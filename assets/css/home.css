@@ -108,8 +108,8 @@
 
         .audio-avatar {
             width: 50%;
-            aspect-ratio: 1 / 1;
             /*保持宽高比为1:1*/
+            aspect-ratio: 1 / 1;
             border-radius: .3rem;
             z-index: 1;
         }
@@ -209,6 +209,7 @@
                 font-size: 1.2rem;
                 background-color: beige;
             }
+
             .notification-close {
                 position: absolute;
                 top: 0;
