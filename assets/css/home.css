@@ -1,0 +1,223 @@
+/* 主页 */
+.home {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    width: 100vw;
+    color: black;
+    position: relative;
+
+    .video-or-audio-notify {
+        position: absolute;
+        width: 0;
+        height: 0;
+        top: -100%;
+        border-radius: .5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        animation: video-notify-spawn .2s forwards;
+        background-color: white;
+        padding-left: 1rem;
+        padding-right: 1rem;
+
+        img {
+            width: 2rem;
+            height: 2rem;
+            border-radius: .2rem;
+        }
+
+        .video-audio-notify-operate {
+            display: flex;
+            gap: 1rem;
+
+            > :first-child {
+                background-color: red;
+            }
+
+            > :nth-child(2) {
+                background-color: #95EC69;
+            }
+
+            span {
+                cursor: pointer;
+                width: 2rem;
+                height: 2rem;
+                border-radius: 50%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+
+                svg path {
+                    fill: white;
+                    stroke: white;
+                }
+            }
+        }
+    }
+
+    .video-container {
+        position: absolute;
+        width: 0;
+        height: 0;
+        top: 1rem;
+        border-radius: .5rem;
+        background-color: white;
+        animation: video-spawn .2s forwards;
+        z-index: 20;
+        overflow: hidden;
+
+        .video-self {
+            width: 100%;
+            height: auto;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            border-radius: .2rem;
+            z-index: 2;
+        }
+
+        .video-friend {
+            position: absolute;
+            width: 100%;
+            height: auto;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 1;
+        }
+
+
+    }
+
+    .audio-container {
+        width: 0;
+        height: 0;
+        top: 1rem;
+        position: absolute;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        /* 居中 */
+        background-position: center;
+        /* 铺满 */
+        background-size: cover;
+        /* 保持图片不重复 */
+        background-repeat: no-repeat;
+        animation: video-spawn .2s forwards;
+
+        .audio-avatar {
+            width: 50%;
+            aspect-ratio: 1 / 1; /*保持宽高比为1:1*/
+            border-radius: .3rem;
+            z-index: 1;
+        }
+
+        &::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            backdrop-filter: blur(10px);
+        }
+    }
+
+    .call-operate {
+        position: absolute;
+        width: 100%;
+        height: 3.5rem;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        z-index: 3;
+
+        background-color: rgba(0, 0, 0, .2);
+
+        span {
+            width: 3rem;
+            height: 3rem;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+
+        }
+
+        .switch-microphone {
+            background-color: white;
+
+            svg {
+                width: 2rem;
+                height: 2rem;
+            }
+        }
+
+        .hangup-icon {
+            background-color: red;
+
+            svg {
+                width: 2rem;
+                height: 2rem;
+
+                path {
+                    fill: white;
+                    stroke: white;
+                }
+            }
+        }
+
+        .call-volume {
+            background-color: white;
+
+            svg {
+                width: 2rem;
+                height: 2rem;
+            }
+        }
+    }
+
+
+    .notify {
+        position: absolute;
+        top: 2rem;
+        right: 1rem;
+        width: 15rem;
+        max-height: 8rem;
+        display: flex;
+        flex-direction: column;
+        gap: .5rem;
+        overflow-y: auto;
+
+        .notification-item {
+            width: 100%;
+            /*height: 3rem;*/
+            max-height: 5rem;
+            background-color: red;
+        }
+    }
+}
+
+@keyframes video-spawn {
+    to {
+        width: 22.5rem;
+        height: 30rem;
+    }
+}
+
+@keyframes video-notify-spawn {
+    to {
+        width: 20rem;
+        height: 3rem;
+        top: .5rem;
+    }
+}
+
+@keyframes video-self-zoom-in {
+    to {
+        width: 50%;
+    }
+}

@@ -1,0 +1,11 @@
+[serve]
+address  = ["0.0.0.0"]
+port = 8080
+[[proxy]]
+rewrite = "/api/"
+backend = "http://172.24.48.1:3000/"
+no-sys-proxy = true
+#backend = "http://192.168.28.120:3000/"
+[watch]
+# Paths to ignore.
+ignore = [".idea", ".git", "dist", ".gitignore", "target"]

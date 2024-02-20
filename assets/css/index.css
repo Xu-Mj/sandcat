@@ -1,0 +1,274 @@
+/* color palette from <https://github.com/vuejs/theme> */
+:root {
+    --vt-c-white: #ffffff;
+    --vt-c-white-soft: #f8f8f8;
+    --vt-c-white-mute: #f2f2f2;
+
+    --vt-c-black: #181818;
+    --vt-c-black-soft: #222222;
+    --vt-c-black-mute: #282828;
+
+    --vt-c-indigo: #2c3e50;
+
+    --vt-c-divider-light-1: rgba(60, 60, 60, 0.29);
+    --vt-c-divider-light-2: rgba(60, 60, 60, 0.12);
+    --vt-c-divider-dark-1: rgba(84, 84, 84, 0.65);
+    --vt-c-divider-dark-2: rgba(84, 84, 84, 0.48);
+
+    --vt-c-text-light-1: var(--vt-c-indigo);
+    --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
+    --vt-c-text-dark-1: var(--vt-c-white);
+    --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
+}
+
+/* semantic color variables for this project */
+:root {
+    --color-background: var(--vt-c-white);
+    --color-background-soft: var(--vt-c-white-soft);
+    --color-background-mute: var(--vt-c-white-mute);
+
+    --color-border: var(--vt-c-divider-light-2);
+    --color-border-hover: var(--vt-c-divider-dark-2);
+
+    --color-heading: var(--vt-c-text-light-1);
+    --color-text: var(--vt-c-text-light-1);
+
+    --section-gap: 160px;
+}
+
+/*@media (prefers-color-scheme: dark) {*/
+:root[theme="dark"] {
+    --color-background: var(--vt-c-black-mute);
+    --color-background-soft: var(--vt-c-black-soft);
+    --color-background-mute: var(--vt-c-black-mute);
+
+    --color-border: var(--vt-c-black-soft);
+    --color-border-hover: var(--vt-c-black);
+
+    --color-heading: var(--vt-c-text-dark-1);
+    --color-text: var(--vt-c-text-dark-1);
+}
+
+/*}*/
+
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-weight: normal;
+}
+
+html {
+    scroll-behavior: smooth;
+    user-select: none;
+    color: var(--color-text);
+    background: var(--color-background);
+    transition: color 0.5s,
+        background-color 0.5s;
+    line-height: 1.6;
+    font-family: Inter,
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        'Fira Sans',
+        'Droid Sans',
+        'Helvetica Neue',
+        sans-serif;
+    font-size: 15px;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+
+:root {
+    --hover-color: #e4e9ec;
+    /*--color:*/
+    font-size: larger;
+}
+
+#friend-card-dialog {
+    position: absolute;
+    background-color: white;
+    box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
+        10px 10px 10px rgba(60, 60, 60, 0.12),
+        -10px -10px 15px rgba(60, 60, 60, 0.12),
+        -10px -10px 15px rgba(60, 60, 60, 0.12);
+    border: none;
+    outline: none;
+    user-select: none;
+
+    &::backdrop {
+        background-color: transparent;
+    }
+}
+
+.box-shadow {
+    box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
+        10px 10px 10px rgba(60, 60, 60, 0.12),
+        -10px -10px 15px rgba(60, 60, 60, 0.12),
+        -10px -10px 15px rgba(60, 60, 60, 0.12);
+}
+
+/* 朋友卡片 */
+.friend-card-container {
+    background-color: white;
+    &[tabindex] {
+        outline: none;
+    }
+
+}
+
+.friend-card {
+    width: 18rem;
+    height: 22rem;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    /* position: absolute; */
+    /* left: 3rem; */
+
+    &>:not(:last-child) {
+        border-bottom: 1px solid #ccc;
+    }
+
+
+    .friend-card-header {
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .friend-card-avatar {
+        width: 4rem;
+        height: 4rem;
+        border-radius: .3rem;
+    }
+
+    .friend-card-info {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+
+        &:not(:first-child) {
+            color: #999;
+        }
+    }
+
+    .friend-card-body {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        button {
+            border: none;
+            background-color: #e4e9ec;
+            width: 6rem;
+            height: 2rem;
+            padding: auto;
+            cursor: pointer;
+        }
+    }
+}
+
+/* 图片预览 */
+.img-preview-dialog {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .img-preview img {
+        max-width: 100%;
+        max-height: 100%
+    }
+}
+
+/* 头像:本人头像以及聊天列表中的头像尺寸 */
+.avatar {
+    width: calc(4rem - 1.5rem);
+    height: calc(4rem - 1.5rem);
+    border-radius: .3rem;
+    cursor: pointer;
+}
+
+/* 左侧顶部搜索栏 */
+.top-bar {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    height: 4rem;
+    padding: 1rem;
+    background-color: white;
+    gap: 1rem;
+
+    .setting-button {
+        width: 2rem;
+        height: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
+
+    .search {
+        width: calc(100% - 2rem);
+        height: 1.5rem;
+
+        .search-icon {
+            position: absolute;
+            width: 1rem;
+            height: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            outline: none;
+            padding: 0.5rem 0.5rem 0.5rem 2rem;
+            background-color: var(--hover-color);
+            border-radius: .5rem;
+        }
+    }
+}
+
+.hover {
+    &:hover {
+        background-color: var(--hover-color);
+    }
+}
+
+/* 滚动条 */
+::-webkit-scrollbar {
+    width: 6px;
+    /*滚动条的宽度*/
+    height: 8px;
+    /*滚动条的高度*/
+}
+
+
+::-webkit-scrollbar-thumb:vertical {
+    /*垂直滚动条的样式*/
+    height: 50px;
+    background-color: #BDBDBD;
+    -webkit-border-radius: 50px;
+    outline: none;
+    /*outline-offset: -2px;*/
+    border: none;
+}

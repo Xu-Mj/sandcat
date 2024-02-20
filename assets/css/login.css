@@ -1,0 +1,86 @@
+/* 登录页面 */
+.login-container {
+    -webkit-user-select: none;
+    /* Safari */
+    -ms-user-select: none;
+    /* IE 10 and IE 11 */
+    user-select: none;
+    /* Standard syntax */
+    width: 100%;
+    min-height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    /* padding: 50px; */
+    /* background-image: url("../assets/imgs/53.jpg"); */
+
+    .error {
+        position: absolute;
+        width: 20rem;
+        height: 10rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .login-wrapper {
+        width: 100%;
+        max-width: 400px;
+        height: 450px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--color-background);
+        border-radius: 5px;
+
+        input {
+            width: 100%;
+            height: 100%;
+            padding: 1em;
+            background-color: #f0f0ee;
+            outline: none;
+            border: none;
+            font: inherit;
+        }
+
+        .email,
+        .pwd {
+            height: 50px;
+            width: 90%;
+            margin-top: 20px;
+        }
+
+        .submit {
+            margin-top: 40px;
+            width: 70px;
+            height: 40px;
+            padding: 0;
+            line-height: 40px;
+            text-align: center;
+            border-radius: 5px;
+            color: #ffffff;
+            background-color: #f77c2c;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+    }
+}
+
+.sign {
+    font-size: xx-large;
+    font-weight: bolder;
+    margin-bottom: 20px;
+}
+
+
+
+/* 注册链接 */
+.login-register {
+    font-size: small;
+}
+
+/* 登录结束 */

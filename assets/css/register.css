@@ -1,0 +1,192 @@
+.register-container {
+    -webkit-user-select: none;
+    /* Safari */
+    -ms-user-select: none;
+    /* IE 10 and IE 11 */
+    user-select: none;
+    /* Standard syntax */
+    width: 100%;
+    min-height: calc(100vh - 70px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+
+    .register-info {
+        position: absolute;
+        margin: auto;
+        background-color: rgb(156, 155, 156);
+        width: 15rem;
+        height: 4rem;
+        border-radius: .5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .register-success {
+        position: absolute;
+        margin: auto;
+        background-color: rgb(3, 248, 117);
+        width: 15rem;
+        height: 4rem;
+        border-radius: .5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .register-error {
+        position: absolute;
+        margin: auto;
+        background-color: rgb(248, 3, 3);
+        width: 15rem;
+        height: 4rem;
+        border-radius: .5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .register-wrapper {
+        width: 100%;
+        max-width: 25rem;
+        height: 20rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+
+        &>div {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 3fr 1fr;
+            height: 3rem;
+            line-height: 3rem;
+            align-items: center;
+
+            /* 最后一个元素左右居中 */
+            &>*:last-child {
+                justify-self: center;
+            }
+        }
+
+        .register-avatar-wrapper {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+
+            &>img {
+                width: 3rem;
+                height: 3rem;
+                cursor: pointer;
+            }
+
+            .avatar-active {
+                border: 3px solid rgb(4, 161, 252);
+            }
+        }
+
+        .register-code-btn {
+            width: 4rem;
+            height: 2rem;
+            background-color: rgb(4, 161, 252);
+            border: none;
+            border-radius: .2rem;
+            cursor: pointer;
+            color: white;
+
+            &:disabled {
+                background-color: rgb(99, 195, 250);
+                cursor: not-allowed;
+            }
+        }
+
+        .email-right {
+            border: green 1px solid;
+        }
+
+        .email-wrong {
+            border: red 1px solid;
+        }
+
+
+    }
+
+
+    progress {
+        width: 90%;
+    }
+
+    input {
+        width: 100%;
+        height: 3rem;
+        padding: 1rem;
+        background-color: #f0f0ee;
+        outline: none;
+        border: none;
+        font: inherit;
+    }
+
+    .register-button {
+        margin-top: 40px;
+        width: 70px;
+        height: 40px;
+        padding: 0;
+        line-height: 40px;
+        text-align: center;
+        border-radius: 5px;
+        color: #ffffff;
+        background-color: #f77c2c;
+        cursor: pointer;
+    }
+
+    meter {
+        --size: 1rem;
+        --gradient: linear-gradient(to right, red calc(var(--size) - 1px), transparent 0 calc(var(--size) + 1px), orange 0 calc(var(--size) * 2 - 1px), transparent 0 calc(var(--size) * 2 + 1px), green 0);
+        width: calc(3 * var(--size));
+        border: 0;
+        /* Safari */
+        position: relative;
+    }
+
+    meter::after {
+        content: '弱 中 强 ';
+        position: absolute;
+        font-size: 14px;
+        line-height: 20px;
+        height: 20px;
+        overflow: hidden;
+        left: calc(var(--size) / 2 - .5em);
+        right: calc(var(--size) / 2 - .5em);
+        text-align: justify;
+        -webkit-text-fill-color: transparent;
+        background: var(--gradient) calc(.5em - var(--size) / 2) / calc(3 * var(--size));
+        -webkit-background-clip: text;
+    }
+
+    ::-webkit-meter-bar {
+        height: 12px;
+        width: calc(3 * var(--size));
+        border: 0;
+        background: #eee;
+        -webkit-mask: var(--gradient);
+        mask: var(--gradient);
+    }
+
+    ::-webkit-meter-even-less-good-value {
+        background: red;
+    }
+
+    ::-webkit-meter-suboptimum-value {
+        background: linear-gradient(to right, red var(--size), orange 0);
+    }
+
+    ::-webkit-meter-optimum-value {
+        background: linear-gradient(to right, red var(--size), orange 0 calc(2 * var(--size)), green 0);
+    }
+}
