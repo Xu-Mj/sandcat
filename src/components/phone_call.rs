@@ -205,10 +205,20 @@ impl Component for PhoneCall {
                             }
                             Err(e) => {
                                 log::debug!("get video stream error: {:?}", &e);
+                                web_sys::console::log_1(&e);
+                                let content = if let Some(err) = e.as_string() {
+                                    if err.contains("not found") {
+                                        "未发现音视频设备"
+                                    } else {
+                                        "其他错误"
+                                    }
+                                } else {
+                                    "其他错误"
+                                };
                                 PhoneCallMsg::Notification(Notification {
                                     type_: NotificationType::Error,
                                     title: AttrValue::from("ERROR"),
-                                    content: format!("get video stream error: {:?}", e).into(),
+                                    content: AttrValue::from(content),
                                 })
                             }
                         },
@@ -220,11 +230,22 @@ impl Component for PhoneCall {
                                     send_msg_event.emit(Msg::SingleCallInvite(msg));
                                     PhoneCallMsg::ShowAudioWindow(stream, Box::new(friend))
                                 }
-                                Err(e) => PhoneCallMsg::Notification(Notification {
-                                    type_: NotificationType::Error,
-                                    title: AttrValue::from("ERROR"),
-                                    content: format!("get video stream error: {:?}", e).into(),
-                                }),
+                                Err(e) => {
+                                    let content = if let Some(err) = e.as_string() {
+                                        if err.contains("NotFoundError") {
+                                            "未发现音视频设备"
+                                        } else {
+                                            "其他错误"
+                                        }
+                                    } else {
+                                        "其他错误"
+                                    };
+                                    PhoneCallMsg::Notification(Notification {
+                                        type_: NotificationType::Error,
+                                        title: AttrValue::from("ERROR"),
+                                        content: AttrValue::from(content),
+                                    })
+                                }
                             }
                         }
                     }

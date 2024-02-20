@@ -108,7 +108,8 @@
 
         .audio-avatar {
             width: 50%;
-            aspect-ratio: 1 / 1; /*保持宽高比为1:1*/
+            aspect-ratio: 1 / 1;
+            /*保持宽高比为1:1*/
             border-radius: .3rem;
             z-index: 1;
         }
@@ -197,6 +198,25 @@
             /*height: 3rem;*/
             max-height: 5rem;
             background-color: red;
+            position: relative;
+            border-radius: .5rem;
+            display: flex;
+            flex-direction: column;
+            padding: .3rem;
+            overflow: hidden;
+
+            .notification-title {
+                font-size: 1.2rem;
+                background-color: beige;
+            }
+            .notification-close {
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 1rem;
+                height: 1rem;
+                cursor: pointer;
+            }
         }
     }
 }

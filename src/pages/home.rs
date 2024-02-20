@@ -5,6 +5,7 @@ use crate::components::phone_call::PhoneCall;
 use crate::db::friend::FriendRepo;
 use crate::db::friend_ship::FriendShipRepo;
 use crate::db::{current_item, TOKEN, WS_ADDR};
+use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser, ItemInfo};
 use crate::model::message::{DeliveredNotice, InviteMsg, Message, Msg};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
@@ -80,6 +81,7 @@ pub enum HomeMsg {
     SendBackMsg(Msg),
     Notification(Notification),
     CleanNotification,
+    CloseNotificationByIndex(usize),
     RecSendCallStateChange(Msg),
 }
 
@@ -532,6 +534,13 @@ impl Component for Home {
                 }
                 false
             }
+            HomeMsg::CloseNotificationByIndex(index) => {
+                if index < self.notifications.len() {
+                    self.notifications.remove(index);
+                    return true;
+                }
+                false
+            }
         }
     }
 
@@ -543,6 +552,9 @@ impl Component for Home {
             .map(|(index, item)| {
                 html! {
                     <div class="notification-item" key={index}>
+                        <div class="notification-close" onclick={ctx.link().callback(move |_| HomeMsg::CloseNotificationByIndex(index))}>
+                            <CloseIcon />
+                        </div>
                         <div class="notification-title">
                             {item.title.clone()}
                         </div>
