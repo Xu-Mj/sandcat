@@ -166,7 +166,6 @@ impl Component for Login {
                     //     user_repo.add(&user).await;
                     // }
 
-                    log::debug!("local storage :{}", res.token);
                     LoginMsg::Success(id)
                 });
                 self.login_state = LoginState::Logining;
