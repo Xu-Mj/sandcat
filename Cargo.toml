@@ -111,4 +111,7 @@ features = [
     "RtcIceGatheringState",
     "RtcIceConnectionState",
     "RtcRtpSender",
+    "Notification",
+    "NotificationOptions",
+    "NotificationPermission",
 ]
