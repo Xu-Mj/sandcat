@@ -550,8 +550,15 @@ impl Component for Home {
             .iter()
             .enumerate()
             .map(|(index, item)| {
+                let mut class = classes!("notification-item") ;
+                match item.type_ {
+                    NotificationType::Info => class.push("info") ,
+                    NotificationType::Success => class.push("success"),
+                    NotificationType::Warn => class.push("warn"),
+                    NotificationType::Error => class.push("error"),
+                }
                 html! {
-                    <div class="notification-item" key={index}>
+                    <div {class} key={index}>
                         <div class="notification-close" onclick={ctx.link().callback(move |_| HomeMsg::CloseNotificationByIndex(index))}>
                             <CloseIcon />
                         </div>
