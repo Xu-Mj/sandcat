@@ -3,7 +3,7 @@
 use crate::{
     api::user::apply_friend,
     db::friend_ship::FriendShipRepo,
-    model::{friend::FriendShipRequest, user::User},
+    model::{friend::{FriendShipRequest, ReadStatus}, user::User},
 };
 use gloo::utils::{document, window};
 use wasm_bindgen::JsCast;
@@ -133,10 +133,11 @@ impl Component for FriendCard {
                         }
                         Ok(mut friendship) => {
                             friendship.is_self = true;
+                            friendship.read = ReadStatus::True;
                             // 数据入库
                             FriendShipRepo::new()
                                 .await
-                                .put_friendship(&friendship)
+                                .put_friendship(friendship)
                                 .await;
                             FriendCardMsg::ApplyFriendResult(FriendShipRequestState::Success)
                         }
