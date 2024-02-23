@@ -6,7 +6,7 @@ use super::{
     db::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
     FRIEND_USER_ID_INDEX,
 };
-use crate::model::friend::FriendShipWithUser;
+use crate::model::friend::{FriendShipWithUser, ReadStatus};
 use futures_channel::oneshot;
 use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
@@ -98,6 +98,7 @@ impl FriendShipRepo {
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         rx.await.unwrap()
     }
+
     // todo 增加错误结果，用来标识
     pub async fn get_friendship_by_friend_id(
         &self,
@@ -181,7 +182,7 @@ impl FriendShipRepo {
         let request = index
             .open_cursor_with_range(&unread)
             .expect("friend select get error");
-        let onsuccess = Closure::once(move |event: &Event| {
+        let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
             let result = event.target().unwrap().dyn_into::<IdbRequest>().unwrap();
             let result = result.result().unwrap_or_else(|_| JsValue::NULL);
             if !result.is_null() {
@@ -189,8 +190,8 @@ impl FriendShipRepo {
                     .dyn_ref::<web_sys::IdbCursorWithValue>()
                     .expect("cursor error");
                 let value = cursor.value().expect("cursor value error");
-                let res: FriendShipWithUser = serde_wasm_bindgen::from_value(value).unwrap();
-
+                let mut res: FriendShipWithUser = serde_wasm_bindgen::from_value(value).unwrap();
+                res.read = ReadStatus::True;
                 match cursor.update(&serde_wasm_bindgen::to_value(&res).unwrap()) {
                     Ok(_) => {
                         let _ = cursor.continue_();
@@ -200,12 +201,14 @@ impl FriendShipRepo {
                     }
                 };
             }
-        });
+        }) as Box<dyn FnMut(&Event)>);
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         let on_add_error = Closure::once(move |event: &Event| {
             log::error!("get unread count error: {:?}", event);
         });
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        onsuccess.forget();
+        on_add_error.forget();
         Ok(())
     }
 
