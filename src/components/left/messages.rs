@@ -55,11 +55,13 @@ impl Component for Messages {
     type Properties = MessagesProps;
 
     fn create(ctx: &Context<Self>) -> Self {
+        // query conversation list
         ctx.link().send_future(async {
             let conv_repo = ConvRepo::new().await;
             let convs = conv_repo.get_convs2().await.unwrap();
             MessagesMsg::QueryConvs(QueryState::Success(convs))
         });
+        // register state
         let (msg_state, _msg_listener) = ctx
             .link()
             .context(ctx.link().callback(MessagesMsg::ReceiveMessage))
@@ -201,7 +203,6 @@ impl Component for Messages {
                 }
                 // log::debug!("in update app state changed: {:?} ; id: {}", self.list.clone(), self.app_state.current_conv_id);
                 // 判断是否需要更新当前会话
-                // let dest = self.list.shift_remove_full(&cur_conv_id);
                 let dest = self.list.get_mut(&cur_conv_id);
                 if dest.is_some() {
                     let mut conv = dest.unwrap();
