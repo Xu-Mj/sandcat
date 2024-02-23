@@ -204,15 +204,18 @@ impl Component for PhoneCall {
                                 PhoneCallMsg::ShowVideoWindow(stream)
                             }
                             Err(e) => {
-                                log::debug!("get video stream error: {:?}", &e);
-                                web_sys::console::log_1(&e);
-                                let content = if let Some(err) = e.as_string() {
-                                    if err.contains("not found") {
-                                        "未发现音视频设备"
+                                let content = if let Some(dom_exception) =
+                                    e.dyn_ref::<web_sys::DomException>()
+                                {
+                                    log::warn!("dom exception: {}", dom_exception.name());
+                                    if dom_exception.name() == "NotFoundError" {
+                                        log::warn!("没有检测到音视频设备");
+                                        "没有检测到音视频设备"
                                     } else {
                                         "其他错误"
                                     }
                                 } else {
+                                    log::error!("未知错误获取音频流: {:?}", e);
                                     "其他错误"
                                 };
                                 PhoneCallMsg::Notification(Notification {
@@ -231,13 +234,18 @@ impl Component for PhoneCall {
                                     PhoneCallMsg::ShowAudioWindow(stream, Box::new(friend))
                                 }
                                 Err(e) => {
-                                    let content = if let Some(err) = e.as_string() {
-                                        if err.contains("NotFoundError") {
-                                            "未发现音视频设备"
+                                    let content = if let Some(dom_exception) =
+                                        e.dyn_ref::<web_sys::DomException>()
+                                    {
+                                        log::warn!("dom exception: {}", dom_exception.name());
+                                        if dom_exception.name() == "NotFoundError" {
+                                            log::warn!("没有检测到音频设备");
+                                            "没有检测到音视频设备"
                                         } else {
                                             "其他错误"
                                         }
                                     } else {
+                                        log::error!("未知错误获取音频流: {:?}", e);
                                         "其他错误"
                                     };
                                     PhoneCallMsg::Notification(Notification {
