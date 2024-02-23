@@ -159,21 +159,54 @@ impl FriendShipRepo {
 
             tx.send(result.as_f64().unwrap_or_default() as usize)
                 .unwrap();
-
-            // if result.is_null() {
-            //     tx.send(0).unwrap();
-            // } else {
-            //     // let count = result.as_f64().unwrap();
-            //
-            //     tx.send(count as usize).unwrap();
-            // }
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         let on_add_error = Closure::once(move |event: &Event| {
-            log::error!("获取好友请求错误: {:?}", event);
+            log::error!("get unread count error: {:?}", event);
         });
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         rx.await.unwrap()
+    }
+
+    pub async fn clean_unread_count(&self) -> Result<(), JsValue> {
+        // 声明一个channel，接收查询结果
+        let store = self
+            .store(&String::from(FRIENDSHIP_TABLE_NAME))
+            .await
+            .unwrap();
+        let index = store
+            .index(FRIENDSHIP_UNREAD_INDEX)
+            .expect("friend select index error");
+        let unread = IdbKeyRange::only(&JsValue::from("False")).unwrap();
+        let request = index
+            .open_cursor_with_range(&unread)
+            .expect("friend select get error");
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event.target().unwrap().dyn_into::<IdbRequest>().unwrap();
+            let result = result.result().unwrap_or_else(|_| JsValue::NULL);
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("cursor error");
+                let value = cursor.value().expect("cursor value error");
+                let res: FriendShipWithUser = serde_wasm_bindgen::from_value(value).unwrap();
+
+                match cursor.update(&serde_wasm_bindgen::to_value(&res).unwrap()) {
+                    Ok(_) => {
+                        let _ = cursor.continue_();
+                    }
+                    Err(err) => {
+                        log::error!("更新好友请求错误: {:?}", err);
+                    }
+                };
+            }
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        let on_add_error = Closure::once(move |event: &Event| {
+            log::error!("get unread count error: {:?}", event);
+        });
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        Ok(())
     }
 
     pub async fn get_list(&self) -> Vec<FriendShipWithUser> {
