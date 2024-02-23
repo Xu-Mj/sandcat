@@ -65,6 +65,5 @@ pub async fn get_audio_stream() -> Result<MediaStream, JsValue> {
         JsFuture::from(devices.get_user_media_with_constraints(&audio_constraints)?).await?;
     let audio_stream = JsCast::dyn_into::<MediaStream>(audio_value)?;
 
-    // 将音频流加入到视频流
     Ok(audio_stream)
 }
