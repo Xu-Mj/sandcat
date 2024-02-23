@@ -443,7 +443,7 @@ impl Component for Home {
                 ctx.link().send_future(async move {
                     FriendShipRepo::new()
                         .await
-                        .put_friendship(&friendship)
+                        .put_friendship(friendship)
                         .await;
                     // 发送收到通知
                     HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(DeliveredNotice {
