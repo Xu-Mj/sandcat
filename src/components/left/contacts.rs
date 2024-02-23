@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 
 use std::rc::Rc;
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::components::left::add_friend::AddFriend;
@@ -59,7 +60,6 @@ impl Component for Contacts {
         ctx.link().send_future(async {
             let friend_repo = FriendRepo::new().await;
             let friends = friend_repo.get_list().await;
-
             ContactsMsg::QueryFriends(QueryState::Success(friends))
         });
         // 查询好友请求列表
@@ -69,6 +69,7 @@ impl Component for Contacts {
             log::debug!("查询好友请求列表, 未读数量{}", count);
             ContactsMsg::QueryFriendship(count)
         });
+        // register state
         let (friendship_state, _listener) = ctx
             .link()
             .context(ctx.link().callback(ContactsMsg::RecFriendShipReq))
@@ -132,7 +133,6 @@ impl Component for Contacts {
                 true
             }
             ContactsMsg::RecFriendShipReq(friendship) => {
-                // self.list.insert(0, friendship.friend.clone());
                 match friendship.state_type {
                     crate::pages::FriendShipStateType::Req => {
                         self.friendships_unread_count += 1;
@@ -155,10 +155,15 @@ impl Component for Contacts {
             ContactsMsg::NewFriendClicked => {
                 log::debug!("new friend clicked");
                 self.friendships_unread_count = 0;
+                // send friendship list event
                 self.friend_state.state_change_event.emit(CurrentItem {
                     item_id: AttrValue::default(),
                     content_type: RightContentType::FriendShipList,
                     unread_count: 0,
+                });
+                // clean unread count
+                spawn_local(async {
+                    let _ = FriendShipRepo::new().await.clean_unread_count().await;
                 });
                 true
             }
@@ -215,10 +220,6 @@ impl Component for Contacts {
                 }
             </div>
         }
-    }
-
-    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
-        if first_render {}
     }
 }
 
