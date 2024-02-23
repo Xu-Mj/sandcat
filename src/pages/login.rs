@@ -89,17 +89,17 @@ async fn init_db(id: AttrValue, token: &str) {
         }
     }
 
-    // 拉取好友请求列表
-    match api::user::get_friend_apply_list_by_id(id.to_string()).await {
-        Ok(res) => {
-            // 写入数据库
-            FriendShipRepo::new().await.put_friendships(&res).await;
-            log::debug!("get friend ship list: {:?}", &res)
-        }
-        Err(e) => {
-            log::error!("获取好友请求列表错误: {:?}", e);
-        }
-    }
+    // // 拉取好友请求列表
+    // match api::user::get_friend_apply_list_by_id(id.to_string()).await {
+    //     Ok(res) => {
+    //         // 写入数据库
+    //         FriendShipRepo::new().await.put_friendships(&res).await;
+    //         log::debug!("get friend ship list: {:?}", &res)
+    //     }
+    //     Err(e) => {
+    //         log::error!("获取好友请求列表错误: {:?}", e);
+    //     }
+    // }
 }
 
 impl Component for Login {
