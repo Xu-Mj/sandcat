@@ -68,9 +68,6 @@ fn is_zero(id: &i32) -> bool {
 
 #[derive(Serialize, Debug, Default, Clone, Deserialize, PartialEq)]
 pub struct FriendShipWithUser {
-    #[serde(skip_serializing_if = "is_zero")]
-    #[serde(default)]
-    pub id: i32,
     pub friendship_id: AttrValue,
     pub user_id: AttrValue,
     pub name: AttrValue,

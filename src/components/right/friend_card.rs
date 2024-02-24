@@ -137,7 +137,7 @@ impl Component for FriendCard {
                             // 数据入库
                             FriendShipRepo::new()
                                 .await
-                                .put_friendship(friendship)
+                                .put_friendship(&friendship)
                                 .await;
                             FriendCardMsg::ApplyFriendResult(FriendShipRequestState::Success)
                         }

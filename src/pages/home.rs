@@ -441,7 +441,7 @@ impl Component for Home {
                 state.state_type = FriendShipStateType::Req;
                 // 入库
                 ctx.link().send_future(async move {
-                    FriendShipRepo::new().await.put_friendship(friendship).await;
+                    FriendShipRepo::new().await.put_friendship(&friendship).await;
                     // 发送收到通知
                     HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(DeliveredNotice {
                         msg_id: id,
