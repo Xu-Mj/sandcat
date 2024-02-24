@@ -3,7 +3,10 @@
 use crate::{
     api::user::apply_friend,
     db::friend_ship::FriendShipRepo,
-    model::{friend::{FriendShipRequest, ReadStatus}, user::User},
+    model::{
+        friend::{FriendShipRequest, ReadStatus},
+        user::User,
+    },
 };
 use gloo::utils::{document, window};
 use wasm_bindgen::JsCast;
@@ -113,15 +116,25 @@ impl Component for FriendCard {
                 let friend_id = ctx.props().friend_info.id.clone();
                 let user_id = ctx.props().user_info.as_ref().unwrap().id.clone();
                 let apply_node: HtmlInputElement = self.apply_node.cast().unwrap();
+                let apply_msg = if apply_node.value().is_empty() {
+                    None
+                } else {
+                    Some(AttrValue::from(apply_node.value()))
+                };
                 let remark: HtmlInputElement = self.remark_node.cast().unwrap();
+                let remark = if remark.value().is_empty() {
+                    None
+                } else {
+                    Some(AttrValue::from(remark.value()))
+                };
                 // 发送好友申请
                 let new_friend = FriendShipRequest {
                     user_id,
                     friend_id,
                     status: AttrValue::from("2"),
-                    apply_msg: Some(apply_node.value().into()),
+                    apply_msg,
                     source: None,
-                    remark: Some(remark.value().into()),
+                    remark,
                 };
 
                 log::debug!("发送好友申请:{:?}", &new_friend);
