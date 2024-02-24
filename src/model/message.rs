@@ -1,12 +1,14 @@
 #![allow(dead_code)]
 
+use super::friend::Friend;
 use crate::model::friend::{FriendShipRequest, FriendShipWithUser};
 use crate::model::ContentType;
 use crate::utils;
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
-use super::friend::Friend;
+pub(crate) const DEFAULT_HELLO_MESSAGE: &'static str =
+    "I've accepted your friend request. Now let's chat!";
 
 fn is_zero(id: &i32) -> bool {
     *id == 0
