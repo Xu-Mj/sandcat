@@ -473,7 +473,7 @@ impl Component for Home {
                         send_id,
                         friend_id: friend.friend_id.clone(),
                         content_type: ContentType::Text,
-                        content: friend.hello.clone().unwrap_or_default(),
+                        content: friend.hello.clone().unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
                         create_time: chrono::Local::now().timestamp_millis(),
                         is_read: true,
                         is_self: true,
