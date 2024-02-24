@@ -7,7 +7,7 @@ use crate::db::friend_ship::FriendShipRepo;
 use crate::db::{current_item, TOKEN, WS_ADDR};
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser, ItemInfo};
-use crate::model::message::{DeliveredNotice, InviteMsg, Message, Msg, EMPTY_HELLO_MESSAGE};
+use crate::model::message::{DeliveredNotice, InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::ContentType;
@@ -392,7 +392,7 @@ impl Component for Home {
                                 send_id,
                                 friend_id: friend.friend_id.clone(),
                                 content_type: ContentType::Text,
-                                content: friend.hello.unwrap_or_else(|| AttrValue::from(EMPTY_HELLO_MESSAGE)),
+                                content: friend.hello.unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
                                 create_time: chrono::Local::now().timestamp_millis(),
                                 is_read: true,
                                 is_self: true,
