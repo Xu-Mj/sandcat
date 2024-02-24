@@ -150,17 +150,24 @@ impl Repository {
                 .create_index_with_str(CONVERSATION_LAST_MSG_TIME_INDEX, "last_msg_time")
                 .unwrap();
 
+            let mut parameter = IdbObjectStoreParameters::new();
+            parameter.key_path(Some(&JsValue::from(FRIENDSHIP_ID_INDEX)));
             let store = db
                 .create_object_store_with_optional_parameters(
                     &String::from(FRIENDSHIP_TABLE_NAME),
-                    &parameters,
+                    &parameter,
+                )
+                .unwrap();
+
+            store
+                .create_index_with_str_and_optional_parameters(
+                    FRIENDSHIP_ID_INDEX,
+                    "friendship_id",
+                    &param,
                 )
                 .unwrap();
             store
                 .create_index_with_str(FRIEND_USER_ID_INDEX, "user_id")
-                .unwrap();
-            store
-                .create_index_with_str(FRIENDSHIP_ID_INDEX, "friendship_id")
                 .unwrap();
             store
                 .create_index_with_str(FRIENDSHIP_UNREAD_INDEX, "read")
