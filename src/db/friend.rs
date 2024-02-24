@@ -5,7 +5,7 @@ use std::ops::Deref;
 use crate::model;
 use futures_channel::oneshot;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{Event, IdbRequest};
+use web_sys::{Event, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
 
 use super::{db::Repository, FRIEND_FRIEND_ID_INDEX, FRIEND_TABLE_NAME};
@@ -35,10 +35,9 @@ impl FriendRepo {
         let value = serde_wasm_bindgen::to_value(friend).unwrap();
         store.put(&value).unwrap();
     }
+
     pub async fn put_friend_list(&self, friends: &Vec<model::friend::Friend>) {
         let store = self.store(&String::from(FRIEND_TABLE_NAME)).await.unwrap();
-        // let value = serde_wasm_bindgen::to_value(friend).unwrap();
-        // store.put(&value).unwrap();
         friends.iter().for_each(|item| {
             let value = serde_wasm_bindgen::to_value(item).unwrap();
             store.put(&value).unwrap();
