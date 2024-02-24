@@ -62,18 +62,20 @@ impl Component for TopBar {
             }
             // 搜索框回车事件
             TopBarMsg::SearchInputEnterListener(e) => {
-                if e.key() == "Enter" {
-                    let input: HtmlInputElement = e.target_unchecked_into();
-                    self.search_value = input.value().into();
-                    let search_value = self.search_value.clone();
-                    ctx.props().search_callback.emit(search_value.clone());
-                } else if e.key() == "Escape" {
-                    let input: HtmlInputElement = e.target_unchecked_into();
-                    input.set_value("");
-                    self.search_value = AttrValue::default();
-                    ctx.props().clean_callback.emit(AttrValue::default());
-                }
-                true
+                // web_sys::console::log_1(&e);
+                // if e.key() == "Enter" {
+                    // let input: HtmlInputElement = e.target_unchecked_into();
+                    // self.search_value = input.value().into();
+                    // let search_value = self.search_value.clone();
+                    // ctx.props().search_callback.emit(search_value.clone());
+                // } else if e.key() == "Escape" {
+                    // let input: HtmlInputElement = e.target_unchecked_into();
+                    // input.set_value("");
+                    // self.search_value = AttrValue::default();
+                    // ctx.props().clean_callback.emit(AttrValue::default());
+                // }
+                // true
+                false
             }
             TopBarMsg::StateChanged(state) => {
                 self.state = state;
