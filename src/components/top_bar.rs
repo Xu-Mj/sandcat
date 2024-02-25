@@ -3,7 +3,7 @@ use std::rc::Rc;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::icons::{PeoplePlusIcon, PlusIcon};
+use crate::icons::{PeoplePlusIcon, PlusIcon, SearchIcon};
 use crate::pages::AppState;
 use crate::pages::ComponentType;
 
@@ -23,6 +23,7 @@ pub struct TopBarProps {
 }
 
 pub struct TopBar {
+    search_node: NodeRef,
     search_value: AttrValue,
     state: Rc<AppState>,
     _listener: ContextHandle<Rc<AppState>>,
@@ -33,6 +34,7 @@ pub enum TopBarMsg {
     SearchInputEnterListener(KeyboardEvent),
     StateChanged(Rc<AppState>),
     PlusButtonClicked,
+    SearchButtonClicked,
 }
 
 impl Component for TopBar {
@@ -46,6 +48,7 @@ impl Component for TopBar {
             .context(ctx.link().callback(TopBarMsg::StateChanged))
             .expect("expect state");
         Self {
+            search_node: NodeRef::default(),
             search_value: "".into(),
             state,
             _listener,
@@ -64,15 +67,15 @@ impl Component for TopBar {
             TopBarMsg::SearchInputEnterListener(e) => {
                 // web_sys::console::log_1(&e);
                 // if e.key() == "Enter" {
-                    // let input: HtmlInputElement = e.target_unchecked_into();
-                    // self.search_value = input.value().into();
-                    // let search_value = self.search_value.clone();
-                    // ctx.props().search_callback.emit(search_value.clone());
+                // let input: HtmlInputElement = e.target_unchecked_into();
+                // self.search_value = input.value().into();
+                // let search_value = self.search_value.clone();
+                // ctx.props().search_callback.emit(search_value.clone());
                 // } else if e.key() == "Escape" {
-                    // let input: HtmlInputElement = e.target_unchecked_into();
-                    // input.set_value("");
-                    // self.search_value = AttrValue::default();
-                    // ctx.props().clean_callback.emit(AttrValue::default());
+                // let input: HtmlInputElement = e.target_unchecked_into();
+                // input.set_value("");
+                // self.search_value = AttrValue::default();
+                // ctx.props().clean_callback.emit(AttrValue::default());
                 // }
                 // true
                 false
@@ -85,15 +88,16 @@ impl Component for TopBar {
                 ctx.props().plus_click.emit(true);
                 true
             }
+            TopBarMsg::SearchButtonClicked => {
+                let input: HtmlInputElement = self.search_node.cast().unwrap();
+                self.search_value = input.value().into();
+                let search_value = self.search_value.clone();
+                ctx.props().search_callback.emit(search_value.clone());
+                true
+            }
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
-        // let search_value = self.search_value.clone();
-        // 搜索图标点击事件
-        /*let onclick = ctx
-        .props()
-        .search_callback
-        .reform(move |_| search_value.clone());*/
         // input 输入框事件
         let onchange = ctx
             .link()
@@ -102,11 +106,6 @@ impl Component for TopBar {
         let onkeydown = ctx
             .link()
             .callback(move |e: KeyboardEvent| TopBarMsg::SearchInputEnterListener(e));
-        // 失去焦点清空搜索框
-        // let onblur = ctx
-        //     .props()
-        //     .clean_callback
-        //         .reform(move |_| AttrValue::default());
         let id = match ctx.props().components_type {
             ComponentType::Contacts => "contacts",
             ComponentType::Messages => "messages",
@@ -126,14 +125,17 @@ impl Component for TopBar {
             }
         };
         let click_plus = ctx.link().callback(|_| TopBarMsg::PlusButtonClicked);
+        let onclick = ctx
+            .link()
+            .callback(move |_| TopBarMsg::SearchButtonClicked);
         html! {
             // 水平布局，从左到右分别为排序选项卡、搜索输入框、设置按钮
             <div class="top-bar">
                 <div class="search">
-                   // <label for={id} class="search-icon" {onclick}>
-                   //  <SearchIcon />
-                   //  </label>
-                   <input id={id} class="search-input" type="search" placeholder="搜索" {onchange} {onkeydown} />
+                   <label for={id} class="search-icon" {onclick}>
+                    <SearchIcon />
+                    </label>
+                   <input id={id} ref={self.search_node.clone()} class="search-input" type="search" placeholder="搜索" {onchange} {onkeydown} />
                 </div>
                 <div class="setting-button" onclick={click_plus}>
                     {icon}
