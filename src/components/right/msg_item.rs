@@ -1,11 +1,8 @@
 #![allow(unused_variables)]
 #![allow(dead_code)]
 
-use gloo::utils::window;
 use nanoid::nanoid;
 use std::rc::Rc;
-use wasm_bindgen::JsCast;
-use web_sys::HtmlImageElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
