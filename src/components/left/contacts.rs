@@ -59,7 +59,7 @@ impl Component for Contacts {
         // 查询联系人列表
         ctx.link().send_future(async {
             let friend_repo = FriendRepo::new().await;
-            let friends = friend_repo.get_list2().await.unwrap_or_default();
+            let friends = friend_repo.get_list().await.unwrap_or_default();
             ContactsMsg::QueryFriends(QueryState::Success(friends))
         });
         // 查询好友请求列表

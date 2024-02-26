@@ -78,43 +78,7 @@ impl FriendRepo {
         rx.await.unwrap()
     }
 
-    pub async fn get_list(&self) -> Vec<Friend> {
-        let (tx, rx) = oneshot::channel::<Vec<Friend>>();
-        let store = self.store(&String::from(FRIEND_TABLE_NAME)).await.unwrap();
-        let request = store.open_cursor().expect("friend select all error");
-        let mut friends = Vec::new();
-        let mut tx = Some(tx);
-        let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
-            // gloo::console::log!("query friends onsuccess");
-            let target = event.target().unwrap();
-            let request = target.dyn_ref::<IdbRequest>().unwrap();
-            let result = match request.result() {
-                Ok(data) => data,
-                Err(_) => JsValue::NULL,
-            };
-            if result.is_null() {
-                let _ = tx.take().unwrap().send(friends.to_owned());
-            } else {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("cursor error");
-                let value = cursor.value().expect("cursor value error");
-                friends.push(serde_wasm_bindgen::from_value(value).unwrap());
-                let _ = cursor.continue_();
-            }
-        }) as Box<dyn FnMut(&Event)>);
-        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        onsuccess.forget();
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("读取数据失败").into());
-            web_sys::console::log_1(&event.into());
-        });
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        on_add_error.forget();
-        rx.await.unwrap()
-    }
-
-    pub async fn get_list2(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue> {
+    pub async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Friend>>();
         let store = self.store(&String::from(FRIEND_TABLE_NAME)).await.unwrap();
         let request = store.open_cursor().unwrap();
