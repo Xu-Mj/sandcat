@@ -4,6 +4,7 @@ use std::ops::Deref;
 
 use crate::model;
 use futures_channel::oneshot;
+use indexmap::IndexMap;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
@@ -111,5 +112,52 @@ impl FriendRepo {
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         on_add_error.forget();
         rx.await.unwrap()
+    }
+
+    pub async fn get_list2(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue> {
+        let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Friend>>();
+        let store = self.store(&String::from(FRIEND_TABLE_NAME)).await.unwrap();
+        let request = store.open_cursor().unwrap();
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("读取数据失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+
+        let convs = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
+        let convs = convs.clone();
+        let mut tx = Some(tx);
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = match req.result() {
+                Ok(data) => data,
+                Err(_err) => {
+                    log::error!("query friend list error ...:{:?}", _err);
+                    JsValue::null()
+                }
+            };
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+                let value = cursor.value().unwrap();
+                // 反序列化
+                let conv: Friend = serde_wasm_bindgen::from_value(value).unwrap();
+                let id = conv.friend_id.clone();
+                convs.borrow_mut().insert(id, conv);
+                let _ = cursor.continue_();
+            } else {
+                // 如果为null说明已经遍历完成
+                //将总的结果发送出来
+                let _ = tx.take().unwrap().send(convs.borrow().clone());
+            }
+        }) as Box<dyn FnMut(&Event)>);
+
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        success.forget();
+        Ok(rx.await.unwrap())
     }
 }
