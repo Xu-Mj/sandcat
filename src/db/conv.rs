@@ -5,7 +5,7 @@ use std::ops::Deref;
 use futures_channel::oneshot;
 use indexmap::IndexMap;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{Event, IdbKeyRange, IdbRequest};
+use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
 
 use crate::model::ContentType;
@@ -102,58 +102,6 @@ impl ConvRepo {
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         on_add_error.forget();
         Ok(result)
-    }
-
-    pub async fn get_convs(&self) -> Result<Vec<Conversation>, JsValue> {
-        let (tx, rx) = oneshot::channel::<Vec<Conversation>>();
-        let store = self
-            .store(&String::from(CONVERSATION_TABLE_NAME))
-            .await
-            .unwrap();
-
-        let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
-        let request = store
-            .open_cursor_with_range_and_direction(
-                &JsValue::from(&rang.unwrap()),
-                web_sys::IdbCursorDirection::Prev,
-            )
-            .unwrap();
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("读取数据失败").into());
-            web_sys::console::log_1(&event.into());
-        });
-
-        let mut convs = Vec::new();
-        let mut tx = Some(tx);
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        let success = Closure::wrap(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = match req.result() {
-                Ok(data) => data,
-                Err(_err) => JsValue::null(),
-            };
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-                let value = cursor.value().unwrap();
-                // 反序列化
-                let msg = serde_wasm_bindgen::from_value(value).unwrap();
-                convs.push(msg);
-                let _ = cursor.continue_();
-            } else {
-                // 如果为null说明已经遍历完成
-                //将总的结果发送出来
-                let _ = tx.take().unwrap().send(convs.to_owned());
-            }
-        }) as Box<dyn FnMut(&Event)>);
-
-        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-        success.forget();
-        Ok(rx.await.unwrap())
     }
 
     pub async fn get_convs2(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue> {

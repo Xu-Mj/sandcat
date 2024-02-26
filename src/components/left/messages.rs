@@ -58,7 +58,7 @@ impl Component for Messages {
         // query conversation list
         ctx.link().send_future(async {
             let conv_repo = ConvRepo::new().await;
-            let convs = conv_repo.get_convs2().await.unwrap();
+            let convs = conv_repo.get_convs2().await.unwrap_or_default();
             MessagesMsg::QueryConvs(QueryState::Success(convs))
         });
         // register state
@@ -91,10 +91,8 @@ impl Component for Messages {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             MessagesMsg::FilterContact(pattern) => {
-                // 过滤联系人列表
-                gloo::console::log!("filter message");
                 self.is_searching = true;
-                // 过滤联系人列表
+                // filter message list
                 if pattern.is_empty() {
                     self.result.clear();
                 } else {
