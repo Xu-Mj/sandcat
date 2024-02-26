@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use indexmap::IndexMap;
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -20,17 +21,16 @@ pub struct ContactsProps {
 }
 
 pub struct Contacts {
-    pub list: Vec<Friend>,
-    // 维护一个查询结果集
-    pub result: Vec<Friend>,
-    pub friendships_unread_count: usize,
+    list: IndexMap<AttrValue, Friend>,
+    result: IndexMap<AttrValue, Friend>,
+    friendships_unread_count: usize,
     // 是否正在搜索
-    pub is_searching: bool,
-    pub is_add_friend: bool,
-    pub friendship_state: Rc<FriendShipState>,
-    pub _listener: ContextHandle<Rc<FriendShipState>>,
-    pub friend_state: Rc<FriendListState>,
-    pub _friend_listener: ContextHandle<Rc<FriendListState>>,
+    is_searching: bool,
+    is_add_friend: bool,
+    friendship_state: Rc<FriendShipState>,
+    _listener: ContextHandle<Rc<FriendShipState>>,
+    friend_state: Rc<FriendListState>,
+    _friend_listener: ContextHandle<Rc<FriendListState>>,
 }
 
 pub enum QueryState<T> {
@@ -42,7 +42,7 @@ pub enum QueryState<T> {
 pub enum ContactsMsg {
     FilterContact(AttrValue),
     CleanupSearchResult,
-    QueryFriends(QueryState<Vec<Friend>>),
+    QueryFriends(QueryState<IndexMap<AttrValue, Friend>>),
     AddFriend(bool),
     RecFriendShipReq(Rc<FriendShipState>),
     FriendListStateChanged(Rc<FriendListState>),
@@ -59,7 +59,7 @@ impl Component for Contacts {
         // 查询联系人列表
         ctx.link().send_future(async {
             let friend_repo = FriendRepo::new().await;
-            let friends = friend_repo.get_list().await;
+            let friends = friend_repo.get_list2().await.unwrap_or_default();
             ContactsMsg::QueryFriends(QueryState::Success(friends))
         });
         // 查询好友请求列表
@@ -79,8 +79,8 @@ impl Component for Contacts {
             .context(ctx.link().callback(ContactsMsg::FriendListStateChanged))
             .expect("need friend ship state");
         Self {
-            list: vec![],
-            result: vec![],
+            list: IndexMap::new(),
+            result: IndexMap::new(),
             friendships_unread_count: 0,
             is_searching: false,
             is_add_friend: false,
@@ -99,9 +99,9 @@ impl Component for Contacts {
                 if pattern.is_empty() {
                     self.result.clear();
                 } else {
-                    self.list.iter().for_each(|item| {
+                    self.list.iter().for_each(|(key, item)| {
                         if item.name.contains(pattern.as_str()) {
-                            self.result.push((*item).clone());
+                            self.result.insert((*key).clone(), (*item).clone());
                         }
                     });
                 }
@@ -138,8 +138,8 @@ impl Component for Contacts {
                         self.friendships_unread_count += 1;
                     }
                     crate::pages::FriendShipStateType::Res => {
-                        self.list
-                            .insert(0, friendship.friend.as_ref().unwrap().clone());
+                        let friend = friendship.friend.as_ref().unwrap().clone();
+                        self.list.insert(friend.friend_id.clone(), friend);
                     }
                 }
                 true
@@ -178,13 +178,13 @@ impl Component for Contacts {
             } else {
                 self.result
                     .iter()
-                    .map(|item| get_list_item(item))
+                    .map(|item| get_list_item(item.1))
                     .collect::<Html>()
             }
         } else {
             self.list
                 .iter()
-                .map(|item| get_list_item(item))
+                .map(|item| get_list_item(item.1))
                 .collect::<Html>()
         };
         let search_callback = ctx.link().callback(ContactsMsg::FilterContact);
