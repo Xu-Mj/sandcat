@@ -525,6 +525,7 @@
                         flex-direction: column;
                         font-size: small;
                         color: #90CBFB;
+
                         svg {
                             width: 2rem;
                             height: 2rem;
@@ -567,21 +568,70 @@
                         }
                     }
                 }
+
+                .friendship-action button {
+                    border: none;
+                    background-color: #e4e9ec;
+                    width: 6rem;
+                    height: 2rem;
+                    font-size: 1rem;
+                    padding: auto;
+                    cursor: pointer;
+                }
             }
 
             /* 好友验证窗口 */
-            .friendship-detail{
-                width: 10rem;
-                height: 14rem;
+            .friendship-detail {
+                width: 18rem;
+                height: 12rem;
+                padding: 1rem;
                 position: absolute;
                 display: flex;
                 flex-direction: column;
                 justify-content: flex-start;
                 align-items: center;
+                gap: 1rem;
                 background-color: white;
                 left: 50%;
                 top: 10%;
                 transform: translateX(-50%);
+
+                > :first-child {
+                    width: 100%;
+                    text-align: center;
+                    font-size: large;
+                    font-weight: bold;
+                }
+
+                > :nth-child(2),
+                :nth-child(3) {
+                    display: grid;
+                    grid-template-columns: 1fr 2fr;
+                    width: 100%;
+
+                    input {
+                        /* border-radius: .3rem; */
+                        outline: none;
+                        padding: 0 .3rem;
+                    }
+                }
+
+                > :last-child {
+                    width: 100%;
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    justify-items: center;
+
+                    button {
+                        border: none;
+                        background-color: #e4e9ec;
+                        width: 6rem;
+                        height: 2rem;
+                        padding: auto;
+                        cursor: pointer;
+                    }
+                }
+
             }
         }
     }
