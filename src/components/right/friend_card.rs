@@ -104,8 +104,12 @@ impl Component for FriendCard {
         match msg {
             FriendCardMsg::Close => {
                 let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
-                // node.close();
-                ctx.props().container.remove();
+                    let node = node
+                    .parent_node()
+                    .unwrap()
+                    .dyn_into::<HtmlDivElement>()
+                    .unwrap();
+                node.remove();
                 true
             }
             FriendCardMsg::ShowApply => {
@@ -159,11 +163,6 @@ impl Component for FriendCard {
                 false
             }
             FriendCardMsg::ApplyFriendResult(state) => {
-                // match state {
-                //     FriendShipRequestState::Pendding => self.is_apply =     true,
-                //     FriendShipRequestState::Success => self.is_apply = true,
-                //     FriendShipRequestState::Fail => todo!(),
-                // }
                 self.is_apply = true;
                 self.show_apply = false;
                 // 发送通知，右侧渲染申请列表
@@ -185,17 +184,18 @@ impl Component for FriendCard {
                 let onclick = ctx.link().callback(|_| FriendCardMsg::Apply);
                 let apply_msg = if self.is_apply { "已申请" } else { "申请" };
                 html! {
-                    <div class="apply-friend">
+                    <div class="apply-detail">
                         <div class="apply-msg">
                             <label>{"申请消息"}</label>
-                            <input ref={self.apply_node.clone()} type="text"/>
+                            <input class="apply-input" ref={self.apply_node.clone()} type="text"/>
                         </div>
                         <div class="apply-remark">
                             <label>{"备注"}</label>
-                            <input ref={self.remark_node.clone()} type="text"/>
+                            <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
                         </div>
                         <div class="apply-friend" >
                             <button {onclick} disabled={self.is_apply}>{apply_msg}</button>
+                            <button /* onclick={cancle} */>{"取消"}</button>
                         </div>
                     </div>
                 }
@@ -211,8 +211,7 @@ impl Component for FriendCard {
             }
         };
         html! {
-            // <dialog id="friend-card-dialog"  >
-            <div class="friend-card box-shadow" ref={self.node_ref.clone()}
+            <div class="friend-card box-shadow" ref={self.node_ref.clone()} tabindex="1"
                 // onblur={ctx.link().callback(|_| FriendCardMsg::Close)}
                 >
                 <div class="friend-card-header">
@@ -243,7 +242,6 @@ impl Component for FriendCard {
                 .unwrap()
                 .dyn_into::<HtmlDivElement>()
                 .unwrap();
-            // node.show_modal().unwrap();
             node.set_tab_index(1);
             node.focus().unwrap();
             // 计算下边框
