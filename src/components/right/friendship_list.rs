@@ -238,7 +238,7 @@ impl Component for FriendShipList {
                 <div class="friendship-detail box-shadow" >
                     // 标题
                     <div class="title">
-                        <span>{"验证好友请求"}</span>
+                        {"验证好友请求"}
                     </div>
                     // 备注
                     <div class="remark">
