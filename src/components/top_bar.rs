@@ -1,4 +1,3 @@
-#![allow(dead_code)]
 use std::rc::Rc;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;

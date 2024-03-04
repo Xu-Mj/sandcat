@@ -1,22 +1,15 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_imports)]
-
+use crate::db::{TOKEN, WS_ADDR};
+use crate::model::user::User;
+use crate::{
+    api,
+    db::{friend::FriendRepo, user::UserRepo, DB_NAME},
+};
 use gloo::utils::window;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
-
-use crate::components::right::sender::SenderMsg;
-use crate::db::friend_ship::FriendShipRepo;
-use crate::db::{TOKEN, WS_ADDR};
-use crate::model::user::User;
-use crate::{
-    api, db,
-    db::{friend::FriendRepo, user::UserRepo, DB_NAME},
-};
 
 use super::Page;
 
@@ -36,8 +29,6 @@ pub enum LoginMsg {
 
 pub enum LoginState {
     Logining,
-    Success(i32),
-    Failed,
     Nothing,
 }
 
@@ -63,7 +54,6 @@ async fn login_simulate(account: String, password: String) -> Result<Response, J
 
 #[derive(Deserialize)]
 pub struct Response {
-    id: String,
     user: User,
     token: String,
     ws_addr: String,
@@ -76,7 +66,7 @@ pub struct LoginRequest {
 }
 
 // 模拟输入写入数据库
-async fn init_db(id: AttrValue, token: &str) {
+async fn init_db(id: AttrValue) {
     // 拉取联系人
     // 查询是否需要更新联系人
     match api::user::get_friend_list_by_id(id.to_string()).await {
@@ -88,18 +78,6 @@ async fn init_db(id: AttrValue, token: &str) {
             log::error!("获取联系人列表错误: {:?}", e)
         }
     }
-
-    // // 拉取好友请求列表
-    // match api::user::get_friend_apply_list_by_id(id.to_string()).await {
-    //     Ok(res) => {
-    //         // 写入数据库
-    //         FriendShipRepo::new().await.put_friendships(&res).await;
-    //         log::debug!("get friend ship list: {:?}", &res)
-    //     }
-    //     Err(e) => {
-    //         log::error!("获取好友请求列表错误: {:?}", e);
-    //     }
-    // }
 }
 
 impl Component for Login {
@@ -119,9 +97,6 @@ impl Component for Login {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             LoginMsg::Login => {
-                // 这里可以写登录逻辑
-                // 假设登录成功
-                // ctx.link().send_message(LoginState::Success);
                 // 使用ref获取用户名和密码
                 let account = self.account_ref.cast::<HtmlInputElement>().unwrap().value();
                 let pwd = self.pwd_ref.cast::<HtmlInputElement>().unwrap().value();
@@ -154,11 +129,11 @@ impl Component for Login {
                         .set(TOKEN, res.token.as_str())
                         .unwrap();
                     // 初始化数据库
-                    init_db(id.clone(), &res.token).await;
+                    init_db(id.clone()).await;
                     // 将用户信息存入数据库
                     // 先查询是否登录过
                     let user_repo = UserRepo::new().await;
-                    let user_former = user_repo.get(id.clone()).await;
+                    // let user_former = user_repo.get(id.clone()).await;
                     user_repo.add(&user).await;
                     // if user_former.is_ok() && user_former.unwrap().id != AttrValue::default() {
                     //     // 已经存在，更新数据库

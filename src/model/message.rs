@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use super::friend::Friend;
 use crate::model::friend::{FriendShipRequest, FriendShipWithUser};
 use crate::model::ContentType;

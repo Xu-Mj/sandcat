@@ -79,6 +79,4 @@ impl UserRepo {
         let user = rx.await.unwrap();
         Ok(user)
     }
-
-    // pub fn delete(&self, id: i32) -> Result<i32, String> {}
 }

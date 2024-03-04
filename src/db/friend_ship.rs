@@ -1,7 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_assignments)]
-
 use super::{
     repository::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
     FRIEND_USER_ID_INDEX,
@@ -21,10 +17,6 @@ impl Deref for FriendShipRepo {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
-}
-
-pub async fn new() -> FriendShipRepo {
-    FriendShipRepo::new().await
 }
 
 impl FriendShipRepo {
@@ -52,49 +44,19 @@ impl FriendShipRepo {
             .unwrap();
         let value = serde_wasm_bindgen::to_value(friendship).unwrap();
         store.put(&value).unwrap();
-        // let index = store
-        //     .index(FRIENDSHIP_ID_INDEX)
-        //     .expect("friend select index error");
-        // let request = index
-        //     .get(&JsValue::from(friendship.friendship_id.as_str()))
-        //     .expect("friend select get error");
-        // let onsuccess = Closure::once(move |event: &Event| {
-        //     let result = event
-        //         .target()
-        //         .unwrap()
-        //         .dyn_ref::<IdbRequest>()
-        //         .unwrap()
-        //         .result()
-        //         .unwrap();
-        //     let mut friend = FriendShipWithUser::default();
-        //     if !result.is_undefined() && !result.is_null() {
-        //         friend = serde_wasm_bindgen::from_value(result).unwrap();
-        //         // update friendship
-        //         friendship.id = friend.id;
-        //     }
-        //     let value = serde_wasm_bindgen::to_value(&friendship).unwrap();
-        //     store.put(&value).unwrap();
-        // });
-        // request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        // let on_add_error = Closure::once(move |event: &Event| {
-        //     log::error!("获取好友请求错误: {:?}", event);
-        // });
-        // request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        // onsuccess.forget();
-        // on_add_error.forget();
     }
-
-    pub async fn put_friendships(&self, friends: &[FriendShipWithUser]) {
-        let store = self
-            .store(&String::from(FRIENDSHIP_TABLE_NAME))
-            .await
-            .unwrap();
-        friends.iter().for_each(|item| {
-            let value = serde_wasm_bindgen::to_value(item).unwrap();
-            store.put(&value).unwrap();
-        });
-    }
-
+    /*
+       pub async fn put_friendships(&self, friends: &[FriendShipWithUser]) {
+           let store = self
+               .store(&String::from(FRIENDSHIP_TABLE_NAME))
+               .await
+               .unwrap();
+           friends.iter().for_each(|item| {
+               let value = serde_wasm_bindgen::to_value(item).unwrap();
+               store.put(&value).unwrap();
+           });
+       }
+    */
     // todo 增加错误结果，用来标识
     pub async fn get_friendship(&self, friendship_id: AttrValue) -> Option<FriendShipWithUser> {
         // 声明一个channel，接收查询结果
@@ -117,9 +79,8 @@ impl FriendShipRepo {
                 .unwrap()
                 .result()
                 .unwrap();
-            let mut friend = FriendShipWithUser::default();
             if !result.is_undefined() && !result.is_null() {
-                friend = serde_wasm_bindgen::from_value(result).unwrap();
+                let friend = serde_wasm_bindgen::from_value(result).unwrap();
                 tx.send(Some(friend)).unwrap();
             } else {
                 tx.send(None).unwrap();
@@ -158,9 +119,8 @@ impl FriendShipRepo {
                 .unwrap()
                 .result()
                 .unwrap();
-            let mut friend = FriendShipWithUser::default();
             if !result.is_undefined() && !result.is_null() {
-                friend = serde_wasm_bindgen::from_value(result).unwrap();
+                let friend = serde_wasm_bindgen::from_value(result).unwrap();
                 tx.send(Some(friend)).unwrap();
             } else {
                 tx.send(None).unwrap();

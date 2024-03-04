@@ -1,6 +1,7 @@
 use crate::components::phone_call::PhoneCall;
 use crate::db::friend::FriendRepo;
 use crate::db::friend_ship::FriendShipRepo;
+use crate::db::repository::Repository;
 use crate::db::{current_item, TOKEN, WS_ADDR};
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
@@ -18,6 +19,7 @@ use gloo::utils::window;
 use std::cell::RefCell;
 use std::rc::Rc;
 use web_sys::HtmlDivElement;
+use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use super::{
@@ -139,7 +141,7 @@ impl Home {
     fn notify(&mut self, notify: Notification) {
         match notify.type_ {
             NotificationType::Info => self.info(notify.content),
-            NotificationType::Success => {}
+            // NotificationType::Success => {}
             NotificationType::Warn => self.warn(notify.content),
             NotificationType::Error => self.error(notify.content),
         }
@@ -541,7 +543,7 @@ impl Component for Home {
                 let mut class = classes!("notification-item") ;
                 match item.type_ {
                     NotificationType::Info => class.push("info") ,
-                    NotificationType::Success => class.push("success"),
+                    // NotificationType::Success => class.push("success"),
                     NotificationType::Warn => class.push("warn"),
                     NotificationType::Error => class.push("error"),
                 }
@@ -605,12 +607,9 @@ impl Component for Home {
         self.ws.borrow_mut().cleanup();
         log::debug!("home destroy==> delete database");
         // 测试阶段，销毁时删除数据库
-        let _ = window()
-            .indexed_db()
-            .unwrap()
-            .as_ref()
-            .unwrap()
-            .delete_database(DB_NAME.get().unwrap().as_str());
+        spawn_local(async {
+            let _ = Repository::new().await.delete_db().await;
+        });
         window().local_storage().unwrap().unwrap().clear().unwrap();
     }
 }

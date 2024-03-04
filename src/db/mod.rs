@@ -1,19 +1,3 @@
-#![allow(dead_code)]
-
-use std::{
-    error::Error,
-    fmt::{Debug, Display},
-    sync::OnceLock,
-};
-
-use serde::{Deserialize, Serialize};
-use yew::AttrValue;
-
-use crate::model::{
-    message::{Hangup, InviteAnswerMsg, InviteCancelMsg, InviteMsg, InviteNotAnswerMsg},
-    ContentType,
-};
-
 pub mod config;
 pub mod conv;
 pub mod current_item;
@@ -22,6 +6,18 @@ pub mod friend_ship;
 pub mod message;
 pub mod repository;
 pub mod user;
+
+use crate::model::{
+    message::{Hangup, InviteAnswerMsg, InviteCancelMsg, InviteMsg, InviteNotAnswerMsg},
+    ContentType, RightContentType,
+};
+use serde::{Deserialize, Serialize};
+use std::{
+    error::Error,
+    fmt::{Debug, Display},
+    sync::OnceLock,
+};
+use yew::AttrValue;
 
 // 不同用户创建不同的数据库，方便查询，提升性能
 // 用户登录时检查对应的数据库是否存在，不存在则创建
@@ -36,7 +32,6 @@ pub const MESSAGE_TABLE_NAME: &str = "messages";
 pub const USER_TABLE_NAME: &str = "users";
 pub const CONFIG_TABLE_NAME: &str = "configs";
 pub const CURRENT_CONV_TABLE_NAME: &str = "conv";
-pub const CURRENT_FRIEND_TABLE_NAME: &str = "conv";
 
 pub const FRIENDSHIP_UNREAD_INDEX: &str = "read";
 pub const FRIENDSHIP_ID_INDEX: &str = "friendship_id";
@@ -64,14 +59,6 @@ pub const MESSAGE_IS_READ_INDEX: &str = "is_read";
 
 fn is_zero(id: &i32) -> bool {
     *id == 0
-}
-
-fn is_zero_u16(id: &u16) -> bool {
-    *id == 0
-}
-
-fn is_default(id: AttrValue) -> bool {
-    id == AttrValue::default()
 }
 
 // 数据结构
@@ -222,52 +209,6 @@ impl From<InviteAnswerMsg> for Conversation {
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
-pub enum RightContentType {
-    // 啥都没选择时，根据全局组件类型展示一些标语
-    #[default]
-    Default,
-    // 好友，包括会话与群组信息
-    Friend,
-    // 群组，包括会话与群组信息
-    Group,
-    // 用户信息，todo考虑查找好友时使用浮窗的方式
-    UserInfo,
-    // 好友请求列表
-    FriendShipList,
-    // 其他服务消息
-    Service,
-}
-
-impl RightContentType {
-    pub fn from_msg_type(msg_type: &MessageType) -> Self {
-        match msg_type {
-            MessageType::Single => Self::Friend,
-            MessageType::Group => Self::Group,
-            _ => Self::Default,
-        }
-    }
-    pub fn from_usize(id: usize) -> Self {
-        match id {
-            1 => RightContentType::Friend,
-            2 => RightContentType::Group,
-            _ => RightContentType::Default,
-        }
-    }
-}
-
-impl Display for RightContentType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            RightContentType::Friend => write!(f, "friend"),
-            RightContentType::Group => write!(f, "group"),
-            RightContentType::Default => write!(f, "default"),
-            RightContentType::UserInfo => write!(f, "user_info"),
-            RightContentType::FriendShipList => write!(f, "frienship_list"),
-            RightContentType::Service => write!(f, "service"),
-        }
-    }
-}
-#[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub enum MessageType {
     #[default]
     Default,
@@ -277,8 +218,8 @@ pub enum MessageType {
     ReadNotice,
 }
 
-impl MessageType {
-    pub fn from_conv_type(conv_type: RightContentType) -> Self {
+impl From<RightContentType> for MessageType {
+    fn from(conv_type: RightContentType) -> Self {
         match conv_type {
             RightContentType::Friend => MessageType::Single,
             RightContentType::Group => MessageType::Group,
@@ -349,7 +290,6 @@ pub struct User {
 // 定义数据库查询状态
 #[derive(Debug, Clone)]
 pub enum QueryStatus<T> {
-    NotQuery,
     // 正在查询
     Querying,
     // 查询成功
@@ -357,9 +297,6 @@ pub enum QueryStatus<T> {
     // 查询失败
     QueryFail(QueryError),
 }
-
-pub const CONFIG_CURRENT_CONV_ID: &str = "current_conv_id";
-pub const CONFIG_CURRENT_FRIEND_ID: &str = "current_friend_id";
 
 #[derive(Debug, Clone)]
 pub struct QueryError {

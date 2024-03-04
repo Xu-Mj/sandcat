@@ -62,10 +62,6 @@ pub enum FriendStatus {
     Delete,
 }
 
-fn is_zero(id: &i32) -> bool {
-    *id == 0
-}
-
 #[derive(Serialize, Debug, Default, Clone, Deserialize, PartialEq)]
 pub struct FriendShipWithUser {
     pub friendship_id: AttrValue,

@@ -1,10 +1,7 @@
 use crate::api::user::get_info_by_id;
 use crate::model::user::User;
-use crate::{
-    components::action::Action,
-    db::{friend::FriendRepo, RightContentType},
-    model::friend::Friend,
-};
+use crate::model::RightContentType;
+use crate::{components::action::Action, db::friend::FriendRepo, model::friend::Friend};
 use wasm_bindgen::JsValue;
 use yew::prelude::*;
 
@@ -19,7 +16,7 @@ pub enum PostCardMsg {
     QueryFriend(QueryState<Friend>),
     QueryUser(QueryState<User>),
     ApplyFriend,
-    ApplyFriendRes,
+    // ApplyFriendRes,
 }
 
 pub enum QueryState<T> {
@@ -143,11 +140,10 @@ impl Component for PostCard {
                     PostCardMsg::ApplyFriendRes
                 }); */
                 false
-            }
-            PostCardMsg::ApplyFriendRes => {
-                // 请求结果
-                false
-            }
+            } // PostCardMsg::ApplyFriendRes => {
+              //     // 请求结果
+              //     false
+              // }
         }
     }
 

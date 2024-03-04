@@ -1,19 +1,17 @@
-#![allow(dead_code)]
-
+use crate::components::left::add_friend::AddFriend;
+use crate::db::friend_ship::FriendShipRepo;
+use crate::model::RightContentType;
+use crate::pages::{CurrentItem, FriendListState, FriendShipState};
+use crate::{
+    components::{left::list_item::ListItem, top_bar::TopBar},
+    db::friend::FriendRepo,
+    model::friend::Friend,
+    pages::{CommonProps, ComponentType},
+};
 use indexmap::IndexMap;
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-
-use crate::components::left::add_friend::AddFriend;
-use crate::db::friend_ship::FriendShipRepo;
-use crate::pages::{CurrentItem, FriendListState, FriendShipState};
-use crate::{
-    components::{left::list_item::ListItem, top_bar::TopBar},
-    db::{friend::FriendRepo, RightContentType},
-    model::friend::Friend,
-    pages::{CommonProps, ComponentType},
-};
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct ContactsProps {
@@ -27,7 +25,7 @@ pub struct Contacts {
     // 是否正在搜索
     is_searching: bool,
     is_add_friend: bool,
-    friendship_state: Rc<FriendShipState>,
+    _friendship_state: Rc<FriendShipState>,
     _listener: ContextHandle<Rc<FriendShipState>>,
     friend_state: Rc<FriendListState>,
     _friend_listener: ContextHandle<Rc<FriendListState>>,
@@ -36,7 +34,7 @@ pub struct Contacts {
 pub enum QueryState<T> {
     Querying,
     Success(T),
-    Failure,
+    // Failure,
 }
 
 pub enum ContactsMsg {
@@ -57,6 +55,8 @@ impl Component for Contacts {
 
     fn create(ctx: &Context<Self>) -> Self {
         // 查询联系人列表
+        ctx.link()
+            .send_message(ContactsMsg::QueryFriends(QueryState::Querying));
         ctx.link().send_future(async {
             let friend_repo = FriendRepo::new().await;
             let friends = friend_repo.get_list().await.unwrap_or_default();
@@ -70,7 +70,7 @@ impl Component for Contacts {
             ContactsMsg::QueryFriendship(count)
         });
         // register state
-        let (friendship_state, _listener) = ctx
+        let (_friendship_state, _listener) = ctx
             .link()
             .context(ctx.link().callback(ContactsMsg::RecFriendShipReq))
             .expect("need friend ship state");
@@ -84,7 +84,7 @@ impl Component for Contacts {
             friendships_unread_count: 0,
             is_searching: false,
             is_add_friend: false,
-            friendship_state,
+            _friendship_state,
             _listener,
             friend_state,
             _friend_listener,
@@ -119,10 +119,10 @@ impl Component for Contacts {
                     self.list = list;
                     true
                 }
-                QueryState::Failure => {
-                    gloo::console::log!("query friends failure");
-                    false
-                }
+                // QueryState::Failure => {
+                //     gloo::console::log!("query friends failure");
+                //     false
+                // }
                 QueryState::Querying => {
                     gloo::console::log!("query friends querying");
                     false

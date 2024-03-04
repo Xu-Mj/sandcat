@@ -1,14 +1,11 @@
-#![allow(dead_code)]
-
-use std::rc::Rc;
-
-use chrono::TimeZone;
-use yew::prelude::*;
-
 use crate::{
-    db::{current_item, RightContentType},
+    db::current_item,
+    model::RightContentType,
     pages::{CommonProps, ComponentType, ConvState, CurrentItem, FriendListState},
 };
+use chrono::TimeZone;
+use std::rc::Rc;
+use yew::prelude::*;
 
 pub struct ListItem {
     conv_state: Rc<ConvState>,
@@ -16,7 +13,6 @@ pub struct ListItem {
     friend_state: Rc<FriendListState>,
     _friend_listener: ContextHandle<Rc<FriendListState>>,
     unread_count: usize,
-    node: NodeRef,
 }
 
 #[derive(Properties, PartialEq)]
@@ -62,7 +58,6 @@ impl Component for ListItem {
             friend_state,
             _friend_listener,
             unread_count,
-            node: Default::default(),
         }
     }
 

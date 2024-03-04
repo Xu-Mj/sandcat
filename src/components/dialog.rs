@@ -1,7 +1,4 @@
-#![allow(unused_variables)]
-#![allow(dead_code)]
-
-use gloo::{timers::callback::Timeout, utils::document};
+/* use gloo::{timers::callback::Timeout, utils::document};
 use web_sys::{Element, HtmlDialogElement, HtmlElement};
 use yew::prelude::*;
 
@@ -127,3 +124,4 @@ impl Component for Dialog {
             }
     }
 }
+ */

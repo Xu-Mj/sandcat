@@ -1,28 +1,25 @@
+use crate::icons::{CloseIcon, ImageIcon};
+use crate::model::message::{InviteMsg, InviteType, Msg};
+use crate::model::RightContentType;
+use crate::{
+    components::right::emoji::EmojiSpan,
+    db::message::MessageRepo,
+    icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon},
+    model::message::Message,
+    model::ContentType,
+    pages::RecSendMessageState,
+};
 use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
-use gloo::utils::document;
-use js_sys::JsString;
 use std::cmp::Ordering;
 use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
     ClipboardEvent, DataTransferItem, DataTransferItemList, File, FileReader, HtmlElement,
-    HtmlImageElement, HtmlInputElement, HtmlTextAreaElement, MediaStream, Response,
+    HtmlInputElement, HtmlTextAreaElement, Response,
 };
 use yew::prelude::*;
-
-use crate::icons::{CloseIcon, ImageIcon};
-use crate::model::message::{InviteMsg, InviteType, Msg};
-use crate::pages::RecSendCallState;
-use crate::{
-    components::right::emoji::EmojiSpan,
-    db::{message::MessageRepo, RightContentType},
-    icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon},
-    model::message::Message,
-    model::ContentType,
-    pages::RecSendMessageState,
-};
 
 use super::emoji::{get_emojis, Emoji};
 
@@ -44,7 +41,6 @@ pub struct Sender {
     _conv_listener: ContextHandle<Rc<RecSendMessageState>>,
     call_state: Rc<RecSendMessageState>,
     _call_listener: ContextHandle<Rc<RecSendMessageState>>,
-    media_stream: Option<MediaStream>,
     file_list: Vec<FileListItem>,
 }
 
@@ -68,8 +64,7 @@ pub enum SenderMsg {
     SendFileIconClicked,
     FileInputChanged(Event),
     SendFile,
-    ConvStateChange(Rc<RecSendMessageState>),
-    CallStateChange(Rc<RecSendCallState>),
+    None,
     FileOnload(String, ContentType, JsValue),
     OnEnterKeyDown(KeyboardEvent),
     OnPaste(Event),
@@ -180,11 +175,11 @@ impl Component for Sender {
     fn create(ctx: &Context<Self>) -> Self {
         let (conv_state, _conv_listener) = ctx
             .link()
-            .context(ctx.link().callback(SenderMsg::ConvStateChange))
+            .context(ctx.link().callback(|_| SenderMsg::None))
             .expect("needed to get context");
         let (call_state, _call_listener) = ctx
             .link()
-            .context(ctx.link().callback(SenderMsg::ConvStateChange))
+            .context(ctx.link().callback(|_| SenderMsg::None))
             .expect("needed to get context");
 
         // 加载表情
@@ -202,7 +197,6 @@ impl Component for Sender {
             _conv_listener,
             call_state,
             _call_listener,
-            media_stream: None,
             file_list: vec![],
         }
     }
@@ -211,12 +205,7 @@ impl Component for Sender {
         match msg {
             SenderMsg::SendText => {
                 let input = self.input_ref.cast::<HtmlTextAreaElement>().unwrap();
-
-                let content: AttrValue = input.value().into(); /*if let Some(text) = input.text_content() {
-                                                                   text.into()
-                                                               } else {
-                                                                   AttrValue::default()
-                                                               };*/
+                let content: AttrValue = input.value().into();
                 // 如果为空那么 提示不能发送空消息
                 if content.is_empty() {
                     self.is_empty_warn_needed = true;
@@ -339,7 +328,7 @@ impl Component for Sender {
                 self.send_msg(ctx, msg);
                 true
             }
-            SenderMsg::ConvStateChange(_) => false,
+            SenderMsg::None => false,
             SenderMsg::OnEnterKeyDown(event) => {
                 if event.shift_key() {
                     if event.key() == "Enter" {
@@ -432,13 +421,6 @@ impl Component for Sender {
                 true
             }
             SenderMsg::SendVideoCall => {
-                /*self.rec_send_msg.call_event.emit(InviteMsg {
-                    msg_id: nanoid::nanoid!().into(),
-                    create_time: chrono::Local::now().timestamp_millis(),
-                    friend_id: ctx.props().friend_id.clone(),
-                    send_id: ctx.props().cur_user_id.clone(),
-                    invite_type: InviteType::Video,
-                });*/
                 self.call_state.call_event.emit(InviteMsg {
                     msg_id: nanoid::nanoid!().into(),
                     create_time: chrono::Local::now().timestamp_millis(),
@@ -449,13 +431,6 @@ impl Component for Sender {
                 false
             }
             SenderMsg::SendAudioCall => {
-                // self.rec_send_msg.call_event.emit(InviteMsg {
-                //     msg_id: nanoid::nanoid!().into(),
-                //     create_time: chrono::Local::now().timestamp_millis(),
-                //     friend_id: ctx.props().friend_id.clone(),
-                //     send_id: ctx.props().cur_user_id.clone(),
-                //     invite_type: InviteType::Audio,
-                // });
                 self.call_state.call_event.emit(InviteMsg {
                     msg_id: nanoid::nanoid!().into(),
                     create_time: chrono::Local::now().timestamp_millis(),
@@ -465,7 +440,6 @@ impl Component for Sender {
                 });
                 false
             }
-            SenderMsg::CallStateChange(_) => false,
         }
     }
 
@@ -624,30 +598,4 @@ impl Component for Sender {
             wrapper.focus().unwrap();
         }
     }
-}
-
-fn get_img_url(file: &File) -> String {
-    // 图片
-
-    let img: HtmlImageElement = document()
-        .create_element("img")
-        .unwrap()
-        .dyn_into()
-        .unwrap();
-    let file_reader = FileReader::new().expect("create file reader error");
-    // 声明一个channel用来获取闭包中的数据
-    let reader = file_reader.clone();
-    let onload = Closure::wrap(Box::new(move || {
-        img.set_src(
-            &JsString::from(reader.result().unwrap())
-                .as_string()
-                .unwrap(),
-        );
-        // 将图片追加
-        // log::debug!("{:?}", img.src());
-    }) as Box<dyn FnMut()>);
-    file_reader.read_as_data_url(file).expect("文件读取错误");
-    file_reader.set_onload(Some(onload.as_ref().unchecked_ref()));
-    onload.forget();
-    String::new()
 }

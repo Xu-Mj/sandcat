@@ -1,19 +1,15 @@
-#![allow(dead_code)]
-
-use std::rc::Rc;
-
-use nanoid::nanoid;
-// 联系人卡面上的动作组件：发消息、点电话、打视频
-use yew::prelude::*;
-
 use crate::icons::{MessagesIcon, PhoneIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
 use crate::pages::{ConvState, CurrentItem, RecSendCallState};
 use crate::{
-    db::RightContentType,
+    model::RightContentType,
     pages::{AppState, ComponentType},
 };
+use nanoid::nanoid;
+use std::rc::Rc;
+use yew::prelude::*;
 
+// 联系人卡面上的动作组件：发消息、点电话、打视频
 pub struct Action {
     state: Rc<AppState>,
     _listener: ContextHandle<Rc<AppState>>,

@@ -1,10 +1,8 @@
-#![allow(dead_code)]
-use yew::prelude::*;
-
 use crate::api::user::search_friend;
 use crate::components::left::user_info::UserInfoCom;
 use crate::model::user::User;
 use crate::{components::top_bar::TopBar, pages::ComponentType};
+use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct AddFriendProps {
@@ -19,8 +17,8 @@ pub struct AddFriend {
     pub is_searching: bool,
 }
 
-pub enum QueryState<T> {
-    Querying,
+pub enum SearchState<T> {
+    Searching,
     Success(T),
     Failure,
 }
@@ -28,7 +26,7 @@ pub enum QueryState<T> {
 pub enum AddFriendMsg {
     SearchFriend(AttrValue),
     CleanupSearchResult,
-    QueryFriends(QueryState<Vec<User>>),
+    SearchFriends(SearchState<Vec<User>>),
     Cancel(bool),
 }
 
@@ -49,12 +47,14 @@ impl Component for AddFriend {
             AddFriendMsg::SearchFriend(pattern) => {
                 self.is_searching = true;
                 let user_id = ctx.props().user_id.clone();
+                ctx.link()
+                    .send_message(AddFriendMsg::SearchFriends(SearchState::Searching));
                 ctx.link().send_future(async move {
                     match search_friend(pattern.to_string(), user_id).await {
-                        Ok(list) => AddFriendMsg::QueryFriends(QueryState::Success(list)),
+                        Ok(list) => AddFriendMsg::SearchFriends(SearchState::Success(list)),
                         Err(err) => {
                             log::error!("搜索用户错误:{:?}", err);
-                            AddFriendMsg::QueryFriends(QueryState::Failure)
+                            AddFriendMsg::SearchFriends(SearchState::Failure)
                         }
                     }
                 });
@@ -67,16 +67,16 @@ impl Component for AddFriend {
                 self.result.clear();
                 true
             }
-            AddFriendMsg::QueryFriends(friends) => match friends {
-                QueryState::Success(list) => {
+            AddFriendMsg::SearchFriends(friends) => match friends {
+                SearchState::Success(list) => {
                     self.result = list;
                     true
                 }
-                QueryState::Failure => {
+                SearchState::Failure => {
                     gloo::console::log!("query friends failure");
                     false
                 }
-                QueryState::Querying => {
+                SearchState::Searching => {
                     gloo::console::log!("query friends querying");
                     false
                 }
@@ -108,12 +108,10 @@ impl Component for AddFriend {
 
         html! {
             <>
-            // <div class="list-wrapper">
                 <TopBar components_type={ComponentType::Setting} {search_callback} {clean_callback} {plus_click} />
                 <div class="contacts-list">
                     {content}
                 </div>
-            // </div>
             </>
         }
     }

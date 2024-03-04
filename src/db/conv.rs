@@ -1,14 +1,10 @@
-#![allow(dead_code)]
-
-use std::ops::Deref;
-
+use crate::model::ContentType;
 use futures_channel::oneshot;
 use indexmap::IndexMap;
+use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
-
-use crate::model::ContentType;
 
 use super::{
     repository::Repository, Conversation, CONVERSATION_FRIEND_ID_INDEX,
@@ -28,16 +24,6 @@ impl Deref for ConvRepo {
 impl ConvRepo {
     pub async fn new() -> Self {
         ConvRepo(Repository::new().await)
-    }
-
-    pub async fn add_conv(&self, conv: &Conversation) {
-        let store = self
-            .store(&String::from(CONVERSATION_TABLE_NAME))
-            .await
-            .unwrap();
-        store
-            .add(&serde_wasm_bindgen::to_value(conv).unwrap())
-            .unwrap();
     }
 
     // 使用put方法，不存在创建，存在则直接更新

@@ -1,20 +1,16 @@
-#![allow(unused_variables)]
-#![allow(dead_code)]
-
-use std::rc::Rc;
-
-use wasm_bindgen::{JsCast, JsValue};
-use web_sys::HtmlElement;
-use yew::prelude::*;
-
 use crate::model::friend::ItemInfo;
 use crate::model::message::Msg;
+use crate::model::RightContentType;
 use crate::{
     components::right::{msg_item::MsgItem, sender::Sender},
-    db::{friend::FriendRepo, message::MessageRepo, RightContentType},
+    db::{friend::FriendRepo, message::MessageRepo},
     model::message::Message,
     pages::RecSendMessageState,
 };
+use std::rc::Rc;
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::HtmlElement;
+use yew::prelude::*;
 
 pub struct MessageList {
     list: Vec<Message>,
@@ -24,7 +20,7 @@ pub struct MessageList {
     is_all: bool,
     scroll_state: ScrollState,
     // 监听消息接收状态，用来更新当前对话框消息列表
-    msg_state: Rc<RecSendMessageState>,
+    _msg_state: Rc<RecSendMessageState>,
     _listener: ContextHandle<Rc<RecSendMessageState>>,
     friend: Option<Box<dyn ItemInfo>>,
     new_msg_count: u32,
@@ -136,7 +132,7 @@ impl Component for MessageList {
     type Properties = MessageListProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (msg_state, _listener) = ctx
+        let (_msg_state, _listener) = ctx
             .link()
             .context(ctx.link().callback(MessageListMsg::ReceiveMsg))
             .expect("need msg context");
@@ -147,7 +143,7 @@ impl Component for MessageList {
             page: 1,
             is_all: false,
             scroll_state: ScrollState::Bottom,
-            msg_state,
+            _msg_state,
             _listener,
             friend: None,
             new_msg_count: 0,
@@ -157,7 +153,7 @@ impl Component for MessageList {
         self_
     }
 
-    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
         // if first_render {
         //     self.query(ctx);
         // }

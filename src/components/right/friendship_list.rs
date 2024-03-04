@@ -4,7 +4,7 @@ use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, ReadStat
 use crate::pages::{FriendShipState, FriendShipStateType};
 use std::rc::Rc;
 use web_sys::{HtmlInputElement, MouseEvent};
-use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef, Properties};
+use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef};
 
 pub struct FriendShipList {
     list: Vec<FriendShipWithUser>,
@@ -23,7 +23,6 @@ pub enum FriendShipListMsg {
     AgreeFriendShipRes(RequestStatus),
     ShowDetail(FriendShipWithUser),
     Cancel,
-    None,
 }
 
 pub enum RequestStatus {
@@ -32,19 +31,9 @@ pub enum RequestStatus {
     // Pending,
 }
 
-#[derive(PartialEq, Properties, Clone)]
-pub struct FriendShipListProps {}
-
-impl FriendShipList {
-    // 查询好友请求列表
-    async fn query_list(&self) -> Vec<FriendShipWithUser> {
-        FriendShipRepo::new().await.get_list().await
-    }
-}
-
 impl Component for FriendShipList {
     type Message = FriendShipListMsg;
-    type Properties = FriendShipListProps;
+    type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async {
@@ -158,7 +147,6 @@ impl Component for FriendShipList {
                 self.detail = None;
                 true
             }
-            FriendShipListMsg::None => false,
             FriendShipListMsg::FriendShipStateChanged(state) => {
                 log::debug!(
                     "friendship state changed:{:?}, {:?}",

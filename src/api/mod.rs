@@ -1,7 +1,3 @@
-// 请求模块
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
 pub(crate) mod user;
 
 use crate::db::TOKEN;
@@ -9,7 +5,6 @@ use gloo::utils::window;
 use std::sync::OnceLock;
 
 pub const AUTHORIZE_HEADER: &str = "Authorization";
-
 pub static TOKEN_VALUE: OnceLock<String> = OnceLock::new();
 
 pub fn token() -> String {

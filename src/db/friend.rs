@@ -1,10 +1,7 @@
-#![allow(dead_code)]
-
-use std::ops::Deref;
-
 use crate::model;
 use futures_channel::oneshot;
 use indexmap::IndexMap;
+use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
@@ -20,10 +17,6 @@ impl Deref for FriendRepo {
     fn deref(&self) -> &Self::Target {
         &self.0
     }
-}
-
-pub async fn new() -> FriendRepo {
-    FriendRepo::new().await
 }
 
 impl FriendRepo {

@@ -1,5 +1,5 @@
-use crate::db::RightContentType;
 use crate::model::ContentType;
+use crate::model::RightContentType;
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 fn is_zero(id: &i32) -> bool {

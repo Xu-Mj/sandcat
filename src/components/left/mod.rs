@@ -13,7 +13,7 @@ use std::rc::Rc;
 use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
-pub struct LeftProps {}
+pub struct LeftProps;
 
 pub enum LeftMsg {
     ContextChanged(Rc<AppState>),
@@ -48,17 +48,10 @@ impl Component for Left {
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             LeftMsg::ContextChanged(state) => {
-                /* gloo::console::log!(
-                    "letf listener context changed",
-                    serde_wasm_bindgen::to_value(&state.login_user).unwrap()
-                ); */
                 self.state = state;
                 true
             }
-            LeftMsg::RequestState => {
-                // gloo::console::log!("left request state");
-                false
-            }
+            LeftMsg::RequestState => false,
         }
     }
 
@@ -80,8 +73,6 @@ impl Component for Left {
             <div class="left-container">
                 // 左侧顶部组件：包含头像以及功能切换
                 <Top avatar={self.state.login_user.avatar.clone()} />
-
-                // {content}
                 <div class="left-down">
                     <div class={classes}>
                     <Messages />

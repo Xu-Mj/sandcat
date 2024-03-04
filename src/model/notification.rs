@@ -13,12 +13,13 @@ pub struct Notification {
 }
 
 impl Notification {
-    pub fn from_content(content: AttrValue) -> Self {
+    /* pub fn from_content(content: AttrValue) -> Self {
         Self {
             content,
             ..Default::default()
         }
     }
+     */
     pub fn error_from_content(content: AttrValue) -> Self {
         Self {
             content,
@@ -32,7 +33,7 @@ impl Notification {
 pub enum NotificationType {
     #[default]
     Info,
-    Success,
+    // Success,
     Warn,
     Error,
 }

@@ -17,8 +17,7 @@ use web_sys::{
 };
 use yew::prelude::*;
 
-const DATE_FORMAT_STR: &str = "%Y-%m-%d %H:%M:%S";
-// const DB_NAME: &'static str = "im";
+// const DATE_FORMAT_STR: &str = "%Y-%m-%d %H:%M:%S";
 const DB_VERSION: u32 = 1;
 
 pub struct Repository {

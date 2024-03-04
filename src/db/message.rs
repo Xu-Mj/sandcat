@@ -1,14 +1,9 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-#![allow(unused_assignments)]
-
-use std::ops::Deref;
-
 use super::{
     repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_TABLE_NAME,
 };
 use crate::model::message::Message;
 use futures_channel::oneshot;
+use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
@@ -155,9 +150,8 @@ impl MessageRepo {
                 .unwrap()
                 .result()
                 .unwrap();
-            let mut result = Message::default();
             if !value.is_undefined() && !value.is_null() {
-                result = serde_wasm_bindgen::from_value(value).unwrap();
+                let result = serde_wasm_bindgen::from_value(value).unwrap();
                 tx.send(Some(result)).unwrap();
             } else {
                 tx.send(None).unwrap();

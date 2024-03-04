@@ -1,6 +1,6 @@
 use crate::db::message::MessageRepo;
-use crate::db::RightContentType;
 use crate::model::message::Msg;
+use crate::model::RightContentType;
 use crate::pages::{ConvState, WaitState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},

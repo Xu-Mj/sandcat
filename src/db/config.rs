@@ -1,13 +1,9 @@
-#![allow(dead_code)]
-
-use std::ops::Deref;
-
+/* use super::{repository::Repository, Config, CONFIG_TABLE_NAME};
 use futures_channel::oneshot;
+use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
-
-use super::{repository::Repository, Config, CONFIG_TABLE_NAME};
 
 pub struct ConfigRepo(Repository);
 
@@ -19,7 +15,6 @@ impl Deref for ConfigRepo {
     }
 }
 
-const CONFIG_INDEX_NAME: &str = "name";
 
 impl ConfigRepo {
     pub async fn new() -> Self {
@@ -89,3 +84,4 @@ impl ConfigRepo {
         on_add_error.forget();
     }
 }
+ */

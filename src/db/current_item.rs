@@ -7,7 +7,7 @@ use wasm_bindgen::JsValue;
 pub const CONV_LOCAL_STORAGE_KEY: &str = "__CURRENT_CONV__";
 pub const FRIEND_LOCAL_STORAGE_KEY: &str = "__CURRENT_FRIEND__";
 pub const COMPONENT_TYPE_LOCAL_STORAGE_KEY: &str = "__CURRENT_COMPONENT__";
-pub const UNREAD_MSG_COUNT_LOCAL_STORAGE_KEY: &str = "__UNREAD_MSG_COUNT__";
+// pub const UNREAD_MSG_COUNT_LOCAL_STORAGE_KEY: &str = "__UNREAD_MSG_COUNT__";
 
 pub fn save_conv(conv: &CurrentItem) -> Result<(), JsValue> {
     let value = serde_json::to_string(conv).unwrap();
@@ -69,7 +69,7 @@ pub fn get_com_type() -> ComponentType {
     serde_json::from_str(value.as_str()).unwrap_or_default()
 }
 
-pub fn get_unread_count() -> usize {
+/* pub fn get_unread_count() -> usize {
     let value = window()
         .local_storage()
         .unwrap()
@@ -89,3 +89,4 @@ pub fn save_unread_count(count: usize) -> Result<(), JsValue> {
         count.to_string().as_str(),
     )
 }
+ */

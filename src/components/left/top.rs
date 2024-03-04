@@ -1,13 +1,9 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
-use std::{rc::Rc, sync::atomic::AtomicU8};
-
-use yew::prelude::*;
-
 use crate::{
-    icons::{ContactsIcon, MessagesIcon, SettingIcon},
-    pages::{AppState, ComponentType, ConvState, RecSendMessageState},
+    icons::{ContactsIcon, MessagesIcon},
+    pages::{AppState, ComponentType, ConvState},
 };
+use std::rc::Rc;
+use yew::prelude::*;
 
 /// 增加双击切换置顶未读消息
 pub struct Top {
@@ -16,7 +12,6 @@ pub struct Top {
     // 修改为单独的未读消息增加减少的状态
     conv_state: Rc<ConvState>,
     _conv_handler: ContextHandle<Rc<ConvState>>,
-    count: usize,
 }
 
 #[derive(Properties, PartialEq)]
@@ -49,7 +44,6 @@ impl Component for Top {
             _handler,
             conv_state,
             _conv_handler,
-            count: 0,
         }
     }
 

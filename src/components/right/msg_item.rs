@@ -1,11 +1,3 @@
-#![allow(unused_variables)]
-#![allow(dead_code)]
-
-use nanoid::nanoid;
-use std::rc::Rc;
-use yew::platform::spawn_local;
-use yew::prelude::*;
-
 use crate::db::friend::FriendRepo;
 use crate::db::user::UserRepo;
 use crate::icons::{MsgPhoneIcon, VideoRecordIcon};
@@ -13,6 +5,10 @@ use crate::model::message::{InviteMsg, InviteType, Message};
 use crate::model::user::User;
 use crate::pages::RecSendMessageState;
 use crate::{components::right::friend_card::FriendCard, model::ContentType};
+use nanoid::nanoid;
+use std::rc::Rc;
+use yew::platform::spawn_local;
+use yew::prelude::*;
 
 pub struct MsgItem {
     show_img_preview: bool,
@@ -54,7 +50,7 @@ impl Component for MsgItem {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            MsgItemMsg::PreviewImg(src) => {
+            MsgItemMsg::PreviewImg(_src) => {
                 self.show_img_preview = true;
                 // let win = window().open().unwrap().unwrap();
                 // let img = win

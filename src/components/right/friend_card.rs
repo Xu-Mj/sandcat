@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use crate::{
     api::user::apply_friend,
     db::friend_ship::FriendShipRepo,
@@ -24,7 +22,7 @@ pub struct FriendCard {
 }
 
 pub enum FriendCardMsg {
-    Close,
+    // Close,
     ShowApply,
     Apply,
     ApplyFriendResult(FriendShipRequestState),
@@ -102,16 +100,16 @@ impl Component for FriendCard {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            FriendCardMsg::Close => {
-                let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
-                let node = node
-                    .parent_node()
-                    .unwrap()
-                    .dyn_into::<HtmlDivElement>()
-                    .unwrap();
-                node.remove();
-                true
-            }
+            // FriendCardMsg::Close => {
+            //     let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
+            //     let node = node
+            //         .parent_node()
+            //         .unwrap()
+            //         .dyn_into::<HtmlDivElement>()
+            //         .unwrap();
+            //     node.remove();
+            //     true
+            // }
             FriendCardMsg::ShowApply => {
                 self.show_apply = true;
                 true
@@ -142,6 +140,9 @@ impl Component for FriendCard {
                 };
 
                 log::debug!("发送好友申请:{:?}", &new_friend);
+                ctx.link().send_message(FriendCardMsg::ApplyFriendResult(
+                    FriendShipRequestState::Pendding,
+                ));
                 ctx.link().send_future(async move {
                     match apply_friend(new_friend).await {
                         Err(err) => {

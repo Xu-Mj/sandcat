@@ -1,27 +1,23 @@
-#![allow(dead_code)]
-
 pub mod emoji;
 pub mod friend_card;
-mod friendship_list;
+pub mod friendship_list;
 pub mod msg_item;
 pub mod msg_list;
 pub mod postcard;
 pub mod sender;
 
-use std::rc::Rc;
-
-use yew::prelude::*;
-
 use crate::components::right::friendship_list::FriendShipList;
 use crate::db::friend::FriendRepo;
-use crate::db::RightContentType;
 use crate::icons::{CloseIcon, MaxIcon};
 use crate::model::friend::ItemInfo;
+use crate::model::RightContentType;
 use crate::pages::{ConvState, FriendListState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     pages::{AppState, ComponentType},
 };
+use std::rc::Rc;
+use yew::prelude::*;
 
 pub struct Right {
     pub state: Rc<AppState>,

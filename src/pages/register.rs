@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
 use crate::api;
 use crate::model::user::UserRegister;
 use crate::pages::Page;
@@ -18,7 +16,6 @@ pub struct Register {
     name_node: NodeRef,
     email_node: NodeRef,
     pwd_node: NodeRef,
-    re_pwd_node: NodeRef,
     code_node: NodeRef,
     re_pwd_is_modify: bool,
     pwd_is_same: bool,
@@ -41,8 +38,8 @@ pub struct Register {
 
 pub enum RegisterMsg {
     Register,
-    OnEnterKeyDown(SubmitEvent),
-    OnFormKeyDown(KeyboardEvent),
+    // OnEnterKeyDown(SubmitEvent),
+    // OnFormKeyDown(KeyboardEvent),
     OnEmailChange,
     SendCode,
     SendCodeSuccess,
@@ -67,7 +64,7 @@ impl Component for Register {
     type Message = RegisterMsg;
     type Properties = ();
 
-    fn create(ctx: &Context<Self>) -> Self {
+    fn create(_ctx: &Context<Self>) -> Self {
         let avatars = vec![
             AttrValue::from("./images/avatars/avatar1.png"),
             AttrValue::from("./images/avatars/avatar2.png"),
@@ -125,11 +122,11 @@ impl Component for Register {
                 });
                 true
             }
-            RegisterMsg::OnEnterKeyDown(event) => {
+            /* RegisterMsg::OnEnterKeyDown(event) => {
                 log::debug!("on submit");
                 event.prevent_default();
                 false
-            }
+            } */
             RegisterMsg::OnEmailChange => {
                 log::debug!("on email change");
                 self.email_is_modify = true;
@@ -227,13 +224,12 @@ impl Component for Register {
                 self.re_pwd_is_modify = true;
                 self.pwd_is_same = re_pwd == self.pwd;
                 true
-            }
-            RegisterMsg::OnFormKeyDown(event) => {
-                if event.key() == "Enter" {
-                    event.prevent_default();
-                }
-                false
-            }
+            } /*  RegisterMsg::OnFormKeyDown(event) => {
+                  if event.key() == "Enter" {
+                      event.prevent_default();
+                  }
+                  false
+              } */
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {

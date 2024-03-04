@@ -1,13 +1,9 @@
-#![allow(dead_code)]
-
-use std::rc::Rc;
-
-use web_sys::HtmlDivElement;
-use yew::prelude::*;
-
 use crate::components::right::friend_card::FriendCard;
 use crate::model::user::User;
 use crate::pages::AppState;
+use std::rc::Rc;
+use web_sys::HtmlDivElement;
+use yew::prelude::*;
 
 pub struct UserInfoCom {
     node: NodeRef,
