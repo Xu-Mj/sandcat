@@ -7,18 +7,19 @@ pub mod message;
 pub mod repository;
 pub mod user;
 
-use crate::model::{
-    message::{Hangup, InviteAnswerMsg, InviteCancelMsg, InviteMsg, InviteNotAnswerMsg},
-    ContentType, RightContentType,
-};
-use serde::{Deserialize, Serialize};
 use std::{
     error::Error,
     fmt::{Debug, Display},
     sync::OnceLock,
 };
+
+use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
+use crate::model::{
+    message::{Hangup, InviteAnswerMsg, InviteCancelMsg, InviteMsg, InviteNotAnswerMsg},
+    ContentType, RightContentType,
+};
 // 不同用户创建不同的数据库，方便查询，提升性能
 // 用户登录时检查对应的数据库是否存在，不存在则创建
 pub static WS_ADDR: &str = "WS_ADDR";

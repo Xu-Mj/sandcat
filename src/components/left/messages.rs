@@ -1,3 +1,9 @@
+use indexmap::IndexMap;
+use std::rc::Rc;
+use wasm_bindgen_futures::spawn_local;
+use yew::prelude::*;
+
+use crate::components::left::add_conv::AddConv;
 use crate::db::message::MessageRepo;
 use crate::model::message::Msg;
 use crate::model::RightContentType;
@@ -8,10 +14,6 @@ use crate::{
     model::ContentType,
     pages::{CommonProps, ComponentType, RecSendMessageState},
 };
-use indexmap::IndexMap;
-use std::rc::Rc;
-use wasm_bindgen_futures::spawn_local;
-use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct MessagesProps {}
@@ -19,30 +21,27 @@ pub struct MessagesProps {}
 pub struct Messages {
     list: IndexMap<AttrValue, Conversation>,
     result: IndexMap<AttrValue, Conversation>,
+    is_searching: bool,
+    query_complete: bool,
+    show_friend_list: bool,
+
     _msg_state: Rc<RecSendMessageState>,
     _msg_listener: ContextHandle<Rc<RecSendMessageState>>,
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
     wait_state: Rc<WaitState>,
     _wait_listener: ContextHandle<Rc<WaitState>>,
-    is_searching: bool,
-    query_complete: bool,
 }
 
 pub enum MessagesMsg {
     FilterContact(AttrValue),
     CleanupSearchResult,
-    QueryConvs(QueryState<IndexMap<AttrValue, Conversation>>),
+    QueryConvs(IndexMap<AttrValue, Conversation>),
     ReceiveMessage(Rc<RecSendMessageState>),
     InsertConv(Conversation),
     ConvStateChanged(Rc<ConvState>),
     WaitStateChanged,
-    AddConv(bool),
-}
-
-pub enum QueryState<T> {
-    Querying,
-    Success(T),
+    AddConv,
 }
 
 impl Component for Messages {
@@ -52,12 +51,10 @@ impl Component for Messages {
 
     fn create(ctx: &Context<Self>) -> Self {
         // query conversation list
-        ctx.link()
-            .send_message(MessagesMsg::QueryConvs(QueryState::Querying));
         ctx.link().send_future(async {
             let conv_repo = ConvRepo::new().await;
             let convs = conv_repo.get_convs2().await.unwrap_or_default();
-            MessagesMsg::QueryConvs(QueryState::Success(convs))
+            MessagesMsg::QueryConvs(convs)
         });
         // register state
         let (msg_state, _msg_listener) = ctx
@@ -73,16 +70,17 @@ impl Component for Messages {
             .context(ctx.link().callback(|_| MessagesMsg::WaitStateChanged))
             .expect("need state in item");
         Self {
-            _msg_state: msg_state,
-            _msg_listener,
+            list: IndexMap::new(),
+            result: IndexMap::new(),
+            query_complete: false,
+            is_searching: false,
+            show_friend_list: false,
             conv_state,
             _conv_listener,
-            result: IndexMap::new(),
-            is_searching: false,
-            query_complete: false,
+            _msg_state: msg_state,
+            _msg_listener,
             wait_state,
             _wait_listener,
-            list: IndexMap::new(),
         }
     }
 
@@ -103,21 +101,13 @@ impl Component for Messages {
                 true
             }
             MessagesMsg::CleanupSearchResult => {
-                gloo::console::log!("filter message clean");
                 self.is_searching = false;
                 self.result.clear();
                 true
             }
-            MessagesMsg::QueryConvs(state) => {
-                match state {
-                    QueryState::Querying => {
-                        gloo::console::log!("querying");
-                    }
-                    QueryState::Success(convs2) => {
-                        self.list = convs2;
-                        self.query_complete = true;
-                    }
-                }
+            MessagesMsg::QueryConvs(convs) => {
+                self.list = convs;
+                self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
                 self.wait_state.ready.emit(());
                 true
@@ -186,14 +176,17 @@ impl Component for Messages {
                 self.list.shift_insert(0, flag.friend_id.clone(), flag);
                 true
             }
-            MessagesMsg::AddConv(_) => false,
+            MessagesMsg::AddConv => {
+                self.show_friend_list = !self.show_friend_list;
+                true
+            }
             MessagesMsg::ConvStateChanged(state) => {
                 log::debug!("conv state change: {:?}", state.conv.item_id);
                 self.conv_state = state;
                 let cur_conv_id = self.conv_state.conv.item_id.clone();
                 // 设置了一个查询状态，如果在查询没有完成时更新了状态，那么不进行更新列表，这里有待于优化，
                 // 因为状态会在
-                if cur_conv_id == AttrValue::default() || !self.query_complete {
+                if cur_conv_id.is_empty() || !self.query_complete {
                     return false;
                 }
                 // log::debug!("in update app state changed: {:?} ; id: {}", self.list.clone(), self.app_state.current_conv_id);
@@ -299,9 +292,22 @@ impl Component for Messages {
         let clean_callback = ctx
             .link()
             .callback(move |_| MessagesMsg::CleanupSearchResult);
-        let plus_click = ctx.link().callback(MessagesMsg::AddConv);
+        let plus_click = ctx.link().callback(|_| MessagesMsg::AddConv);
+
+        // spawn friend list
+        let mut friend_list = html!();
+        if self.show_friend_list {
+            friend_list = html! {
+                <div class="friend-list">
+                    <AddConv
+                       close_back={plus_click.clone()}
+                       />
+                </div>
+            };
+        }
         html! {
             <div class="list-wrapper">
+                {friend_list}
                 <TopBar components_type={ComponentType::Messages} {search_callback} {clean_callback} {plus_click}/>
                 <div class="contacts-list">
                     {content}

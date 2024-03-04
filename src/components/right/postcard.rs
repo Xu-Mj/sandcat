@@ -1,9 +1,10 @@
+use wasm_bindgen::JsValue;
+use yew::prelude::*;
+
 use crate::api::user::get_info_by_id;
 use crate::model::user::User;
 use crate::model::RightContentType;
 use crate::{components::action::Action, db::friend::FriendRepo, model::friend::Friend};
-use wasm_bindgen::JsValue;
-use yew::prelude::*;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct PostCardProps {

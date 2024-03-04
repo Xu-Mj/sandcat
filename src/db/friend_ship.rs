@@ -1,13 +1,15 @@
-use super::{
-    repository::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
-    FRIEND_USER_ID_INDEX,
-};
-use crate::model::friend::{FriendShipWithUser, ReadStatus};
 use futures_channel::oneshot;
 use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
+
+use crate::model::friend::{FriendShipWithUser, ReadStatus};
+
+use super::{
+    repository::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
+    FRIEND_USER_ID_INDEX,
+};
 
 pub struct FriendShipRepo(Repository);
 
@@ -216,7 +218,6 @@ impl FriendShipRepo {
         let mut friends = Vec::new();
         let mut tx = Some(tx);
         let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
-            // gloo::console::log!("query friends onsuccess");
             let target = event.target().unwrap();
             let request = target.dyn_ref::<IdbRequest>().unwrap();
             let result = match request.result() {

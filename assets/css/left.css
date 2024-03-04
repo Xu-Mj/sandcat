@@ -27,10 +27,11 @@
             align-items: center;
             gap: 1rem;
 
-            svg{
+            svg {
                 width: 1.5rem;
                 height: 1.5rem;
             }
+
             .msg-icon {
                 border-radius: .4rem;
                 display: flex;
@@ -79,6 +80,17 @@
 
             .list-wrapper {
                 width: 50%;
+                position: relative;
+
+                .add-conv {
+                    width: 80%;
+                    height: 80%;
+                    position: absolute;
+                    left: 50%;
+                    right: 50%;
+                    translate: translate(-50%, -50%);
+                    background-color: white;
+                }
             }
         }
 

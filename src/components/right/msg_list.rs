@@ -1,3 +1,9 @@
+use std::rc::Rc;
+
+use wasm_bindgen::JsCast;
+use web_sys::HtmlElement;
+use yew::prelude::*;
+
 use crate::model::friend::ItemInfo;
 use crate::model::message::Msg;
 use crate::model::RightContentType;
@@ -7,10 +13,6 @@ use crate::{
     model::message::Message,
     pages::RecSendMessageState,
 };
-use std::rc::Rc;
-use wasm_bindgen::{JsCast, JsValue};
-use web_sys::HtmlElement;
-use yew::prelude::*;
 
 pub struct MessageList {
     list: Vec<Message>,
@@ -177,7 +179,7 @@ impl Component for MessageList {
         let friend_id = ctx.props().friend_id.clone();
         match msg {
             MessageListMsg::QueryMsgList(mut list) => {
-                gloo::console::log!("message list update", JsValue::from(list.len()));
+                log::debug!("message list update: {}", list.len());
                 // 判断是否是最后一页，优化查询次数
                 if list.len() < self.page_size as usize {
                     self.is_all = true;
@@ -186,7 +188,7 @@ impl Component for MessageList {
                 true
             }
             MessageListMsg::NextPage => {
-                gloo::console::log!("next page");
+                log::debug!("next page");
                 self.page += 1;
                 self.scroll_state = ScrollState::None;
                 self.query(ctx);

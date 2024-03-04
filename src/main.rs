@@ -10,10 +10,11 @@ mod utils;
 mod web_rtc;
 mod ws;
 
-use crate::pages::register::Register;
-use crate::pages::{home::Home, login::Login, Page};
 use yew::prelude::*;
 use yew_router::{BrowserRouter, Switch};
+
+use crate::pages::register::Register;
+use crate::pages::{home::Home, login::Login, Page};
 
 #[function_component(App)]
 fn app() -> Html {

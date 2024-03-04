@@ -1,6 +1,7 @@
-use crate::model::friend::Friend;
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
+
+use crate::model::friend::Friend;
 
 /// 用来接收服务端的用户信息
 #[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]

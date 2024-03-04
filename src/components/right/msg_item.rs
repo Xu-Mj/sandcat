@@ -1,3 +1,9 @@
+use std::rc::Rc;
+
+use nanoid::nanoid;
+use yew::platform::spawn_local;
+use yew::prelude::*;
+
 use crate::db::friend::FriendRepo;
 use crate::db::user::UserRepo;
 use crate::icons::{MsgPhoneIcon, VideoRecordIcon};
@@ -5,10 +11,6 @@ use crate::model::message::{InviteMsg, InviteType, Message};
 use crate::model::user::User;
 use crate::pages::RecSendMessageState;
 use crate::{components::right::friend_card::FriendCard, model::ContentType};
-use nanoid::nanoid;
-use std::rc::Rc;
-use yew::platform::spawn_local;
-use yew::prelude::*;
 
 pub struct MsgItem {
     show_img_preview: bool,

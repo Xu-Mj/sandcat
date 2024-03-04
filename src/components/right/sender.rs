@@ -1,3 +1,16 @@
+use std::cmp::Ordering;
+use std::rc::Rc;
+
+use futures_channel::oneshot;
+use gloo::timers::callback::Timeout;
+use wasm_bindgen::{closure::Closure, JsCast, JsValue};
+use wasm_bindgen_futures::JsFuture;
+use web_sys::{
+    ClipboardEvent, DataTransferItem, DataTransferItemList, File, FileReader, HtmlElement,
+    HtmlInputElement, HtmlTextAreaElement, Response,
+};
+use yew::prelude::*;
+
 use crate::icons::{CloseIcon, ImageIcon};
 use crate::model::message::{InviteMsg, InviteType, Msg};
 use crate::model::RightContentType;
@@ -9,17 +22,6 @@ use crate::{
     model::ContentType,
     pages::RecSendMessageState,
 };
-use futures_channel::oneshot;
-use gloo::timers::callback::Timeout;
-use std::cmp::Ordering;
-use std::rc::Rc;
-use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use wasm_bindgen_futures::JsFuture;
-use web_sys::{
-    ClipboardEvent, DataTransferItem, DataTransferItemList, File, FileReader, HtmlElement,
-    HtmlInputElement, HtmlTextAreaElement, Response,
-};
-use yew::prelude::*;
 
 use super::emoji::{get_emojis, Emoji};
 
@@ -275,14 +277,11 @@ impl Component for Sender {
             SenderMsg::SendComplete => false,
 
             SenderMsg::SendFileIconClicked => {
-                gloo::console::log!("发送文件");
                 let file_input = self.file_input_ref.cast::<HtmlElement>().unwrap();
                 file_input.click();
                 false
             }
             SenderMsg::FileInputChanged(event) => {
-                gloo::console::log!("文件输入框改变");
-                // self.show_file_sender = true;
                 let file_input: HtmlInputElement = event.target().unwrap().dyn_into().unwrap();
                 let file_list = file_input.files();
                 if let Some(file_list) = file_list {

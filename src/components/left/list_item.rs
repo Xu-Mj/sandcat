@@ -1,11 +1,12 @@
+use chrono::TimeZone;
+use std::rc::Rc;
+use yew::prelude::*;
+
 use crate::{
     db::current_item,
     model::RightContentType,
     pages::{CommonProps, ComponentType, ConvState, CurrentItem, FriendListState},
 };
-use chrono::TimeZone;
-use std::rc::Rc;
-use yew::prelude::*;
 
 pub struct ListItem {
     conv_state: Rc<ConvState>,
@@ -167,7 +168,7 @@ impl Component for ListItem {
                 .to_string();
         }
         let mut name = props.name.clone();
-        if props.remark == AttrValue::default() {
+        if !props.remark.is_empty() {
             name = props.remark.clone();
         }
         let mut right = html!();

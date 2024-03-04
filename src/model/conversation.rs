@@ -1,7 +1,9 @@
-use crate::model::ContentType;
-use crate::model::RightContentType;
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
+
+use crate::model::ContentType;
+use crate::model::RightContentType;
+
 fn is_zero(id: &i32) -> bool {
     *id == 0
 }

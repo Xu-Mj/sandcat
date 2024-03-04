@@ -1,4 +1,12 @@
-use super::DB_NAME;
+use futures_channel::oneshot;
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::{JsCast, JsValue};
+use web_sys::{
+    IdbDatabase, IdbIndexParameters, IdbObjectStore, IdbObjectStoreParameters, IdbRequest,
+    IdbTransactionMode,
+};
+use yew::prelude::*;
+
 use crate::db::{
     CONFIG_TABLE_NAME, CONVERSATION_FRIEND_ID_INDEX, CONVERSATION_LAST_MSG_TIME_INDEX,
     CONVERSATION_TABLE_NAME, CURRENT_CONV_TABLE_NAME, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME,
@@ -8,14 +16,8 @@ use crate::db::{
     MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX,
     MESSAGE_TYPE_INDEX, USER_TABLE_NAME,
 };
-use futures_channel::oneshot;
-use wasm_bindgen::closure::Closure;
-use wasm_bindgen::{JsCast, JsValue};
-use web_sys::{
-    IdbDatabase, IdbIndexParameters, IdbObjectStore, IdbObjectStoreParameters, IdbRequest,
-    IdbTransactionMode,
-};
-use yew::prelude::*;
+
+use super::DB_NAME;
 
 // const DATE_FORMAT_STR: &str = "%Y-%m-%d %H:%M:%S";
 const DB_VERSION: u32 = 1;
@@ -27,7 +29,6 @@ pub struct Repository {
 impl Repository {
     pub async fn new() -> Repository {
         let db_name = DB_NAME.get().unwrap();
-        // gloo::console::log!("正在创建数据库");
         // 这里使用channel来获取异步的结果
         let (tx, rx) = oneshot::channel::<IdbDatabase>();
         // 获取window对象
@@ -204,7 +205,6 @@ impl Repository {
         on_success.forget();
 
         let db = rx.await.unwrap();
-        // gloo::console::log!("数据库创建成功");
 
         Repository { db }
     }

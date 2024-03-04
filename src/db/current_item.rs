@@ -1,8 +1,8 @@
 // use local storage to store current conv info and current friend info
-
-use crate::pages::{ComponentType, CurrentItem};
 use gloo::utils::window;
 use wasm_bindgen::JsValue;
+
+use crate::pages::{ComponentType, CurrentItem};
 
 pub const CONV_LOCAL_STORAGE_KEY: &str = "__CURRENT_CONV__";
 pub const FRIEND_LOCAL_STORAGE_KEY: &str = "__CURRENT_FRIEND__";

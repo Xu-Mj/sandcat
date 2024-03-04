@@ -1,10 +1,12 @@
+use std::rc::Rc;
+
+use web_sys::{HtmlInputElement, MouseEvent};
+use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef};
+
 use crate::api;
 use crate::db::friend_ship::FriendShipRepo;
 use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, ReadStatus};
 use crate::pages::{FriendShipState, FriendShipStateType};
-use std::rc::Rc;
-use web_sys::{HtmlInputElement, MouseEvent};
-use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef};
 
 pub struct FriendShipList {
     list: Vec<FriendShipWithUser>,

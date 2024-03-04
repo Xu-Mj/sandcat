@@ -1,3 +1,8 @@
+use indexmap::IndexMap;
+use std::rc::Rc;
+use wasm_bindgen_futures::spawn_local;
+use yew::prelude::*;
+
 use crate::components::left::add_friend::AddFriend;
 use crate::db::friend_ship::FriendShipRepo;
 use crate::model::RightContentType;
@@ -8,10 +13,6 @@ use crate::{
     model::friend::Friend,
     pages::{CommonProps, ComponentType},
 };
-use indexmap::IndexMap;
-use std::rc::Rc;
-use wasm_bindgen_futures::spawn_local;
-use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct ContactsProps {
@@ -41,7 +42,7 @@ pub enum ContactsMsg {
     FilterContact(AttrValue),
     CleanupSearchResult,
     QueryFriends(QueryState<IndexMap<AttrValue, Friend>>),
-    AddFriend(bool),
+    AddFriend,
     RecFriendShipReq(Rc<FriendShipState>),
     FriendListStateChanged(Rc<FriendListState>),
     QueryFriendship(usize),
@@ -109,7 +110,6 @@ impl Component for Contacts {
             }
             // 清空搜索结果
             ContactsMsg::CleanupSearchResult => {
-                gloo::console::log!("filter contacts clean");
                 self.is_searching = false;
                 self.result.clear();
                 true
@@ -120,16 +120,12 @@ impl Component for Contacts {
                     true
                 }
                 // QueryState::Failure => {
-                //     gloo::console::log!("query friends failure");
                 //     false
                 // }
-                QueryState::Querying => {
-                    gloo::console::log!("query friends querying");
-                    false
-                }
+                QueryState::Querying => false,
             },
-            ContactsMsg::AddFriend(is_add) => {
-                self.is_add_friend = is_add;
+            ContactsMsg::AddFriend => {
+                self.is_add_friend = !self.is_add_friend;
                 true
             }
             ContactsMsg::RecFriendShipReq(friendship) => {
@@ -191,7 +187,7 @@ impl Component for Contacts {
         let clean_callback = ctx
             .link()
             .callback(move |_| ContactsMsg::CleanupSearchResult);
-        let plus_click = ctx.link().callback(ContactsMsg::AddFriend);
+        let plus_click = ctx.link().callback(|_| ContactsMsg::AddFriend);
         let friendship_click = ctx.link().callback(|_| ContactsMsg::NewFriendClicked);
 
         html! {

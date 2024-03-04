@@ -1,9 +1,11 @@
+use std::rc::Rc;
+
+use yew::prelude::*;
+
 use crate::{
     icons::{ContactsIcon, MessagesIcon},
     pages::{AppState, ComponentType, ConvState},
 };
-use std::rc::Rc;
-use yew::prelude::*;
 
 /// 增加双击切换置顶未读消息
 pub struct Top {

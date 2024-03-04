@@ -1,3 +1,4 @@
+pub mod add_conv;
 pub mod add_friend;
 pub mod contacts;
 pub mod list_item;
@@ -5,12 +6,14 @@ pub mod messages;
 pub mod top;
 pub mod user_info;
 
+use std::rc::Rc;
+
+use yew::prelude::*;
+
 use crate::components::left::contacts::Contacts;
 use crate::components::left::messages::Messages;
 use crate::components::left::top::Top;
 use crate::pages::{AppState, ComponentType};
-use std::rc::Rc;
-use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct LeftProps;
@@ -31,10 +34,7 @@ impl Component for Left {
 
     fn create(ctx: &Context<Self>) -> Self {
         // 向服务器查询会话列表、联系人列表
-        ctx.link().send_future(async {
-            // gloo::console::log!("left init");
-            LeftMsg::RequestState
-        });
+        ctx.link().send_future(async { LeftMsg::RequestState });
         let (state, _context_listener) = ctx
             .link()
             .context(ctx.link().callback(LeftMsg::ContextChanged))

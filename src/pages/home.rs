@@ -1,3 +1,16 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use gloo::timers::callback::Interval;
+use gloo::utils::window;
+use web_sys::HtmlDivElement;
+use yew::platform::spawn_local;
+use yew::prelude::*;
+
+use super::{
+    AppState, ComponentType, ConvState, CurrentItem, FriendListState, FriendShipState,
+    FriendShipStateType, RecSendCallState, RecSendMessageState, WaitState,
+};
 use crate::components::phone_call::PhoneCall;
 use crate::db::friend::FriendRepo;
 use crate::db::friend_ship::FriendShipRepo;
@@ -13,18 +26,6 @@ use crate::ws::WebSocketManager;
 use crate::{
     components::{left::Left, right::Right},
     db::{message::MessageRepo, user::UserRepo, QueryError, QueryStatus, DB_NAME},
-};
-use gloo::timers::callback::Interval;
-use gloo::utils::window;
-use std::cell::RefCell;
-use std::rc::Rc;
-use web_sys::HtmlDivElement;
-use yew::platform::spawn_local;
-use yew::prelude::*;
-
-use super::{
-    AppState, ComponentType, ConvState, CurrentItem, FriendListState, FriendShipState,
-    FriendShipStateType, RecSendCallState, RecSendMessageState, WaitState,
 };
 
 pub struct Home {
@@ -255,8 +256,6 @@ impl Component for Home {
                 }
                 current_item::save_com_type(&component_type).unwrap();
                 shared_state.component_type = component_type;
-                gloo::console::log!("home state listener");
-                // 是否会重新渲染所有子元素？
                 true
             }
             HomeMsg::SwitchFriend(conv) => {
@@ -515,7 +514,7 @@ impl Component for Home {
                 true
             }
             HomeMsg::WaitStateChanged => {
-                log::debug!("wait state changed");
+                log::debug!("wait state changed: {:?}", self.wait_state);
                 let state = Rc::make_mut(&mut self.wait_state);
                 state.wait_count -= 1;
                 if state.wait_count == 0 {

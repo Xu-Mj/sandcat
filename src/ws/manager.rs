@@ -1,13 +1,12 @@
-#![allow(dead_code)]
-
-use crate::model::message::Msg;
 use std::cell::RefCell;
 use std::rc::Rc;
+
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 use yew::Callback;
 
+use crate::model::message::Msg;
 // 定义WebSocket管理器结构体
 pub struct WebSocketManager {
     url: String,

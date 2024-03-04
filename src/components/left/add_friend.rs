@@ -1,12 +1,13 @@
+use yew::prelude::*;
+
 use crate::api::user::search_friend;
 use crate::components::left::user_info::UserInfoCom;
 use crate::model::user::User;
 use crate::{components::top_bar::TopBar, pages::ComponentType};
-use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct AddFriendProps {
-    pub plus_click: Callback<bool>,
+    pub plus_click: Callback<()>,
     pub user_id: AttrValue,
 }
 
@@ -27,7 +28,7 @@ pub enum AddFriendMsg {
     SearchFriend(AttrValue),
     CleanupSearchResult,
     SearchFriends(SearchState<Vec<User>>),
-    Cancel(bool),
+    Cancel,
 }
 
 impl Component for AddFriend {
@@ -62,7 +63,6 @@ impl Component for AddFriend {
             }
             // 清空搜索结果
             AddFriendMsg::CleanupSearchResult => {
-                gloo::console::log!("filter contacts clean");
                 self.is_searching = false;
                 self.result.clear();
                 true
@@ -73,16 +73,13 @@ impl Component for AddFriend {
                     true
                 }
                 SearchState::Failure => {
-                    gloo::console::log!("query friends failure");
+                    log::debug!("query friends failure");
                     false
                 }
-                SearchState::Searching => {
-                    gloo::console::log!("query friends querying");
-                    false
-                }
+                SearchState::Searching => false,
             },
-            AddFriendMsg::Cancel(_) => {
-                ctx.props().plus_click.emit(false);
+            AddFriendMsg::Cancel => {
+                ctx.props().plus_click.emit(());
                 false
             }
         }
@@ -104,7 +101,7 @@ impl Component for AddFriend {
         let clean_callback = ctx
             .link()
             .callback(move |_| AddFriendMsg::CleanupSearchResult);
-        let plus_click = ctx.link().callback(AddFriendMsg::Cancel);
+        let plus_click = ctx.link().callback(|_| AddFriendMsg::Cancel);
 
         html! {
             <>

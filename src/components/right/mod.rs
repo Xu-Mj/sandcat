@@ -6,6 +6,10 @@ pub mod msg_list;
 pub mod postcard;
 pub mod sender;
 
+use std::rc::Rc;
+
+use yew::prelude::*;
+
 use crate::components::right::friendship_list::FriendShipList;
 use crate::db::friend::FriendRepo;
 use crate::icons::{CloseIcon, MaxIcon};
@@ -16,8 +20,6 @@ use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     pages::{AppState, ComponentType},
 };
-use std::rc::Rc;
-use yew::prelude::*;
 
 pub struct Right {
     pub state: Rc<AppState>,
@@ -137,7 +139,7 @@ impl Component for Right {
         let content = match self.state.component_type {
             ComponentType::Messages => {
                 // 处理没有选中会话的情况
-                if self.conv_state.conv.item_id == AttrValue::default() {
+                if self.conv_state.conv.item_id.is_empty() {
                     html! {
                         <div class="choose-conv">{"与挚友开始聊天吧！"}</div>
                     }

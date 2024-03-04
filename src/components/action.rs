@@ -1,3 +1,8 @@
+use std::rc::Rc;
+
+use nanoid::nanoid;
+use yew::prelude::*;
+
 use crate::icons::{MessagesIcon, PhoneIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
 use crate::pages::{ConvState, CurrentItem, RecSendCallState};
@@ -5,9 +10,6 @@ use crate::{
     model::RightContentType,
     pages::{AppState, ComponentType},
 };
-use nanoid::nanoid;
-use std::rc::Rc;
-use yew::prelude::*;
 
 // 联系人卡面上的动作组件：发消息、点电话、打视频
 pub struct Action {
@@ -63,7 +65,6 @@ impl Component for Action {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             ActionMsg::SendMessage => {
-                gloo::console::log!("send message");
                 let id = ctx.props().id.clone();
                 self.state.switch_com_event.emit(ComponentType::Messages);
                 self.conv_state.state_change_event.emit(CurrentItem {

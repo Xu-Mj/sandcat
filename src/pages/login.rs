@@ -1,15 +1,16 @@
-use crate::db::{TOKEN, WS_ADDR};
-use crate::model::user::User;
-use crate::{
-    api,
-    db::{friend::FriendRepo, user::UserRepo, DB_NAME},
-};
 use gloo::utils::window;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
+
+use crate::db::{TOKEN, WS_ADDR};
+use crate::model::user::User;
+use crate::{
+    api,
+    db::{friend::FriendRepo, user::UserRepo, DB_NAME},
+};
 
 use super::Page;
 

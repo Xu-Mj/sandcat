@@ -83,7 +83,6 @@ impl Component for Dialog {
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if first_render {
-            // gloo::console::log!("rendered", self.container.clone());
             let node = self.node_ref.cast::<HtmlElement>().unwrap();
             node.focus().unwrap();
             let node = self.node_ref.cast::<HtmlDialogElement>().unwrap();

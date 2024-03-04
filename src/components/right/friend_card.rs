@@ -1,3 +1,8 @@
+use gloo::utils::{document, window};
+use wasm_bindgen::JsCast;
+use web_sys::{Element, HtmlDivElement, HtmlInputElement};
+use yew::prelude::*;
+
 use crate::{
     api::user::apply_friend,
     db::friend_ship::FriendShipRepo,
@@ -6,10 +11,6 @@ use crate::{
         user::User,
     },
 };
-use gloo::utils::{document, window};
-use wasm_bindgen::JsCast;
-use web_sys::{Element, HtmlDivElement, HtmlInputElement};
-use yew::prelude::*;
 
 #[derive(Default)]
 pub struct FriendCard {

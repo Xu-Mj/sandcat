@@ -1,4 +1,5 @@
 use std::rc::Rc;
+
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -18,7 +19,7 @@ pub struct TopBarProps {
     pub components_type: ComponentType,
     pub search_callback: Callback<AttrValue>,
     pub clean_callback: Callback<AttrValue>,
-    pub plus_click: Callback<bool>,
+    pub plus_click: Callback<()>,
 }
 
 pub struct TopBar {
@@ -84,7 +85,7 @@ impl Component for TopBar {
                 false
             }
             TopBarMsg::PlusButtonClicked => {
-                ctx.props().plus_click.emit(true);
+                ctx.props().plus_click.emit(());
                 true
             }
             TopBarMsg::SearchButtonClicked => {

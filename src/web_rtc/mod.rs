@@ -1,5 +1,3 @@
-use crate::model::message::{Candidate, InviteType, Msg, Offer};
-use crate::ws::WebSocketManager;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
@@ -11,6 +9,9 @@ use web_sys::{
 };
 use yew::platform::spawn_local;
 use yew::{AttrValue, Callback, NodeRef};
+
+use crate::model::message::{Candidate, InviteType, Msg, Offer};
+use crate::ws::WebSocketManager;
 
 pub struct WebRTC;
 

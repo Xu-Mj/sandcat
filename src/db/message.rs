@@ -1,12 +1,15 @@
-use super::{
-    repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_TABLE_NAME,
-};
-use crate::model::message::Message;
-use futures_channel::oneshot;
 use std::ops::Deref;
+
+use futures_channel::oneshot;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
+
+use crate::model::message::Message;
+
+use super::{
+    repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_TABLE_NAME,
+};
 
 pub struct MessageRepo(Repository);
 

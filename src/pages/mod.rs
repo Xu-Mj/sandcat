@@ -1,13 +1,15 @@
 pub mod home;
 pub mod login;
 pub mod register;
+
+use serde::{Deserialize, Serialize};
+use yew::{AttrValue, Callback};
+use yew_router::Routable;
+
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{InviteMsg, Msg};
 use crate::model::user::User;
 use crate::model::RightContentType;
-use serde::{Deserialize, Serialize};
-use yew::{AttrValue, Callback};
-use yew_router::Routable;
 
 // 1. 对话卡片切换
 // 2. 朋友卡片切换
@@ -22,7 +24,7 @@ pub struct AppState {
     pub login_user: User,
 }
 
-#[derive(Default, Clone, PartialEq)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct WaitState {
     pub wait_count: usize,
     pub ready: Callback<()>,

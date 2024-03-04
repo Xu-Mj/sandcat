@@ -1,4 +1,3 @@
-use crate::model;
 use futures_channel::oneshot;
 use indexmap::IndexMap;
 use std::ops::Deref;
@@ -6,8 +5,10 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
 
-use super::{repository::Repository, FRIEND_FRIEND_ID_INDEX, FRIEND_TABLE_NAME};
+use crate::model;
 use crate::model::friend::Friend;
+
+use super::{repository::Repository, FRIEND_FRIEND_ID_INDEX, FRIEND_TABLE_NAME};
 
 pub struct FriendRepo(Repository);
 

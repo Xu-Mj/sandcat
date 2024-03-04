@@ -1,6 +1,3 @@
-use crate::api;
-use crate::model::user::UserRegister;
-use crate::pages::Page;
 use gloo::timers::callback::{Interval, Timeout};
 use regex::Regex;
 use wasm_bindgen::JsValue;
@@ -8,6 +5,11 @@ use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::RouterScopeExt;
+
+use crate::api;
+use crate::model::user::UserRegister;
+use crate::pages::Page;
+
 extern crate zxcvbn;
 
 use zxcvbn::zxcvbn;
