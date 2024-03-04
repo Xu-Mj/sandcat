@@ -12,7 +12,7 @@ use crate::model::message::{
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::ContentType;
 use crate::pages::RecSendCallState;
-use crate::ws::ws::WebSocketManager;
+use crate::ws::WebSocketManager;
 use crate::{utils, web_rtc};
 use gloo::timers::callback::Timeout;
 use nanoid::nanoid;
@@ -55,7 +55,7 @@ pub struct PhoneCall {
     pc: Option<RtcPeerConnection>,
     /// 音视频流
     stream: Option<MediaStream>,
-    /// 通话的好友信息    
+    /// 通话的好友信息
     call_friend_info: Option<Box<dyn ItemInfo>>,
     /// 邀请计时器，到时间即为未接听
     call_timer: Option<Timeout>,
@@ -100,9 +100,8 @@ pub enum PhoneCallMsg {
     Notification(Notification),
     // 显示顶部消息通知
     ShowCallNotify(Box<dyn ItemInfo>),
-    CleanNotification,
     SwitchVolume,
-    SwitchCamera,
+    // SwitchCamera,
     SwitchMicrophoneMute,
     ShowAudioWindow(MediaStream, Box<dyn ItemInfo>),
     ReceiveCallMsg(Msg),
@@ -465,7 +464,7 @@ impl Component for PhoneCall {
                             msg_id: msg_id.clone(),
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
-                            content_type: content_type.clone(),
+                            content_type,
                             content: AttrValue::from("已拒绝"),
                             create_time,
                             is_read: true,
@@ -568,7 +567,6 @@ impl Component for PhoneCall {
                 }
                 false
             }
-            PhoneCallMsg::CleanNotification => false,
             PhoneCallMsg::SwitchVolume => {
                 self.volume_mute = !self.volume_mute;
                 match self.invite_info.as_ref().unwrap().invite_type {
@@ -583,7 +581,6 @@ impl Component for PhoneCall {
                 }
                 true
             }
-            PhoneCallMsg::SwitchCamera => false,
             PhoneCallMsg::SwitchMicrophoneMute => {
                 self.microphone_mute = !self.microphone_mute;
                 self.mute_audio(self.microphone_mute);
@@ -675,7 +672,7 @@ impl Component for PhoneCall {
                     }
                     Msg::SingleCallOffer(msg) => {
                         // 建立通话连接，收到offer，设置sdp
-                        if let Some(_) = self.pc {
+                        if self.pc.is_some() {
                             log::warn!("收到邀请，但是占线: {:?}", &msg);
                             return false;
                         }

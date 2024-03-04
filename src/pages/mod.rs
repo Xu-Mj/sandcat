@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-#[allow(dead_code)]
 use yew::{AttrValue, Callback};
 use yew_router::Routable;
 

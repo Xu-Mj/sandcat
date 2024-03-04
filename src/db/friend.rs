@@ -9,7 +9,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
 
-use super::{db::Repository, FRIEND_FRIEND_ID_INDEX, FRIEND_TABLE_NAME};
+use super::{repository::Repository, FRIEND_FRIEND_ID_INDEX, FRIEND_TABLE_NAME};
 use crate::model::friend::Friend;
 
 pub struct FriendRepo(Repository);
@@ -37,7 +37,7 @@ impl FriendRepo {
         store.put(&value).unwrap();
     }
 
-    pub async fn put_friend_list(&self, friends: &Vec<model::friend::Friend>) {
+    pub async fn put_friend_list(&self, friends: &[model::friend::Friend]) {
         let store = self.store(&String::from(FRIEND_TABLE_NAME)).await.unwrap();
         friends.iter().for_each(|item| {
             let value = serde_wasm_bindgen::to_value(item).unwrap();

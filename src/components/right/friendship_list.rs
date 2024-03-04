@@ -1,5 +1,3 @@
-#![allow(unused_variables)]
-
 use crate::api;
 use crate::db::friend_ship::FriendShipRepo;
 use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, ReadStatus};
@@ -29,8 +27,8 @@ pub enum FriendShipListMsg {
 }
 
 pub enum RequestStatus {
-    Success((AttrValue, Friend)),
     Failed(AttrValue),
+    Success(AttrValue, Box<Friend>),
     // Pending,
 }
 
@@ -110,10 +108,10 @@ impl Component for FriendShipList {
                         match api::user::agree_friend(friendship_req).await {
                             Ok(res) => {
                                 log::debug!("好友请求成功:{:?}", &res);
-                                FriendShipListMsg::AgreeFriendShipRes(RequestStatus::Success((
+                                FriendShipListMsg::AgreeFriendShipRes(RequestStatus::Success(
                                     friendship_id,
-                                    res,
-                                )))
+                                    Box::new(res),
+                                ))
                             }
                             Err(err) => {
                                 log::debug!("好友请求失败:{:?}", err);
@@ -128,7 +126,7 @@ impl Component for FriendShipList {
             }
             FriendShipListMsg::AgreeFriendShipRes(res) => {
                 match res {
-                    RequestStatus::Success((mut friendship_id, friend)) => {
+                    RequestStatus::Success(friendship_id, friend) => {
                         let pos = self
                             .list
                             .iter()
@@ -140,7 +138,7 @@ impl Component for FriendShipList {
                         }
                         self.friendship_state
                             .res_change_event
-                            .emit((friendship_id, friend));
+                            .emit((friendship_id, *friend));
                         // ship.status = AttrValue::from("1");
                         // ship.read = ReadStatus::True;
                         // 发送通知给contacts，刷新列表

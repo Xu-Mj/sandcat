@@ -1,5 +1,5 @@
 use crate::model::message::{Candidate, InviteType, Msg, Offer};
-use crate::ws::ws::WebSocketManager;
+use crate::ws::WebSocketManager;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
@@ -106,12 +106,9 @@ impl WebRTC {
                 "on signaling state change: {:?}",
                 pc_clone.signaling_state()
             );
-            match pc_clone.signaling_state() {
-                RtcSignalingState::Closed => {
-                    // 关闭视频流
-                    close_event.emit(friend.clone());
-                }
-                _ => {}
+            if pc_clone.signaling_state() == RtcSignalingState::Closed {
+                // 关闭视频流
+                close_event.emit(friend.clone());
             }
         }) as Box<dyn FnMut()>);
 

@@ -173,7 +173,7 @@ impl Component for MsgItem {
             },
             ContentType::File => {
                 let full = ctx.props().msg.content.clone();
-                let file_name = ctx.props().msg.content.split("-").last().unwrap_or(&full);
+                let file_name = ctx.props().msg.content.split('-').last().unwrap_or(&full);
                 html! {
                     <div class="msg-item-content">
                         <span class="msg-item-file-name">

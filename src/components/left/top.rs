@@ -88,7 +88,7 @@ impl Component for Top {
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
-        let mut setting_class = "top-icon-selected";
+        // let mut setting_class = "top-icon-selected";
         // let setting_onclick = if self.state.component_type != ComponentType::Setting {
         //     setting_class = "hover";
         //     self.state

@@ -1,10 +1,3 @@
-#![allow(dead_code)]
-
-use indexmap::IndexMap;
-use std::rc::Rc;
-use wasm_bindgen_futures::spawn_local;
-use yew::prelude::*;
-
 use crate::db::message::MessageRepo;
 use crate::db::RightContentType;
 use crate::model::message::Msg;
@@ -15,6 +8,10 @@ use crate::{
     model::ContentType,
     pages::{CommonProps, ComponentType, RecSendMessageState},
 };
+use indexmap::IndexMap;
+use std::rc::Rc;
+use wasm_bindgen_futures::spawn_local;
+use yew::prelude::*;
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct MessagesProps {}
@@ -22,7 +19,7 @@ pub struct MessagesProps {}
 pub struct Messages {
     list: IndexMap<AttrValue, Conversation>,
     result: IndexMap<AttrValue, Conversation>,
-    msg_state: Rc<RecSendMessageState>,
+    _msg_state: Rc<RecSendMessageState>,
     _msg_listener: ContextHandle<Rc<RecSendMessageState>>,
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
@@ -46,7 +43,6 @@ pub enum MessagesMsg {
 pub enum QueryState<T> {
     Querying,
     Success(T),
-    Failed,
 }
 
 impl Component for Messages {
@@ -56,6 +52,8 @@ impl Component for Messages {
 
     fn create(ctx: &Context<Self>) -> Self {
         // query conversation list
+        ctx.link()
+            .send_message(MessagesMsg::QueryConvs(QueryState::Querying));
         ctx.link().send_future(async {
             let conv_repo = ConvRepo::new().await;
             let convs = conv_repo.get_convs2().await.unwrap_or_default();
@@ -75,7 +73,7 @@ impl Component for Messages {
             .context(ctx.link().callback(|_| MessagesMsg::WaitStateChanged))
             .expect("need state in item");
         Self {
-            msg_state,
+            _msg_state: msg_state,
             _msg_listener,
             conv_state,
             _conv_listener,
@@ -115,12 +113,9 @@ impl Component for Messages {
                     QueryState::Querying => {
                         gloo::console::log!("querying");
                     }
-                    QueryState::Success(mut convs2) => {
+                    QueryState::Success(convs2) => {
                         self.list = convs2;
                         self.query_complete = true;
-                    }
-                    QueryState::Failed => {
-                        gloo::console::log!("query failed");
                     }
                 }
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
@@ -141,12 +136,14 @@ impl Component for Messages {
                 };
                 match msg {
                     Msg::Single(msg) | Msg::Group(msg) | Msg::OfflineSync(msg) => {
-                        let mut conv = Conversation::default();
-                        conv.last_msg = msg.content.clone();
-                        conv.last_msg_time = msg.create_time;
-                        conv.last_msg_type = msg.content_type;
-                        conv.conv_type = conv_type;
-                        conv.friend_id = msg.friend_id.clone();
+                        let conv = Conversation {
+                            last_msg: msg.content.clone(),
+                            last_msg_time: msg.create_time,
+                            last_msg_type: msg.content_type,
+                            conv_type,
+                            friend_id: msg.friend_id.clone(),
+                            ..Default::default()
+                        };
                         self.operate_msg(ctx, msg.friend_id, conv)
                     }
                     Msg::SingleCallInvite(msg) => {
@@ -203,7 +200,7 @@ impl Component for Messages {
                 // 判断是否需要更新当前会话
                 let dest = self.list.get_mut(&cur_conv_id);
                 if dest.is_some() {
-                    let mut conv = dest.unwrap();
+                    let conv = dest.unwrap();
                     conv.unread_count = 0;
                     // self.list.shift_insert(index, cur_conv_id, conv.clone());
                     let conv = conv.clone();
@@ -226,12 +223,11 @@ impl Component for Messages {
                             .get_last_msg(friend_id.clone())
                             .await
                             .unwrap_or_default();
-                        let content;
-                        if result.id != 0 {
-                            content = get_msg_type(result.content_type, &result.content);
+                        let content = if result.id != 0 {
+                            get_msg_type(result.content_type, &result.content)
                         } else {
-                            content = AttrValue::default();
-                        }
+                            AttrValue::default()
+                        };
                         let conv = Conversation {
                             id: 0,
                             name: friend.name,
@@ -261,7 +257,7 @@ impl Component for Messages {
             } else {
                 self.result
                     .iter()
-                    .map(|(id, item)| {
+                    .map(|(_id, item)| {
                         let remark = get_msg_type(item.last_msg_type, &item.last_msg);
                         html! {
                                 <ListItem
@@ -282,14 +278,14 @@ impl Component for Messages {
             self.list
                 .iter()
                 // .map(|item| {
-                .map(|(friend_id, item)| {
+                .map(|(_friend_id, item)| {
                     let remark = get_msg_type(item.last_msg_type, &item.last_msg);
                     html! {
                             <ListItem
                                 component_type={ComponentType::Messages}
                                 props={CommonProps{name:item.name.clone().into(),
                                     avatar:item.avatar.clone().into(),
-                                    time:item.last_msg_time.clone().into(),
+                                    time:item.last_msg_time,
                                     remark,
                                     id: item.friend_id.clone() }}
                                 unread_count={item.unread_count}

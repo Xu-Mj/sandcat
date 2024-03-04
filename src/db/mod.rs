@@ -17,10 +17,10 @@ use crate::model::{
 pub mod config;
 pub mod conv;
 pub mod current_item;
-pub mod db;
 pub mod friend;
 pub mod friend_ship;
 pub mod message;
+pub mod repository;
 pub mod user;
 
 // 不同用户创建不同的数据库，方便查询，提升性能
@@ -253,16 +253,20 @@ impl RightContentType {
             _ => RightContentType::Default,
         }
     }
+}
 
-    pub fn to_string(&self) -> String {
+impl Display for RightContentType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RightContentType::Friend => "1".to_string(),
-            RightContentType::Group => "2".to_string(),
-            _ => "0".to_string(),
+            RightContentType::Friend => write!(f, "friend"),
+            RightContentType::Group => write!(f, "group"),
+            RightContentType::Default => write!(f, "default"),
+            RightContentType::UserInfo => write!(f, "user_info"),
+            RightContentType::FriendShipList => write!(f, "frienship_list"),
+            RightContentType::Service => write!(f, "service"),
         }
     }
 }
-
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub enum MessageType {
     #[default]

@@ -1,22 +1,19 @@
-#![allow(dead_code)]
-#![allow(unused_variables)]
-
 use crate::components::phone_call::PhoneCall;
 use crate::db::friend::FriendRepo;
 use crate::db::friend_ship::FriendShipRepo;
 use crate::db::{current_item, TOKEN, WS_ADDR};
 use crate::icons::CloseIcon;
-use crate::model::friend::{Friend, FriendShipWithUser, ItemInfo};
+use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{DeliveredNotice, InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::ContentType;
-use crate::ws::ws::WebSocketManager;
+use crate::ws::WebSocketManager;
 use crate::{
     components::{left::Left, right::Right},
     db::{message::MessageRepo, user::UserRepo, QueryError, QueryStatus, DB_NAME},
 };
-use gloo::timers::callback::{Interval, Timeout};
+use gloo::timers::callback::Interval;
 use gloo::utils::window;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -40,9 +37,6 @@ pub struct Home {
     user: User,
     ws: Rc<RefCell<WebSocketManager>>,
     friend_ship_state: Rc<FriendShipState>,
-    show_notify: bool,
-    call_friend_info: Option<Box<dyn ItemInfo>>,
-    call_timer: Option<Timeout>,
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
     notification_node: NodeRef,
@@ -70,9 +64,7 @@ pub enum HomeMsg {
     ReceiveFriendShipReq(FriendShipWithUser),
     // 回复好友请求
     FriendShipResponse((AttrValue, Friend)),
-    ReceiveFriendShipRes(Friend),
     // 显示顶部消息通知
-    ShowNotify(Box<dyn ItemInfo>),
     // 发送视频电话请求
     SendCallInvite(InviteMsg),
     // 发送消息
@@ -82,7 +74,7 @@ pub enum HomeMsg {
     Notification(Notification),
     CleanNotification,
     CloseNotificationByIndex(usize),
-    RecSendCallStateChange(Msg),
+    // RecSendCallStateChange(Msg),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -232,9 +224,6 @@ impl Component for Home {
                 friend: Default::default(),
                 state_change_event: switch_friend_callback,
             }),
-            show_notify: false,
-            call_friend_info: None,
-            call_timer: None,
             notifications: vec![],
             notification: Rc::new(NotificationState {
                 notify: error_event,
@@ -302,7 +291,7 @@ impl Component for Home {
                         let friend_state = Rc::make_mut(&mut self.friend_state);
                         friend_state.friend = u.2.clone();
                         self.user = u.0.clone();
-                        shared_state.component_type = u.3.clone();
+                        shared_state.component_type = u.3;
                     }
                     QueryStatus::QueryFail(_) => {
                         gloo::console::log!("query fail")
@@ -327,7 +316,7 @@ impl Component for Home {
                             conv_state.conv.unread_count =
                                 conv_state.conv.unread_count.saturating_add(1);
                             let _ = current_item::save_conv(&conv_state.conv)
-                                .map_err(|err| log::error!("save conv fail"));
+                                .map_err(|err| log::error!("save conv fail{:?}", err));
                         }
                         ctx.link().send_future(async move {
                             // 数据入库
@@ -392,7 +381,9 @@ impl Component for Home {
                                 send_id,
                                 friend_id: friend.friend_id.clone(),
                                 content_type: ContentType::Text,
-                                content: friend.hello.unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
+                                content: friend
+                                    .hello
+                                    .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
                                 create_time: chrono::Local::now().timestamp_millis(),
                                 is_read: true,
                                 is_self: true,
@@ -423,11 +414,11 @@ impl Component for Home {
                 conv_state.msg = msg;
                 true
             }
-            HomeMsg::RecSendCallStateChange(msg) => {
-                let conv_state = Rc::make_mut(&mut self.msg_state);
-                conv_state.msg = msg;
-                true
-            }
+            // HomeMsg::RecSendCallStateChange(msg) => {
+            //     let conv_state = Rc::make_mut(&mut self.msg_state);
+            //     conv_state.msg = msg;
+            //     true
+            // }
             HomeMsg::SendBackMsg(msg) => {
                 // 发送已收到消息给服务器
                 self.send_msg(&msg);
@@ -441,7 +432,10 @@ impl Component for Home {
                 state.state_type = FriendShipStateType::Req;
                 // 入库
                 ctx.link().send_future(async move {
-                    FriendShipRepo::new().await.put_friendship(&friendship).await;
+                    FriendShipRepo::new()
+                        .await
+                        .put_friendship(&friendship)
+                        .await;
                     // 发送收到通知
                     HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(DeliveredNotice {
                         msg_id: id,
@@ -473,7 +467,10 @@ impl Component for Home {
                         send_id,
                         friend_id: friend.friend_id.clone(),
                         content_type: ContentType::Text,
-                        content: friend.hello.clone().unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
+                        content: friend
+                            .hello
+                            .clone()
+                            .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
                         create_time: chrono::Local::now().timestamp_millis(),
                         is_read: true,
                         is_self: true,
@@ -490,12 +487,6 @@ impl Component for Home {
                 });
                 true
             }
-            HomeMsg::ReceiveFriendShipRes(_) => todo!(),
-
-            HomeMsg::ShowNotify(item) => {
-                self.call_friend_info = Some(item);
-                true
-            }
             HomeMsg::Notification(noti) => {
                 log::debug!("notification:{:?}", &noti);
                 self.notify(noti);
@@ -508,7 +499,7 @@ impl Component for Home {
                 true
             }
             HomeMsg::CleanNotification => {
-                if self.notifications.len() > 0 {
+                if !self.notifications.is_empty() {
                     self.notifications.remove(0);
                 } else {
                     self.notification_interval = None;
@@ -601,7 +592,7 @@ impl Component for Home {
         }
     }
 
-    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
         // 将通知区域向上滚动
         if self.notifications.len() > 2 {
             if let Some(div) = self.notification_node.cast::<HtmlDivElement>() {
@@ -610,7 +601,7 @@ impl Component for Home {
         }
     }
 
-    fn destroy(&mut self, ctx: &Context<Self>) {
+    fn destroy(&mut self, _ctx: &Context<Self>) {
         self.ws.borrow_mut().cleanup();
         log::debug!("home destroy==> delete database");
         // 测试阶段，销毁时删除数据库

@@ -1,20 +1,16 @@
-#![allow(dead_code)]
+pub mod add_friend;
 pub mod contacts;
 pub mod list_item;
-
-mod add_friend;
 pub mod messages;
 pub mod top;
-mod user_info;
-
-use std::rc::Rc;
-
-use yew::prelude::*;
+pub mod user_info;
 
 use crate::components::left::contacts::Contacts;
 use crate::components::left::messages::Messages;
 use crate::components::left::top::Top;
 use crate::pages::{AppState, ComponentType};
+use std::rc::Rc;
+use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct LeftProps {}
@@ -35,7 +31,7 @@ impl Component for Left {
 
     fn create(ctx: &Context<Self>) -> Self {
         // 向服务器查询会话列表、联系人列表
-        let _ = ctx.link().send_future(async {
+        ctx.link().send_future(async {
             // gloo::console::log!("left init");
             LeftMsg::RequestState
         });

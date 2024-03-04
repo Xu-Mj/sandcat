@@ -1,14 +1,10 @@
-#![allow(dead_code)]
-
-use std::ops::Deref;
-
+use super::repository::Repository;
+use crate::model::user::User;
 use futures_channel::oneshot;
+use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{console, Event, IdbRequest};
 use yew::AttrValue;
-
-use super::db::Repository;
-use crate::model::user::User;
 
 const USER_STORE_NAME: &str = "users";
 // 用户仓库，增删改查

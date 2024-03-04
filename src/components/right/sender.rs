@@ -1,9 +1,8 @@
-#![allow(unused_variables)]
-#[allow(dead_code)]
 use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
 use gloo::utils::document;
 use js_sys::JsString;
+use std::cmp::Ordering;
 use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
@@ -127,7 +126,7 @@ impl Sender {
             if file.type_() == "image/png" || file.type_() == "image/jpeg" {
                 content_type = ContentType::Image;
                 // 读取文件内容
-                let file_reader = FileReader::new().expect("craete file reader error");
+                let file_reader = FileReader::new().expect("create file reader error");
                 // 声明一个channel用来获取闭包中的数据
                 let (tx, rx) = oneshot::channel();
                 let mut tx = Some(tx);
@@ -162,7 +161,7 @@ async fn upload_file(file: File) -> Result<String, JsValue> {
 
     // 创建请求
     let url = "/api/file/upload";
-    let request = web_sys::Request::new_with_str_and_init(&url, &opts).unwrap();
+    let request = web_sys::Request::new_with_str_and_init(url, &opts).unwrap();
 
     // 发送网络请求
     let window = web_sys::window().unwrap();
@@ -270,7 +269,7 @@ impl Component for Sender {
                     send_id,
                     friend_id,
                     content_type: ContentType::Emoji,
-                    content: emoji.url.clone().into(),
+                    content: emoji.url.clone(),
                     create_time: time,
                     is_read: true,
                     is_self: true,
@@ -353,19 +352,22 @@ impl Component for Sender {
                         let v: Vec<(usize, char)> = value.char_indices().collect();
                         let start_index = v[start].0;
                         // log::debug!("v: {:?}; start: {}, end: {}", &v, start, end);
-                        if end == value.chars().count() {
-                            value.push('\n');
-                        } else if end < value.chars().count() {
-                            let end_index = v[end].0;
-                            // log::debug!("end index: {}",end_index);
-                            if end_index == start_index {
-                                value.insert_str(start_index, "\n");
-                            } else {
-                                let selected_text = &value[start_index..end_index];
-                                let new_text = "\n";
-                                value = value.replacen(selected_text, &new_text, 1);
+                        match end.cmp(&value.chars().count()) {
+                            Ordering::Equal => value.push('\n'),
+                            Ordering::Less => {
+                                let end_index = v[end].0;
+                                // log::debug!("end index: {}",end_index);
+                                if end_index == start_index {
+                                    value.insert(start_index, '\n');
+                                } else {
+                                    let selected_text = &value[start_index..end_index];
+                                    let new_text = "\n";
+                                    value = value.replacen(selected_text, new_text, 1);
+                                }
                             }
+                            Ordering::Greater => {}
                         };
+
                         textarea.set_value(&value);
                         textarea
                             .set_selection_start(Some((start + 1) as u32))
@@ -551,10 +553,8 @@ impl Component for Sender {
         } else {
             html! {}
         };
-        let onkeydown = ctx
-            .link()
-            .callback(|event| SenderMsg::OnEnterKeyDown(event));
-        let onpaste = ctx.link().callback(|event| SenderMsg::OnPaste(event));
+        let onkeydown = ctx.link().callback(SenderMsg::OnEnterKeyDown);
+        let onpaste = ctx.link().callback(SenderMsg::OnPaste);
         let video_click = ctx.link().callback(|_| SenderMsg::SendVideoCall);
         let audio_click = ctx.link().callback(|_| SenderMsg::SendAudioCall);
         html! {
@@ -571,7 +571,7 @@ impl Component for Sender {
                         </span>
                         <span >
                             <input type="file" hidden={true} ref={self.file_input_ref.clone()}
-                                onchange={ctx.link().callback(move |event| SenderMsg::FileInputChanged(event))}/>
+                                onchange={ctx.link().callback(SenderMsg::FileInputChanged)}/>
                                 <span onclick={ctx.link().callback(|_| SenderMsg::SendFileIconClicked)}>
 
                             <FileIcon />
@@ -634,7 +634,7 @@ fn get_img_url(file: &File) -> String {
         .unwrap()
         .dyn_into()
         .unwrap();
-    let file_reader = FileReader::new().expect("craete file reader error");
+    let file_reader = FileReader::new().expect("create file reader error");
     // 声明一个channel用来获取闭包中的数据
     let reader = file_reader.clone();
     let onload = Closure::wrap(Box::new(move || {
@@ -646,7 +646,7 @@ fn get_img_url(file: &File) -> String {
         // 将图片追加
         // log::debug!("{:?}", img.src());
     }) as Box<dyn FnMut()>);
-    file_reader.read_as_data_url(&file).expect("文件读取错误");
+    file_reader.read_as_data_url(file).expect("文件读取错误");
     file_reader.set_onload(Some(onload.as_ref().unchecked_ref()));
     onload.forget();
     String::new()

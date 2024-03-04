@@ -1,8 +1,3 @@
-#![allow(unused_variables)]
-
-#[allow(dead_code)]
-use yew::prelude::*;
-
 use crate::api::user::get_info_by_id;
 use crate::model::user::User;
 use crate::{
@@ -10,6 +5,8 @@ use crate::{
     db::{friend::FriendRepo, RightContentType},
     model::friend::Friend,
 };
+use wasm_bindgen::JsValue;
+use yew::prelude::*;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct PostCardProps {
@@ -28,7 +25,7 @@ pub enum PostCardMsg {
 pub enum QueryState<T> {
     Querying,
     Success(T),
-    Failed,
+    Failed(JsValue),
 }
 
 pub struct PostCard {
@@ -50,7 +47,7 @@ impl PostCard {
                                 log::debug!("查询成功:{:?}", &user);
                                 PostCardMsg::QueryUser(QueryState::Success(user))
                             }
-                            Err(err) => PostCardMsg::QueryUser(QueryState::Failed),
+                            Err(err) => PostCardMsg::QueryUser(QueryState::Failed(err)),
                         }
                     });
                     ctx.link()
@@ -93,7 +90,7 @@ impl Component for PostCard {
         true
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             PostCardMsg::QueryFriend(state) => match state {
                 QueryState::Querying => true,
@@ -101,7 +98,7 @@ impl Component for PostCard {
                     self.friend_info = user_info;
                     true
                 }
-                QueryState::Failed => false,
+                QueryState::Failed(_) => false,
             },
             PostCardMsg::QueryUser(state) => match state {
                 QueryState::Querying => true,
@@ -128,7 +125,7 @@ impl Component for PostCard {
                     self.friend_info = friend_info;
                     true
                 }
-                QueryState::Failed => false,
+                QueryState::Failed(_) => false,
             },
             PostCardMsg::ApplyFriend => {
                 // 发送好友请求

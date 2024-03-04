@@ -7,7 +7,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
 
-use super::{db::Repository, Config, CONFIG_TABLE_NAME};
+use super::{repository::Repository, Config, CONFIG_TABLE_NAME};
 
 pub struct ConfigRepo(Repository);
 

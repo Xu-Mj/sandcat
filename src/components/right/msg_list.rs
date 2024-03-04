@@ -290,7 +290,7 @@ impl Component for MessageList {
                                             friend_id={props.friend_id.clone()}
                                             msg={msg.clone()}
                                             avatar={avatar}
-                                            key={msg.id.clone()}
+                                            key={msg.id}
                                         />
                                     }
                                 }).collect::<Html>()

@@ -119,22 +119,22 @@ impl Component for ListItem {
         let id = props.id.clone();
         let onclick;
         let mut unread_count = html! {};
-        let mut classess = Classes::from("item");
+        let mut classes = Classes::from("item");
         match ctx.props().component_type {
             ComponentType::Contacts => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::FriendItemClicked);
                 if self.friend_state.friend.item_id == id {
-                    classess.push("selected");
+                    classes.push("selected");
                 } else {
-                    classess.push("hover")
+                    classes.push("hover")
                 }
             }
             ComponentType::Messages => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::CleanUnreadCount);
                 if self.conv_state.conv.item_id == id {
-                    classess.push("selected");
+                    classes.push("selected");
                 } else {
-                    classess.push("hover")
+                    classes.push("hover")
                 }
 
                 if self.unread_count > 0 {
@@ -159,7 +159,7 @@ impl Component for ListItem {
             let step = now - props.time;
             let time_flag = if step < 60 * 1000 * 24 {
                 "%T"
-            } else if step >= 60 * 1000 * 24 && step < 60 * 1000 * 48 {
+            } else if (60 * 1000 * 24..60 * 1000 * 48).contains(&step) {
                 "昨天 %T"
             } else {
                 "%a %b %e %T"
@@ -180,7 +180,7 @@ impl Component for ListItem {
             ComponentType::Contacts => {
                 right = html! {
                     <div class="name-time">
-                        <span>{props.name.clone()}</span>
+                        <span>{name}</span>
                     </div>
                 }
             }
@@ -198,7 +198,7 @@ impl Component for ListItem {
             ComponentType::Setting => {}
         }
         html! {
-        <div class={classess} {onclick}>
+        <div class={classes} {onclick}>
             <div class="item-avatar">
                 <img class="avatar" src={props.avatar.clone()} />
             </div>

@@ -11,8 +11,8 @@ use yew::AttrValue;
 use crate::model::ContentType;
 
 use super::{
-    db::Repository, Conversation, CONVERSATION_FRIEND_ID_INDEX, CONVERSATION_LAST_MSG_TIME_INDEX,
-    CONVERSATION_TABLE_NAME,
+    repository::Repository, Conversation, CONVERSATION_FRIEND_ID_INDEX,
+    CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME,
 };
 
 pub struct ConvRepo(Repository);
@@ -36,7 +36,7 @@ impl ConvRepo {
             .await
             .unwrap();
         store
-            .add(&JsValue::from(serde_wasm_bindgen::to_value(conv).unwrap()))
+            .add(&serde_wasm_bindgen::to_value(conv).unwrap())
             .unwrap();
     }
 
@@ -94,7 +94,7 @@ impl ConvRepo {
 
         let value = serde_wasm_bindgen::to_value(&result).unwrap();
         // 添加成功失败回调
-        let request = store.put(&JsValue::from(value)).unwrap();
+        let request = store.put(&value).unwrap();
         let on_add_error = Closure::once(move |event: &Event| {
             web_sys::console::log_1(&String::from("put conv失败").into());
             web_sys::console::log_1(&event.into());

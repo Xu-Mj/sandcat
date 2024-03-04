@@ -7,8 +7,7 @@ use crate::utils;
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
-pub(crate) const DEFAULT_HELLO_MESSAGE: &'static str =
-    "I've accepted your friend request. Now let's chat!";
+pub(crate) const DEFAULT_HELLO_MESSAGE: &str = "I've accepted your friend request. Now let's chat!";
 
 fn is_zero(id: &i32) -> bool {
     *id == 0

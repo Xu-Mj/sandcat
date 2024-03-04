@@ -64,7 +64,7 @@ impl Component for TopBar {
                 true
             }
             // 搜索框回车事件
-            TopBarMsg::SearchInputEnterListener(e) => {
+            TopBarMsg::SearchInputEnterListener(_e) => {
                 // web_sys::console::log_1(&e);
                 // if e.key() == "Enter" {
                 // let input: HtmlInputElement = e.target_unchecked_into();
@@ -125,9 +125,7 @@ impl Component for TopBar {
             }
         };
         let click_plus = ctx.link().callback(|_| TopBarMsg::PlusButtonClicked);
-        let onclick = ctx
-            .link()
-            .callback(move |_| TopBarMsg::SearchButtonClicked);
+        let onclick = ctx.link().callback(move |_| TopBarMsg::SearchButtonClicked);
         html! {
             // 水平布局，从左到右分别为排序选项卡、搜索输入框、设置按钮
             <div class="top-bar">

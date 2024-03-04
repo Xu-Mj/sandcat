@@ -10,7 +10,7 @@ use std::sync::OnceLock;
 
 pub const AUTHORIZE_HEADER: &str = "Authorization";
 
-pub const TOKEN_VALUE: OnceLock<String> = OnceLock::new();
+pub static TOKEN_VALUE: OnceLock<String> = OnceLock::new();
 
 pub fn token() -> String {
     let token = TOKEN_VALUE

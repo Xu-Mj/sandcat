@@ -4,7 +4,9 @@
 
 use std::ops::Deref;
 
-use super::{db::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_TABLE_NAME};
+use super::{
+    repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_TABLE_NAME,
+};
 use crate::model::message::Message;
 use futures_channel::oneshot;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
@@ -66,10 +68,8 @@ impl MessageRepo {
                 let msg: Message = serde_wasm_bindgen::from_value(value).unwrap();
 
                 let _ = tx.take().unwrap().send(msg);
-                return;
             } else {
                 let _ = tx.take().unwrap().send(Message::default());
-                return;
             }
         }) as Box<dyn FnMut(&Event)>);
 

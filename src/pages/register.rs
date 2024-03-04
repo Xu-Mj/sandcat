@@ -138,11 +138,7 @@ impl Component for Register {
                 let regex =
                     Regex::new(r"^([a-zA-Z0-9_\-\.]+)@([a-zA-Z0-9_\-\.]+)\.([a-zA-Z]{2,})$")
                         .unwrap();
-                if regex.is_match(&email_value) {
-                    self.email_format = true;
-                } else {
-                    self.email_format = false;
-                }
+                self.email_format = regex.is_match(&email_value);
                 true
             }
             RegisterMsg::SendCode => {
@@ -229,11 +225,7 @@ impl Component for Register {
                 log::debug!("re pwd");
                 let re_pwd = event.target_dyn_into::<HtmlInputElement>().unwrap().value();
                 self.re_pwd_is_modify = true;
-                if re_pwd != self.pwd {
-                    self.pwd_is_same = false;
-                } else {
-                    self.pwd_is_same = true;
-                }
+                self.pwd_is_same = re_pwd == self.pwd;
                 true
             }
             RegisterMsg::OnFormKeyDown(event) => {
@@ -247,12 +239,12 @@ impl Component for Register {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let avatars = self.avatars.iter().enumerate().map(|(index,avatar)| {
         let on_avatar_click = ctx.link().callback(move |_| RegisterMsg::OnAvatarClick(index));
-            let mut classess = classes!("register-avatar");
+            let mut classes = classes!("register-avatar");
             if avatar == &self.avatar {
-               classess.push( "avatar-active");
+               classes.push( "avatar-active");
             }
             html! {
-                <img src={avatar.to_owned()} class={classess} alt="avatar" onclick={on_avatar_click} />
+                <img src={avatar.to_owned()} class={classes} alt="avatar" onclick={on_avatar_click} />
             }
         }).collect::<Html>();
 

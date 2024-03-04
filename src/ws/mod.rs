@@ -1,1 +1,2 @@
-pub mod ws;
+mod manager;
+pub use manager::WebSocketManager;

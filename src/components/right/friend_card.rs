@@ -104,7 +104,7 @@ impl Component for FriendCard {
         match msg {
             FriendCardMsg::Close => {
                 let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
-                    let node = node
+                let node = node
                     .parent_node()
                     .unwrap()
                     .dyn_into::<HtmlDivElement>()
@@ -162,7 +162,7 @@ impl Component for FriendCard {
                 });
                 false
             }
-            FriendCardMsg::ApplyFriendResult(state) => {
+            FriendCardMsg::ApplyFriendResult(_state) => {
                 self.is_apply = true;
                 self.show_apply = false;
                 // 发送通知，右侧渲染申请列表
@@ -179,35 +179,33 @@ impl Component for FriendCard {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let apply = if ctx.props().is_friend {
             html!()
-        } else {
-            if self.show_apply {
-                let onclick = ctx.link().callback(|_| FriendCardMsg::Apply);
-                let apply_msg = if self.is_apply { "已申请" } else { "申请" };
-                html! {
-                    <div class="apply-detail">
-                        <div class="apply-msg">
-                            <label>{"申请消息"}</label>
-                            <input class="apply-input" ref={self.apply_node.clone()} type="text"/>
-                        </div>
-                        <div class="apply-remark">
-                            <label>{"备注"}</label>
-                            <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
-                        </div>
-                        <div class="apply-friend" >
-                            <button {onclick} disabled={self.is_apply}>{apply_msg}</button>
-                            <button /* onclick={cancle} */>{"取消"}</button>
-                        </div>
+        } else if self.show_apply {
+            let onclick = ctx.link().callback(|_| FriendCardMsg::Apply);
+            let apply_msg = if self.is_apply { "已申请" } else { "申请" };
+            html! {
+                <div class="apply-detail">
+                    <div class="apply-msg">
+                        <label>{"申请消息"}</label>
+                        <input class="apply-input" ref={self.apply_node.clone()} type="text"/>
                     </div>
-                }
-            } else {
-                let onclick = ctx.link().callback(|_| FriendCardMsg::ShowApply);
-                let cancle = ctx.link().callback(|_| FriendCardMsg::Destroy);
-                html! {
+                    <div class="apply-remark">
+                        <label>{"备注"}</label>
+                        <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
+                    </div>
                     <div class="apply-friend" >
-                        <button {onclick}>{"申请好友"}</button>
-                        <button onclick={cancle}>{"取消"}</button>
+                        <button {onclick} disabled={self.is_apply}>{apply_msg}</button>
+                        <button /* onclick={cancel} */>{"取消"}</button>
                     </div>
-                }
+                </div>
+            }
+        } else {
+            let onclick = ctx.link().callback(|_| FriendCardMsg::ShowApply);
+            let cancel = ctx.link().callback(|_| FriendCardMsg::Destroy);
+            html! {
+                <div class="apply-friend" >
+                    <button {onclick}>{"申请好友"}</button>
+                    <button onclick={cancel}>{"取消"}</button>
+                </div>
             }
         };
         html! {

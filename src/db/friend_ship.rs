@@ -3,7 +3,7 @@
 #![allow(unused_assignments)]
 
 use super::{
-    db::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
+    repository::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
     FRIEND_USER_ID_INDEX,
 };
 use crate::model::friend::{FriendShipWithUser, ReadStatus};
@@ -84,7 +84,7 @@ impl FriendShipRepo {
         // on_add_error.forget();
     }
 
-    pub async fn put_friendships(&self, friends: &Vec<FriendShipWithUser>) {
+    pub async fn put_friendships(&self, friends: &[FriendShipWithUser]) {
         let store = self
             .store(&String::from(FRIENDSHIP_TABLE_NAME))
             .await
@@ -190,7 +190,7 @@ impl FriendShipRepo {
             .expect("friend select get error");
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event.target().unwrap().dyn_into::<IdbRequest>().unwrap();
-            let result = result.result().unwrap_or_else(|_| JsValue::NULL);
+            let result = result.result().unwrap_or(JsValue::NULL);
 
             tx.send(result.as_f64().unwrap_or_default() as usize)
                 .unwrap();
@@ -218,7 +218,7 @@ impl FriendShipRepo {
             .expect("friend select get error");
         let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
             let result = event.target().unwrap().dyn_into::<IdbRequest>().unwrap();
-            let result = result.result().unwrap_or_else(|_| JsValue::NULL);
+            let result = result.result().unwrap_or(JsValue::NULL);
             if !result.is_null() {
                 let cursor = result
                     .dyn_ref::<web_sys::IdbCursorWithValue>()
