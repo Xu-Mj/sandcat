@@ -17,7 +17,10 @@ use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
 use crate::model::{
-    message::{Hangup, InviteAnswerMsg, InviteCancelMsg, InviteMsg, InviteNotAnswerMsg},
+    group::Group,
+    message::{
+        Hangup, InviteAnswerMsg, InviteCancelMsg, InviteMsg, InviteNotAnswerMsg, InviteType,
+    },
     ContentType, RightContentType,
 };
 // 不同用户创建不同的数据库，方便查询，提升性能
@@ -92,18 +95,7 @@ pub struct Conversation {
 
 impl From<Hangup> for Conversation {
     fn from(msg: Hangup) -> Self {
-        let last_msg;
-        let last_msg_type;
-        match msg.invite_type {
-            crate::model::message::InviteType::Video => {
-                last_msg = AttrValue::from("[视频通话]");
-                last_msg_type = ContentType::VideoCall;
-            }
-            crate::model::message::InviteType::Audio => {
-                last_msg = AttrValue::from("[语音通话]");
-                last_msg_type = ContentType::AudioCall;
-            }
-        };
+        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -116,18 +108,7 @@ impl From<Hangup> for Conversation {
 
 impl From<InviteNotAnswerMsg> for Conversation {
     fn from(msg: InviteNotAnswerMsg) -> Self {
-        let last_msg;
-        let last_msg_type;
-        match msg.invite_type {
-            crate::model::message::InviteType::Video => {
-                last_msg = AttrValue::from("[视频通话]");
-                last_msg_type = ContentType::VideoCall;
-            }
-            crate::model::message::InviteType::Audio => {
-                last_msg = AttrValue::from("[语音通话]");
-                last_msg_type = ContentType::AudioCall;
-            }
-        };
+        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -140,18 +121,7 @@ impl From<InviteNotAnswerMsg> for Conversation {
 
 impl From<InviteCancelMsg> for Conversation {
     fn from(msg: InviteCancelMsg) -> Self {
-        let last_msg;
-        let last_msg_type;
-        match msg.invite_type {
-            crate::model::message::InviteType::Video => {
-                last_msg = AttrValue::from("[视频通话]");
-                last_msg_type = ContentType::VideoCall;
-            }
-            crate::model::message::InviteType::Audio => {
-                last_msg = AttrValue::from("[语音通话]");
-                last_msg_type = ContentType::AudioCall;
-            }
-        };
+        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -161,20 +131,10 @@ impl From<InviteCancelMsg> for Conversation {
         }
     }
 }
+
 impl From<InviteMsg> for Conversation {
     fn from(msg: InviteMsg) -> Self {
-        let last_msg;
-        let last_msg_type;
-        match msg.invite_type {
-            crate::model::message::InviteType::Video => {
-                last_msg = AttrValue::from("[视频通话]");
-                last_msg_type = ContentType::VideoCall;
-            }
-            crate::model::message::InviteType::Audio => {
-                last_msg = AttrValue::from("[语音通话]");
-                last_msg_type = ContentType::AudioCall;
-            }
-        };
+        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -187,18 +147,7 @@ impl From<InviteMsg> for Conversation {
 
 impl From<InviteAnswerMsg> for Conversation {
     fn from(msg: InviteAnswerMsg) -> Self {
-        let last_msg;
-        let last_msg_type;
-        match msg.invite_type {
-            crate::model::message::InviteType::Video => {
-                last_msg = AttrValue::from("[视频通话]");
-                last_msg_type = ContentType::VideoCall;
-            }
-            crate::model::message::InviteType::Audio => {
-                last_msg = AttrValue::from("[语音通话]");
-                last_msg_type = ContentType::AudioCall;
-            }
-        };
+        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -206,6 +155,24 @@ impl From<InviteAnswerMsg> for Conversation {
             last_msg_type,
             ..Default::default()
         }
+    }
+}
+
+impl From<Group> for Conversation {
+    fn from(value: Group) -> Self {
+        Self {
+            name: value.name,
+            friend_id: value.id,
+            avatar: value.avatar,
+            ..Default::default()
+        }
+    }
+}
+
+fn get_invite_type(t: InviteType) -> (AttrValue, ContentType) {
+    match t {
+        InviteType::Video => (AttrValue::from("[视频通话]"), ContentType::VideoCall),
+        InviteType::Audio => (AttrValue::from("[语音通话]"), ContentType::AudioCall),
     }
 }
 
@@ -273,20 +240,20 @@ pub struct Config {
     // pub update_time: String,
 }
 
-#[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
-// 当前用户表
-pub struct User {
-    #[serde(skip)]
-    pub login: bool,
-    pub id: AttrValue,
-    pub name: AttrValue,
-    pub avatar: AttrValue,
-    pub gender: AttrValue,
-    pub phone: Option<AttrValue>,
-    pub email: Option<AttrValue>,
-    pub address: Option<AttrValue>,
-    pub birthday: Option<chrono::NaiveDateTime>,
-}
+// #[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
+// // 当前用户表
+// pub struct User {
+//     #[serde(skip)]
+//     pub login: bool,
+//     pub id: AttrValue,
+//     pub name: AttrValue,
+//     pub avatar: AttrValue,
+//     pub gender: AttrValue,
+//     pub phone: Option<AttrValue>,
+//     pub email: Option<AttrValue>,
+//     pub address: Option<AttrValue>,
+//     pub birthday: Option<chrono::NaiveDateTime>,
+// }
 
 // 定义数据库查询状态
 #[derive(Debug, Clone)]

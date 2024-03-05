@@ -75,7 +75,7 @@ impl Component for Left {
                 <Top avatar={self.state.login_user.avatar.clone()} />
                 <div class="left-down">
                     <div class={classes}>
-                    <Messages />
+                    <Messages user_id={self.state.login_user.id.clone()}/>
                     <Contacts user_id={self.state.login_user.id.clone()}/>
                     </div>
                 </div>

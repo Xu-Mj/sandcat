@@ -1,3 +1,4 @@
+pub(crate) mod group;
 pub(crate) mod user;
 
 use crate::db::TOKEN;

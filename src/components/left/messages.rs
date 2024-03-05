@@ -5,6 +5,7 @@ use yew::prelude::*;
 
 use crate::components::left::add_conv::AddConv;
 use crate::db::message::MessageRepo;
+use crate::model::group::{Group, GroupMember};
 use crate::model::message::Msg;
 use crate::model::RightContentType;
 use crate::pages::{ConvState, WaitState};
@@ -16,7 +17,9 @@ use crate::{
 };
 
 #[derive(Properties, PartialEq, Debug)]
-pub struct MessagesProps {}
+pub struct MessagesProps {
+    pub user_id: AttrValue,
+}
 
 pub struct Messages {
     list: IndexMap<AttrValue, Conversation>,
@@ -42,7 +45,7 @@ pub enum MessagesMsg {
     ConvStateChanged(Rc<ConvState>),
     WaitStateChanged,
     AddConv,
-    CreateGroup(Vec<String>),
+    CreateGroup((Group, Vec<GroupMember>)),
 }
 
 impl Component for Messages {
@@ -242,10 +245,10 @@ impl Component for Messages {
                 }
             }
             MessagesMsg::WaitStateChanged => false,
-            MessagesMsg::CreateGroup(list) => {
+            MessagesMsg::CreateGroup((g, list)) => {
                 self.show_friend_list = false;
                 // create group conversation and send 'create group' message
-                self.create_group(list);
+                self.create_group(ctx, g, list);
                 true
             }
         }
@@ -308,6 +311,7 @@ impl Component for Messages {
         if self.show_friend_list {
             friend_list = html! {
                 <AddConv
+                    user_id={ctx.props().user_id.clone()}
                     close_back={plus_click.clone()} {submit_back}
                     />
             };
@@ -339,8 +343,15 @@ fn get_msg_type(msg_type: ContentType, content: &AttrValue) -> AttrValue {
 }
 
 impl Messages {
-    fn create_group(&self, list: Vec<String>) {
+    fn create_group(&self, ctx: &Context<Self>, g: Group, list: Vec<GroupMember>) {
         log::debug!("list: {:?}", list);
+        ctx.link().send_future(async move {
+            let conv = Conversation::from(g);
+            let conv_repo = ConvRepo::new().await;
+            conv_repo.put_conv(&conv, false).await.unwrap();
+            log::debug!("创建会话: {:?}", &conv);
+            MessagesMsg::InsertConv(conv)
+        });
     }
 
     fn operate_msg(

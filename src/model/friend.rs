@@ -81,12 +81,6 @@ pub struct FriendShipWithUser {
     pub is_self: bool,
 }
 
-pub struct Group {
-    pub id: AttrValue,
-    pub name: AttrValue,
-    pub avatar: AttrValue,
-}
-
 pub enum ItemType {
     Friend,
     Group,
@@ -113,24 +107,6 @@ impl ItemInfo for Friend {
 
     fn get_type(&self) -> ItemType {
         ItemType::Friend
-    }
-
-    fn avatar(&self) -> AttrValue {
-        self.avatar.clone()
-    }
-}
-
-impl ItemInfo for Group {
-    fn name(&self) -> AttrValue {
-        self.name.clone()
-    }
-
-    fn id(&self) -> AttrValue {
-        self.id.clone()
-    }
-
-    fn get_type(&self) -> ItemType {
-        ItemType::Group
     }
 
     fn avatar(&self) -> AttrValue {
