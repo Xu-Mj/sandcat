@@ -166,7 +166,7 @@
         text-align: justify;
         -webkit-text-fill-color: transparent;
         background: var(--gradient) calc(.5em - var(--size) / 2) / calc(3 * var(--size));
-        -webkit-background-clip: text;
+        background-clip: text;
     }
 
     ::-webkit-meter-bar {

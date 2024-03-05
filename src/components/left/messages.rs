@@ -42,6 +42,7 @@ pub enum MessagesMsg {
     ConvStateChanged(Rc<ConvState>),
     WaitStateChanged,
     AddConv,
+    CreateGroup(Vec<String>),
 }
 
 impl Component for Messages {
@@ -241,8 +242,15 @@ impl Component for Messages {
                 }
             }
             MessagesMsg::WaitStateChanged => false,
+            MessagesMsg::CreateGroup(list) => {
+                self.show_friend_list = false;
+                // create group conversation and send 'create group' message
+                self.create_group(list);
+                true
+            }
         }
     }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         let content = if self.is_searching {
             if self.result.is_empty() {
@@ -293,16 +301,15 @@ impl Component for Messages {
             .link()
             .callback(move |_| MessagesMsg::CleanupSearchResult);
         let plus_click = ctx.link().callback(|_| MessagesMsg::AddConv);
+        let submit_back = ctx.link().callback(MessagesMsg::CreateGroup);
 
         // spawn friend list
         let mut friend_list = html!();
         if self.show_friend_list {
             friend_list = html! {
-                <div class="friend-list">
-                    <AddConv
-                       close_back={plus_click.clone()}
-                       />
-                </div>
+                <AddConv
+                    close_back={plus_click.clone()} {submit_back}
+                    />
             };
         }
         html! {
@@ -332,6 +339,10 @@ fn get_msg_type(msg_type: ContentType, content: &AttrValue) -> AttrValue {
 }
 
 impl Messages {
+    fn create_group(&self, list: Vec<String>) {
+        log::debug!("list: {:?}", list);
+    }
+
     fn operate_msg(
         &mut self,
         ctx: &Context<Self>,
