@@ -168,6 +168,7 @@ impl AddConv {
         ctx.link().send_future(async move {
             let mut values = Vec::with_capacity(nodes.length() as usize);
             let mut ids = Vec::with_capacity(nodes.length() as usize);
+            let mut avatar = Vec::with_capacity(nodes.length() as usize);
             let mut group_name = String::new();
             for i in 0..nodes.length() {
                 let node = nodes.item(i).unwrap();
@@ -185,6 +186,7 @@ impl AddConv {
                                 name = friend.remark.as_ref().unwrap().clone();
                             }
                             group_name.push_str(name.as_str());
+                            avatar.push(friend.avatar.clone().to_string());
                             values.push(GroupMember::from(friend));
                         }
                     }
@@ -193,12 +195,16 @@ impl AddConv {
             if ids.is_empty() {
                 return AddConvMsg::SubmitEmpty;
             }
+            group_name.push_str("Group");
             let group_req = GroupRequest {
+                owner: user_id.to_string(),
+                avatar,
                 group_name,
                 members_id: ids,
+                id: String::new(),
             };
             // send create request
-            match api::group::create_group(user_id, group_req).await {
+            match api::group::create_group(group_req).await {
                 Ok(g) => {
                     if let Err(err) = GroupRepo::new().await.put(&g).await {
                         return AddConvMsg::RequestCreateGroupFail(err);

@@ -228,7 +228,6 @@ impl Component for Sender {
                     self.timer = Some(Timeout::new(1000, move || {
                         ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
                     }));
-
                     return true;
                 }
                 // 存储消息、发送消息

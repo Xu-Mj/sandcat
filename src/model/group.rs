@@ -15,6 +15,9 @@ pub struct Group {
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct GroupRequest {
+    pub id: String,
+    pub owner: String,
+    pub avatar: Vec<String>,
     pub group_name: String,
     pub members_id: Vec<String>,
 }
