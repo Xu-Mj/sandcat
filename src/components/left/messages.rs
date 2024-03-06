@@ -141,6 +141,10 @@ impl Component for Messages {
                         };
                         self.operate_msg(ctx, msg.friend_id, conv)
                     }
+                    Msg::CreateGroup(_msg) => {
+                        // create group conversation directly
+                        false
+                    }
                     Msg::SingleCallInvite(msg) => {
                         let friend_id = msg.friend_id.clone();
                         let mut conv = Conversation::from(msg);

@@ -7,6 +7,7 @@ use crate::utils;
 
 use super::friend::Friend;
 use super::group::Group;
+use super::user::UserView;
 
 pub(crate) const DEFAULT_HELLO_MESSAGE: &str = "I've accepted your friend request. Now let's chat!";
 
@@ -140,17 +141,18 @@ pub struct CreateGroup {
     pub owner: AttrValue,
     pub avatar: AttrValue,
     pub group_name: AttrValue,
-    pub members_id: Vec<AttrValue>,
+    pub members: Vec<UserView>,
 }
 
 impl From<Group> for CreateGroup {
     fn from(value: Group) -> Self {
+        // need to query user list for members
         CreateGroup {
             id: value.id,
             owner: value.owner,
             avatar: value.avatar,
             group_name: value.name,
-            members_id: value.members_id.into_iter().map(AttrValue::from).collect(),
+            members: vec![],
         }
     }
 }

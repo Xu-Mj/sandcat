@@ -60,3 +60,14 @@ pub struct UserRegister {
     pub email: AttrValue,
     pub code: AttrValue,
 }
+
+/// for group members
+#[derive(Clone, Serialize, Default, Deserialize, Debug, PartialEq)]
+pub struct UserView {
+    pub id: String,
+    pub name: String,
+    pub account: String,
+    pub avatar: String,
+    pub gender: String,
+    pub age: i32,
+}
