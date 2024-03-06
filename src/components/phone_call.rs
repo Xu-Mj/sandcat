@@ -19,13 +19,13 @@ use crate::icons::{
     AnswerPhoneIcon, HangupInNotifyIcon, MicrophoneIcon, MicrophoneMuteIcon, VideoRecordIcon,
     VolumeIcon, VolumeMuteIcon,
 };
-use crate::model::friend::ItemInfo;
 use crate::model::message::{
     Agree, Hangup, InviteAnswerMsg, InviteCancelMsg, InviteInfo, InviteMsg, InviteNotAnswerMsg,
     InviteType, Message, Msg,
 };
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::ContentType;
+use crate::model::ItemInfo;
 use crate::pages::RecSendCallState;
 use crate::ws::WebSocketManager;
 use crate::{utils, web_rtc};

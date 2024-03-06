@@ -8,6 +8,7 @@ pub mod user;
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
+use yew::AttrValue;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ContentType {
@@ -21,6 +22,21 @@ pub enum ContentType {
     Emoji,
     VideoCall,
     AudioCall,
+}
+
+pub enum ItemType {
+    Friend,
+    Group,
+}
+
+pub trait ItemInfo {
+    fn name(&self) -> AttrValue;
+
+    fn id(&self) -> AttrValue;
+
+    fn get_type(&self) -> ItemType;
+
+    fn avatar(&self) -> AttrValue;
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]

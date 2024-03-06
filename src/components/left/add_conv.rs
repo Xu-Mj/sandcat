@@ -204,7 +204,7 @@ impl AddConv {
                         return AddConvMsg::RequestCreateGroupFail(err);
                     }
                     for v in values.iter_mut() {
-                        v.group_id = g.id;
+                        v.group_id = g.id.clone();
                         if let Err(e) = GroupMembersRepo::new().await.put(v).await {
                             log::error!("save group member error: {:?}", e);
                             continue;

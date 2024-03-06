@@ -1,11 +1,11 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
-use super::friend::{Friend, ItemInfo, ItemType};
+use super::{friend::Friend, ItemInfo, ItemType};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct Group {
-    pub id: i64,
+    pub id: AttrValue,
     pub name: AttrValue,
     pub avatar: AttrValue,
     pub members_id: Vec<String>,
@@ -23,7 +23,7 @@ pub struct GroupRequest {
 pub struct GroupMember {
     pub id: i64,
     pub user_id: AttrValue,
-    pub group_id: i64,
+    pub group_id: AttrValue,
     pub name: AttrValue,
     pub group_name: Option<AttrValue>,
     pub avatar: AttrValue,
@@ -35,7 +35,7 @@ impl From<Friend> for GroupMember {
         Self {
             id: 0,
             user_id: value.friend_id,
-            group_id: 0,
+            group_id: AttrValue::default(),
             name: value.name,
             group_name: None,
             avatar: value.avatar,
@@ -50,7 +50,7 @@ impl ItemInfo for Group {
     }
 
     fn id(&self) -> AttrValue {
-        self.id.to_string().into()
+        self.id.clone()
     }
 
     fn get_type(&self) -> ItemType {

@@ -11,7 +11,6 @@ use crate::model::group::Group;
 use super::{repository::Repository, GROUP_TABLE_NAME};
 
 pub struct GroupRepo(Repository);
-const ID: &str = "id";
 impl Deref for GroupRepo {
     type Target = Repository;
 
@@ -32,10 +31,10 @@ impl GroupRepo {
         Ok(())
     }
 
-    pub async fn get(&self) -> Result<Option<Group>, JsValue> {
+    pub async fn get(&self, id: AttrValue) -> Result<Option<Group>, JsValue> {
         let (tx, rx) = oneshot::channel::<Option<Group>>();
         let store = self.store(GROUP_TABLE_NAME).await?;
-        let request = store.get(&JsValue::from(ID))?;
+        let request = store.get(&JsValue::from(id.as_str()))?;
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()

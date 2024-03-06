@@ -30,7 +30,7 @@ impl MessageRepo {
     pub async fn get_last_msg(&self, friend_id: AttrValue) -> Result<Message, JsValue> {
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<Message>();
-        let store = self.store(&String::from(MESSAGE_TABLE_NAME)).await.unwrap();
+        let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
 
         // let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
         let rang = IdbKeyRange::only(&JsValue::from(friend_id.as_str()));
@@ -75,6 +75,7 @@ impl MessageRepo {
         success.forget();
         Ok(rx.await.unwrap())
     }
+
     pub async fn get_messages(
         &self,
         friend_id: AttrValue,
@@ -85,7 +86,7 @@ impl MessageRepo {
         let mut advanced = true;
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<Vec<Message>>();
-        let store = self.store(&String::from(MESSAGE_TABLE_NAME)).await.unwrap();
+        let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
         let rang = IdbKeyRange::only(&JsValue::from(friend_id.as_str()));
         let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
         let request = index
@@ -141,7 +142,7 @@ impl MessageRepo {
     }
 
     pub async fn add_message(&self, msg: &mut Message) -> Result<(), JsValue> {
-        let store = self.store(&String::from(MESSAGE_TABLE_NAME)).await.unwrap();
+        let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
         let index = store.index(MESSAGE_ID_INDEX).unwrap();
         let (tx, rx) = oneshot::channel::<Option<Message>>();
         let req = index.get(&JsValue::from(msg.msg_id.as_str())).unwrap();

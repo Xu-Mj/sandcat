@@ -5,6 +5,7 @@ pub mod friend;
 pub mod friend_ship;
 pub mod group;
 pub mod group_members;
+pub mod group_msg;
 pub mod message;
 pub mod repository;
 pub mod user;
@@ -27,6 +28,7 @@ pub const CONVERSATION_TABLE_NAME: &str = "conversations";
 pub const MESSAGE_TABLE_NAME: &str = "messages";
 pub const USER_TABLE_NAME: &str = "users";
 pub const GROUP_TABLE_NAME: &str = "groups";
+pub const GROUP_MSG_TABLE_NAME: &str = "group_messages";
 pub const GROUP_MEMBERS_TABLE_NAME: &str = "group_members";
 
 pub const FRIENDSHIP_UNREAD_INDEX: &str = "read";

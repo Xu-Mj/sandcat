@@ -8,12 +8,14 @@ pub mod sender;
 
 use std::rc::Rc;
 
+use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use crate::components::right::friendship_list::FriendShipList;
 use crate::db::friend::FriendRepo;
+use crate::db::group::GroupRepo;
 use crate::icons::{CloseIcon, MaxIcon};
-use crate::model::friend::ItemInfo;
+use crate::model::ItemInfo;
 use crate::model::RightContentType;
 use crate::pages::{ConvState, FriendListState};
 use crate::{
@@ -56,7 +58,12 @@ impl Right {
                         });
                     }
                     RightContentType::Group => {
-                        // _ctx.link().send_message(ContentChange(ContentType::MessageGroup));
+                        let ctx = ctx.link().clone();
+                        spawn_local(async move {
+                            if let Ok(Some(group)) = GroupRepo::new().await.get(id).await {
+                                ctx.send_message(RightMsg::ContentChange(Some(Box::new(group))));
+                            }
+                        });
                     }
 
                     _ => {}

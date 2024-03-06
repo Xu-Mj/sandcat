@@ -9,8 +9,10 @@ use web_sys::{
     ClipboardEvent, DataTransferItem, DataTransferItemList, File, FileReader, HtmlElement,
     HtmlInputElement, HtmlTextAreaElement, Response,
 };
+use yew::platform::spawn_local;
 use yew::prelude::*;
 
+use crate::db::group_msg::GroupMsgRepo;
 use crate::icons::{CloseIcon, ImageIcon};
 use crate::model::message::{InviteMsg, InviteType, Msg};
 use crate::model::RightContentType;
@@ -61,7 +63,6 @@ pub enum SenderMsg {
     CleanEmptyMsgWarn,
     SendEmoji(Emoji),
     ShowEmoji,
-    SendComplete,
     // SenderResize(MouseEvent),
     SendFileIconClicked,
     FileInputChanged(Event),
@@ -85,11 +86,20 @@ pub struct SenderProps {
 }
 
 impl Sender {
+    // fixme need to wait message store success
     fn store_message(&self, ctx: &Context<Self>, mut msg: Message) {
-        ctx.link().send_future(async move {
-            let msg_repo = MessageRepo::new().await;
-            msg_repo.add_message(&mut msg).await.unwrap();
-            SenderMsg::SendComplete
+        let conv_type = ctx.props().conv_type.clone();
+        spawn_local(async move {
+            match conv_type {
+                RightContentType::Friend => {
+                    let msg_repo = MessageRepo::new().await;
+                    msg_repo.add_message(&mut msg).await.unwrap();
+                }
+                RightContentType::Group => {
+                    GroupMsgRepo::new().await.put(&msg).await.unwrap();
+                }
+                _ => {}
+            }
         });
     }
 
@@ -274,8 +284,6 @@ impl Component for Sender {
                 self.show_emoji = !self.show_emoji;
                 true
             }
-            SenderMsg::SendComplete => false,
-
             SenderMsg::SendFileIconClicked => {
                 let file_input = self.file_input_ref.cast::<HtmlElement>().unwrap();
                 file_input.click();

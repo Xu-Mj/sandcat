@@ -1,3 +1,4 @@
+use nanoid::nanoid;
 // use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
@@ -17,10 +18,10 @@ pub async fn create_group(user_id: AttrValue, data: GroupRequest) -> Result<Grou
     //     .json()
     //     .await
     //     .map_err(|err| JsValue::from(err.to_string()))
-
+    log::debug!("send create group reeques by {:?}", user_id);
     Ok(Group {
-        id: 1,
-        name: format!("{}、test_group", user_id).into(),
+        id: nanoid!().into(),
+        name: data.group_name.into(),
         avatar: "./images/avatars/avatar1.png".to_string().into(),
         members_id: data.members_id,
         create_time: chrono::Local::now().timestamp_millis(),

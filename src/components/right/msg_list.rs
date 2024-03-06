@@ -4,8 +4,10 @@ use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 use yew::prelude::*;
 
-use crate::model::friend::ItemInfo;
+use crate::db::group::GroupRepo;
+use crate::db::group_msg::GroupMsgRepo;
 use crate::model::message::Msg;
+use crate::model::ItemInfo;
 use crate::model::RightContentType;
 use crate::{
     components::right::{msg_item::MsgItem, sender::Sender},
@@ -63,7 +65,7 @@ impl MessageList {
     fn query(&self, ctx: &Context<Self>) {
         let id = ctx.props().friend_id.clone();
         log::debug!("message list props id: {} in query method", id.clone());
-        if id != AttrValue::default() {
+        if !id.is_empty() {
             // 查询数据库
             let id = id.clone();
             let page = self.page;
@@ -71,15 +73,31 @@ impl MessageList {
             let conv_type = ctx.props().conv_type.clone();
             log::debug!("props conv type :{:?}", conv_type);
             ctx.link().send_future(async move {
-                let msg_repo = MessageRepo::new().await;
-                let list = msg_repo
-                    .get_messages(id.clone(), page, page_size)
-                    .await
-                    .unwrap();
-                MessageListMsg::QueryMsgList(list)
+                match conv_type {
+                    RightContentType::Friend => {
+                        let list = MessageRepo::new()
+                            .await
+                            .get_messages(id.clone(), page, page_size)
+                            .await
+                            .unwrap();
+                        MessageListMsg::QueryMsgList(list)
+                    }
+                    RightContentType::Group => {
+                        let list = GroupMsgRepo::new()
+                            .await
+                            .get_messages(id.clone(), page, page_size)
+                            .await
+                            .unwrap();
+                        MessageListMsg::QueryMsgList(list)
+                    }
+                    _ => {
+                        todo!()
+                    }
+                }
             });
         }
     }
+
     fn query_friend(&self, ctx: &Context<Self>) {
         let id = ctx.props().friend_id.clone();
         log::debug!("message list props id: {} in query method", id.clone());
@@ -95,7 +113,11 @@ impl MessageList {
                     RightContentType::Friend => {
                         friend = Some(Box::new(FriendRepo::new().await.get_friend(id).await));
                     }
-                    RightContentType::Group => {}
+                    RightContentType::Group => {
+                        friend = Some(Box::new(
+                            GroupRepo::new().await.get(id).await.unwrap().unwrap(),
+                        ));
+                    }
                     _ => {}
                 }
                 MessageListMsg::QueryFriend(friend)

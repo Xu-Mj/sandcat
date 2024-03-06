@@ -11,7 +11,7 @@ use crate::model::group::GroupMember;
 use super::{repository::Repository, GROUP_MEMBERS_TABLE_NAME};
 
 pub struct GroupMembersRepo(Repository);
-const ID: &str = "id";
+
 impl Deref for GroupMembersRepo {
     type Target = Repository;
 
@@ -33,10 +33,10 @@ impl GroupMembersRepo {
         Ok(())
     }
 
-    pub async fn get(&self) -> Result<Option<GroupMember>, JsValue> {
+    pub async fn get(&self, id: i64) -> Result<Option<GroupMember>, JsValue> {
         let (tx, rx) = oneshot::channel::<Option<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
-        let request = store.get(&JsValue::from(ID))?;
+        let request = store.get(&JsValue::from(id))?;
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()

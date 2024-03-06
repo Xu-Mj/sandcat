@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
+use super::{ItemInfo, ItemType};
+
 #[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
 pub struct FriendShipRequest {
     // #[serde(skip_serializing_if = "is_zero")]
@@ -79,21 +81,6 @@ pub struct FriendShipWithUser {
     pub read: ReadStatus,
     #[serde(default)]
     pub is_self: bool,
-}
-
-pub enum ItemType {
-    Friend,
-    Group,
-}
-
-pub trait ItemInfo {
-    fn name(&self) -> AttrValue;
-
-    fn id(&self) -> AttrValue;
-
-    fn get_type(&self) -> ItemType;
-
-    fn avatar(&self) -> AttrValue;
 }
 
 impl ItemInfo for Friend {
