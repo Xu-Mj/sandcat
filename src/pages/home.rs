@@ -256,6 +256,7 @@ impl Component for Home {
                 }
                 current_item::save_com_type(&component_type).unwrap();
                 shared_state.component_type = component_type;
+                // 是否会重新渲染所有子元素？
                 true
             }
             HomeMsg::SwitchFriend(conv) => {
@@ -398,6 +399,11 @@ impl Component for Home {
                                 .map_err(|err| log::error!("save message fail:{:?}", err));
                             HomeMsg::SendMessage(Msg::Single(msg))
                         });
+                    }
+                    Msg::CreateGroup(_) => {
+                        // receive create group message
+                        ctx.link()
+                            .send_message(HomeMsg::RecSendMsgStateChange(message));
                     }
                 }
                 false

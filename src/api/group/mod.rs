@@ -20,6 +20,7 @@ pub async fn create_group(data: GroupRequest) -> Result<Group, JsValue> {
     // log::debug!("send create group reeques by {:?}", user_id);
     Ok(Group {
         id: response.id.into(),
+        owner: response.owner.into(),
         name: response.group_name.into(),
         avatar: response.avatar.join(",").into(),
         members_id: data.members_id,

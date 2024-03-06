@@ -6,6 +6,7 @@ use super::{friend::Friend, ItemInfo, ItemType};
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct Group {
     pub id: AttrValue,
+    pub owner: AttrValue,
     pub name: AttrValue,
     pub avatar: AttrValue,
     pub members_id: Vec<String>,

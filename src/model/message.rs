@@ -6,6 +6,7 @@ use crate::model::ContentType;
 use crate::utils;
 
 use super::friend::Friend;
+use super::group::Group;
 
 pub(crate) const DEFAULT_HELLO_MESSAGE: &str = "I've accepted your friend request. Now let's chat!";
 
@@ -134,16 +135,31 @@ impl Message {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct CreateGroup {
+    pub id: AttrValue,
+    pub owner: AttrValue,
+    pub avatar: AttrValue,
+    pub group_name: AttrValue,
+    pub members_id: Vec<AttrValue>,
+}
+
+impl From<Group> for CreateGroup {
+    fn from(value: Group) -> Self {
+        CreateGroup {
+            id: value.id,
+            owner: value.owner,
+            avatar: value.avatar,
+            group_name: value.name,
+            members_id: value.members_id.into_iter().map(AttrValue::from).collect(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Msg {
     Single(Message),
-    SingleCallOffer(Offer),
-    SingleCallInvite(InviteMsg),
-    SingleCallInviteCancel(InviteCancelMsg),
-    SingleCallNotAnswer(InviteNotAnswerMsg),
-    SingleCallInviteAnswer(InviteAnswerMsg),
-    SingleCallAgree(Agree),
-    SingleCallHangUp(Hangup),
     Group(Message),
+    CreateGroup(CreateGroup),
     SendRelationshipReq(FriendShipRequest),
     RecRelationship(FriendShipWithUser),
     RelationshipRes(Friend),
@@ -151,6 +167,13 @@ pub enum Msg {
     SingleDeliveredNotice(DeliveredNotice),
     FriendshipDeliveredNotice(DeliveredNotice),
     OfflineSync(Message),
+    SingleCallOffer(Offer),
+    SingleCallInvite(InviteMsg),
+    SingleCallInviteCancel(InviteCancelMsg),
+    SingleCallNotAnswer(InviteNotAnswerMsg),
+    SingleCallInviteAnswer(InviteAnswerMsg),
+    SingleCallAgree(Agree),
+    SingleCallHangUp(Hangup),
     NewIceCandidate(Candidate),
 }
 

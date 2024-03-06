@@ -251,7 +251,8 @@ impl Component for MessageList {
                     | Msg::OfflineSync(_)
                     | Msg::NewIceCandidate(_)
                     | Msg::RelationshipRes(_)
-                    | Msg::FriendshipDeliveredNotice(_) => false,
+                    | Msg::FriendshipDeliveredNotice(_)
+                    | Msg::CreateGroup(_) => false,
                 }
             }
             MessageListMsg::GoBottom => {
