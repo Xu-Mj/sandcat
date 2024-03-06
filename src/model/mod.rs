@@ -9,8 +9,6 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-use crate::db::MessageType;
-
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ContentType {
     #[default]
@@ -71,6 +69,26 @@ impl Display for RightContentType {
             RightContentType::UserInfo => write!(f, "user_info"),
             RightContentType::FriendShipList => write!(f, "frienship_list"),
             RightContentType::Service => write!(f, "service"),
+        }
+    }
+}
+
+#[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
+pub enum MessageType {
+    #[default]
+    Default,
+    Single,
+    Group,
+    DeliveredNotice,
+    ReadNotice,
+}
+
+impl From<RightContentType> for MessageType {
+    fn from(conv_type: RightContentType) -> Self {
+        match conv_type {
+            RightContentType::Friend => MessageType::Single,
+            RightContentType::Group => MessageType::Group,
+            _ => MessageType::Default,
         }
     }
 }

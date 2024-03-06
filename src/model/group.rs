@@ -8,8 +8,8 @@ pub struct Group {
     pub id: AttrValue,
     pub name: AttrValue,
     pub avatar: AttrValue,
-    pub members_id: Vec<GroupMember>,
-    pub create_time: chrono::NaiveDateTime,
+    pub members_id: Vec<String>,
+    pub create_time: i64,
     pub publish_msg: AttrValue,
 }
 
@@ -17,6 +17,8 @@ pub struct Group {
 #[derive(Debug, Clone, Default, Deserialize)]
 pub struct GroupMember {
     pub id: AttrValue,
+    pub user_id: AttrValue,
+    pub group_id: AttrValue,
     pub name: AttrValue,
     pub group_name: Option<AttrValue>,
     pub avatar: AttrValue,
@@ -27,6 +29,8 @@ impl From<Friend> for GroupMember {
     fn from(value: Friend) -> Self {
         Self {
             id: AttrValue::default(),
+            user_id: value.friend_id,
+            group_id: AttrValue::default(),
             name: value.name,
             group_name: None,
             avatar: value.avatar,

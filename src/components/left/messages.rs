@@ -5,13 +5,14 @@ use yew::prelude::*;
 
 use crate::components::left::add_conv::AddConv;
 use crate::db::message::MessageRepo;
+use crate::model::conversation::Conversation;
 use crate::model::group::{Group, GroupMember};
 use crate::model::message::Msg;
 use crate::model::RightContentType;
 use crate::pages::{ConvState, WaitState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
-    db::{conv::ConvRepo, friend::FriendRepo, Conversation},
+    db::{conv::ConvRepo, friend::FriendRepo},
     model::ContentType,
     pages::{CommonProps, ComponentType, RecSendMessageState},
 };
