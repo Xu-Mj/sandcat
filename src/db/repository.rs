@@ -8,13 +8,13 @@ use web_sys::{
 use yew::prelude::*;
 
 use crate::db::{
-    CONFIG_TABLE_NAME, CONVERSATION_FRIEND_ID_INDEX, CONVERSATION_LAST_MSG_TIME_INDEX,
-    CONVERSATION_TABLE_NAME, CURRENT_CONV_TABLE_NAME, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME,
-    FRIENDSHIP_UNREAD_INDEX, FRIEND_ADDRESS_INDEX, FRIEND_FRIEND_ID_INDEX, FRIEND_GENDER_INDEX,
-    FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX, FRIEND_REMARK_INDEX, FRIEND_TABLE_NAME,
-    FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX, MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_ID_INDEX,
-    MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX,
-    MESSAGE_TYPE_INDEX, USER_TABLE_NAME,
+    CONVERSATION_FRIEND_ID_INDEX, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME,
+    FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_ADDRESS_INDEX,
+    FRIEND_FRIEND_ID_INDEX, FRIEND_GENDER_INDEX, FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX,
+    FRIEND_REMARK_INDEX, FRIEND_TABLE_NAME, FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX,
+    GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX,
+    MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME,
+    MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX, USER_TABLE_NAME,
 };
 
 use super::DB_NAME;
@@ -87,30 +87,6 @@ impl Repository {
             store
                 .create_index_with_str(MESSAGE_IS_READ_INDEX, "is_read")
                 .unwrap();
-            let store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(CONFIG_TABLE_NAME),
-                    &parameters,
-                )
-                .unwrap();
-
-            let mut param: IdbIndexParameters = IdbIndexParameters::new();
-            param.unique(true);
-            store
-                .create_index_with_str_and_optional_parameters("name", "name", &param)
-                .unwrap();
-            let store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(CURRENT_CONV_TABLE_NAME),
-                    &parameters,
-                )
-                .unwrap();
-
-            let mut param: IdbIndexParameters = IdbIndexParameters::new();
-            param.unique(true);
-            store
-                .create_index_with_str_and_optional_parameters("item_id", "item_id", &param)
-                .unwrap();
 
             let store = db
                 .create_object_store_with_optional_parameters(
@@ -125,6 +101,25 @@ impl Repository {
                 .create_index_with_str(CONVERSATION_LAST_MSG_TIME_INDEX, "last_msg_time")
                 .unwrap();
 
+            let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
+            parameters.key_path(Some(&JsValue::from_str("id")));
+            parameters.auto_increment(true);
+            let _store = db
+                .create_object_store_with_optional_parameters(
+                    &String::from(GROUP_TABLE_NAME),
+                    &parameters,
+                )
+                .unwrap();
+
+            let store = db
+                .create_object_store_with_optional_parameters(
+                    &String::from(GROUP_MEMBERS_TABLE_NAME),
+                    &parameters,
+                )
+                .unwrap();
+            store
+                .create_index_with_str(GROUP_ID_INDEX, "group_id")
+                .unwrap();
             let mut parameter = IdbObjectStoreParameters::new();
             parameter.key_path(Some(&JsValue::from(FRIENDSHIP_ID_INDEX)));
             let store = db

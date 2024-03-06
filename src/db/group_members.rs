@@ -1,18 +1,18 @@
+use std::ops::Deref;
+
 use futures_channel::oneshot;
 use indexmap::IndexMap;
-use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{Event, IdbRequest};
-use yew::AttrValue;
+use web_sys::IdbRequest;
+use yew::{AttrValue, Event};
 
-use crate::model;
-use crate::model::friend::Friend;
+use crate::model::group::GroupMember;
 
-use super::{repository::Repository, FRIEND_FRIEND_ID_INDEX, FRIEND_TABLE_NAME};
+use super::{repository::Repository, GROUP_MEMBERS_TABLE_NAME};
 
-pub struct FriendRepo(Repository);
-
-impl Deref for FriendRepo {
+pub struct GroupMembersRepo(Repository);
+const ID: &str = "id";
+impl Deref for GroupMembersRepo {
     type Target = Repository;
 
     fn deref(&self) -> &Self::Target {
@@ -20,35 +20,23 @@ impl Deref for FriendRepo {
     }
 }
 
-impl FriendRepo {
+#[allow(dead_code)]
+impl GroupMembersRepo {
     pub async fn new() -> Self {
         Self(Repository::new().await)
     }
 
-    pub async fn put_friend(&self, friend: &Friend) {
-        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
-        let value = serde_wasm_bindgen::to_value(friend).unwrap();
-        store.put(&value).unwrap();
+    pub async fn put(&self, group: &GroupMember) -> Result<(), JsValue> {
+        let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
+        let value = serde_wasm_bindgen::to_value(group)?;
+        store.put(&value)?;
+        Ok(())
     }
 
-    pub async fn put_friend_list(&self, friends: &[model::friend::Friend]) {
-        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
-        friends.iter().for_each(|item| {
-            let value = serde_wasm_bindgen::to_value(item).unwrap();
-            store.put(&value).unwrap();
-        });
-    }
-
-    pub async fn get_friend(&self, friend_id: AttrValue) -> Friend {
-        // 声明一个channel，接收查询结果
-        let (tx, rx) = oneshot::channel::<Friend>();
-        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
-        let index = store
-            .index(FRIEND_FRIEND_ID_INDEX)
-            .expect("friend select index error");
-        let request = index
-            .get(&JsValue::from(friend_id.as_str()))
-            .expect("friend select get error");
+    pub async fn get(&self) -> Result<Option<GroupMember>, JsValue> {
+        let (tx, rx) = oneshot::channel::<Option<GroupMember>>();
+        let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
+        let request = store.get(&JsValue::from(ID))?;
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()
@@ -57,11 +45,11 @@ impl FriendRepo {
                 .unwrap()
                 .result()
                 .unwrap();
-            let mut friend = Friend::default();
+            let mut group = None;
             if !result.is_undefined() && !result.is_null() {
-                friend = serde_wasm_bindgen::from_value(result).unwrap();
+                group = Some(serde_wasm_bindgen::from_value(result).unwrap());
             }
-            tx.send(friend).unwrap();
+            tx.send(group).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         let on_add_error = Closure::once(move |event: &Event| {
@@ -69,20 +57,20 @@ impl FriendRepo {
             web_sys::console::log_1(&event.into());
         });
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        rx.await.unwrap()
+        Ok(rx.await.unwrap())
     }
 
-    pub async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue> {
-        let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Friend>>();
-        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
-        let request = store.open_cursor().unwrap();
+    pub async fn get_list(&self) -> Result<IndexMap<AttrValue, GroupMember>, JsValue> {
+        let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, GroupMember>>();
+        let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
+        let request = store.open_cursor()?;
         let on_add_error = Closure::once(move |event: &Event| {
             web_sys::console::log_1(&String::from("读取数据失败").into());
             web_sys::console::log_1(&event.into());
         });
 
-        let convs = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
-        let convs = convs.clone();
+        let groups = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
+        let groups = groups.clone();
         let mut tx = Some(tx);
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         let success = Closure::wrap(Box::new(move |event: &Event| {
@@ -103,14 +91,14 @@ impl FriendRepo {
                     .expect("result is IdbCursorWithValue; qed");
                 let value = cursor.value().unwrap();
                 // 反序列化
-                let conv: Friend = serde_wasm_bindgen::from_value(value).unwrap();
-                let id = conv.friend_id.clone();
-                convs.borrow_mut().insert(id, conv);
+                let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
+                let id = group.id.to_string().into();
+                groups.borrow_mut().insert(id, group);
                 let _ = cursor.continue_();
             } else {
                 // 如果为null说明已经遍历完成
                 //将总的结果发送出来
-                let _ = tx.take().unwrap().send(convs.borrow().clone());
+                let _ = tx.take().unwrap().send(groups.borrow().clone());
             }
         }) as Box<dyn FnMut(&Event)>);
 

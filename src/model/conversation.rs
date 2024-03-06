@@ -113,8 +113,9 @@ impl From<Group> for Conversation {
     fn from(value: Group) -> Self {
         Self {
             name: value.name,
-            friend_id: value.id,
+            friend_id: value.id.to_string().into(),
             avatar: value.avatar,
+            conv_type: RightContentType::Group,
             ..Default::default()
         }
     }

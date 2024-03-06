@@ -7,8 +7,11 @@ use web_sys::NodeList;
 use yew::prelude::*;
 
 use crate::api;
+use crate::db::group::GroupRepo;
+use crate::db::group_members::GroupMembersRepo;
 use crate::model::group::Group;
 use crate::model::group::GroupMember;
+use crate::model::group::GroupRequest;
 use crate::{db::friend::FriendRepo, model::friend::Friend};
 
 #[derive(Debug, Default)]
@@ -23,6 +26,7 @@ pub enum AddConvMsg {
     Close,
     QueryFriends(QueryStatus<IndexMap<AttrValue, Friend>>),
     SubmitGroupMembers(Group, Vec<GroupMember>),
+    SubmitEmpty,
     RequestCreateGroupFail(JsValue),
 }
 #[derive(Debug, Clone)]
@@ -103,6 +107,10 @@ impl Component for AddConv {
                 log::error!("request server to create group error: {:?}", err);
                 false
             }
+            AddConvMsg::SubmitEmpty => {
+                ctx.props().close_back.emit(());
+                false
+            }
         }
     }
 
@@ -160,6 +168,7 @@ impl AddConv {
         ctx.link().send_future(async move {
             let mut values = Vec::with_capacity(nodes.length() as usize);
             let mut ids = Vec::with_capacity(nodes.length() as usize);
+            let mut group_name = String::new();
             for i in 0..nodes.length() {
                 let node = nodes.item(i).unwrap();
                 if let Ok(node) = node.dyn_into::<HtmlInputElement>() {
@@ -171,15 +180,38 @@ impl AddConv {
                             .await;
                         if !friend.id.is_empty() {
                             ids.push(value);
+                            let mut name = friend.name.clone();
+                            if friend.remark.is_some() {
+                                name = friend.remark.as_ref().unwrap().clone();
+                            }
+                            group_name.push_str(name.as_str());
                             values.push(GroupMember::from(friend));
                         }
                     }
                 }
             }
-
+            if ids.is_empty() {
+                return AddConvMsg::SubmitEmpty;
+            }
+            let group_req = GroupRequest {
+                group_name,
+                members_id: ids,
+            };
             // send create request
-            match api::group::create_group(user_id, ids).await {
-                Ok(g) => AddConvMsg::SubmitGroupMembers(g, values),
+            match api::group::create_group(user_id, group_req).await {
+                Ok(g) => {
+                    if let Err(err) = GroupRepo::new().await.put(&g).await {
+                        return AddConvMsg::RequestCreateGroupFail(err);
+                    }
+                    for v in values.iter_mut() {
+                        v.group_id = g.id;
+                        if let Err(e) = GroupMembersRepo::new().await.put(v).await {
+                            log::error!("save group member error: {:?}", e);
+                            continue;
+                        }
+                    }
+                    AddConvMsg::SubmitGroupMembers(g, values)
+                }
                 Err(err) => AddConvMsg::RequestCreateGroupFail(err),
             }
         });
