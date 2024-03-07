@@ -6,7 +6,7 @@ use crate::model::ContentType;
 use crate::utils;
 
 use super::friend::Friend;
-use super::group::Group;
+use super::group::{Group, GroupInfo};
 use super::user::UserView;
 
 pub(crate) const DEFAULT_HELLO_MESSAGE: &str = "I've accepted your friend request. Now let's chat!";
@@ -137,10 +137,7 @@ impl Message {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct CreateGroup {
-    pub id: AttrValue,
-    pub owner: AttrValue,
-    pub avatar: AttrValue,
-    pub group_name: AttrValue,
+    pub info: GroupInfo,
     pub members: Vec<UserView>,
 }
 
@@ -148,10 +145,14 @@ impl From<Group> for CreateGroup {
     fn from(value: Group) -> Self {
         // need to query user list for members
         CreateGroup {
-            id: value.id,
-            owner: value.owner,
-            avatar: value.avatar,
-            group_name: value.name,
+            info: GroupInfo {
+                id: value.id,
+                owner: value.owner,
+                avatar: value.avatar,
+                group_name: value.group_name,
+                create_time: chrono::Local::now().timestamp_millis(),
+                announcement: value.announcement,
+            },
             members: vec![],
         }
     }

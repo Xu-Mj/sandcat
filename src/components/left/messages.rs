@@ -4,9 +4,11 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::components::left::add_conv::AddConv;
+use crate::db::group::GroupRepo;
+use crate::db::group_members::GroupMembersRepo;
 use crate::db::message::MessageRepo;
 use crate::model::conversation::Conversation;
-use crate::model::group::{Group, GroupMember};
+use crate::model::group::{Group, GroupInfo};
 use crate::model::message::Msg;
 use crate::model::RightContentType;
 use crate::pages::{ConvState, WaitState};
@@ -46,7 +48,7 @@ pub enum MessagesMsg {
     ConvStateChanged(Rc<ConvState>),
     WaitStateChanged,
     AddConv,
-    CreateGroup((Group, Vec<GroupMember>)),
+    CreateGroup(Group),
 }
 
 impl Component for Messages {
@@ -141,8 +143,33 @@ impl Component for Messages {
                         };
                         self.operate_msg(ctx, msg.friend_id, conv)
                     }
-                    Msg::CreateGroup(_msg) => {
+                    Msg::CreateGroup(msg) => {
                         // create group conversation directly
+
+                        self.create_group_conv(ctx, Conversation::from(msg.info.clone()));
+                        let members_id: Vec<String> =
+                            msg.members.iter().map(|v| v.id.clone()).collect();
+                        spawn_local(async move {
+                            let group = Group {
+                                id: msg.info.id.clone(),
+                                owner: msg.info.owner.clone(),
+                                avatar: msg.info.avatar.clone(),
+                                group_name: msg.info.group_name.clone(),
+                                create_time: msg.info.create_time,
+                                announcement: msg.info.announcement.clone(),
+                                members_id,
+                            };
+                            if let Err(err) = GroupRepo::new().await.put(&group).await {
+                                log::error!("store group error : {:?}", err);
+                            };
+                            if let Err(e) = GroupMembersRepo::new()
+                                .await
+                                .put_list(msg.members, msg.info.id)
+                                .await
+                            {
+                                log::error!("save group member error: {:?}", e);
+                            }
+                        });
                         false
                     }
                     Msg::SingleCallInvite(msg) => {
@@ -250,10 +277,10 @@ impl Component for Messages {
                 }
             }
             MessagesMsg::WaitStateChanged => false,
-            MessagesMsg::CreateGroup((g, list)) => {
+            MessagesMsg::CreateGroup(g) => {
                 self.show_friend_list = false;
                 // create group conversation and send 'create group' message
-                self.create_group(ctx, g, list);
+                self.create_group_conv(ctx, Conversation::from(GroupInfo::from(g)));
                 true
             }
         }
@@ -348,12 +375,9 @@ fn get_msg_type(msg_type: ContentType, content: &AttrValue) -> AttrValue {
 }
 
 impl Messages {
-    fn create_group(&self, ctx: &Context<Self>, g: Group, list: Vec<GroupMember>) {
-        log::debug!("list: {:?}", list);
+    fn create_group_conv(&self, ctx: &Context<Self>, conv: Conversation) {
         ctx.link().send_future(async move {
-            let conv = Conversation::from(g);
-            let conv_repo = ConvRepo::new().await;
-            conv_repo.put_conv(&conv, false).await.unwrap();
+            ConvRepo::new().await.put_conv(&conv, true).await.unwrap();
             log::debug!("创建会话: {:?}", &conv);
             MessagesMsg::InsertConv(conv)
         });

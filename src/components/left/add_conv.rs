@@ -25,7 +25,7 @@ pub enum AddConvMsg {
     Add,
     Close,
     QueryFriends(QueryStatus<IndexMap<AttrValue, Friend>>),
-    SubmitGroupMembers(Group, Vec<GroupMember>),
+    SubmitGroupMembers(Group),
     SubmitEmpty,
     RequestCreateGroupFail(JsValue),
 }
@@ -43,7 +43,7 @@ pub enum QueryStatus<T> {
 pub struct AddConvProps {
     pub user_id: AttrValue,
     pub close_back: Callback<()>,
-    pub submit_back: Callback<(Group, Vec<GroupMember>)>,
+    pub submit_back: Callback<Group>,
 }
 
 impl Component for AddConv {
@@ -99,8 +99,8 @@ impl Component for AddConv {
                 ctx.props().close_back.emit(());
                 false
             }
-            AddConvMsg::SubmitGroupMembers(g, mems) => {
-                ctx.props().submit_back.emit((g, mems));
+            AddConvMsg::SubmitGroupMembers(g) => {
+                ctx.props().submit_back.emit(g);
                 false
             }
             AddConvMsg::RequestCreateGroupFail(err) => {
@@ -198,7 +198,7 @@ impl AddConv {
             group_name.push_str("Group");
             let group_req = GroupRequest {
                 owner: user_id.to_string(),
-                avatar,
+                avatar: avatar.join(","),
                 group_name,
                 members_id: ids,
                 id: String::new(),
@@ -216,7 +216,7 @@ impl AddConv {
                             continue;
                         }
                     }
-                    AddConvMsg::SubmitGroupMembers(g, values)
+                    AddConvMsg::SubmitGroupMembers(g)
                 }
                 Err(err) => AddConvMsg::RequestCreateGroupFail(err),
             }

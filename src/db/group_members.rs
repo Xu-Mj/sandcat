@@ -6,7 +6,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::IdbRequest;
 use yew::{AttrValue, Event};
 
-use crate::model::group::GroupMember;
+use crate::model::{group::GroupMember, user::UserView};
 
 use super::{repository::Repository, GROUP_MEMBERS_TABLE_NAME};
 
@@ -26,10 +26,24 @@ impl GroupMembersRepo {
         Self(Repository::new().await)
     }
 
-    pub async fn put(&self, group: &GroupMember) -> Result<(), JsValue> {
+    pub async fn put(&self, mem: &GroupMember) -> Result<(), JsValue> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
-        let value = serde_wasm_bindgen::to_value(group)?;
+        let value = serde_wasm_bindgen::to_value(mem)?;
         store.put(&value)?;
+        Ok(())
+    }
+
+    pub async fn put_list(
+        &self,
+        members: Vec<UserView>,
+        group_id: AttrValue,
+    ) -> Result<(), JsValue> {
+        let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
+        for member in members {
+            let member = GroupMember::from_user_view_and_group(member, group_id.clone());
+            let value = serde_wasm_bindgen::to_value(&member)?;
+            store.put(&value)?;
+        }
         Ok(())
     }
 

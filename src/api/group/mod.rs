@@ -21,10 +21,10 @@ pub async fn create_group(data: GroupRequest) -> Result<Group, JsValue> {
     Ok(Group {
         id: response.id.into(),
         owner: response.owner.into(),
-        name: response.group_name.into(),
-        avatar: response.avatar.join(",").into(),
+        group_name: response.group_name.into(),
+        avatar: response.avatar.into(),
         members_id: data.members_id,
         create_time: chrono::Local::now().timestamp_millis(),
-        publish_msg: AttrValue::default(),
+        announcement: AttrValue::default(),
     })
 }
