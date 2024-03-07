@@ -337,13 +337,32 @@ impl Component for Home {
                         ctx.link()
                             .send_message(HomeMsg::RecSendMsgStateChange(message));
                     }
-                    Msg::Group(_) => {
-                        // if self.conv_state.conv.item_id != msg.friend_id {
-                        //     let conv_state = Rc::make_mut(&mut self.conv_state);
-                        //     conv_state.conv.unread_count =
-                        //         conv_state.conv.unread_count.saturating_add(1);
-                        //     current_item::save_conv(&conv_state.conv);
-                        // }
+                    Msg::Group(ref msg) => {
+                        let mut msg = msg.clone();
+                        let msg_id = msg.msg_id.to_string();
+                        if self.conv_state.conv.item_id != msg.friend_id {
+                            let conv_state = Rc::make_mut(&mut self.conv_state);
+                            conv_state.conv.unread_count =
+                                conv_state.conv.unread_count.saturating_add(1);
+                            let _ = current_item::save_conv(&conv_state.conv)
+                                .map_err(|err| log::error!("save conv fail{:?}", err));
+                        }
+                        ctx.link().send_future(async move {
+                            // 数据入库
+                            if let Err(err) = MessageRepo::new().await.add_message(&mut msg).await {
+                                HomeMsg::Notification(Notification::error_from_content(
+                                    format!("内部错误:{:?}", err).into(),
+                                ))
+                            } else {
+                                HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(DeliveredNotice {
+                                    msg_id,
+                                    create_time: chrono::Local::now().timestamp_millis(),
+                                }))
+                            }
+                        });
+
+                        ctx.link()
+                            .send_message(HomeMsg::RecSendMsgStateChange(message));
                     }
                     Msg::SendRelationshipReq(_msg) => {}
                     Msg::RecRelationship(msg) => {

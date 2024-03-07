@@ -5,7 +5,7 @@ use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef};
 
 use crate::api;
 use crate::db::friend_ship::FriendShipRepo;
-use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, ReadStatus};
+use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus};
 use crate::pages::{FriendShipState, FriendShipStateType};
 
 pub struct FriendShipList {
@@ -74,7 +74,7 @@ impl Component for FriendShipList {
                 if self.detail.is_some() {
                     // let item = self.list.get_mut(pos.unwrap()).unwrap();
                     let item = self.detail.as_mut().unwrap();
-                    item.status = AttrValue::from("999");
+                    item.status = FriendStatus::Accepted;
 
                     let remark = self.apply_msg_node.cast::<HtmlInputElement>().unwrap();
                     let response_msg = self.response_msg_node.cast::<HtmlInputElement>().unwrap();
@@ -124,7 +124,7 @@ impl Component for FriendShipList {
                             .position(|item| item.friendship_id == friendship_id);
                         if pos.is_some() {
                             let item = self.list.get_mut(pos.unwrap()).unwrap();
-                            item.status = AttrValue::from("1");
+                            item.status = FriendStatus::Accepted;
                             item.read = ReadStatus::True;
                         }
                         self.friendship_state
@@ -142,7 +142,7 @@ impl Component for FriendShipList {
                         if pos.is_some() {
                             let item = self.list.get_mut(pos.unwrap()).unwrap();
                             // 000 标识请求失败
-                            item.status = AttrValue::from("000");
+                            item.status = FriendStatus::Failed;
                         }
                     }
                 }

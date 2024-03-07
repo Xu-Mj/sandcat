@@ -4,7 +4,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
 
-use crate::model::friend::{FriendShipWithUser, ReadStatus};
+use crate::model::friend::{FriendShipWithUser, FriendStatus, ReadStatus};
 
 use super::{
     repository::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
@@ -28,13 +28,13 @@ impl FriendShipRepo {
 
     pub async fn agree(&self, friendship_id: AttrValue) {
         let mut friendship = self.get_friendship(friendship_id).await.unwrap();
-        friendship.status = AttrValue::from("1");
+        friendship.status = FriendStatus::Accepted;
         self.put_friendship(&friendship).await;
     }
 
     pub async fn agree_by_friend_id(&self, friend_id: AttrValue) {
         let mut friendship = self.get_friendship_by_friend_id(friend_id).await.unwrap();
-        friendship.status = AttrValue::from("1");
+        friendship.status = FriendStatus::Accepted;
         self.put_friendship(&friendship).await;
     }
 

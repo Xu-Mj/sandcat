@@ -7,7 +7,7 @@ use crate::{
     api::user::apply_friend,
     db::friend_ship::FriendShipRepo,
     model::{
-        friend::{FriendShipRequest, ReadStatus},
+        friend::{FriendShipRequest, FriendStatus, ReadStatus},
         user::User,
     },
 };
@@ -134,7 +134,7 @@ impl Component for FriendCard {
                 let new_friend = FriendShipRequest {
                     user_id,
                     friend_id,
-                    status: AttrValue::from("2"),
+                    status: FriendStatus::Pending,
                     apply_msg,
                     source: None,
                     remark,

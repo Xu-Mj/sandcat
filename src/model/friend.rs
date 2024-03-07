@@ -2,6 +2,16 @@ use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
 use super::{ItemInfo, ItemType};
+#[derive(Debug, Default, Clone, Deserialize, Serialize, PartialEq, Eq)]
+pub enum FriendStatus {
+    #[default]
+    Pending,
+    Accepted,
+    Rejected,
+    Blacked,
+    Cancelled,
+    Failed,
+}
 
 #[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
 pub struct FriendShipRequest {
@@ -10,7 +20,7 @@ pub struct FriendShipRequest {
     // pub id: i32,
     pub user_id: AttrValue,
     pub friend_id: AttrValue,
-    pub status: AttrValue,
+    pub status: FriendStatus,
     pub apply_msg: Option<AttrValue>,
     pub source: Option<AttrValue>,
     pub remark: Option<AttrValue>,
@@ -38,7 +48,7 @@ pub struct Friend {
     pub remark: Option<AttrValue>,
     /// 这里的hello是我们发送给对方的消息
     pub hello: Option<AttrValue>,
-    pub status: AttrValue,
+    pub status: FriendStatus,
     pub create_time: chrono::NaiveDateTime,
     pub update_time: chrono::NaiveDateTime,
     pub from: Option<AttrValue>,
@@ -53,16 +63,16 @@ pub struct Friend {
     pub birthday: Option<chrono::NaiveDateTime>,
 }
 
-#[derive(PartialEq, Serialize, Deserialize, Default)]
-pub enum FriendStatus {
-    #[default]
-    Default,
-    Apply,
-    Agree,
-    Deny,
-    BlackList,
-    Delete,
-}
+// #[derive(PartialEq, Serialize, Deserialize, Default)]
+// pub enum FriendStatus {
+//     #[default]
+//     Default,
+//     Apply,
+//     Agree,
+//     Deny,
+//     BlackList,
+//     Delete,
+// }
 
 #[derive(Serialize, Debug, Default, Clone, Deserialize, PartialEq)]
 pub struct FriendShipWithUser {
@@ -72,7 +82,7 @@ pub struct FriendShipWithUser {
     pub avatar: AttrValue,
     pub gender: AttrValue,
     pub age: i32,
-    pub status: AttrValue,
+    pub status: FriendStatus,
     pub apply_msg: Option<AttrValue>,
     pub source: Option<AttrValue>,
     #[serde(default)]
