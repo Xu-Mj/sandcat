@@ -14,6 +14,7 @@ use super::{
 use crate::components::phone_call::PhoneCall;
 use crate::db::friend::FriendRepo;
 use crate::db::friend_ship::FriendShipRepo;
+use crate::db::group_msg::GroupMsgRepo;
 use crate::db::repository::Repository;
 use crate::db::{current_item, TOKEN, WS_ADDR};
 use crate::icons::CloseIcon;
@@ -338,7 +339,7 @@ impl Component for Home {
                             .send_message(HomeMsg::RecSendMsgStateChange(message));
                     }
                     Msg::Group(ref msg) => {
-                        let mut msg = msg.clone();
+                        let msg = msg.clone();
                         let msg_id = msg.msg_id.to_string();
                         if self.conv_state.conv.item_id != msg.friend_id {
                             let conv_state = Rc::make_mut(&mut self.conv_state);
@@ -349,7 +350,7 @@ impl Component for Home {
                         }
                         ctx.link().send_future(async move {
                             // 数据入库
-                            if let Err(err) = MessageRepo::new().await.add_message(&mut msg).await {
+                            if let Err(err) = GroupMsgRepo::new().await.put(&msg).await {
                                 HomeMsg::Notification(Notification::error_from_content(
                                     format!("内部错误:{:?}", err).into(),
                                 ))
