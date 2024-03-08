@@ -4,7 +4,7 @@ use yew::AttrValue;
 use crate::model::ContentType;
 use crate::model::RightContentType;
 
-use super::group::GroupInfo;
+use super::group::Group;
 use super::message::Hangup;
 use super::message::InviteAnswerMsg;
 use super::message::InviteCancelMsg;
@@ -109,10 +109,10 @@ impl From<InviteAnswerMsg> for Conversation {
     }
 }
 
-impl From<GroupInfo> for Conversation {
-    fn from(value: GroupInfo) -> Self {
+impl From<Group> for Conversation {
+    fn from(value: Group) -> Self {
         Self {
-            name: value.group_name,
+            name: value.name,
             friend_id: value.id.to_string().into(),
             avatar: value.avatar,
             conv_type: RightContentType::Group,

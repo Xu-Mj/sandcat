@@ -195,7 +195,7 @@ impl AddConv {
             if ids.is_empty() {
                 return AddConvMsg::SubmitEmpty;
             }
-            group_name.push_str("Group");
+            group_name.push_str("、Group");
             let group_req = GroupRequest {
                 owner: user_id.to_string(),
                 avatar: avatar.join(","),
@@ -204,7 +204,7 @@ impl AddConv {
                 id: String::new(),
             };
             // send create request
-            match api::group::create_group(group_req).await {
+            match api::group::create_group(group_req, user_id).await {
                 Ok(g) => {
                     if let Err(err) = GroupRepo::new().await.put(&g).await {
                         return AddConvMsg::RequestCreateGroupFail(err);
