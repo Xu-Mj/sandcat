@@ -419,7 +419,7 @@ impl Component for Home {
                             HomeMsg::SendMessage(Msg::Single(msg))
                         });
                     }
-                    Msg::CreateGroup(_) => {
+                    Msg::GroupInvitation(_) => {
                         // receive create group message
                         ctx.link()
                             .send_message(HomeMsg::RecSendMsgStateChange(message));

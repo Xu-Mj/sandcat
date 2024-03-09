@@ -143,7 +143,7 @@ impl Component for Messages {
                         };
                         self.operate_msg(ctx, msg.friend_id, conv)
                     }
-                    Msg::CreateGroup(msg) => {
+                    Msg::GroupInvitation(msg) => {
                         // create group conversation directly
                         ctx.link().send_future(async move {
                             let conv = Conversation::from(msg.info.clone());

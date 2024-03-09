@@ -135,7 +135,7 @@ impl Message {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
-pub struct CreateGroup {
+pub struct GroupInvitation {
     pub info: Group,
     pub members: Vec<GroupMember>,
 }
@@ -146,7 +146,7 @@ pub type MessageID = String;
 pub enum Msg {
     Single(Message),
     Group(Message),
-    CreateGroup(CreateGroup),
+    GroupInvitation(GroupInvitation),
     SendRelationshipReq(FriendShipRequest),
     RecRelationship(FriendShipWithUser),
     RelationshipRes(Friend),

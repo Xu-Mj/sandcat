@@ -252,7 +252,7 @@ impl Component for MessageList {
                     | Msg::NewIceCandidate(_)
                     | Msg::RelationshipRes(_)
                     | Msg::FriendshipDeliveredNotice(_)
-                    | Msg::CreateGroup(_) => false,
+                    | Msg::GroupInvitation(_) => false,
                 }
             }
             MessageListMsg::GoBottom => {
