@@ -140,6 +140,8 @@ pub struct CreateGroup {
     pub members: Vec<GroupMember>,
 }
 
+pub type MessageID = String;
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Msg {
     Single(Message),
@@ -149,8 +151,8 @@ pub enum Msg {
     RecRelationship(FriendShipWithUser),
     RelationshipRes(Friend),
     ReadNotice(ReadNotice),
-    SingleDeliveredNotice(DeliveredNotice),
-    FriendshipDeliveredNotice(DeliveredNotice),
+    SingleDeliveredNotice(MessageID),
+    FriendshipDeliveredNotice(MessageID),
     OfflineSync(Message),
     SingleCallOffer(Offer),
     SingleCallInvite(InviteMsg),
@@ -381,11 +383,5 @@ pub struct ReadNotice {
     pub msg_ids: Vec<String>,
     pub send_id: String,
     pub friend_id: String,
-    pub create_time: i64,
-}
-
-#[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
-pub struct DeliveredNotice {
-    pub msg_id: String,
     pub create_time: i64,
 }

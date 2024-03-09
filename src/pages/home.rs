@@ -19,7 +19,7 @@ use crate::db::repository::Repository;
 use crate::db::{current_item, TOKEN, WS_ADDR};
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::message::{DeliveredNotice, InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE};
+use crate::model::message::{InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::ContentType;
@@ -328,10 +328,7 @@ impl Component for Home {
                                     format!("内部错误:{:?}", err).into(),
                                 ))
                             } else {
-                                HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(DeliveredNotice {
-                                    msg_id,
-                                    create_time: chrono::Local::now().timestamp_millis(),
-                                }))
+                                HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
                             }
                         });
 
@@ -355,10 +352,7 @@ impl Component for Home {
                                     format!("内部错误:{:?}", err).into(),
                                 ))
                             } else {
-                                HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(DeliveredNotice {
-                                    msg_id,
-                                    create_time: chrono::Local::now().timestamp_millis(),
-                                }))
+                                HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
                             }
                         });
 
@@ -391,13 +385,18 @@ impl Component for Home {
                         let send_id = self.state.login_user.id.clone();
                         // 需要通知联系人列表更新
                         // 数据入库
+                        let cloned_ctx = ctx.link().clone();
                         ctx.link().send_future(async move {
                             FriendShipRepo::new()
                                 .await
                                 .agree_by_friend_id(friend.friend_id.clone())
                                 .await;
                             FriendRepo::new().await.put_friend(&friend).await;
-                            // 创建一个会话，TODO这里需要一个friendship数据，用来创建打招呼的信息
+                            // send received message
+                            cloned_ctx.send_message(HomeMsg::SendBackMsg(
+                                Msg::FriendshipDeliveredNotice(friend.id.to_string()),
+                            ));
+                            // send hello message
                             let mut msg = Message {
                                 msg_id: nanoid::nanoid!().into(),
                                 send_id,
@@ -464,10 +463,7 @@ impl Component for Home {
                         .put_friendship(&friendship)
                         .await;
                     // 发送收到通知
-                    HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(DeliveredNotice {
-                        msg_id: id,
-                        create_time: chrono::Local::now().timestamp_millis(),
-                    }))
+                    HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(id))
                 });
                 // 显示通知
                 // self.info(AttrValue::from("收到好友请求"));
