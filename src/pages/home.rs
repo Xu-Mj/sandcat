@@ -179,6 +179,7 @@ impl Component for Home {
         let rec_msg_event = ctx.link().callback(HomeMsg::RecSendMsgStateChange);
         let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
         let send_msg_event = ctx.link().callback(HomeMsg::SendMessage);
+        let send_back_event = ctx.link().callback(HomeMsg::SendBackMsg);
         let call_event = ctx.link().callback(HomeMsg::SendCallInvite);
         let rec_friend_req_event = ctx.link().callback(HomeMsg::ReceiveFriendShipReq);
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
@@ -208,6 +209,7 @@ impl Component for Home {
             }),
             msg_state: Rc::new(RecSendMessageState {
                 msg: Msg::Single(Message::default()),
+                send_back_event,
                 send_msg_event: send_msg_event.clone(),
                 call_event: call_event.clone(),
             }),
@@ -424,6 +426,7 @@ impl Component for Home {
                         ctx.link()
                             .send_message(HomeMsg::RecSendMsgStateChange(message));
                     }
+                    Msg::GroupInvitationReceived(_) => {}
                 }
                 false
             }

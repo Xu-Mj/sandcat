@@ -141,6 +141,8 @@ pub struct GroupInvitation {
 }
 
 pub type MessageID = String;
+pub type GroupID = String;
+pub type UserID = String;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Msg {
@@ -162,6 +164,7 @@ pub enum Msg {
     SingleCallAgree(Agree),
     SingleCallHangUp(Hangup),
     NewIceCandidate(Candidate),
+    GroupInvitationReceived((UserID, GroupID)),
 }
 
 impl Default for Msg {

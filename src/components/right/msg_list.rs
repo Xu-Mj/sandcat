@@ -252,6 +252,7 @@ impl Component for MessageList {
                     | Msg::NewIceCandidate(_)
                     | Msg::RelationshipRes(_)
                     | Msg::FriendshipDeliveredNotice(_)
+                    | Msg::GroupInvitationReceived(_)
                     | Msg::GroupInvitation(_) => false,
                 }
             }

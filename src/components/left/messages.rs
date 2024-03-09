@@ -31,7 +31,7 @@ pub struct Messages {
     query_complete: bool,
     show_friend_list: bool,
 
-    _msg_state: Rc<RecSendMessageState>,
+    msg_state: Rc<RecSendMessageState>,
     _msg_listener: ContextHandle<Rc<RecSendMessageState>>,
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
@@ -49,6 +49,7 @@ pub enum MessagesMsg {
     WaitStateChanged,
     AddConv,
     CreateGroup(Group),
+    SendBackGroupInvitation(AttrValue),
 }
 
 impl Component for Messages {
@@ -84,7 +85,7 @@ impl Component for Messages {
             show_friend_list: false,
             conv_state,
             _conv_listener,
-            _msg_state: msg_state,
+            msg_state,
             _msg_listener,
             wait_state,
             _wait_listener,
@@ -145,6 +146,7 @@ impl Component for Messages {
                     }
                     Msg::GroupInvitation(msg) => {
                         // create group conversation directly
+                        let clone_ctx = ctx.link().clone();
                         ctx.link().send_future(async move {
                             let conv = Conversation::from(msg.info.clone());
                             ConvRepo::new().await.put_conv(&conv, true).await.unwrap();
@@ -156,6 +158,9 @@ impl Component for Messages {
                             {
                                 log::error!("save group member error: {:?}", e);
                             }
+                            // send back received message
+                            clone_ctx
+                                .send_message(MessagesMsg::SendBackGroupInvitation(msg.info.id));
                             MessagesMsg::InsertConv(conv)
                         });
 
@@ -274,6 +279,15 @@ impl Component for Messages {
                     ConvRepo::new().await.put_conv(&conv, true).await.unwrap();
                     MessagesMsg::InsertConv(conv)
                 });
+                false
+            }
+            MessagesMsg::SendBackGroupInvitation(group_id) => {
+                self.msg_state
+                    .send_back_event
+                    .emit(Msg::GroupInvitationReceived((
+                        ctx.props().user_id.to_string(),
+                        group_id.to_string(),
+                    )));
                 false
             }
         }

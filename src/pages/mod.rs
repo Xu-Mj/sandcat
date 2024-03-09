@@ -42,7 +42,7 @@ pub struct UnreadMsgCountState {
 #[derive(Default, Clone, PartialEq)]
 pub struct RecSendMessageState {
     pub msg: Msg,
-    // pub receive_msg_event: Callback<Msg>,
+    pub send_back_event: Callback<Msg>,
     pub send_msg_event: Callback<Msg>,
     pub call_event: Callback<InviteMsg>,
 }
