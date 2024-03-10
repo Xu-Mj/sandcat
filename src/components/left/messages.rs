@@ -22,6 +22,7 @@ use crate::{
 #[derive(Properties, PartialEq, Debug)]
 pub struct MessagesProps {
     pub user_id: AttrValue,
+    pub avatar: AttrValue,
 }
 
 pub struct Messages {
@@ -352,6 +353,7 @@ impl Component for Messages {
                 <AddConv
                     user_id={ctx.props().user_id.clone()}
                     close_back={plus_click.clone()} {submit_back}
+                    avatar={ctx.props().avatar.clone()}
                     />
             };
         }

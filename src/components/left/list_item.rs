@@ -195,14 +195,44 @@ impl Component for ListItem {
         }
         html! {
         <div class={classes} {onclick}>
-            <div class="item-avatar">
-                <img class="avatar" src={props.avatar.clone()} />
-            </div>
+            {self.get_avatar(ctx)}
             <div class="item-info">
                 {unread_count}
                 {right}
             </div>
         </div>
+        }
+    }
+}
+
+impl ListItem {
+    fn get_avatar(&self, ctx: &Context<Self>) -> Html {
+        // deal with group avatars
+        let avatar_str = ctx.props().props.avatar.clone();
+
+        let mut avatar_style = "--avatar-column: 1";
+        // trim spliter
+        let avatar_str = avatar_str.trim_matches(',');
+        // get len
+        let len = avatar_str.matches(',').count() + 1;
+        let iter = avatar_str.split(',');
+        if len > 1 && len < 5 {
+            avatar_style = "--avatar-column: 2"
+        } else if len >= 5 {
+            avatar_style = "--avatar-column: 3"
+        }
+
+        let avatar = iter
+            .map(|v| {
+                html! {
+                    <img class="avatar" src={v.to_owned()} />
+                }
+            })
+            .collect::<Html>();
+        html! {
+            <div class="item-avatar" style={avatar_style}>
+                {avatar}
+            </div>
         }
     }
 }

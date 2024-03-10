@@ -24,7 +24,6 @@ pub enum LeftMsg {
 }
 pub struct Left {
     pub state: Rc<AppState>,
-    // 必须写，不知道什么原理
     _context_listener: ContextHandle<Rc<AppState>>,
 }
 
@@ -75,7 +74,8 @@ impl Component for Left {
                 <Top avatar={self.state.login_user.avatar.clone()} />
                 <div class="left-down">
                     <div class={classes}>
-                    <Messages user_id={self.state.login_user.id.clone()}/>
+                    <Messages user_id={self.state.login_user.id.clone()}
+                            avatar={self.state.login_user.avatar.clone()} />
                     <Contacts user_id={self.state.login_user.id.clone()}/>
                     </div>
                 </div>

@@ -42,6 +42,7 @@ pub enum QueryStatus<T> {
 #[derive(Properties, Clone, PartialEq)]
 pub struct AddConvProps {
     pub user_id: AttrValue,
+    pub avatar: AttrValue,
     pub close_back: Callback<()>,
     pub submit_back: Callback<Group>,
 }
@@ -165,10 +166,13 @@ impl Component for AddConv {
 impl AddConv {
     fn get_group_mems(&self, ctx: &Context<Self>, nodes: NodeList) {
         let user_id = ctx.props().user_id.clone();
+        let self_avatar = ctx.props().avatar.clone();
         ctx.link().send_future(async move {
             let mut values = Vec::with_capacity(nodes.length() as usize);
             let mut ids = Vec::with_capacity(nodes.length() as usize);
             let mut avatar = Vec::with_capacity(nodes.length() as usize);
+            // push self avatar
+            avatar.push(self_avatar.to_string());
             let mut group_name = String::new();
             for i in 0..nodes.length() {
                 let node = nodes.item(i).unwrap();
@@ -186,7 +190,9 @@ impl AddConv {
                                 name = friend.remark.as_ref().unwrap().clone();
                             }
                             group_name.push_str(name.as_str());
-                            avatar.push(friend.avatar.clone().to_string());
+                            if i < 8 {
+                                avatar.push(friend.avatar.clone().to_string());
+                            }
                             values.push(GroupMember::from(friend));
                         }
                     }

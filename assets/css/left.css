@@ -202,10 +202,20 @@
             padding: 1rem;
             /* border: black 1px solid; */
 
-            .avatar {
+            .item-avatar {
                 width: calc(4rem - 1rem);
                 height: calc(4rem - 1rem);
+                background-color: azure;
                 border-radius: .3rem;
+                display: grid;
+                grid-template-columns: repeat(var(--avatar-column), 1fr);
+                gap: .2rem;
+
+                .avatar {
+                    place-self: center;
+                    width: 100%;
+                    height: auto;
+                }
             }
 
             .item-info {
