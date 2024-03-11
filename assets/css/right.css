@@ -414,6 +414,7 @@
                     border: none;
                     font-size: 1rem;
                     font-family: inherit;
+                    resize: none;
                 }
 
                 .empty-msg-tip {

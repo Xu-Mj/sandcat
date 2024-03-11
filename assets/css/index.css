@@ -62,10 +62,17 @@
 }
 
 html {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     scroll-behavior: smooth;
     user-select: none;
     color: var(--color-text);
-    background: var(--color-background);
+    /* background-color: var(--color-background); */
+    background-image: url('./images/home-background.jpg');
+    background-size: cover;
     transition: color 0.5s,
         background-color 0.5s;
     line-height: 1.6;

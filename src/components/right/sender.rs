@@ -568,7 +568,7 @@ impl Component for Sender {
                     </div>
                 </div>
                 <div class="msg-input-wrapper">
-                    <textarea class="msg-input" ref={self.input_ref.clone()} {onpaste} {onkeydown} contenteditable="true">
+                    <textarea class="msg-input" ref={self.input_ref.clone()} {onpaste} {onkeydown} /* contenteditable="true" */>
                     </textarea>
                     {warn}
                     <button class="send-btn"

@@ -116,6 +116,7 @@ impl From<Group> for Conversation {
             friend_id: value.id.to_string().into(),
             avatar: value.avatar,
             conv_type: RightContentType::Group,
+            last_msg_time: value.create_time.timestamp_millis(),
             ..Default::default()
         }
     }
