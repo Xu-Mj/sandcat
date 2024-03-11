@@ -325,6 +325,7 @@ impl Component for Messages {
                 // set right content type
                 let mut conv = self.conv_state.conv.clone();
                 conv.item_id = AttrValue::default();
+                conv.content_type = RightContentType::Default;
                 self.conv_state.state_change_event.emit(conv);
                 true
             }

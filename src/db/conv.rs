@@ -132,9 +132,10 @@ impl ConvRepo {
                     .expect("result is IdbCursorWithValue; qed");
                 let value = cursor.value().unwrap();
                 // 反序列化
-                let conv: Conversation = serde_wasm_bindgen::from_value(value).unwrap();
-                let id = conv.friend_id.clone();
-                convs.borrow_mut().insert(id, conv);
+                if let Ok(conv) = serde_wasm_bindgen::from_value::<Conversation>(value) {
+                    let id = conv.friend_id.clone();
+                    convs.borrow_mut().insert(id, conv);
+                }
                 let _ = cursor.continue_();
             } else {
                 // 如果为null说明已经遍历完成

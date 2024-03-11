@@ -1,12 +1,19 @@
 .right-click-panel {
-    width: 10rem;
-    height: 20rem;
     background-color: white;
     position: fixed;
+    border-radius: .3rem;
+    overflow: hidden;
     z-index: 10;
 
     &[tabindex] {
         outline: none;
+    }
+
+    .right-click-panel-item {
+        width: 7rem;
+        height: 2rem;
+        line-height: 2rem;
+        padding: 0 1rem;
     }
 }
 

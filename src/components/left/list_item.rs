@@ -3,7 +3,6 @@ use std::rc::Rc;
 use yew::prelude::*;
 
 use crate::{
-    db::current_item,
     model::RightContentType,
     pages::{CommonProps, ComponentType, ConvState, CurrentItem, FriendListState},
 };
@@ -81,7 +80,6 @@ impl Component for ListItem {
                     item_id: ctx.props().props.id.clone(),
                     content_type: ctx.props().conv_type.clone(),
                 };
-                current_item::save_conv(&conv).unwrap();
                 self.unread_count = 0;
                 self.conv_state.state_change_event.emit(conv);
                 true

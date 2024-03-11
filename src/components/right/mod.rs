@@ -43,9 +43,13 @@ pub enum RightMsg {
 
 impl Right {
     fn match_content(&mut self, ctx: &Context<Self>) {
+        let id = self.conv_state.conv.item_id.clone();
+        if id.is_empty() {
+            self.cur_conv_info = None;
+            return;
+        }
         match self.state.component_type {
             ComponentType::Messages => {
-                let id = self.conv_state.conv.item_id.clone();
                 log::debug!(
                     "right conv content type:{:?}",
                     self.conv_state.conv.content_type

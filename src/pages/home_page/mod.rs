@@ -102,7 +102,6 @@ impl Component for Home {
                 }
                 current_item::save_com_type(&component_type).unwrap();
                 shared_state.component_type = component_type;
-                // 是否会重新渲染所有子元素？
                 true
             }
             HomeMsg::SwitchFriend(conv) => {
@@ -126,6 +125,7 @@ impl Component for Home {
                 {
                     return false;
                 }
+                current_item::save_conv(&conv).unwrap();
                 conv_state.conv = conv;
                 true
             }
