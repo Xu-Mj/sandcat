@@ -38,6 +38,7 @@ pub enum RightMsg {
     ConvStateChanged(Rc<ConvState>),
     ContentChange(Option<Box<dyn ItemInfo>>),
     FriendListStateChanged(Rc<FriendListState>),
+    ShowSetting,
 }
 
 impl Right {
@@ -126,18 +127,20 @@ impl Component for Right {
                 self.match_content(ctx);
                 true
             }
+            RightMsg::ShowSetting => true,
         }
     }
 
     fn view(&self, _ctx: &Context<Self>) -> Html {
         let mut top_bar_info = html!();
         if let Some(info) = &self.cur_conv_info {
+            let onclick = _ctx.link().callback(|_| RightMsg::ShowSetting);
             top_bar_info = html! {
                 <div class="right-top-bar-friend">
                     <span>
                         {info.name()}
                     </span>
-                    <span>
+                    <span class="pointer" {onclick}>
                         {"···"}
                     </span>
                 </div>

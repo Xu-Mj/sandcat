@@ -124,6 +124,10 @@ html {
         -10px -10px 15px rgba(60, 60, 60, 0.12);
 }
 
+.pointer {
+    cursor: pointer;
+}
+
 /* 朋友卡片 */
 .friend-card-container {
     background-color: white;

@@ -102,18 +102,18 @@ impl Component for Action {
 
         html! {
             <div class="action">
-                <span {onclick}>
+                <div {onclick}>
                     <MessagesIcon/>
-                    {"发消息"}
-                </span>
-                <span onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Audio))}>
+                    <span>{"发消息"}</span>
+                </div>
+                <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Audio))}>
                     <PhoneIcon/>
-                    {"语音聊天"}
-                </span>
-                <span onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Video))}>
+                    <span>{"语音聊天"}</span>
+                </div>
+                <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Video))}>
                     <VideoIcon/>
-                    {"视频通话"}
-                </span>
+                    <span>{"视频通话"}</span>
+                </div>
             </div>
         }
     }

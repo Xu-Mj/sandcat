@@ -194,7 +194,7 @@ impl Component for ListItem {
             ComponentType::Setting => {}
         }
         html! {
-        <div class={classes} {onclick}>
+        <div class={classes} {onclick} title={props.name.clone()}>
             {self.get_avatar(ctx)}
             <div class="item-info">
                 {unread_count}

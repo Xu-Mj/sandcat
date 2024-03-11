@@ -514,11 +514,12 @@
                 .action {
                     width: 100%;
                     display: flex;
+                    justify-content: space-evenly;
                     height: 5rem;
                     line-height: 5rem;
-                    gap: 1rem;
 
-                    span {
+                    & div {
+                        height: 100%;
                         display: flex;
                         justify-content: center;
                         align-items: center;
@@ -527,7 +528,7 @@
                         font-size: small;
                         color: #90CBFB;
 
-                        svg {
+                        & svg {
                             width: 2rem;
                             height: 2rem;
                             fill: #90CBFB;
