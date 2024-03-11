@@ -151,7 +151,7 @@ impl Component for Right {
                 // 处理没有选中会话的情况
                 if self.conv_state.conv.item_id.is_empty() {
                     html! {
-                        <div class="choose-conv">{"与挚友开始聊天吧！"}</div>
+                        <h2 class="choose-conv">{"与挚友开始聊天吧！"}</h2>
                     }
                 } else {
                     html! {

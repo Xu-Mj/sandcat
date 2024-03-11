@@ -7,6 +7,10 @@
     height: 100%;
     position: relative;
 
+    .choose-conv {
+        margin: auto;
+    }
+
     .right-top-bar {
         width: 100%;
         height: 3rem;
