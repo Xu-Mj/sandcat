@@ -26,6 +26,7 @@ pub struct Contacts {
     // 是否正在搜索
     is_searching: bool,
     is_add_friend: bool,
+    show_context_menu: bool,
     _friendship_state: Rc<FriendShipState>,
     _listener: ContextHandle<Rc<FriendShipState>>,
     friend_state: Rc<FriendListState>,
@@ -47,6 +48,7 @@ pub enum ContactsMsg {
     FriendListStateChanged(Rc<FriendListState>),
     QueryFriendship(usize),
     NewFriendClicked,
+    ShowContextMenu((i32, i32), AttrValue),
 }
 
 impl Component for Contacts {
@@ -85,6 +87,7 @@ impl Component for Contacts {
             friendships_unread_count: 0,
             is_searching: false,
             is_add_friend: false,
+            show_context_menu: false,
             _friendship_state,
             _listener,
             friend_state,
@@ -163,24 +166,32 @@ impl Component for Contacts {
                 });
                 true
             }
+            ContactsMsg::ShowContextMenu((_x, _y), _id) => {
+                // event.prevent_default();
+                self.show_context_menu = true;
+                true
+            }
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
         // 根据搜索结果显示联系人列表，
         // 如果是搜索状态，那么搜索结果为空时需要提示用户没有结果
+        let oncontextmenu = ctx
+            .link()
+            .callback(|((x, y), id)| ContactsMsg::ShowContextMenu((x, y), id));
         let content = if self.is_searching {
             if self.result.is_empty() {
                 html! {<div class="no-result">{"没有搜索结果"}</div>}
             } else {
                 self.result
                     .iter()
-                    .map(|item| get_list_item(item.1))
+                    .map(|item| get_list_item(item.1, oncontextmenu.clone()))
                     .collect::<Html>()
             }
         } else {
             self.list
                 .iter()
-                .map(|item| get_list_item(item.1))
+                .map(|item| get_list_item(item.1, oncontextmenu.clone()))
                 .collect::<Html>()
         };
         let search_callback = ctx.link().callback(ContactsMsg::FilterContact);
@@ -219,7 +230,7 @@ impl Component for Contacts {
     }
 }
 
-fn get_list_item(item: &Friend) -> Html {
+fn get_list_item(item: &Friend, oncontextmenu: Callback<((i32, i32), AttrValue)>) -> Html {
     html! {
         <ListItem
             component_type={ComponentType::Contacts}
@@ -234,6 +245,7 @@ fn get_list_item(item: &Friend) -> Html {
             }
             unread_count={0}
             conv_type={RightContentType::Friend}
+            {oncontextmenu}
             key={item.friend_id.clone().as_str()} />
     }
 }

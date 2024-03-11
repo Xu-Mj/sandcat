@@ -3,6 +3,7 @@ pub mod add_friend;
 pub mod contacts;
 pub mod list_item;
 pub mod messages;
+pub mod right_click_panel;
 pub mod top;
 pub mod user_info;
 

@@ -4,6 +4,7 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::components::left::add_conv::AddConv;
+use crate::components::left::right_click_panel::RightClickPanel;
 use crate::db::group::GroupRepo;
 use crate::db::group_members::GroupMembersRepo;
 use crate::db::message::MessageRepo;
@@ -31,6 +32,8 @@ pub struct Messages {
     is_searching: bool,
     query_complete: bool,
     show_friend_list: bool,
+    show_context_menu: bool,
+    context_menu_pos: (i32, i32, AttrValue),
 
     msg_state: Rc<RecSendMessageState>,
     _msg_listener: ContextHandle<Rc<RecSendMessageState>>,
@@ -51,6 +54,9 @@ pub enum MessagesMsg {
     AddConv,
     CreateGroup(Group),
     SendBackGroupInvitation(AttrValue),
+    ShowContextMenu((i32, i32), AttrValue),
+    CloseContextMenu,
+    DeleteItem,
 }
 
 impl Component for Messages {
@@ -84,6 +90,8 @@ impl Component for Messages {
             query_complete: false,
             is_searching: false,
             show_friend_list: false,
+            show_context_menu: false,
+            context_menu_pos: (0, 0, AttrValue::default()),
             conv_state,
             _conv_listener,
             msg_state,
@@ -291,10 +299,42 @@ impl Component for Messages {
                     )));
                 false
             }
+            MessagesMsg::ShowContextMenu((x, y), id) => {
+                // event.prevent_default();
+                self.context_menu_pos = (x, y, id);
+                self.show_context_menu = true;
+                true
+            }
+            MessagesMsg::CloseContextMenu => {
+                log::debug!("close context menu");
+                self.show_context_menu = false;
+                self.context_menu_pos = (0, 0, AttrValue::default());
+                true
+            }
+            MessagesMsg::DeleteItem => {
+                self.list.shift_remove(self.context_menu_pos.2.as_str());
+                // delete database data
+                let id = self.context_menu_pos.2.clone();
+                spawn_local(async move {
+                    if let Err(e) = ConvRepo::new().await.delete(id).await {
+                        log::error!("delete conversation error: {:?}", e);
+                    }
+                });
+                self.show_context_menu = false;
+                self.context_menu_pos = (0, 0, AttrValue::default());
+                // set right content type
+                let mut conv = self.conv_state.conv.clone();
+                conv.item_id = AttrValue::default();
+                self.conv_state.state_change_event.emit(conv);
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let oncontextmenu = ctx
+            .link()
+            .callback(|((x, y), id)| MessagesMsg::ShowContextMenu((x, y), id));
         let content = if self.is_searching {
             if self.result.is_empty() {
                 html! {<div class="no-result">{"没有搜索结果"}</div>}
@@ -313,6 +353,7 @@ impl Component for Messages {
                                         id: item.friend_id.clone() }}
                                     unread_count={item.unread_count}
                                     conv_type={item.conv_type.clone()}
+                                    oncontextmenu={oncontextmenu.clone()}
                                     key={item.friend_id.clone().as_str()} />
                         }
                     })
@@ -333,6 +374,7 @@ impl Component for Messages {
                                     remark,
                                     id: item.friend_id.clone() }}
                                 unread_count={item.unread_count}
+                                oncontextmenu={oncontextmenu.clone()}
                                 conv_type={item.conv_type.clone()}
                                 key={item.friend_id.clone().as_str()} />
                     }
@@ -357,8 +399,19 @@ impl Component for Messages {
                     />
             };
         }
+        let mut context_menu = html!();
+        if self.show_context_menu {
+            context_menu = html! {
+                <RightClickPanel
+                    x={self.context_menu_pos.0}
+                    y={self.context_menu_pos.1}
+                    close={ctx.link().callback( |_|MessagesMsg::CloseContextMenu)}
+                    delete={ctx.link().callback(|_|MessagesMsg::DeleteItem)}/>
+            }
+        }
         html! {
             <div class="list-wrapper">
+                {context_menu}
                 {friend_list}
                 <TopBar components_type={ComponentType::Messages} {search_callback} {clean_callback} {plus_click}/>
                 <div class="contacts-list">

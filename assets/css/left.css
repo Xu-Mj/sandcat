@@ -1,3 +1,15 @@
+.right-click-panel {
+    width: 10rem;
+    height: 20rem;
+    background-color: white;
+    position: fixed;
+    z-index: 10;
+
+    &[tabindex] {
+        outline: none;
+    }
+}
+
 /* 左侧列表 */
 .left-container {
     display: flex;
@@ -32,7 +44,7 @@
                 height: 1.5rem;
             }
 
-            > span {
+            >span {
                 border-radius: .4rem;
                 display: flex;
                 align-items: center;

@@ -22,6 +22,7 @@ pub struct ListItemProps {
     pub component_type: ComponentType,
     pub unread_count: usize,
     pub conv_type: RightContentType,
+    pub oncontextmenu: Callback<((i32, i32), AttrValue)>,
 }
 
 pub enum ListItemMsg {
@@ -30,6 +31,7 @@ pub enum ListItemMsg {
     GoToSetting,
     CleanUnreadCount,
     FriendItemClicked,
+    OnContextMenu(MouseEvent),
 }
 
 impl Component for ListItem {
@@ -99,6 +101,14 @@ impl Component for ListItem {
                     content_type: ctx.props().conv_type.clone(),
                     unread_count: 0,
                 });
+                false
+            }
+            ListItemMsg::OnContextMenu(event) => {
+                event.prevent_default();
+                ctx.props().oncontextmenu.emit((
+                    (event.client_x(), event.client_y()),
+                    ctx.props().props.id.clone(),
+                ));
                 false
             }
         }
@@ -193,8 +203,9 @@ impl Component for ListItem {
             }
             ComponentType::Setting => {}
         }
+        let oncontextmenu = ctx.link().callback(ListItemMsg::OnContextMenu);
         html! {
-        <div class={classes} {onclick} title={props.name.clone()}>
+        <div class={classes} {onclick} title={props.name.clone()} {oncontextmenu}>
             {self.get_avatar(ctx)}
             <div class="item-info">
                 {unread_count}

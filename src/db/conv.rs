@@ -147,4 +147,49 @@ impl ConvRepo {
         success.forget();
         Ok(rx.await.unwrap())
     }
+
+    pub async fn get_by_frined_id(&self, friend_id: AttrValue) -> Conversation {
+        // 声明一个channel，接收查询结果
+        let (tx, rx) = oneshot::channel::<Conversation>();
+        let store = self.store(CONVERSATION_TABLE_NAME).await.unwrap();
+        let index = store
+            .index(CONVERSATION_FRIEND_ID_INDEX)
+            .expect("friend select index error");
+        // let key = IdbKeyRange::only(&JsValue::from(friend_id.as_str())).unwrap();
+        let request = index
+            // .open_cursor_with_range(&key)
+            .get(&JsValue::from(friend_id.as_str()))
+            .expect("friend select get error");
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            let mut conv = Conversation::default();
+            if !result.is_undefined() && !result.is_null() {
+                web_sys::console::log_1(&result);
+                conv = serde_wasm_bindgen::from_value(result).unwrap();
+            }
+            tx.send(conv).unwrap();
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("读取数据失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        rx.await.unwrap()
+    }
+
+    pub async fn delete(&self, friend_id: AttrValue) -> Result<(), JsValue> {
+        let conv = self.get_by_frined_id(friend_id).await;
+        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
+        if conv.id > 0 {
+            store.delete(&JsValue::from(conv.id))?;
+        }
+        Ok(())
+    }
 }
