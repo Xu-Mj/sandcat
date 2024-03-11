@@ -109,4 +109,12 @@ impl ItemInfo for Friend {
     fn avatar(&self) -> AttrValue {
         self.avatar.clone()
     }
+
+    fn time(&self) -> i64 {
+        self.create_time.timestamp_millis()
+    }
+
+    fn remark(&self) -> Option<AttrValue> {
+        self.remark.clone()
+    }
 }

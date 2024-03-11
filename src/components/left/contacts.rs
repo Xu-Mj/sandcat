@@ -5,7 +5,9 @@ use yew::prelude::*;
 
 use crate::components::left::add_friend::AddFriend;
 use crate::db::friend_ship::FriendShipRepo;
-use crate::model::RightContentType;
+use crate::db::group::GroupRepo;
+use crate::model::group::Group;
+use crate::model::{ItemInfo, RightContentType};
 use crate::pages::{CurrentItem, FriendListState, FriendShipState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
@@ -22,6 +24,8 @@ pub struct ContactsProps {
 pub struct Contacts {
     list: IndexMap<AttrValue, Friend>,
     result: IndexMap<AttrValue, Friend>,
+    groups: IndexMap<AttrValue, Group>,
+    // 未读消息数量
     friendships_unread_count: usize,
     // 是否正在搜索
     is_searching: bool,
@@ -43,6 +47,7 @@ pub enum ContactsMsg {
     FilterContact(AttrValue),
     CleanupSearchResult,
     QueryFriends(QueryState<IndexMap<AttrValue, Friend>>),
+    QueryGroups(QueryState<IndexMap<AttrValue, Group>>),
     AddFriend,
     RecFriendShipReq(Rc<FriendShipState>),
     FriendListStateChanged(Rc<FriendListState>),
@@ -65,6 +70,11 @@ impl Component for Contacts {
             let friends = friend_repo.get_list().await.unwrap_or_default();
             ContactsMsg::QueryFriends(QueryState::Success(friends))
         });
+        ctx.link().send_future(async {
+            let group_repo = GroupRepo::new().await;
+            let friends = group_repo.get_list().await.unwrap_or_default();
+            ContactsMsg::QueryGroups(QueryState::Success(friends))
+        });
         // 查询好友请求列表
         ctx.link().send_future(async {
             let friend_repo = FriendShipRepo::new().await;
@@ -84,6 +94,7 @@ impl Component for Contacts {
         Self {
             list: IndexMap::new(),
             result: IndexMap::new(),
+            groups: IndexMap::new(),
             friendships_unread_count: 0,
             is_searching: false,
             is_add_friend: false,
@@ -171,6 +182,16 @@ impl Component for Contacts {
                 self.show_context_menu = true;
                 true
             }
+            ContactsMsg::QueryGroups(groups) => match groups {
+                QueryState::Success(list) => {
+                    self.groups = list;
+                    true
+                }
+                // QueryState::Failure => {
+                //     false
+                // }
+                QueryState::Querying => false,
+            },
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -200,7 +221,11 @@ impl Component for Contacts {
             .callback(move |_| ContactsMsg::CleanupSearchResult);
         let plus_click = ctx.link().callback(|_| ContactsMsg::AddFriend);
         let friendship_click = ctx.link().callback(|_| ContactsMsg::NewFriendClicked);
-
+        let groups_con = self
+            .groups
+            .iter()
+            .map(|item| get_list_item(item.1, oncontextmenu.clone()))
+            .collect::<Html>();
         html! {
             <div class="list-wrapper">
                 {
@@ -219,6 +244,7 @@ impl Component for Contacts {
                                             {self.friendships_unread_count}
                                         }
                                     </div>
+                                    {groups_con}
                                     {content}
                                 </div>
                             </>
@@ -230,22 +256,22 @@ impl Component for Contacts {
     }
 }
 
-fn get_list_item(item: &Friend, oncontextmenu: Callback<((i32, i32), AttrValue)>) -> Html {
+fn get_list_item(item: &impl ItemInfo, oncontextmenu: Callback<((i32, i32), AttrValue)>) -> Html {
     html! {
         <ListItem
             component_type={ComponentType::Contacts}
             props={
                 CommonProps{
-                    name:item.name.clone(),
-                    avatar:item.avatar.clone(),
-                    time:item.create_time.clone().timestamp_millis(),
-                    remark:item.remark.clone().unwrap_or_default().clone(),
-                    id: item.friend_id.clone()
+                    name:item.name(),
+                    avatar:item.avatar(),
+                    time:item.time(),
+                    remark:item.remark().unwrap_or_default(),
+                    id: item.id()
                 }
             }
             unread_count={0}
             conv_type={RightContentType::Friend}
             {oncontextmenu}
-            key={item.friend_id.clone().as_str()} />
+            key={item.id().as_str()} />
     }
 }

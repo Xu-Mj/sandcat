@@ -37,6 +37,10 @@ pub trait ItemInfo {
     fn get_type(&self) -> ItemType;
 
     fn avatar(&self) -> AttrValue;
+
+    fn time(&self) -> i64;
+
+    fn remark(&self) -> Option<AttrValue>;
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
