@@ -46,7 +46,7 @@ impl Component for MsgItem {
 
     fn create(ctx: &Context<Self>) -> Self {
         // query data by conv type
-        if ctx.props().conv_type == RightContentType::Group {
+        if ctx.props().conv_type == RightContentType::Group && !ctx.props().msg.is_self {
             let friend_id = ctx.props().msg.send_id.clone();
             let group_id = ctx.props().msg.friend_id.clone();
             ctx.link().send_future(async move {
