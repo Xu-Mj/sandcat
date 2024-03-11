@@ -19,6 +19,7 @@ pub struct Top {
 #[derive(Properties, PartialEq)]
 pub struct TopProps {
     pub avatar: AttrValue,
+    pub name: AttrValue,
 }
 
 pub enum TopMsg {
@@ -104,7 +105,7 @@ impl Component for Top {
         html! {
             <div class="top">
                 <div class="top-left">
-                    <img class="avatar" src={ctx.props().avatar.clone()} />
+                    <img class="avatar" title={ctx.props().name.clone()} src={ctx.props().avatar.clone()} />
                 </div>
                 <div class="top-right">
                     <span class={msg_class} onclick={msg_onclick}>

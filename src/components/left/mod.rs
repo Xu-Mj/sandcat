@@ -71,7 +71,7 @@ impl Component for Left {
         html! {
             <div class="left-container">
                 // 左侧顶部组件：包含头像以及功能切换
-                <Top avatar={self.state.login_user.avatar.clone()} />
+                <Top avatar={self.state.login_user.avatar.clone()} name={self.state.login_user.name.clone()} />
                 <div class="left-down">
                     <div class={classes}>
                     <Messages user_id={self.state.login_user.id.clone()}

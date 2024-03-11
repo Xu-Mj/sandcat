@@ -1,4 +1,4 @@
-pub mod home;
+pub mod home_page;
 pub mod login;
 pub mod register;
 
