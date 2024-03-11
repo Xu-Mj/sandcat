@@ -2,6 +2,7 @@ use wasm_bindgen::JsValue;
 use yew::prelude::*;
 
 use crate::api::user::get_info_by_id;
+use crate::components::right::set_drawer::SetDrawer;
 use crate::model::user::User;
 use crate::model::RightContentType;
 use crate::{components::action::Action, db::friend::FriendRepo, model::friend::Friend};
@@ -17,6 +18,7 @@ pub enum PostCardMsg {
     QueryFriend(QueryState<Friend>),
     QueryUser(QueryState<User>),
     ApplyFriend,
+    ShowSetDrawer,
     // ApplyFriendRes,
 }
 
@@ -27,8 +29,9 @@ pub enum QueryState<T> {
 }
 
 pub struct PostCard {
-    pub friend_info: Friend,
-    pub user_info: User,
+    friend_info: Friend,
+    // user_info: User,
+    show_set_drawer: bool,
 }
 
 impl PostCard {
@@ -76,7 +79,8 @@ impl Component for PostCard {
         log::debug!("postcard conv type:{:?}", ctx.props().conv_type.clone());
         let self_ = PostCard {
             friend_info: Friend::default(),
-            user_info: User::default(),
+            // user_info: User::default(),
+            show_set_drawer: false,
         };
         self_.query(ctx);
         self_
@@ -141,6 +145,10 @@ impl Component for PostCard {
                     PostCardMsg::ApplyFriendRes
                 }); */
                 false
+            }
+            PostCardMsg::ShowSetDrawer => {
+                self.show_set_drawer = !self.show_set_drawer;
+                true
             } // PostCardMsg::ApplyFriendRes => {
               //     // 请求结果
               //     false
@@ -167,10 +175,21 @@ impl Component for PostCard {
                 }
             }
         };
+        let mut set_drawer = html!();
+        if self.show_set_drawer {
+            let close = ctx.link().callback(|_| PostCardMsg::ShowSetDrawer);
+            set_drawer = html! {
+                <SetDrawer {close} />
+            }
+        }
         html! {
         <div class="postcard">
             if id != AttrValue::default() {
                 <div class="pc-wrapper">
+                <span class="postcard-setting" onclick={ctx.link().callback(|_| PostCardMsg::ShowSetDrawer)}>
+                    {"···"}
+                </span>
+                {set_drawer}
                 <div class="header">
                     <div class="header-info">
                         <div >

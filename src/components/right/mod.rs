@@ -5,6 +5,7 @@ pub mod msg_item;
 pub mod msg_list;
 pub mod postcard;
 pub mod sender;
+pub mod set_drawer;
 
 use std::rc::Rc;
 

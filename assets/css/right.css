@@ -463,13 +463,26 @@
             .pc-wrapper {
                 /* width: fit-content; */
                 /* width: 50%; */
-                height: 100%;
+                /* height: 100%; */
                 display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
+                position: relative;
 
-                &>*:not(:last-child) {
+                .postcard-setting {
+                    width: 2rem;
+                    height: 2rem;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+                    cursor: pointer;
+                }
+
+                &>*:not(:last-child, :first-child) {
                     border-bottom: 1px solid gray;
                 }
 
