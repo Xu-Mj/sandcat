@@ -1,4 +1,5 @@
 use futures_channel::oneshot;
+use js_sys::Array;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
@@ -12,9 +13,10 @@ use crate::db::{
     FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_ADDRESS_INDEX,
     FRIEND_FRIEND_ID_INDEX, FRIEND_GENDER_INDEX, FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX,
     FRIEND_REMARK_INDEX, FRIEND_TABLE_NAME, FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX,
-    GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME, GROUP_TABLE_NAME,
-    MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX,
-    MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX, USER_TABLE_NAME,
+    GROUP_ID_AND_USER_ID, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,
+    GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
+    MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX,
+    USER_TABLE_NAME,
 };
 
 use super::DB_NAME;
@@ -142,6 +144,14 @@ impl Repository {
                 .unwrap();
             store
                 .create_index_with_str(GROUP_ID_INDEX, "group_id")
+                .unwrap();
+            // create multipal index
+            let indexes = Array::new();
+            indexes.push(&JsValue::from("user_id"));
+            indexes.push(&JsValue::from("group_id"));
+            let indexes = JsValue::from(indexes);
+            store
+                .create_index_with_str_sequence(GROUP_ID_AND_USER_ID, &indexes)
                 .unwrap();
             let mut parameter = IdbObjectStoreParameters::new();
             parameter.key_path(Some(&JsValue::from(FRIENDSHIP_ID_INDEX)));

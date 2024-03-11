@@ -5,14 +5,18 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use crate::db::friend::FriendRepo;
+use crate::db::group_members::GroupMembersRepo;
 use crate::db::user::UserRepo;
 use crate::icons::{MsgPhoneIcon, VideoRecordIcon};
+use crate::model::group::GroupMember;
 use crate::model::message::{InviteMsg, InviteType, Message};
 use crate::model::user::User;
+use crate::model::RightContentType;
 use crate::pages::RecSendMessageState;
 use crate::{components::right::friend_card::FriendCard, model::ContentType};
 
 pub struct MsgItem {
+    avatar: AttrValue,
     show_img_preview: bool,
     show_friend_card: bool,
     msg_state: Rc<RecSendMessageState>,
@@ -24,6 +28,7 @@ pub enum MsgItemMsg {
     CallVideo,
     None,
     CallAudio,
+    QueryGroupMember(GroupMember),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -32,21 +37,36 @@ pub struct MsgItemProps {
     pub friend_id: AttrValue,
     pub avatar: AttrValue,
     pub msg: Message,
+    pub conv_type: RightContentType,
 }
 
 impl Component for MsgItem {
     type Message = MsgItemMsg;
     type Properties = MsgItemProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
-        let (msg_state, _listener) = _ctx
+    fn create(ctx: &Context<Self>) -> Self {
+        // query data by conv type
+        if ctx.props().conv_type == RightContentType::Group {
+            let friend_id = ctx.props().msg.send_id.clone();
+            let group_id = ctx.props().msg.friend_id.clone();
+            ctx.link().send_future(async move {
+                let member = GroupMembersRepo::new()
+                    .await
+                    .get_by_group_id_and_friend_id(group_id, friend_id)
+                    .await
+                    .unwrap();
+                MsgItemMsg::QueryGroupMember(member.unwrap())
+            });
+        }
+        let (msg_state, _listener) = ctx
             .link()
-            .context(_ctx.link().callback(|_| MsgItemMsg::None))
+            .context(ctx.link().callback(|_| MsgItemMsg::None))
             .expect("need msg context");
         Self {
             show_img_preview: false,
             show_friend_card: false,
             msg_state,
+            avatar: ctx.props().avatar.clone(),
         }
     }
 
@@ -76,17 +96,37 @@ impl Component for MsgItem {
                 // } else {
                 //     ctx.props().friend_id.clone()
                 // };
+                log::debug!("friend id in msg item: {:?}", &ctx.props().msg);
                 let is_self = ctx.props().msg.is_self;
-                let friend_id = ctx.props().friend_id.clone();
+                // the friend id is friend when msg type is single
+                // because send id exchange the friend id when receive the message
+                let friend_id = ctx.props().msg.friend_id.clone();
+                let send_id = ctx.props().msg.send_id.clone();
                 let user_id = ctx.props().user_id.clone();
+                let conv_type = ctx.props().conv_type.clone();
+                let group_id = ctx.props().friend_id.clone();
                 spawn_local(async move {
                     // 查询好友信息
-                    log::debug!("friend id in msg item: {}", &friend_id);
                     let user = if is_self {
                         UserRepo::new().await.get(user_id).await.unwrap()
                     } else {
-                        let friend = FriendRepo::new().await.get_friend(friend_id).await;
-                        User::from(friend)
+                        match conv_type {
+                            RightContentType::Friend => {
+                                let friend = FriendRepo::new().await.get_friend(friend_id).await;
+                                User::from(friend)
+                            }
+                            // query group member
+                            RightContentType::Group => {
+                                let member = GroupMembersRepo::new()
+                                    .await
+                                    .get_by_group_id_and_friend_id(group_id, send_id)
+                                    .await
+                                    .unwrap()
+                                    .unwrap();
+                                User::from(member)
+                            }
+                            _ => User::default(),
+                        }
                     };
                     FriendCard::show(user, None, true, x, y);
                 });
@@ -115,6 +155,10 @@ impl Component for MsgItem {
             MsgItemMsg::None => {
                 // 不需要监听值得变化，这里只是占位符的作用
                 false
+            }
+            MsgItemMsg::QueryGroupMember(m) => {
+                self.avatar = m.avatar;
+                true
             }
         }
     }
@@ -224,7 +268,7 @@ impl Component for MsgItem {
                 }
             <div class={classes} id={id.to_string()} >
                 <div class="msg-item-avatar">
-                    <img class="avatar" src={ctx.props().avatar.clone()} onclick={ctx.link().callback(MsgItemMsg::ShowFriendCard)} />
+                    <img class="avatar" src={self.avatar.clone()} onclick={ctx.link().callback(MsgItemMsg::ShowFriendCard)} />
                 </div>
                 <div class="content-wrapper">
                     {content}

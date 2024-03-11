@@ -35,6 +35,7 @@ pub const FRIENDSHIP_UNREAD_INDEX: &str = "read";
 pub const FRIENDSHIP_ID_INDEX: &str = "friendship_id";
 pub const GROUP_ID_INDEX: &str = "group_id";
 // 定义索引常量
+pub const GROUP_ID_AND_USER_ID: &str = "group_id_and_friend_id";
 pub const FRIEND_USER_ID_INDEX: &str = "friend_id";
 pub const FRIEND_FRIEND_ID_INDEX: &str = "friend_id";
 pub const FRIEND_NAME_INDEX: &str = "name";

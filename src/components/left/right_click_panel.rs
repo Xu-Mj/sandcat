@@ -39,7 +39,7 @@ impl Component for RightClickPanel {
                 class="right-click-panel box-shadow" tabindex="0"
                 onblur={ctx.props().close.reform(|_|())}
                 >
-                <div class="right-click-panel-item" onclick={ctx.props().delete.reform(|_|())}>
+                <div class="right-click-panel-item hover" onclick={ctx.props().delete.reform(|_|())}>
                     {"删除会话"}
                 </div>
             </div>

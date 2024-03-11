@@ -301,6 +301,7 @@ impl Component for MessageList {
                     <div ref={self.node_ref.clone()} class="msg-list"  {onscroll}>
                         {
                             if let Some(friend) = self.friend.as_ref() {
+                                let conv_type = props.conv_type.clone();
                                 self.list.iter().map(|msg| {
                                 let mut avatar = friend.avatar().clone();
                                     if msg.is_self {
@@ -312,6 +313,7 @@ impl Component for MessageList {
                                             friend_id={props.friend_id.clone()}
                                             msg={msg.clone()}
                                             avatar={avatar}
+                                            conv_type={conv_type.clone()}
                                             key={msg.id}
                                         />
                                     }

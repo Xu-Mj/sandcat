@@ -61,7 +61,7 @@ impl FriendCard {
         container.set_class_name("friend-card-container");
         // 设置容器绝对定位
         container
-            .set_attribute("style", "position: absolute;")
+            .set_attribute("style", "position: fixed;")
             .unwrap();
 
         container.set_scroll_top(y);
@@ -211,8 +211,11 @@ impl Component for FriendCard {
             }
         };
         html! {
-            <div class="friend-card box-shadow" ref={self.node_ref.clone()} tabindex="1"
-                // onblur={ctx.link().callback(|_| FriendCardMsg::Close)}
+            <div
+                class="friend-card box-shadow"
+                tabindex="1"
+                ref={self.node_ref.clone()}
+                onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >
                 <div class="friend-card-header">
                     <img src={&self.friend.avatar} class="friend-card-avatar"/>
@@ -237,13 +240,13 @@ impl Component for FriendCard {
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if first_render {
             let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
+            node.focus().unwrap();
             let node = node
                 .parent_node()
                 .unwrap()
                 .dyn_into::<HtmlDivElement>()
                 .unwrap();
-            node.set_tab_index(1);
-            node.focus().unwrap();
+
             // 计算下边框
             let height = window().inner_height().unwrap().as_f64().unwrap() as i32;
             let width = window().inner_width().unwrap().as_f64().unwrap() as i32;
@@ -266,6 +269,8 @@ impl Component for FriendCard {
             node.style()
                 .set_property("left", format!("{}px", x).as_str())
                 .unwrap();
+            // node.set_tab_index(1);
+            // node.focus().unwrap();
         }
     }
 }

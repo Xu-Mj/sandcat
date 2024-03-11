@@ -2,13 +2,14 @@ use std::ops::Deref;
 
 use futures_channel::oneshot;
 use indexmap::IndexMap;
+use js_sys::Array;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::IdbRequest;
 use yew::{AttrValue, Event};
 
 use crate::model::group::GroupMember;
 
-use super::{repository::Repository, GROUP_MEMBERS_TABLE_NAME};
+use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
 
 pub struct GroupMembersRepo(Repository);
 
@@ -46,6 +47,41 @@ impl GroupMembersRepo {
         let (tx, rx) = oneshot::channel::<Option<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         let request = store.get(&JsValue::from(id))?;
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            let mut group = None;
+            if !result.is_undefined() && !result.is_null() {
+                group = Some(serde_wasm_bindgen::from_value(result).unwrap());
+            }
+            tx.send(group).unwrap();
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("读取数据失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        Ok(rx.await.unwrap())
+    }
+
+    pub async fn get_by_group_id_and_friend_id(
+        &self,
+        group_id: AttrValue,
+        friend_id: AttrValue,
+    ) -> Result<Option<GroupMember>, JsValue> {
+        let (tx, rx) = oneshot::channel::<Option<GroupMember>>();
+        let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
+        let index = store.index(GROUP_ID_AND_USER_ID)?;
+        let indices = Array::new();
+        indices.push(&JsValue::from(friend_id.as_str()));
+        indices.push(&JsValue::from(group_id.as_str()));
+        let request = index.get(&JsValue::from(indices))?;
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()

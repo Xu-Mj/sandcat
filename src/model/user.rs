@@ -3,6 +3,8 @@ use yew::AttrValue;
 
 use crate::model::friend::Friend;
 
+use super::group::GroupMember;
+
 /// 用来接收服务端的用户信息
 #[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
 // 当前用户表
@@ -33,6 +35,23 @@ pub struct User {
     pub email: Option<AttrValue>,
     pub address: Option<AttrValue>,
     pub birthday: Option<chrono::NaiveDateTime>,
+}
+
+impl From<GroupMember> for User {
+    fn from(value: GroupMember) -> Self {
+        Self {
+            id: value.user_id.clone(),
+            name: value.group_name,
+            account: value.user_id,
+            age: 0,
+            gender: value.gender,
+            avatar: value.avatar,
+            phone: None,
+            address: None,
+            email: None,
+            birthday: None,
+        }
+    }
 }
 
 impl From<Friend> for User {

@@ -132,9 +132,7 @@ html {
 .friend-card-container {
     background-color: white;
 
-    &[tabindex] {
-        outline: none;
-    }
+
 
 }
 
@@ -144,8 +142,12 @@ html {
     display: flex;
     flex-direction: column;
     padding: 1rem;
+
     /* position: absolute; */
     /* left: 3rem; */
+    &[tabindex] {
+        outline: none;
+    }
 
     &>:not(:last-child) {
         border-bottom: 1px solid #ccc;
@@ -208,7 +210,8 @@ html {
                 /* font-size: 1rem; */
             }
 
-            > :first-child,:nth-child(2) {
+            > :first-child,
+            :nth-child(2) {
                 display: grid;
                 grid-template-columns: 1fr 2fr;
             }
