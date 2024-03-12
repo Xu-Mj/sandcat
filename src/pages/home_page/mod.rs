@@ -9,8 +9,9 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use super::{
-    AppState, ComponentType, ConvState, CurrentItem, FriendListState, FriendShipState,
-    RecSendCallState, RecSendMessageState, UnreadState, WaitState,
+    AppState, ComponentType, ConvState, CurrentItem, FriendListState, FriendShipState, ItemType,
+    RecSendCallState, RecSendMessageState, RemoveConvState, RemoveFriendState, UnreadState,
+    WaitState,
 };
 use crate::components::phone_call::PhoneCall;
 use crate::db::current_item;
@@ -33,6 +34,8 @@ pub struct Home {
     // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
     call_msg: Msg,
     conv_state: Rc<ConvState>,
+    remove_conv_state: Rc<RemoveConvState>,
+    remove_friend_state: Rc<RemoveFriendState>,
     unread_state: Rc<UnreadState>,
     friend_state: Rc<FriendListState>,
     // user_state: QueryStatus<QueryResult>,
@@ -80,6 +83,8 @@ pub enum HomeMsg {
     SubUnreadMsgCount(usize),
     AddUnreadContactCount,
     SubUnreadContactCount(usize),
+    RemoveConv(AttrValue),
+    RemoveFriend((AttrValue, ItemType)),
     // RecSendCallStateChange(Msg),
 }
 
@@ -244,6 +249,17 @@ impl Component for Home {
                 current_item::save_unread_count(state.unread.clone()).unwrap();
                 true
             }
+            HomeMsg::RemoveConv(id) => {
+                let state = Rc::make_mut(&mut self.remove_conv_state);
+                state.id = id;
+                true
+            }
+            HomeMsg::RemoveFriend((id, type_)) => {
+                let state = Rc::make_mut(&mut self.remove_friend_state);
+                state.id = id;
+                state.type_ = type_;
+                true
+            }
         }
     }
 
@@ -287,6 +303,8 @@ impl Component for Home {
                                         <ContextProvider<Msg> context={self.call_msg.clone()}>
                                             <ContextProvider<Rc<WaitState>> context={self.wait_state.clone()}>
                                             <ContextProvider<Rc<UnreadState>> context={self.unread_state.clone()}>
+                                            <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
+                                            <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
                                                 <div class="home" id="app">
                                                     <Left />
                                                     <Right />
@@ -296,6 +314,8 @@ impl Component for Home {
                                                         {notify}
                                                     </div>
                                                 </div>
+                                            </ContextProvider<Rc<RemoveFriendState>>>
+                                            </ContextProvider<Rc<RemoveConvState>>>
                                             </ContextProvider<Rc<UnreadState>>>
                                             </ContextProvider<Rc<WaitState>>>
                                         </ContextProvider<Msg>>

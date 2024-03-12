@@ -9,6 +9,7 @@ use yew::prelude::*;
 use crate::api;
 use crate::db::group::GroupRepo;
 use crate::db::group_members::GroupMembersRepo;
+use crate::db::user::UserRepo;
 use crate::model::group::Group;
 use crate::model::group::GroupMember;
 use crate::model::group::GroupRequest;
@@ -209,9 +210,14 @@ impl AddConv {
                 members_id: ids,
                 id: String::new(),
             };
+            // push self
+            values.push(GroupMember::from(
+                UserRepo::new().await.get(user_id.clone()).await.unwrap(),
+            ));
             // send create request
             match api::group::create_group(group_req, user_id).await {
                 Ok(g) => {
+                    log::debug!("group created: {:?}", g);
                     if let Err(err) = GroupRepo::new().await.put(&g).await {
                         return AddConvMsg::RequestCreateGroupFail(err);
                     }

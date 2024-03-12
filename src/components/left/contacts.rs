@@ -8,7 +8,7 @@ use crate::db::friend_ship::FriendShipRepo;
 use crate::db::group::GroupRepo;
 use crate::model::group::Group;
 use crate::model::{ItemInfo, RightContentType};
-use crate::pages::{CurrentItem, FriendListState, FriendShipState};
+use crate::pages::{CurrentItem, FriendListState, FriendShipState, ItemType, RemoveFriendState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     db::friend::FriendRepo,
@@ -35,6 +35,8 @@ pub struct Contacts {
     _listener: ContextHandle<Rc<FriendShipState>>,
     friend_state: Rc<FriendListState>,
     _friend_listener: ContextHandle<Rc<FriendListState>>,
+    _remove_friend_state: Rc<RemoveFriendState>,
+    _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
 }
 
 pub enum QueryState<T> {
@@ -54,6 +56,7 @@ pub enum ContactsMsg {
     QueryFriendship(usize),
     NewFriendClicked,
     ShowContextMenu((i32, i32), AttrValue),
+    RemoveFriend(Rc<RemoveFriendState>),
 }
 
 impl Component for Contacts {
@@ -91,6 +94,10 @@ impl Component for Contacts {
             .link()
             .context(ctx.link().callback(ContactsMsg::FriendListStateChanged))
             .expect("need friend ship state");
+        let (_remove_friend_state, _remove_friend_listener) = ctx
+            .link()
+            .context(ctx.link().callback(ContactsMsg::RemoveFriend))
+            .expect("postcard friend_state needed");
         Self {
             list: IndexMap::new(),
             result: IndexMap::new(),
@@ -103,6 +110,8 @@ impl Component for Contacts {
             _listener,
             friend_state,
             _friend_listener,
+            _remove_friend_state,
+            _remove_friend_listener,
         }
     }
 
@@ -191,6 +200,28 @@ impl Component for Contacts {
                 // }
                 QueryState::Querying => false,
             },
+            ContactsMsg::RemoveFriend(state) => {
+                let mut friend_id = AttrValue::default();
+                match state.type_ {
+                    ItemType::Group => {
+                        if let Some(item) = self.groups.shift_remove(&state.id) {
+                            friend_id = item.id;
+                        }
+                    }
+                    ItemType::Friend => {
+                        if let Some(item) = self.list.shift_remove(&state.id) {
+                            friend_id = item.id;
+                        }
+                    }
+                }
+                if !friend_id.is_empty() && friend_id == self.friend_state.friend.item_id {
+                    self.friend_state
+                        .state_change_event
+                        .emit(CurrentItem::default());
+                    return true;
+                }
+                false
+            }
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {

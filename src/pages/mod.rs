@@ -60,6 +60,35 @@ pub struct ConvState {
     pub conv: CurrentItem,
     pub state_change_event: Callback<CurrentItem>,
 }
+
+/// 记录当前会话状态
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct RemoveConvState {
+    pub id: AttrValue,
+    pub remove_event: Callback<AttrValue>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+pub enum ItemType {
+    Group,
+    #[default]
+    Friend,
+}
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct RemoveFriendState {
+    pub id: AttrValue,
+    pub type_: ItemType,
+    pub remove_event: Callback<(AttrValue, ItemType)>,
+}
+
+impl RemoveFriendState {
+    pub fn with_event(event: Callback<(AttrValue, ItemType)>) -> Self {
+        Self {
+            remove_event: event,
+            ..Default::default()
+        }
+    }
+}
 /// 记录当前未读消息数量
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct UnreadState {
@@ -106,7 +135,6 @@ pub enum ComponentType {
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CurrentItem {
-    // pub unread_count: usize,
     pub item_id: AttrValue,
     pub content_type: RightContentType,
 }

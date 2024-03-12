@@ -12,7 +12,7 @@ use crate::model::conversation::Conversation;
 use crate::model::group::Group;
 use crate::model::message::Msg;
 use crate::model::RightContentType;
-use crate::pages::{ConvState, UnreadState, WaitState};
+use crate::pages::{ConvState, CurrentItem, RemoveConvState, UnreadState, WaitState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     db::{conv::ConvRepo, friend::FriendRepo},
@@ -39,7 +39,9 @@ pub struct Messages {
     _msg_listener: ContextHandle<Rc<RecSendMessageState>>,
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
-    _unread_state: Rc<UnreadState>,
+    _remove_conv_state: Rc<RemoveConvState>,
+    _remove_conv_listener: ContextHandle<Rc<RemoveConvState>>,
+    unread_state: Rc<UnreadState>,
     _unread_listener: ContextHandle<Rc<UnreadState>>,
     wait_state: Rc<WaitState>,
     _wait_listener: ContextHandle<Rc<WaitState>>,
@@ -60,6 +62,7 @@ pub enum MessagesMsg {
     CloseContextMenu,
     DeleteItem,
     None,
+    RemoveConvStateChanged(Rc<RemoveConvState>),
 }
 
 impl Component for Messages {
@@ -87,6 +90,10 @@ impl Component for Messages {
             .link()
             .context(ctx.link().callback(|_| MessagesMsg::None))
             .expect("need state in item");
+        let (remove_conv_state, _remove_conv_listener) = ctx
+            .link()
+            .context(ctx.link().callback(MessagesMsg::RemoveConvStateChanged))
+            .expect("need state in item");
         let (wait_state, _wait_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| MessagesMsg::WaitStateChanged))
@@ -101,7 +108,9 @@ impl Component for Messages {
             context_menu_pos: (0, 0, AttrValue::default()),
             conv_state,
             _conv_listener,
-            _unread_state: unread_state,
+            _remove_conv_state: remove_conv_state,
+            _remove_conv_listener,
+            unread_state,
             _unread_listener,
             msg_state,
             _msg_listener,
@@ -324,7 +333,6 @@ impl Component for Messages {
                 true
             }
             MessagesMsg::DeleteItem => {
-                self.list.shift_remove(self.context_menu_pos.2.as_str());
                 // delete database data
                 let id = self.context_menu_pos.2.clone();
                 spawn_local(async move {
@@ -332,6 +340,11 @@ impl Component for Messages {
                         log::error!("delete conversation error: {:?}", e);
                     }
                 });
+                if let Some(conv) = self.list.shift_remove(self.context_menu_pos.2.as_str()) {
+                    if conv.unread_count > 0 {
+                        self.unread_state.sub_msg_count.emit(conv.unread_count);
+                    }
+                }
                 self.show_context_menu = false;
                 self.context_menu_pos = (0, 0, AttrValue::default());
                 // set right content type
@@ -342,6 +355,20 @@ impl Component for Messages {
                 true
             }
             MessagesMsg::None => false,
+            MessagesMsg::RemoveConvStateChanged(state) => {
+                // delete conversation from database should be here
+                if let Some(conv) = self.list.shift_remove(state.id.as_str()) {
+                    if conv.unread_count > 0 {
+                        self.unread_state.sub_msg_count.emit(conv.unread_count);
+                    }
+                    if conv.friend_id == self.conv_state.conv.item_id {
+                        self.conv_state
+                            .state_change_event
+                            .emit(CurrentItem::default());
+                    }
+                };
+                true
+            }
         }
     }
 
@@ -464,7 +491,7 @@ impl Messages {
             let mut old = dest.unwrap();
             // deal with unread message count
             if !old.mute && !is_self {
-                self._unread_state.add_msg_count.emit(());
+                self.unread_state.add_msg_count.emit(());
             }
             // 这里是因为要直接更新面板上的数据，所以需要处理未读数量
             if friend_id != self.conv_state.conv.item_id {
@@ -485,7 +512,7 @@ impl Messages {
             true
         } else {
             if !is_self {
-                self._unread_state.add_msg_count.emit(());
+                self.unread_state.add_msg_count.emit(());
             }
             // 如果会话列表中不存在那么需要新建
             ctx.link().send_future(async move {

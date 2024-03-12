@@ -238,8 +238,6 @@ impl Repository {
     }
 
     pub async fn store(&self, name: &str) -> Result<IdbObjectStore, JsValue> {
-        // console::log_1(&JsValue::from(&self.db.clone()));
-
         let transaction = self
             .db
             .transaction_with_str_and_mode(name, IdbTransactionMode::Readwrite)?;

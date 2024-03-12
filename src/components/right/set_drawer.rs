@@ -36,28 +36,23 @@ impl Component for SetDrawer {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let btn_msg = match ctx.props().conv_type {
             RightContentType::Friend => "删除好友",
-            RightContentType::Group => "退出群聊",
+            RightContentType::Group => {
+                if ctx.props().is_owner {
+                    "解散群聊"
+                } else {
+                    "退出群聊"
+                }
+            }
             _ => "未知操作",
         };
-        let mut dismiss_group = html!();
-        if ctx.props().is_owner {
-            dismiss_group = html! {
-                <div class="set-drawer-item hover" /* onclick={ctx.props().delete.reform(|_|())} */>
-                    {"解散群聊"}
-                </div>
-            }
-        }
-
-        // let style =
         html! {
             <div ref={self.node.clone()}
                 class="set-drawer box-shadow" tabindex="0"
                 onblur={ctx.props().close.reform(|_|())}
                 >
-                <div class="set-drawer-item hover" /* onclick={ctx.props().delete.reform(|_|())} */>
+                <div class="set-drawer-item hover" onclick={ctx.props().delete.reform(|_|())}>
                     {btn_msg}
                 </div>
-                {dismiss_group}
             </div>
         }
     }

@@ -166,7 +166,6 @@ impl ConvRepo {
                 .unwrap();
             let mut conv = Conversation::default();
             if !result.is_undefined() && !result.is_null() {
-                web_sys::console::log_1(&result);
                 conv = serde_wasm_bindgen::from_value(result).unwrap();
             }
             tx.send(conv).unwrap();

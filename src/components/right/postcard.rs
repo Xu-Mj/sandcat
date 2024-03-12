@@ -1,8 +1,13 @@
+use std::rc::Rc;
+
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::components::right::set_drawer::SetDrawer;
+use crate::db::conv::ConvRepo;
 use crate::db::group::GroupRepo;
 use crate::model::{ItemInfo, RightContentType};
+use crate::pages::{ItemType, RemoveConvState, RemoveFriendState};
 use crate::{components::action::Action, db::friend::FriendRepo};
 
 #[derive(Properties, Clone, PartialEq)]
@@ -14,8 +19,9 @@ pub struct PostCardProps {
 
 pub enum PostCardMsg {
     QueryInformation(QueryState<Option<Box<dyn ItemInfo>>>),
-    // QueryGroup(QueryState<Group>),
+    Delete,
     ShowSetDrawer,
+    None,
 }
 
 pub enum QueryState<T> {
@@ -29,6 +35,10 @@ pub struct PostCard {
     is_group_owner: bool,
     // user_info: User,
     show_set_drawer: bool,
+    remove_conv_state: Rc<RemoveConvState>,
+    _remove_conv_listener: ContextHandle<Rc<RemoveConvState>>,
+    remove_friend_state: Rc<RemoveFriendState>,
+    _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
 }
 
 impl PostCard {
@@ -102,10 +112,22 @@ impl Component for PostCard {
 
     fn create(ctx: &Context<Self>) -> Self {
         log::debug!("postcard conv type:{:?}", ctx.props().conv_type.clone());
+        let (remove_conv_state, _remove_conv_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| PostCardMsg::None))
+            .expect("postcard remove_conv_state needed");
+        let (remove_friend_state, _remove_friend_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| PostCardMsg::None))
+            .expect("postcard friend_state needed");
         let self_ = PostCard {
             info: None,
             show_set_drawer: false,
             is_group_owner: false,
+            remove_conv_state,
+            _remove_conv_listener,
+            remove_friend_state,
+            _remove_friend_listener,
         };
         self_.query(ctx);
         self_
@@ -135,6 +157,41 @@ impl Component for PostCard {
                 self.show_set_drawer = !self.show_set_drawer;
                 true
             }
+            PostCardMsg::Delete => {
+                // delete data from local database
+                if let Some(info) = self.info.as_ref() {
+                    match info.get_type() {
+                        RightContentType::Friend => {}
+                        RightContentType::Group => {
+                            if self.is_group_owner {
+                                // dismiss group
+                            }
+                            // send leave group request
+                            // delete data from local database
+                            let id = info.id();
+                            spawn_local(async move {
+                                if let Err(e) = GroupRepo::new().await.delete(id.clone()).await {
+                                    log::error!("delete group failed: {:?}", e);
+                                }
+                                // delete conversation
+                                if let Err(e) = ConvRepo::new().await.delete(id).await {
+                                    log::error!("delete conversation failed: {:?}", e);
+                                }
+                            });
+
+                            // send state message to remove conversation from conversation lis
+                            self.remove_conv_state.remove_event.emit(info.id());
+                            // send state message to remove friend from friend list
+                            self.remove_friend_state
+                                .remove_event
+                                .emit((info.id(), ItemType::Group));
+                        }
+                        _ => {}
+                    }
+                }
+                true
+            }
+            PostCardMsg::None => false,
         }
     }
 
@@ -143,7 +200,7 @@ impl Component for PostCard {
         let mut set_drawer = html!();
         if self.show_set_drawer {
             let close = ctx.link().callback(|_| PostCardMsg::ShowSetDrawer);
-            let delete = ctx.link().callback(|_| PostCardMsg::ShowSetDrawer);
+            let delete = ctx.link().callback(|_| PostCardMsg::Delete);
             set_drawer = html! {
                 <SetDrawer
                     conv_type={ctx.props().conv_type.clone()}

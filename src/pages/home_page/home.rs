@@ -17,8 +17,8 @@ use crate::{
     },
     pages::{
         home_page::HomeMsg, AppState, ComponentType, ConvState, CurrentItem, FriendListState,
-        FriendShipState, FriendShipStateType, RecSendCallState, RecSendMessageState, UnreadState,
-        WaitState,
+        FriendShipState, FriendShipStateType, RecSendCallState, RecSendMessageState,
+        RemoveConvState, RemoveFriendState, UnreadState, WaitState,
     },
     ws::WebSocketManager,
 };
@@ -58,6 +58,8 @@ impl Home {
         let callback = ctx.link().callback(HomeMsg::SwitchComponent);
         let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
         let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
+        let remove_conv_callback = ctx.link().callback(HomeMsg::RemoveConv);
+        let remove_event = ctx.link().callback(HomeMsg::RemoveFriend);
         let add_contact_count = ctx.link().callback(|_| HomeMsg::AddUnreadContactCount);
         let sub_contact_count = ctx.link().callback(HomeMsg::SubUnreadContactCount);
         let sub_msg_count = ctx.link().callback(HomeMsg::SubUnreadMsgCount);
@@ -105,6 +107,10 @@ impl Home {
                 conv: CurrentItem::default(),
                 state_change_event: switch_conv_callback,
             }),
+            remove_conv_state: Rc::new(RemoveConvState {
+                id: AttrValue::default(),
+                remove_event: remove_conv_callback,
+            }),
             unread_state: Rc::new(UnreadState {
                 unread: current_item::get_unread_count(),
                 add_contact_count,
@@ -141,6 +147,7 @@ impl Home {
                 wait_count: WAIT_COUNT,
                 ready,
             }),
+            remove_friend_state: Rc::new(RemoveFriendState::with_event(remove_event)),
         }
     }
     pub fn send_msg(&self, msg: &Msg) {

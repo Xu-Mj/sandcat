@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
-use super::{friend::Friend, ItemInfo, RightContentType};
+use super::{friend::Friend, user::User, ItemInfo, RightContentType};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq)]
 pub struct Group {
@@ -26,11 +26,16 @@ pub struct GroupRequest {
     pub group_name: String,
     pub members_id: Vec<String>,
 }
+
+fn is_zero(id: &i32) -> bool {
+    *id == 0
+}
+
 /// Group member information
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMember {
-    #[serde(default)]
-    pub id: i64,
+    #[serde(skip_serializing_if = "is_zero")]
+    pub id: i32,
     pub user_id: AttrValue,
     #[serde(default)]
     pub group_id: AttrValue,
@@ -57,6 +62,20 @@ impl From<Friend> for GroupMember {
     }
 }
 
+impl From<User> for GroupMember {
+    fn from(value: User) -> Self {
+        Self {
+            id: 0,
+            user_id: value.id,
+            group_id: AttrValue::default(),
+            group_name: value.name,
+            avatar: value.avatar,
+            region: value.address,
+            gender: value.gender,
+            joined_at: chrono::Local::now().naive_local(),
+        }
+    }
+}
 impl ItemInfo for Group {
     fn name(&self) -> AttrValue {
         self.name.clone()

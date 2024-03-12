@@ -3,12 +3,12 @@ use std::ops::Deref;
 use futures_channel::oneshot;
 use indexmap::IndexMap;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::IdbRequest;
+use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
-use crate::model::group::Group;
+use crate::model::group::{Group, GroupMember};
 
-use super::{repository::Repository, GROUP_TABLE_NAME};
+use super::{repository::Repository, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_TABLE_NAME};
 
 pub struct GroupRepo(Repository);
 impl Deref for GroupRepo {
@@ -103,5 +103,45 @@ impl GroupRepo {
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
         success.forget();
         Ok(rx.await.unwrap())
+    }
+
+    // delete group and related group members
+    pub async fn delete(&self, id: AttrValue) -> Result<(), JsValue> {
+        let store = self.store(GROUP_TABLE_NAME).await?;
+        store.delete(&JsValue::from(id.as_str()))?;
+
+        // delete group members
+        let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
+        // need query group members first
+        // use group id index
+        let index = store.index(GROUP_ID_INDEX)?;
+        let range = JsValue::from(IdbKeyRange::only(&JsValue::from(id.as_str()))?);
+        let request = index.open_cursor_with_range(&range)?;
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = match req.result() {
+                Ok(data) => data,
+                Err(_err) => {
+                    log::error!("query friend list error ...:{:?}", _err);
+                    JsValue::null()
+                }
+            };
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+                let value = cursor.value().unwrap();
+                // 反序列化
+                let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
+                store.delete(&JsValue::from(group.id)).unwrap();
+                let _ = cursor.continue_();
+            }
+        }) as Box<dyn FnMut(&Event)>);
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        success.forget();
+        Ok(())
     }
 }

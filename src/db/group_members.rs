@@ -137,7 +137,7 @@ impl GroupMembersRepo {
                 let value = cursor.value().unwrap();
                 // 反序列化
                 let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
-                let id = group.id.to_string().into();
+                let id = group.user_id.to_string().into();
                 groups.borrow_mut().insert(id, group);
                 let _ = cursor.continue_();
             } else {
