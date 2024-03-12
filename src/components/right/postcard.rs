@@ -71,7 +71,7 @@ impl PostCard {
             match ctx.props().conv_type {
                 RightContentType::Friend => {
                     ctx.link().send_future(async move {
-                        let user_info = FriendRepo::new().await.get(id).await;
+                        let user_info = FriendRepo::new().await.get_friend(id).await;
                         log::debug!("user info :{:?}", user_info);
                         PostCardMsg::QueryInformation(QueryState::Success(Some(Box::new(
                             user_info,

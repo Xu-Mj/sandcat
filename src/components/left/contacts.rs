@@ -169,7 +169,6 @@ impl Component for Contacts {
                 self.friend_state.state_change_event.emit(CurrentItem {
                     item_id: AttrValue::default(),
                     content_type: RightContentType::FriendShipList,
-                    unread_count: 0,
                 });
                 // clean unread count
                 spawn_local(async {

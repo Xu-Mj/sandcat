@@ -70,7 +70,6 @@ impl Component for Action {
                 self.conv_state.state_change_event.emit(CurrentItem {
                     item_id: id,
                     content_type: ctx.props().conv_type.clone(),
-                    unread_count: self.conv_state.conv.unread_count,
                 });
                 log::debug!("conv type: {:?}", ctx.props().conv_type.clone());
                 true

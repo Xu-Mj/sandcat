@@ -4,12 +4,14 @@ use yew::prelude::*;
 
 use crate::{
     model::RightContentType,
-    pages::{CommonProps, ComponentType, ConvState, CurrentItem, FriendListState},
+    pages::{CommonProps, ComponentType, ConvState, CurrentItem, FriendListState, UnreadState},
 };
 
 pub struct ListItem {
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
+    _unread_state: Rc<UnreadState>,
+    _unread_listener: ContextHandle<Rc<UnreadState>>,
     friend_state: Rc<FriendListState>,
     _friend_listener: ContextHandle<Rc<FriendListState>>,
     unread_count: usize,
@@ -26,6 +28,7 @@ pub struct ListItemProps {
 
 pub enum ListItemMsg {
     ConvStateChanged(Rc<ConvState>),
+    None,
     FriendStateChanged(Rc<FriendListState>),
     GoToSetting,
     CleanUnreadCount,
@@ -48,6 +51,10 @@ impl Component for ListItem {
             .link()
             .context(ctx.link().callback(ListItemMsg::ConvStateChanged))
             .expect("need state in item");
+        let (unread_state, _unread_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| ListItemMsg::None))
+            .expect("need state in item");
         let (friend_state, _friend_listener) = ctx
             .link()
             .context(ctx.link().callback(ListItemMsg::FriendStateChanged))
@@ -57,6 +64,8 @@ impl Component for ListItem {
         Self {
             conv_state,
             _conv_listener,
+            _unread_state: unread_state,
+            _unread_listener,
             friend_state,
             _friend_listener,
             unread_count,
@@ -72,16 +81,12 @@ impl Component for ListItem {
             ListItemMsg::GoToSetting => false,
             ListItemMsg::CleanUnreadCount => {
                 let conv = CurrentItem {
-                    unread_count: self
-                        .conv_state
-                        .conv
-                        .unread_count
-                        .saturating_sub(self.unread_count),
                     item_id: ctx.props().props.id.clone(),
                     content_type: ctx.props().conv_type.clone(),
                 };
-                self.unread_count = 0;
+                self._unread_state.sub_msg_count.emit(self.unread_count);
                 self.conv_state.state_change_event.emit(conv);
+                self.unread_count = 0;
                 true
             }
             ListItemMsg::FriendStateChanged(state) => {
@@ -97,7 +102,6 @@ impl Component for ListItem {
                 self.friend_state.state_change_event.emit(CurrentItem {
                     item_id: ctx.props().props.id.clone(),
                     content_type: ctx.props().conv_type.clone(),
-                    unread_count: 0,
                 });
                 false
             }
@@ -109,6 +113,7 @@ impl Component for ListItem {
                 ));
                 false
             }
+            ListItemMsg::None => false,
         }
     }
 

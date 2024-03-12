@@ -4,7 +4,7 @@ use yew::prelude::*;
 
 use crate::{
     icons::{ContactsIcon, MessagesIcon},
-    pages::{AppState, ComponentType, ConvState},
+    pages::{AppState, ComponentType, ConvState, UnreadState},
 };
 
 /// 增加双击切换置顶未读消息
@@ -14,6 +14,8 @@ pub struct Top {
     // 修改为单独的未读消息增加减少的状态
     conv_state: Rc<ConvState>,
     _conv_handler: ContextHandle<Rc<ConvState>>,
+    unread_state: Rc<UnreadState>,
+    _unread_handler: ContextHandle<Rc<UnreadState>>,
 }
 
 #[derive(Properties, PartialEq)]
@@ -25,6 +27,7 @@ pub struct TopProps {
 pub enum TopMsg {
     AppContextChanged(Rc<AppState>),
     ConvStateChanged(Rc<ConvState>),
+    UnreadStateChanged(Rc<UnreadState>),
     EmptyCallback,
 }
 
@@ -42,11 +45,17 @@ impl Component for Top {
             .link()
             .context::<Rc<ConvState>>(ctx.link().callback(TopMsg::ConvStateChanged))
             .expect("need state");
+        let (unread_state, _unread_handler) = ctx
+            .link()
+            .context::<Rc<UnreadState>>(ctx.link().callback(TopMsg::UnreadStateChanged))
+            .expect("need state");
         Self {
             state,
             _handler,
             conv_state,
             _conv_handler,
+            unread_state,
+            _unread_handler,
         }
     }
 
@@ -59,6 +68,10 @@ impl Component for Top {
             TopMsg::EmptyCallback => false,
             TopMsg::ConvStateChanged(state) => {
                 self.conv_state = state;
+                true
+            }
+            TopMsg::UnreadStateChanged(state) => {
+                self.unread_state = state;
                 true
             }
         }
@@ -95,10 +108,10 @@ impl Component for Top {
         //     ctx.link().callback(move |_| TopMsg::EmptyCallback)
         // };
         let mut count = html!();
-        if self.conv_state.conv.unread_count > 0 {
+        if self.unread_state.unread.unread_msg > 0 {
             count = html! {
                 <span class="unread-count">
-                    {self.conv_state.conv.unread_count}
+                    {self.unread_state.unread.unread_msg}
                 </span>
             };
         }

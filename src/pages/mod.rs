@@ -60,6 +60,15 @@ pub struct ConvState {
     pub conv: CurrentItem,
     pub state_change_event: Callback<CurrentItem>,
 }
+/// 记录当前未读消息数量
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct UnreadState {
+    pub unread: UnreadItem,
+    pub add_contact_count: Callback<()>,
+    pub sub_contact_count: Callback<usize>,
+    pub add_msg_count: Callback<()>,
+    pub sub_msg_count: Callback<usize>,
+}
 
 /// 记录当前朋友列表状态
 #[derive(Default, Clone, PartialEq)]
@@ -97,9 +106,15 @@ pub enum ComponentType {
 
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CurrentItem {
-    pub unread_count: usize,
+    // pub unread_count: usize,
     pub item_id: AttrValue,
     pub content_type: RightContentType,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UnreadItem {
+    pub unread_msg: usize,
+    pub unread_contact: usize,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]

@@ -94,17 +94,12 @@ impl ConvRepo {
 
     pub async fn get_convs2(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Conversation>>();
-        let store = self
-            .store(&String::from(CONVERSATION_TABLE_NAME))
-            .await
-            .unwrap();
+        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         let index = store.index(CONVERSATION_LAST_MSG_TIME_INDEX).unwrap();
-        let request = index
-            .open_cursor_with_range_and_direction(
-                &JsValue::default(),
-                web_sys::IdbCursorDirection::Prev,
-            )
-            .unwrap();
+        let request = index.open_cursor_with_range_and_direction(
+            &JsValue::default(),
+            web_sys::IdbCursorDirection::Prev,
+        )?;
         let on_add_error = Closure::once(move |event: &Event| {
             web_sys::console::log_1(&String::from("读取数据失败").into());
             web_sys::console::log_1(&event.into());

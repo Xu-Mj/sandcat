@@ -10,7 +10,7 @@ use yew::prelude::*;
 
 use super::{
     AppState, ComponentType, ConvState, CurrentItem, FriendListState, FriendShipState,
-    RecSendCallState, RecSendMessageState, WaitState,
+    RecSendCallState, RecSendMessageState, UnreadState, WaitState,
 };
 use crate::components::phone_call::PhoneCall;
 use crate::db::current_item;
@@ -33,6 +33,7 @@ pub struct Home {
     // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
     call_msg: Msg,
     conv_state: Rc<ConvState>,
+    unread_state: Rc<UnreadState>,
     friend_state: Rc<FriendListState>,
     // user_state: QueryStatus<QueryResult>,
     user: User,
@@ -75,6 +76,10 @@ pub enum HomeMsg {
     Notification(Notification),
     CleanNotification,
     CloseNotificationByIndex(usize),
+    AddUnreadMsgCount,
+    SubUnreadMsgCount(usize),
+    AddUnreadContactCount,
+    SubUnreadContactCount(usize),
     // RecSendCallStateChange(Msg),
 }
 
@@ -215,6 +220,30 @@ impl Component for Home {
                 }
                 false
             }
+            HomeMsg::AddUnreadMsgCount => {
+                let state = Rc::make_mut(&mut self.unread_state);
+                state.unread.unread_msg = state.unread.unread_msg.saturating_add(1);
+                current_item::save_unread_count(state.unread.clone()).unwrap();
+                true
+            }
+            HomeMsg::AddUnreadContactCount => {
+                let state = Rc::make_mut(&mut self.unread_state);
+                state.unread.unread_contact = state.unread.unread_contact.saturating_add(1);
+                current_item::save_unread_count(state.unread.clone()).unwrap();
+                true
+            }
+            HomeMsg::SubUnreadContactCount(count) => {
+                let state = Rc::make_mut(&mut self.unread_state);
+                state.unread.unread_contact = state.unread.unread_contact.saturating_sub(count);
+                current_item::save_unread_count(state.unread.clone()).unwrap();
+                true
+            }
+            HomeMsg::SubUnreadMsgCount(count) => {
+                let state = Rc::make_mut(&mut self.unread_state);
+                state.unread.unread_msg = state.unread.unread_msg.saturating_sub(count);
+                current_item::save_unread_count(state.unread.clone()).unwrap();
+                true
+            }
         }
     }
 
@@ -257,6 +286,7 @@ impl Component for Home {
                                     <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
                                         <ContextProvider<Msg> context={self.call_msg.clone()}>
                                             <ContextProvider<Rc<WaitState>> context={self.wait_state.clone()}>
+                                            <ContextProvider<Rc<UnreadState>> context={self.unread_state.clone()}>
                                                 <div class="home" id="app">
                                                     <Left />
                                                     <Right />
@@ -266,6 +296,7 @@ impl Component for Home {
                                                         {notify}
                                                     </div>
                                                 </div>
+                                            </ContextProvider<Rc<UnreadState>>>
                                             </ContextProvider<Rc<WaitState>>>
                                         </ContextProvider<Msg>>
                                     </ContextProvider<Rc<RecSendCallState>>>

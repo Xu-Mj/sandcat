@@ -12,7 +12,7 @@ use crate::model::conversation::Conversation;
 use crate::model::group::Group;
 use crate::model::message::Msg;
 use crate::model::RightContentType;
-use crate::pages::{ConvState, WaitState};
+use crate::pages::{ConvState, UnreadState, WaitState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     db::{conv::ConvRepo, friend::FriendRepo},
@@ -39,6 +39,8 @@ pub struct Messages {
     _msg_listener: ContextHandle<Rc<RecSendMessageState>>,
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
+    _unread_state: Rc<UnreadState>,
+    _unread_listener: ContextHandle<Rc<UnreadState>>,
     wait_state: Rc<WaitState>,
     _wait_listener: ContextHandle<Rc<WaitState>>,
 }
@@ -57,6 +59,7 @@ pub enum MessagesMsg {
     ShowContextMenu((i32, i32), AttrValue),
     CloseContextMenu,
     DeleteItem,
+    None,
 }
 
 impl Component for Messages {
@@ -80,6 +83,10 @@ impl Component for Messages {
             .link()
             .context(ctx.link().callback(MessagesMsg::ConvStateChanged))
             .expect("need state in item");
+        let (unread_state, _unread_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| MessagesMsg::None))
+            .expect("need state in item");
         let (wait_state, _wait_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| MessagesMsg::WaitStateChanged))
@@ -94,6 +101,8 @@ impl Component for Messages {
             context_menu_pos: (0, 0, AttrValue::default()),
             conv_state,
             _conv_listener,
+            _unread_state: unread_state,
+            _unread_listener,
             msg_state,
             _msg_listener,
             wait_state,
@@ -151,7 +160,7 @@ impl Component for Messages {
                             friend_id: msg.friend_id.clone(),
                             ..Default::default()
                         };
-                        self.operate_msg(ctx, msg.friend_id, conv)
+                        self.operate_msg(ctx, msg.friend_id, conv, msg.is_self)
                     }
                     Msg::GroupInvitation(msg) => {
                         // create group conversation directly
@@ -179,36 +188,38 @@ impl Component for Messages {
                         let friend_id = msg.friend_id.clone();
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv)
+                        self.operate_msg(ctx, friend_id, conv, false)
                     }
                     Msg::SingleCallInviteCancel(msg) => {
                         let friend_id = msg.friend_id.clone();
+                        let is_self = msg.is_self;
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv)
+                        self.operate_msg(ctx, friend_id, conv, is_self)
                     }
                     Msg::SingleCallNotAnswer(msg) => {
                         let friend_id = msg.friend_id.clone();
+                        let is_self = msg.is_self;
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv)
+                        self.operate_msg(ctx, friend_id, conv, is_self)
                     }
                     Msg::SingleCallHangUp(msg) => {
                         let friend_id = msg.friend_id.clone();
+                        let is_self = msg.is_self;
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv)
+                        self.operate_msg(ctx, friend_id, conv, is_self)
                     }
                     Msg::SingleCallInviteAnswer(msg) => {
                         let friend_id = msg.friend_id.clone();
+                        let is_self = msg.is_self;
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv)
+                        self.operate_msg(ctx, friend_id, conv, is_self)
                     }
                     _ => false,
                 }
-
-                // 数据入库, 考虑一下是否将数据库操作统一到同一个组件中
             }
             MessagesMsg::InsertConv(flag) => {
                 // self.list.insert(0, flag);
@@ -270,6 +281,7 @@ impl Component for Messages {
                             unread_count: 0,
                             friend_id,
                             conv_type,
+                            mute: false,
                         };
                         let conv_repo = ConvRepo::new().await;
                         conv_repo.put_conv(&conv, true).await.unwrap();
@@ -329,6 +341,7 @@ impl Component for Messages {
                 self.conv_state.state_change_event.emit(conv);
                 true
             }
+            MessagesMsg::None => false,
         }
     }
 
@@ -443,11 +456,16 @@ impl Messages {
         ctx: &Context<Self>,
         friend_id: AttrValue,
         mut conv: Conversation,
+        is_self: bool,
     ) -> bool {
         let dest = self.list.shift_remove(&friend_id);
         let mut clean = false;
         if dest.is_some() {
             let mut old = dest.unwrap();
+            // deal with unread message count
+            if !old.mute && !is_self {
+                self._unread_state.add_msg_count.emit(());
+            }
             // 这里是因为要直接更新面板上的数据，所以需要处理未读数量
             if friend_id != self.conv_state.conv.item_id {
                 old.unread_count += 1;
@@ -466,6 +484,9 @@ impl Messages {
             });
             true
         } else {
+            if !is_self {
+                self._unread_state.add_msg_count.emit(());
+            }
             // 如果会话列表中不存在那么需要新建
             ctx.link().send_future(async move {
                 let friend_repo = FriendRepo::new().await;

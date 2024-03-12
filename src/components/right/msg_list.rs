@@ -178,9 +178,6 @@ impl Component for MessageList {
     }
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        // if first_render {
-        //     self.query(ctx);
-        // }
         if self.scroll_state == ScrollState::Bottom {
             let node = self.node_ref.cast::<HtmlElement>().unwrap();
             node.set_scroll_top(0);

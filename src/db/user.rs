@@ -70,7 +70,6 @@ impl UserRepo {
             let result = req.result().expect("read result error");
             let mut user = User::default();
             if !result.is_undefined() && !result.is_null() {
-                console::log_1(&String::from("读取数据成功").into());
                 user = serde_wasm_bindgen::from_value(result).expect("反序列化出错");
             }
             let _ = tx.send(user);

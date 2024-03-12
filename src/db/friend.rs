@@ -39,6 +39,7 @@ impl FriendRepo {
         });
     }
 
+    #[allow(dead_code)]
     pub async fn get(&self, id: AttrValue) -> Friend {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Friend>();

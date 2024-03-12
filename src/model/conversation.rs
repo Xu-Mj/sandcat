@@ -41,6 +41,7 @@ pub struct Conversation {
     pub last_msg_time: i64,
     pub last_msg_type: ContentType,
     pub unread_count: usize,
+    pub mute: bool,
     // pub file:
 }
 

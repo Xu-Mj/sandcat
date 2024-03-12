@@ -99,7 +99,7 @@ impl ItemInfo for Friend {
     }
 
     fn id(&self) -> AttrValue {
-        self.id.clone()
+        self.friend_id.clone()
     }
 
     fn get_type(&self) -> RightContentType {

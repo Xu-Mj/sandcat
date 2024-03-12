@@ -17,7 +17,8 @@ use crate::{
     },
     pages::{
         home_page::HomeMsg, AppState, ComponentType, ConvState, CurrentItem, FriendListState,
-        FriendShipState, FriendShipStateType, RecSendCallState, RecSendMessageState, WaitState,
+        FriendShipState, FriendShipStateType, RecSendCallState, RecSendMessageState, UnreadState,
+        WaitState,
     },
     ws::WebSocketManager,
 };
@@ -57,6 +58,10 @@ impl Home {
         let callback = ctx.link().callback(HomeMsg::SwitchComponent);
         let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
         let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
+        let add_contact_count = ctx.link().callback(|_| HomeMsg::AddUnreadContactCount);
+        let sub_contact_count = ctx.link().callback(HomeMsg::SubUnreadContactCount);
+        let sub_msg_count = ctx.link().callback(HomeMsg::SubUnreadMsgCount);
+        let add_msg_count = ctx.link().callback(|_| HomeMsg::AddUnreadMsgCount);
         let ready = ctx.link().callback(|_| HomeMsg::WaitStateChanged);
         let rec_msg_event = ctx.link().callback(HomeMsg::RecSendMsgStateChange);
         let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
@@ -99,6 +104,13 @@ impl Home {
             conv_state: Rc::new(ConvState {
                 conv: CurrentItem::default(),
                 state_change_event: switch_conv_callback,
+            }),
+            unread_state: Rc::new(UnreadState {
+                unread: current_item::get_unread_count(),
+                add_contact_count,
+                add_msg_count,
+                sub_contact_count,
+                sub_msg_count,
             }),
             ws,
             friend_ship_state: Rc::new(FriendShipState {
@@ -262,7 +274,6 @@ impl Home {
                 let msg_id = msg.msg_id.to_string();
                 if self.conv_state.conv.item_id != msg.friend_id {
                     let conv_state = Rc::make_mut(&mut self.conv_state);
-                    conv_state.conv.unread_count = conv_state.conv.unread_count.saturating_add(1);
                     let _ = current_item::save_conv(&conv_state.conv)
                         .map_err(|err| log::error!("save conv fail{:?}", err));
                 }
@@ -285,7 +296,6 @@ impl Home {
                 let msg_id = msg.msg_id.to_string();
                 if self.conv_state.conv.item_id != msg.friend_id {
                     let conv_state = Rc::make_mut(&mut self.conv_state);
-                    conv_state.conv.unread_count = conv_state.conv.unread_count.saturating_add(1);
                     let _ = current_item::save_conv(&conv_state.conv)
                         .map_err(|err| log::error!("save conv fail{:?}", err));
                 }

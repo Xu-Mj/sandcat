@@ -2,12 +2,12 @@
 use gloo::utils::window;
 use wasm_bindgen::JsValue;
 
-use crate::pages::{ComponentType, CurrentItem};
+use crate::pages::{ComponentType, CurrentItem, UnreadItem};
 
 pub const CONV_LOCAL_STORAGE_KEY: &str = "__CURRENT_CONV__";
 pub const FRIEND_LOCAL_STORAGE_KEY: &str = "__CURRENT_FRIEND__";
 pub const COMPONENT_TYPE_LOCAL_STORAGE_KEY: &str = "__CURRENT_COMPONENT__";
-// pub const UNREAD_MSG_COUNT_LOCAL_STORAGE_KEY: &str = "__UNREAD_MSG_COUNT__";
+pub const UNREAD_COUNT_LOCAL_STORAGE_KEY: &str = "__UNREAD_COUNT__";
 
 pub fn save_conv(conv: &CurrentItem) -> Result<(), JsValue> {
     let value = serde_json::to_string(conv).unwrap();
@@ -69,24 +69,22 @@ pub fn get_com_type() -> ComponentType {
     serde_json::from_str(value.as_str()).unwrap_or_default()
 }
 
-/* pub fn get_unread_count() -> usize {
+pub fn get_unread_count() -> UnreadItem {
     let value = window()
         .local_storage()
         .unwrap()
         .unwrap()
-        .get(UNREAD_MSG_COUNT_LOCAL_STORAGE_KEY)
+        .get(UNREAD_COUNT_LOCAL_STORAGE_KEY)
         .unwrap()
         .unwrap_or_default();
-    if value.is_empty() {
-        return 0;
-    }
-    value.parse::<usize>().unwrap()
+    serde_json::from_str(value.as_str()).unwrap_or_default()
 }
 
-pub fn save_unread_count(count: usize) -> Result<(), JsValue> {
-    window().local_storage().unwrap().unwrap().set(
-        UNREAD_MSG_COUNT_LOCAL_STORAGE_KEY,
-        count.to_string().as_str(),
-    )
+pub fn save_unread_count(value: UnreadItem) -> Result<(), JsValue> {
+    let value = serde_json::to_string(&value).unwrap();
+    window()
+        .local_storage()
+        .unwrap()
+        .unwrap()
+        .set(UNREAD_COUNT_LOCAL_STORAGE_KEY, &value)
 }
- */
