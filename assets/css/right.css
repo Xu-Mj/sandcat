@@ -482,14 +482,14 @@
                     align-items: center;
                     position: absolute;
                     right: 0;
-                    top: 0;
+                    top: -1rem;
                     cursor: pointer;
                 }
 
                 .set-drawer {
                     position: absolute;
                     right: 0;
-                    top: 2rem;
+                    top: 1rem;
                     background-color: white;
 
                     &[tabindex] {
@@ -521,6 +521,22 @@
                             width: 6rem;
                             height: 6rem;
                             border-radius: 1rem;
+                        }
+
+                        .item-avatar {
+                            width: 6rem;
+                            height: 6rem;
+                            background-color: azure;
+                            border-radius: .3rem;
+                            display: grid;
+                            grid-template-columns: repeat(var(--avatar-column), 1fr);
+                            gap: .2rem;
+
+                            .avatar {
+                                place-self: center;
+                                width: 100%;
+                                height: auto;
+                            }
                         }
 
                         .info {

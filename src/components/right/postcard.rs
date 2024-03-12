@@ -32,6 +32,36 @@ pub struct PostCard {
 }
 
 impl PostCard {
+    fn get_avatar(&self) -> Html {
+        // deal with group avatars
+        let avatar_str = self.info.as_ref().unwrap().avatar();
+
+        let mut avatar_style = "--avatar-column: 1";
+        // trim spliter
+        let avatar_str = avatar_str.trim_matches(',');
+        // get len
+        let len = avatar_str.matches(',').count() + 1;
+        let iter = avatar_str.split(',');
+        if len > 1 && len < 5 {
+            avatar_style = "--avatar-column: 2"
+        } else if len >= 5 {
+            avatar_style = "--avatar-column: 3"
+        }
+
+        let avatar = iter
+            .map(|v| {
+                html! {
+                    <img class="avatar" src={v.to_owned()} />
+                }
+            })
+            .collect::<Html>();
+        html! {
+            <div class="item-avatar" style={avatar_style}>
+                {avatar}
+            </div>
+        }
+    }
+
     fn query(&self, ctx: &Context<Self>) {
         ctx.link()
             .send_message(PostCardMsg::QueryInformation(QueryState::Querying));
@@ -132,9 +162,10 @@ impl Component for PostCard {
                     {set_drawer}
                 <div class="header">
                     <div class="header-info">
-                        <div >
-                            <img class="postcard-avatar" src={self.info.as_ref().unwrap().avatar()} />
-                        </div>
+                        // <div >
+                        //     <img class="postcard-avatar" src={self.info.as_ref().unwrap().avatar()} />
+                        // </div>
+                        {self.get_avatar()}
                         <div class="info">
                             <span class="name">
                                 {self.info.as_ref().unwrap().name()}
