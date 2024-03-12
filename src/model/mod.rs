@@ -24,23 +24,24 @@ pub enum ContentType {
     AudioCall,
 }
 
-pub enum ItemType {
-    Friend,
-    Group,
-}
-
 pub trait ItemInfo {
     fn name(&self) -> AttrValue;
 
     fn id(&self) -> AttrValue;
 
-    fn get_type(&self) -> ItemType;
+    fn get_type(&self) -> RightContentType;
 
     fn avatar(&self) -> AttrValue;
 
     fn time(&self) -> i64;
 
     fn remark(&self) -> Option<AttrValue>;
+
+    fn signature(&self) -> Option<AttrValue>;
+
+    fn region(&self) -> Option<AttrValue>;
+
+    fn owner(&self) -> AttrValue;
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]

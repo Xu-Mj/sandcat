@@ -470,6 +470,10 @@
                 align-items: center;
                 position: relative;
 
+                &>*:not(:last-child, :first-child, :nth-child(2)) {
+                    border-bottom: 1px solid gray;
+                }
+
                 .postcard-setting {
                     width: 2rem;
                     height: 2rem;
@@ -482,9 +486,27 @@
                     cursor: pointer;
                 }
 
-                &>*:not(:last-child, :first-child) {
-                    border-bottom: 1px solid gray;
+                .set-drawer {
+                    position: absolute;
+                    right: 0;
+                    top: 2rem;
+                    background-color: white;
+
+                    &[tabindex] {
+                        outline: none;
+                    }
+
+                    .set-drawer-item {
+                        width: 6rem;
+                        height: 2rem;
+                        line-height: 2rem;
+                        padding: 0 1rem;
+                        border: none;
+
+                    }
                 }
+
+
 
                 .header {
                     display: flex;

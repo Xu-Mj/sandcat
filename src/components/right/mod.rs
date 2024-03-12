@@ -176,7 +176,7 @@ impl Component for Right {
                     | RightContentType::UserInfo => {
                         html! {
                             <PostCard user_id={&self.state.login_user.id.clone()}
-                            friend_id={&self.friend_list_state.friend.item_id.clone()}
+                            id={&self.friend_list_state.friend.item_id.clone()}
                             conv_type={self.friend_list_state.friend.content_type.clone()}/>
                         }
                     }

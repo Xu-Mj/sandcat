@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
-use super::{ItemInfo, ItemType};
+use super::{ItemInfo, RightContentType};
 #[derive(Debug, Default, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum FriendStatus {
     #[default]
@@ -102,8 +102,8 @@ impl ItemInfo for Friend {
         self.id.clone()
     }
 
-    fn get_type(&self) -> ItemType {
-        ItemType::Friend
+    fn get_type(&self) -> RightContentType {
+        RightContentType::Friend
     }
 
     fn avatar(&self) -> AttrValue {
@@ -116,5 +116,18 @@ impl ItemInfo for Friend {
 
     fn remark(&self) -> Option<AttrValue> {
         self.remark.clone()
+    }
+
+    fn signature(&self) -> Option<AttrValue> {
+        // self.signature
+        None
+    }
+
+    fn region(&self) -> Option<AttrValue> {
+        self.address.clone()
+    }
+
+    fn owner(&self) -> AttrValue {
+        self.friend_id.clone()
     }
 }

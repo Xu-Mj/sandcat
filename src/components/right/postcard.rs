@@ -1,73 +1,68 @@
-use wasm_bindgen::JsValue;
 use yew::prelude::*;
 
-use crate::api::user::get_info_by_id;
 use crate::components::right::set_drawer::SetDrawer;
-use crate::model::user::User;
-use crate::model::RightContentType;
-use crate::{components::action::Action, db::friend::FriendRepo, model::friend::Friend};
+use crate::db::group::GroupRepo;
+use crate::model::{ItemInfo, RightContentType};
+use crate::{components::action::Action, db::friend::FriendRepo};
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct PostCardProps {
-    pub friend_id: AttrValue,
+    pub id: AttrValue,
     pub user_id: AttrValue,
     pub conv_type: RightContentType,
 }
 
 pub enum PostCardMsg {
-    QueryFriend(QueryState<Friend>),
-    QueryUser(QueryState<User>),
-    ApplyFriend,
+    QueryInformation(QueryState<Option<Box<dyn ItemInfo>>>),
+    // QueryGroup(QueryState<Group>),
     ShowSetDrawer,
-    // ApplyFriendRes,
 }
 
 pub enum QueryState<T> {
     Querying,
     Success(T),
-    Failed(JsValue),
+    Failed,
 }
 
 pub struct PostCard {
-    friend_info: Friend,
+    info: Option<Box<dyn ItemInfo>>,
+    is_group_owner: bool,
     // user_info: User,
     show_set_drawer: bool,
 }
 
 impl PostCard {
     fn query(&self, ctx: &Context<Self>) {
-        let friend_id = ctx.props().friend_id.clone();
-        log::debug!("friend_id :{:?}", &friend_id);
-        if friend_id != AttrValue::default() {
+        ctx.link()
+            .send_message(PostCardMsg::QueryInformation(QueryState::Querying));
+        let id = ctx.props().id.clone();
+        log::debug!("friend_id :{:?}", &id);
+        if !id.is_empty() {
             match ctx.props().conv_type {
-                RightContentType::UserInfo => {
-                    // 通过网络获取
-                    ctx.link().send_future(async move {
-                        match get_info_by_id(friend_id.to_string()).await {
-                            Ok(user) => {
-                                log::debug!("查询成功:{:?}", &user);
-                                PostCardMsg::QueryUser(QueryState::Success(user))
-                            }
-                            Err(err) => PostCardMsg::QueryUser(QueryState::Failed(err)),
-                        }
-                    });
-                    ctx.link()
-                        .send_message(PostCardMsg::QueryUser(QueryState::Querying))
-                }
                 RightContentType::Friend => {
                     ctx.link().send_future(async move {
-                        let user_info = FriendRepo::new().await.get_friend(friend_id).await;
-                        PostCardMsg::QueryFriend(QueryState::Success(user_info))
+                        let user_info = FriendRepo::new().await.get(id).await;
+                        log::debug!("user info :{:?}", user_info);
+                        PostCardMsg::QueryInformation(QueryState::Success(Some(Box::new(
+                            user_info,
+                        ))))
                     });
                 }
-                RightContentType::Group => {}
+                RightContentType::Group => ctx.link().send_future(async move {
+                    match GroupRepo::new().await.get(id).await {
+                        Ok(Some(group)) => PostCardMsg::QueryInformation(QueryState::Success(
+                            Some(Box::new(group)),
+                        )),
+                        _ => PostCardMsg::QueryInformation(QueryState::Failed),
+                    }
+                }),
                 _ => {}
             }
         }
     }
 
     fn reset(&mut self) {
-        self.friend_info = Friend::default();
+        self.info = None;
     }
 }
 
@@ -78,9 +73,9 @@ impl Component for PostCard {
     fn create(ctx: &Context<Self>) -> Self {
         log::debug!("postcard conv type:{:?}", ctx.props().conv_type.clone());
         let self_ = PostCard {
-            friend_info: Friend::default(),
-            // user_info: User::default(),
+            info: None,
             show_set_drawer: false,
+            is_group_owner: false,
         };
         self_.query(ctx);
         self_
@@ -94,129 +89,74 @@ impl Component for PostCard {
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            PostCardMsg::QueryFriend(state) => match state {
+            PostCardMsg::QueryInformation(state) => match state {
                 QueryState::Querying => true,
-                QueryState::Success(user_info) => {
-                    self.friend_info = user_info;
-                    true
-                }
-                QueryState::Failed(_) => false,
-            },
-            PostCardMsg::QueryUser(state) => match state {
-                QueryState::Querying => true,
-                QueryState::Success(user_info) => {
-                    let friend_info = Friend {
-                        id: Default::default(),
-                        friend_id: user_info.id,
-                        remark: None,
-                        status: Default::default(),
-                        create_time: Default::default(),
-                        update_time: Default::default(),
-                        from: None,
-                        name: user_info.name,
-                        account: user_info.account,
-                        avatar: user_info.avatar,
-                        gender: user_info.gender,
-                        age: user_info.age,
-                        phone: user_info.phone,
-                        email: user_info.email,
-                        address: user_info.address,
-                        birthday: user_info.birthday,
-                        hello: None,
-                    };
-                    self.friend_info = friend_info;
-                    true
-                }
-                QueryState::Failed(_) => false,
-            },
-            PostCardMsg::ApplyFriend => {
-                // 发送好友请求
-                /* let new_friend = FriendShipRequest {
-                    user_id: ctx.props().user_id.clone(),
-                    friend_id: ctx.props().friend_id.clone(),
-                    status: AttrValue::from("2"),
-                    apply_msg: None,
-                    source: None,
-                };
-                ctx.link().send_future(async {
-                    if let Err(err) = apply_friend(new_friend).await {
-                        log::error!("发送好友申请错误: {:?}", err);
+                QueryState::Success(info) => {
+                    if info.is_some() {
+                        self.is_group_owner =
+                            info.as_ref().unwrap().owner() == _ctx.props().user_id;
                     }
-                    PostCardMsg::ApplyFriendRes
-                }); */
-                false
-            }
+                    self.info = info;
+                    true
+                }
+                QueryState::Failed => false,
+            },
             PostCardMsg::ShowSetDrawer => {
                 self.show_set_drawer = !self.show_set_drawer;
                 true
-            } // PostCardMsg::ApplyFriendRes => {
-              //     // 请求结果
-              //     false
-              // }
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let id = ctx.props().friend_id.clone();
-        let apply_friend = ctx.link().callback(|_| PostCardMsg::ApplyFriend);
-        let action = match ctx.props().conv_type {
-            RightContentType::UserInfo => {
-                html! {
-                    <div class="apply" >
-                        <button onclick={apply_friend} >
-                            {"申请好友"}
-                        </button>
-                    </div>
-                }
-            }
-            _ => {
-                html! {
-                    <Action id={id.clone()} conv_type={ctx.props().conv_type.clone()} />
-                }
-            }
-        };
+        let id = ctx.props().id.clone();
         let mut set_drawer = html!();
         if self.show_set_drawer {
             let close = ctx.link().callback(|_| PostCardMsg::ShowSetDrawer);
+            let delete = ctx.link().callback(|_| PostCardMsg::ShowSetDrawer);
             set_drawer = html! {
-                <SetDrawer {close} />
+                <SetDrawer
+                    conv_type={ctx.props().conv_type.clone()}
+                    is_owner={self.is_group_owner}
+                    {close}
+                    {delete}/>
             }
         }
         html! {
         <div class="postcard">
-            if id != AttrValue::default() {
+            if !id.is_empty() && self.info.is_some(){
                 <div class="pc-wrapper">
-                <span class="postcard-setting" onclick={ctx.link().callback(|_| PostCardMsg::ShowSetDrawer)}>
-                    {"···"}
-                </span>
-                {set_drawer}
+                    <span class="postcard-setting" onclick={ctx.link().callback(|_| PostCardMsg::ShowSetDrawer)}>
+                        {"···"}
+                    </span>
+                    {set_drawer}
                 <div class="header">
                     <div class="header-info">
                         <div >
-                            <img class="postcard-avatar" src={self.friend_info.avatar.clone()} />
+                            <img class="postcard-avatar" src={self.info.as_ref().unwrap().avatar()} />
                         </div>
                         <div class="info">
                             <span class="name">
-                                {self.friend_info.name.clone()}
+                                {self.info.as_ref().unwrap().name()}
                             </span>
                             <span class="num">
                                 {"编号: "}{""}
                             </span>
                             <span class="region">
-                                {"地区: "}{self.friend_info.address.clone()}
+                                {"地区: "}{self.info.as_ref().unwrap().region()}
                             </span>
                         </div>
                     </div>
 
                 </div>
                 <div class="postcard-remark">
-                    {"备注: "}{self.friend_info.remark.clone()}
+                    {"备注: "}{self.info.as_ref().unwrap().remark()}
                 </div>
                 <div class="sign">
-                    {"签名: "}{self.friend_info.remark.clone()}
+                    {"签名: "}{self.info.as_ref().unwrap().signature()}
                 </div>
 
-                {action}
+                <Action id={id.clone()} conv_type={ctx.props().conv_type.clone()} />
             </div>
             }
         </div>

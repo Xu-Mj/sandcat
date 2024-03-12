@@ -39,6 +39,36 @@ impl FriendRepo {
         });
     }
 
+    pub async fn get(&self, id: AttrValue) -> Friend {
+        // 声明一个channel，接收查询结果
+        let (tx, rx) = oneshot::channel::<Friend>();
+        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
+        let request = store
+            .get(&JsValue::from(id.as_str()))
+            .expect("friend select get error");
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            let mut friend = Friend::default();
+            if !result.is_undefined() && !result.is_null() {
+                friend = serde_wasm_bindgen::from_value(result).unwrap();
+            }
+            tx.send(friend).unwrap();
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("读取数据失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        rx.await.unwrap()
+    }
+
     pub async fn get_friend(&self, friend_id: AttrValue) -> Friend {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Friend>();

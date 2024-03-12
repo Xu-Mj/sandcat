@@ -7,7 +7,7 @@ use wasm_bindgen::JsValue;
 use yew::AttrValue;
 
 // 根据id查询用户信息
-
+#[allow(dead_code)]
 pub async fn get_info_by_id(id: String) -> Result<User, JsValue> {
     Request::get(format!("/api/user/{}", id).as_str())
         .header(AUTHORIZE_HEADER, token().as_str())

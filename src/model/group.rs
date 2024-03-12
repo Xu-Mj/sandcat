@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
-use super::{friend::Friend, ItemInfo, ItemType};
+use super::{friend::Friend, ItemInfo, RightContentType};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq)]
 pub struct Group {
@@ -66,8 +66,8 @@ impl ItemInfo for Group {
         self.id.clone()
     }
 
-    fn get_type(&self) -> ItemType {
-        ItemType::Group
+    fn get_type(&self) -> RightContentType {
+        RightContentType::Group
     }
 
     fn avatar(&self) -> AttrValue {
@@ -80,5 +80,21 @@ impl ItemInfo for Group {
 
     fn remark(&self) -> Option<AttrValue> {
         None
+    }
+
+    fn signature(&self) -> Option<AttrValue> {
+        if self.description.is_empty() {
+            None
+        } else {
+            Some(self.description.clone())
+        }
+    }
+
+    fn region(&self) -> Option<AttrValue> {
+        None
+    }
+
+    fn owner(&self) -> AttrValue {
+        self.owner.clone()
     }
 }
