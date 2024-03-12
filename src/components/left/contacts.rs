@@ -224,6 +224,7 @@ impl Component for Contacts {
             }
         }
     }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         // 根据搜索结果显示联系人列表，
         // 如果是搜索状态，那么搜索结果为空时需要提示用户没有结果

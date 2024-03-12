@@ -490,7 +490,7 @@ impl Messages {
         if dest.is_some() {
             let mut old = dest.unwrap();
             // deal with unread message count
-            if !old.mute && !is_self {
+            if !old.mute && !is_self && self.conv_state.conv.item_id != friend_id {
                 self.unread_state.add_msg_count.emit(());
             }
             // 这里是因为要直接更新面板上的数据，所以需要处理未读数量
@@ -511,7 +511,7 @@ impl Messages {
             });
             true
         } else {
-            if !is_self {
+            if !is_self && self.conv_state.conv.item_id != friend_id {
                 self.unread_state.add_msg_count.emit(());
             }
             // 如果会话列表中不存在那么需要新建
