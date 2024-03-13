@@ -19,6 +19,7 @@
         top: 0;
         position: absolute;
         background-color: white;
+        z-index: 2;
 
         .close-bar {
             height: 1rem;
