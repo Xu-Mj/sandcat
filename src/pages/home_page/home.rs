@@ -10,7 +10,7 @@ use crate::{
     },
     model::{
         friend::{Friend, FriendShipWithUser},
-        message::{InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE},
+        message::{InviteMsg, Message, Msg, SingleCall, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
         user::User,
         ContentType,
@@ -142,7 +142,7 @@ impl Home {
                 rec_msg_event,
                 call_event,
             }),
-            call_msg: Msg::default(),
+            call_msg: SingleCall::default(),
             wait_state: Rc::new(WaitState {
                 wait_count: WAIT_COUNT,
                 ready,
@@ -327,16 +327,9 @@ impl Home {
             }
             Msg::ReadNotice(_) | Msg::SingleDeliveredNotice(_) => {}
             Msg::OfflineSync(_) => {}
-            Msg::SingleCallOffer(_)
-            | Msg::SingleCallInvite(_)
-            | Msg::SingleCallInviteCancel(_)
-            | Msg::SingleCallNotAnswer(_)
-            | Msg::SingleCallInviteAnswer(_)
-            | Msg::SingleCallAgree(_)
-            | Msg::SingleCallHangUp(_)
-            | Msg::NewIceCandidate(_) => {
+            Msg::SingleCall(m) => {
                 // 保存电话信息，通知phone call组件
-                self.call_msg = message;
+                self.call_msg = m;
                 return true;
             }
             Msg::FriendshipDeliveredNotice(_) => {}

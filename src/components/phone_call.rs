@@ -21,7 +21,7 @@ use crate::icons::{
 };
 use crate::model::message::{
     Agree, Hangup, InviteAnswerMsg, InviteCancelMsg, InviteInfo, InviteMsg, InviteNotAnswerMsg,
-    InviteType, Message, Msg,
+    InviteType, Message, Msg, SingleCall,
 };
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::ContentType;
@@ -62,7 +62,7 @@ pub struct PhoneCall {
     /// 邀请计时器，到时间即为未接听
     call_timer: Option<Timeout>,
     /// 用来监听是否有通话消息
-    _listener: ContextHandle<Msg>,
+    _listener: ContextHandle<SingleCall>,
     /// 通话状态， 用来挂断、取消等等。。
     call_state: Rc<RecSendCallState>,
     _call_listener: ContextHandle<Rc<RecSendCallState>>,
@@ -106,9 +106,9 @@ pub enum PhoneCallMsg {
     // SwitchCamera,
     SwitchMicrophoneMute,
     ShowAudioWindow(MediaStream, Box<dyn ItemInfo>),
-    ReceiveCallMsg(Msg),
-    SendMessage(Msg),
-    SendInsideMessage(Msg),
+    ReceiveCallMsg(SingleCall),
+    SendMessage(SingleCall),
+    SendInsideMessage(SingleCall),
     CallStateChange(Rc<RecSendCallState>),
     None,
     OnMouseDown(MouseEvent),
@@ -201,7 +201,7 @@ impl Component for PhoneCall {
                     match call_type {
                         InviteType::Video => match utils::get_video_stream().await {
                             Ok(stream) => {
-                                send_msg_event.emit(Msg::SingleCallInvite(msg));
+                                send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
                                 PhoneCallMsg::ShowVideoWindow(stream)
                             }
                             Err(e) => {
@@ -231,7 +231,7 @@ impl Component for PhoneCall {
                             let friend = FriendRepo::new().await.get_friend(friend_id).await;
                             match utils::get_audio_stream().await {
                                 Ok(stream) => {
-                                    send_msg_event.emit(Msg::SingleCallInvite(msg));
+                                    send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
                                     PhoneCallMsg::ShowAudioWindow(stream, Box::new(friend))
                                 }
                                 Err(e) => {
@@ -291,7 +291,7 @@ impl Component for PhoneCall {
                         })
                         .await
                         .map_err(|err| log::error!("消息入库失败:{:?}", err));
-                    PhoneCallMsg::SendMessage(Msg::SingleCallInviteCancel(InviteCancelMsg {
+                    PhoneCallMsg::SendMessage(SingleCall::InviteCancel(InviteCancelMsg {
                         msg_id,
                         send_id,
                         friend_id,
@@ -364,7 +364,7 @@ impl Component for PhoneCall {
                         .await
                         .map_err(|err| log::error!("消息入库失败:{:?}", err))
                         .unwrap();
-                    PhoneCallMsg::SendMessage(Msg::SingleCallHangUp(Hangup {
+                    PhoneCallMsg::SendMessage(SingleCall::HangUp(Hangup {
                         msg_id,
                         send_id,
                         friend_id,
@@ -380,7 +380,7 @@ impl Component for PhoneCall {
             PhoneCallMsg::AgreeCall => {
                 // 同意视频通话
                 let info = self.invite_info.as_ref().unwrap();
-                let msg = Msg::SingleCallInviteAnswer(InviteAnswerMsg {
+                let msg = SingleCall::InviteAnswer(InviteAnswerMsg {
                     msg_id: nanoid!().into(),
                     send_id: ctx.props().user_id.clone(),
                     friend_id: self.invite_info.as_ref().unwrap().send_id.clone(),
@@ -389,7 +389,7 @@ impl Component for PhoneCall {
                     is_self: true,
                     invite_type: info.invite_type.clone(),
                 });
-                self.call_state.send_msg_event.emit(msg);
+                self.call_state.send_msg_event.emit(Msg::SingleCall(msg));
                 self.show_notify = false;
                 match info.invite_type {
                     InviteType::Video => {
@@ -432,12 +432,12 @@ impl Component for PhoneCall {
                     let _ = pc.set_local_description(&desc);
                     web_rtc::WebRTC::send_msg1(
                         ws,
-                        &Msg::SingleCallAgree(Agree {
+                        &Msg::SingleCall(SingleCall::Agree(Agree {
                             sdp: Some(rtc_desc.sdp().into()),
                             send_id,
                             friend_id,
                             create_time: 0,
-                        }),
+                        })),
                     );
                 });
                 self.invite_info.as_mut().unwrap().connected = true;
@@ -474,7 +474,7 @@ impl Component for PhoneCall {
                             file_content: Default::default(),
                         })
                         .await;
-                    PhoneCallMsg::SendMessage(Msg::SingleCallInviteAnswer(InviteAnswerMsg {
+                    PhoneCallMsg::SendMessage(SingleCall::InviteAnswer(InviteAnswerMsg {
                         msg_id,
                         send_id,
                         friend_id,
@@ -541,7 +541,7 @@ impl Component for PhoneCall {
                             })
                             .await
                             .map_err(|err| log::error!("消息入库失败:{:?}", err));
-                        PhoneCallMsg::SendMessage(Msg::SingleCallNotAnswer(InviteNotAnswerMsg {
+                        PhoneCallMsg::SendMessage(SingleCall::NotAnswer(InviteNotAnswerMsg {
                             msg_id,
                             send_id,
                             friend_id,
@@ -599,7 +599,7 @@ impl Component for PhoneCall {
             }
             PhoneCallMsg::ReceiveCallMsg(mut message) => {
                 match message {
-                    Msg::SingleCallInvite(msg) => {
+                    SingleCall::Invite(msg) => {
                         // 判断是否占线
                         if self.invite_info.is_some() {
                             // todo回复占线
@@ -620,7 +620,7 @@ impl Component for PhoneCall {
                             PhoneCallMsg::ShowCallNotify(Box::new(friend))
                         });
                     }
-                    Msg::SingleCallInviteCancel(ref mut msg) => {
+                    SingleCall::InviteCancel(ref mut msg) => {
                         log::debug!("对方取消通话:{:?}", &msg);
                         // 判断是否是当前用户
                         if let Some(info) = self.invite_info.as_ref() {
@@ -640,7 +640,7 @@ impl Component for PhoneCall {
                             }
                         }
                     }
-                    Msg::SingleCallInviteAnswer(ref mut msg) => {
+                    SingleCall::InviteAnswer(ref mut msg) => {
                         log::debug!("single invite answer");
                         if msg.agree {
                             // 对方同意了通话请求，正在建立连接，为了简化代码邀请方和被邀请方的创建pc方法合并到一起了
@@ -672,7 +672,7 @@ impl Component for PhoneCall {
                             return true;
                         }
                     }
-                    Msg::SingleCallOffer(msg) => {
+                    SingleCall::Offer(msg) => {
                         // 建立通话连接，收到offer，设置sdp
                         if self.pc.is_some() {
                             log::warn!("收到邀请，但是占线: {:?}", &msg);
@@ -693,7 +693,7 @@ impl Component for PhoneCall {
                         }
                         ctx.link().send_message(PhoneCallMsg::ResponseCall)
                     }
-                    Msg::SingleCallAgree(msg) => {
+                    SingleCall::Agree(msg) => {
                         // 同意通话请求并建立连接，设置sdp
                         // 判断是否是我们发出去的邀请回复
                         if let Some(info) = &self.invite_info {
@@ -722,7 +722,7 @@ impl Component for PhoneCall {
                             }
                         }
                     }
-                    Msg::NewIceCandidate(msg) => {
+                    SingleCall::NewIceCandidate(msg) => {
                         let mut candidate = RtcIceCandidateInit::new(&msg.candidate);
                         if let Some(index) = msg.sdp_m_index {
                             candidate.sdp_m_line_index(Some(index));
@@ -744,7 +744,7 @@ impl Component for PhoneCall {
                             }
                         })
                     }
-                    Msg::SingleCallNotAnswer(ref mut msg) => {
+                    SingleCall::NotAnswer(ref mut msg) => {
                         // 判断是否是当前用户
                         if let Some(info) = self.invite_info.as_ref() {
                             if info.send_id == msg.send_id {
@@ -760,7 +760,7 @@ impl Component for PhoneCall {
                             }
                         }
                     }
-                    Msg::SingleCallHangUp(ref mut msg) => {
+                    SingleCall::HangUp(ref mut msg) => {
                         // 判断是否是当前连接
                         if let Some(info) = self.invite_info.as_ref() {
                             if info.send_id == msg.friend_id || info.send_id == msg.send_id {
@@ -777,7 +777,6 @@ impl Component for PhoneCall {
                             }
                         }
                     }
-                    _ => {}
                 }
                 false
             }
@@ -786,7 +785,7 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::SendMessage(msg) => {
-                self.call_state.send_msg_event.emit(msg);
+                self.call_state.send_msg_event.emit(Msg::SingleCall(msg));
                 false
             }
             PhoneCallMsg::CallStateChange(state) => {
@@ -840,7 +839,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::SendInsideMessage(msg) => {
-                self.call_state.rec_msg_event.emit(msg);
+                self.call_state.rec_msg_event.emit(Msg::SingleCall(msg));
                 false
             }
         }
@@ -1111,7 +1110,7 @@ impl PhoneCall {
         self.microphone_mute = false;
     }
 
-    fn save_call_msg(&self, ctx: &Context<Self>, mut msg: Message, message: Msg) {
+    fn save_call_msg(&self, ctx: &Context<Self>, mut msg: Message, message: SingleCall) {
         ctx.link().send_future(async move {
             MessageRepo::new()
                 .await

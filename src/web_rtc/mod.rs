@@ -10,7 +10,7 @@ use web_sys::{
 use yew::platform::spawn_local;
 use yew::{AttrValue, Callback, NodeRef};
 
-use crate::model::message::{Candidate, InviteType, Msg, Offer};
+use crate::model::message::{Candidate, InviteType, Msg, Offer, SingleCall};
 use crate::ws::WebSocketManager;
 
 pub struct WebRTC;
@@ -57,14 +57,14 @@ impl WebRTC {
             Closure::wrap(Box::new(move |event: web_sys::RtcPeerConnectionIceEvent| {
                 // handle ICE candidate event
                 if let Some(candidate) = event.candidate() {
-                    let msg_clone = Msg::NewIceCandidate(Candidate {
+                    let msg_clone = Msg::SingleCall(SingleCall::NewIceCandidate(Candidate {
                         candidate: candidate.candidate().into(),
                         sdp_mid: candidate.sdp_mid(),
                         sdp_m_index: candidate.sdp_m_line_index(),
                         send_id: send.clone(),
                         friend_id: friend.clone(),
                         create_time: chrono::Local::now().timestamp_millis(),
-                    });
+                    }));
                     // log::debug!("on ice candidate send message:candidate:{:?}, ", &msg_clone);
                     WebRTC::send_msg1(ws_clone.clone(), &msg_clone)
                 }
@@ -131,12 +131,12 @@ impl WebRTC {
                     .await
                     .unwrap();
                 let sdp = pc.local_description().unwrap().sdp();
-                let msg = &Msg::SingleCallOffer(Offer {
+                let msg = &Msg::SingleCall(SingleCall::Offer(Offer {
                     sdp: sdp.into(),
                     send_id,
                     friend_id,
                     create_time: chrono::Local::now().timestamp_millis(),
-                });
+                }));
                 // log::debug!("on negotiation needed send message: {:?}", &msg);
                 WebRTC::send_msg1(ws.clone(), msg);
             });

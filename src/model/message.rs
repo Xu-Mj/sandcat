@@ -156,14 +156,15 @@ pub enum Msg {
     SingleDeliveredNotice(MessageID),
     FriendshipDeliveredNotice(MessageID),
     OfflineSync(Message),
-    SingleCallOffer(Offer),
-    SingleCallInvite(InviteMsg),
-    SingleCallInviteCancel(InviteCancelMsg),
-    SingleCallNotAnswer(InviteNotAnswerMsg),
-    SingleCallInviteAnswer(InviteAnswerMsg),
-    SingleCallAgree(Agree),
-    SingleCallHangUp(Hangup),
-    NewIceCandidate(Candidate),
+    SingleCall(SingleCall),
+    // SingleCallOffer(Offer),
+    // SingleCallInvite(InviteMsg),
+    // SingleCallInviteCancel(InviteCancelMsg),
+    // SingleCallNotAnswer(InviteNotAnswerMsg),
+    // SingleCallInviteAnswer(InviteAnswerMsg),
+    // SingleCallAgree(Agree),
+    // SingleCallHangUp(Hangup),
+    // NewIceCandidate(Candidate),
     GroupInvitationReceived((UserID, GroupID)),
 }
 
@@ -173,6 +174,23 @@ impl Default for Msg {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum SingleCall {
+    Offer(Offer),
+    Invite(InviteMsg),
+    InviteCancel(InviteCancelMsg),
+    NotAnswer(InviteNotAnswerMsg),
+    InviteAnswer(InviteAnswerMsg),
+    Agree(Agree),
+    HangUp(Hangup),
+    NewIceCandidate(Candidate),
+}
+
+impl Default for SingleCall {
+    fn default() -> Self {
+        Self::Offer(Offer::default())
+    }
+}
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Offer {
     pub sdp: AttrValue,

@@ -7,6 +7,7 @@ use yew::prelude::*;
 use crate::db::group::GroupRepo;
 use crate::db::group_msg::GroupMsgRepo;
 use crate::model::message::Msg;
+use crate::model::message::SingleCall;
 use crate::model::ItemInfo;
 use crate::model::RightContentType;
 use crate::{
@@ -224,29 +225,28 @@ impl Component for MessageList {
                 match msg {
                     Msg::Single(msg) | Msg::Group(msg) => self.insert_msg(msg, friend_id),
 
-                    Msg::SingleCallInviteCancel(msg) => self.insert_msg(msg.into(), friend_id),
-                    Msg::SingleCallInviteAnswer(msg) => {
-                        if !msg.agree {
-                            return self.insert_msg(msg.into(), friend_id);
+                    Msg::SingleCall(m) => match m {
+                        SingleCall::InviteCancel(msg) => self.insert_msg(msg.into(), friend_id),
+                        SingleCall::InviteAnswer(msg) => {
+                            if !msg.agree {
+                                return self.insert_msg(msg.into(), friend_id);
+                            }
+                            false
                         }
-                        false
-                    }
+                        SingleCall::HangUp(msg) => {
+                            self.insert_msg(Message::from_hangup(msg), friend_id)
+                        }
+                        SingleCall::NotAnswer(msg) => {
+                            self.insert_msg(Message::from_not_answer(msg), friend_id)
+                        }
+                        _ => false,
+                    },
 
-                    Msg::SingleCallHangUp(msg) => {
-                        self.insert_msg(Message::from_hangup(msg), friend_id)
-                    }
-                    Msg::SingleCallNotAnswer(msg) => {
-                        self.insert_msg(Message::from_not_answer(msg), friend_id)
-                    }
-                    Msg::SingleCallOffer(_)
-                    | Msg::SingleCallInvite(_)
-                    | Msg::SingleCallAgree(_)
-                    | Msg::SendRelationshipReq(_)
+                    Msg::SendRelationshipReq(_)
                     | Msg::RecRelationship(_)
                     | Msg::ReadNotice(_)
                     | Msg::SingleDeliveredNotice(_)
                     | Msg::OfflineSync(_)
-                    | Msg::NewIceCandidate(_)
                     | Msg::RelationshipRes(_)
                     | Msg::FriendshipDeliveredNotice(_)
                     | Msg::GroupInvitationReceived(_)

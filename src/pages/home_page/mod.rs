@@ -18,7 +18,7 @@ use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::message::{InviteMsg, Msg};
+use crate::model::message::{InviteMsg, Msg, SingleCall};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::ws::WebSocketManager;
@@ -32,7 +32,7 @@ pub struct Home {
     msg_state: Rc<RecSendMessageState>,
     call_state: Rc<RecSendCallState>,
     // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
-    call_msg: Msg,
+    call_msg: SingleCall,
     conv_state: Rc<ConvState>,
     remove_conv_state: Rc<RemoveConvState>,
     remove_friend_state: Rc<RemoveFriendState>,
@@ -300,7 +300,7 @@ impl Component for Home {
                             <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
                                 <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
                                     <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
-                                        <ContextProvider<Msg> context={self.call_msg.clone()}>
+                                        <ContextProvider<SingleCall> context={self.call_msg.clone()}>
                                             <ContextProvider<Rc<WaitState>> context={self.wait_state.clone()}>
                                             <ContextProvider<Rc<UnreadState>> context={self.unread_state.clone()}>
                                             <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
@@ -318,7 +318,7 @@ impl Component for Home {
                                             </ContextProvider<Rc<RemoveConvState>>>
                                             </ContextProvider<Rc<UnreadState>>>
                                             </ContextProvider<Rc<WaitState>>>
-                                        </ContextProvider<Msg>>
+                                        </ContextProvider<SingleCall>>
                                     </ContextProvider<Rc<RecSendCallState>>>
                                 </ContextProvider<Rc<NotificationState>>>
                             </ContextProvider<Rc<ConvState>>>

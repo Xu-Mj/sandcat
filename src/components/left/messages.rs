@@ -10,7 +10,7 @@ use crate::db::group_members::GroupMembersRepo;
 use crate::db::message::MessageRepo;
 use crate::model::conversation::Conversation;
 use crate::model::group::Group;
-use crate::model::message::Msg;
+use crate::model::message::{Msg, SingleCall};
 use crate::model::RightContentType;
 use crate::pages::{ConvState, CurrentItem, RemoveConvState, UnreadState, WaitState};
 use crate::{
@@ -153,12 +153,7 @@ impl Component for Messages {
                 let msg = state.msg.clone();
                 let conv_type = match msg {
                     Msg::Group(_) => RightContentType::Group,
-                    Msg::Single(_)
-                    | Msg::SingleCallNotAnswer(_)
-                    | Msg::SingleCallInviteCancel(_)
-                    | Msg::SingleCallInvite(_)
-                    | Msg::SingleCallInviteAnswer(_)
-                    | Msg::SingleCallHangUp(_) => RightContentType::Friend,
+                    Msg::Single(_) | Msg::SingleCall(_) => RightContentType::Friend,
                     _ => RightContentType::Default,
                 };
                 match msg {
@@ -195,34 +190,34 @@ impl Component for Messages {
 
                         false
                     }
-                    Msg::SingleCallInvite(msg) => {
+                    Msg::SingleCall(SingleCall::Invite(msg)) => {
                         let friend_id = msg.friend_id.clone();
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
                         self.operate_msg(ctx, friend_id, conv, false)
                     }
-                    Msg::SingleCallInviteCancel(msg) => {
+                    Msg::SingleCall(SingleCall::InviteCancel(msg)) => {
                         let friend_id = msg.friend_id.clone();
                         let is_self = msg.is_self;
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
                         self.operate_msg(ctx, friend_id, conv, is_self)
                     }
-                    Msg::SingleCallNotAnswer(msg) => {
+                    Msg::SingleCall(SingleCall::NotAnswer(msg)) => {
                         let friend_id = msg.friend_id.clone();
                         let is_self = msg.is_self;
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
                         self.operate_msg(ctx, friend_id, conv, is_self)
                     }
-                    Msg::SingleCallHangUp(msg) => {
+                    Msg::SingleCall(SingleCall::HangUp(msg)) => {
                         let friend_id = msg.friend_id.clone();
                         let is_self = msg.is_self;
                         let mut conv = Conversation::from(msg);
                         conv.conv_type = conv_type;
                         self.operate_msg(ctx, friend_id, conv, is_self)
                     }
-                    Msg::SingleCallInviteAnswer(msg) => {
+                    Msg::SingleCall(SingleCall::InviteAnswer(msg)) => {
                         let friend_id = msg.friend_id.clone();
                         let is_self = msg.is_self;
                         let mut conv = Conversation::from(msg);
