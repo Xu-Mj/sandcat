@@ -26,7 +26,7 @@ use crate::model::message::{
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::ContentType;
 use crate::model::ItemInfo;
-use crate::pages::RecSendCallState;
+use crate::pages::{RecSendCallState, RecSendMessageState};
 use crate::ws::WebSocketManager;
 use crate::{utils, web_rtc};
 
@@ -69,6 +69,9 @@ pub struct PhoneCall {
     /// 发送通知
     notify_state: Rc<NotificationState>,
     _notify_listener: ContextHandle<Rc<NotificationState>>,
+    /// send receive message
+    msg_state: Rc<RecSendMessageState>,
+    _msg_listener: ContextHandle<Rc<RecSendMessageState>>,
     /// 面板拖动记录x、y坐标
     pos_x: i32,
     pos_y: i32,
@@ -133,6 +136,10 @@ impl Component for PhoneCall {
             .link()
             .context(ctx.link().callback(|_| PhoneCallMsg::None))
             .expect("need msg context");
+        let (msg_state, _msg_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| PhoneCallMsg::None))
+            .expect("need conv state in item");
         Self {
             show_video: false,
             show_audio: false,
@@ -154,6 +161,8 @@ impl Component for PhoneCall {
             _call_listener,
             notify_state,
             _notify_listener,
+            msg_state,
+            _msg_listener,
             pos_x: 0,
             pos_y: 0,
             is_dragging: false,
@@ -678,7 +687,6 @@ impl Component for PhoneCall {
                             return false;
                         }
                         if let Err(e) = self.create_pc(ctx, &msg.sdp) {
-                            // ctx.link().send_message(PhoneCallMsg::Notification(Notification::error_from_content(AttrValue::from("创建连接失败"))));
                             log::error!("创建连接失败:{:?}", e);
                             return false;
                         }
@@ -1110,6 +1118,7 @@ impl PhoneCall {
     }
 
     fn save_call_msg(&self, ctx: &Context<Self>, mut msg: Message, message: SingleCall) {
+        let msg_id = msg.msg_id.clone();
         ctx.link().send_future(async move {
             MessageRepo::new()
                 .await
@@ -1117,8 +1126,11 @@ impl PhoneCall {
                 .await
                 .map_err(|err| log::error!("消息入库失败:{:?}", err))
                 .unwrap();
-            // log::debug!("正在发送消息:{:?}", &message);
             PhoneCallMsg::SendInsideMessage(message)
         });
+        // send receive message
+        self.msg_state
+            .send_back_event
+            .emit(Msg::SingleDeliveredNotice(msg_id.to_string()));
     }
 }

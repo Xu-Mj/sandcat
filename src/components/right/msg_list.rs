@@ -300,7 +300,7 @@ impl Component for MessageList {
                             if let Some(friend) = self.friend.as_ref() {
                                 let conv_type = props.conv_type.clone();
                                 self.list.iter().map(|msg| {
-                                let mut avatar = friend.avatar().clone();
+                                    let mut avatar = friend.avatar().clone();
                                     if msg.is_self {
                                         avatar = props.cur_user_avatar.clone();
                                     }
