@@ -24,6 +24,7 @@ pub struct ListItemProps {
     pub unread_count: usize,
     pub conv_type: RightContentType,
     pub oncontextmenu: Callback<((i32, i32), AttrValue)>,
+    pub mute: bool,
 }
 
 pub enum ListItemMsg {
@@ -151,8 +152,15 @@ impl Component for ListItem {
                     if self.unread_count >= 100 {
                         unread_str = "99+".to_string();
                     }
-                    unread_count = html! {
-                        <span class="unread-count">{unread_str}</span>
+                    if ctx.props().mute {
+                        unread_str = format!("[{}条]", unread_str);
+                        unread_count = html! {
+                        <span class="unread-count-mute">{unread_str}</span>
+                        }
+                    } else {
+                        unread_count = html! {
+                            <span class="unread-count">{unread_str}</span>
+                        }
                     }
                 };
             }

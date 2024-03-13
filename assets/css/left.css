@@ -11,9 +11,10 @@
 
     .right-click-panel-item {
         width: 6rem;
-        height: 2rem;
-        line-height: 2rem;
+        height: 1.5rem;
+        line-height: 1.5rem;
         padding: 0 1rem;
+        font-size: small;
     }
 }
 
@@ -263,6 +264,19 @@
                     color: white;
                     font-size: .6rem;
                     font-weight: bold;
+                    position: absolute;
+                    top: 1.5rem;
+                    right: .5rem;
+                }
+
+                .unread-count-mute {
+                    width: 3.2rem;
+                    height: 1.2rem;
+                    display: flex;
+                    justify-content: end;
+                    align-items: center;
+                    color: grap;
+                    font-size: .6rem;
                     position: absolute;
                     top: 1.5rem;
                     right: .5rem;

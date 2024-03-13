@@ -303,6 +303,7 @@ fn get_list_item(item: &impl ItemInfo, oncontextmenu: Callback<((i32, i32), Attr
             unread_count={0}
             conv_type={item.get_type()}
             {oncontextmenu}
+            mute={false}
             key={item.id().as_str()} />
     }
 }

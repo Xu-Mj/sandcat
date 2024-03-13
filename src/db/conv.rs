@@ -28,6 +28,11 @@ impl ConvRepo {
         ConvRepo(Repository::new().await)
     }
 
+    pub async fn mute(&self, conv: &Conversation) -> Result<(), JsValue> {
+        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
+        store.put(&serde_wasm_bindgen::to_value(conv).unwrap())?;
+        Ok(())
+    }
     // 使用put方法，不存在创建，存在则直接更新
     pub async fn put_conv(
         &self,

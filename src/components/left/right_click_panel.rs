@@ -11,6 +11,7 @@ pub struct RightClickPanelProps {
     pub y: i32,
     pub close: Callback<()>,
     pub delete: Callback<()>,
+    pub mute: Callback<()>,
 }
 
 pub enum RightClickPanelMsg {}
@@ -41,6 +42,9 @@ impl Component for RightClickPanel {
                 >
                 <div class="right-click-panel-item hover" onclick={ctx.props().delete.reform(|_|())}>
                     {"删除会话"}
+                </div>
+                <div class="right-click-panel-item hover" onclick={ctx.props().mute.reform(|_|())}>
+                    {"消息免打扰"}
                 </div>
             </div>
         }

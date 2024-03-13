@@ -33,6 +33,7 @@ pub struct Messages {
     query_complete: bool,
     show_friend_list: bool,
     show_context_menu: bool,
+    /// hold right click item position and id
     context_menu_pos: (i32, i32, AttrValue),
 
     msg_state: Rc<RecSendMessageState>,
@@ -61,6 +62,7 @@ pub enum MessagesMsg {
     ShowContextMenu((i32, i32), AttrValue),
     CloseContextMenu,
     DeleteItem,
+    Mute,
     None,
     RemoveConvStateChanged(Rc<RemoveConvState>),
 }
@@ -369,6 +371,19 @@ impl Component for Messages {
                 };
                 true
             }
+            MessagesMsg::Mute => {
+                if let Some(conv) = self.list.get_mut(&self.context_menu_pos.2) {
+                    conv.mute = true;
+                    let conv = conv.clone();
+                    spawn_local(async move {
+                        if let Err(e) = ConvRepo::new().await.mute(&conv).await {
+                            log::error!("mute conversation err: {:?}", e);
+                        }
+                    });
+                    return true;
+                }
+                false
+            }
         }
     }
 
@@ -395,6 +410,7 @@ impl Component for Messages {
                                     unread_count={item.unread_count}
                                     conv_type={item.conv_type.clone()}
                                     oncontextmenu={oncontextmenu.clone()}
+                                    mute={item.mute}
                                     key={item.friend_id.clone().as_str()} />
                         }
                     })
@@ -417,6 +433,7 @@ impl Component for Messages {
                                 unread_count={item.unread_count}
                                 oncontextmenu={oncontextmenu.clone()}
                                 conv_type={item.conv_type.clone()}
+                                mute={item.mute}
                                 key={item.friend_id.clone().as_str()} />
                     }
                 })
@@ -447,6 +464,7 @@ impl Component for Messages {
                     x={self.context_menu_pos.0}
                     y={self.context_menu_pos.1}
                     close={ctx.link().callback( |_|MessagesMsg::CloseContextMenu)}
+                    mute={ctx.link().callback(|_| MessagesMsg::Mute)}
                     delete={ctx.link().callback(|_|MessagesMsg::DeleteItem)}/>
             }
         }
@@ -504,6 +522,7 @@ impl Messages {
             conv.avatar = old.avatar;
             conv.id = old.id;
             conv.unread_count = old.unread_count;
+            conv.mute = old.mute;
             self.list.shift_insert(0, friend_id, conv.clone());
             spawn_local(async move {
                 let conv_repo = ConvRepo::new().await;
