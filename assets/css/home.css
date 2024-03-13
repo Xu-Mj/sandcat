@@ -30,6 +30,7 @@
         background-color: white;
         padding-left: 1rem;
         padding-right: 1rem;
+        z-index: 3;
 
         img {
             width: 2rem;

@@ -97,7 +97,8 @@ pub enum PhoneCallMsg {
     ConnectedCall(MediaStream),
     DenyCall,
     DisConnCall(AttrValue),
-    ShowVideoWindow(MediaStream),
+    ShowVideoWindow(MediaStream, Box<dyn ItemInfo>),
+    ShowAudioWindow(MediaStream, Box<dyn ItemInfo>),
     CallTimeout,
     Notification(Notification),
     // 显示顶部消息通知
@@ -105,7 +106,6 @@ pub enum PhoneCallMsg {
     SwitchVolume,
     // SwitchCamera,
     SwitchMicrophoneMute,
-    ShowAudioWindow(MediaStream, Box<dyn ItemInfo>),
     ReceiveCallMsg(SingleCall),
     SendMessage(SingleCall),
     SendInsideMessage(SingleCall),
@@ -183,8 +183,6 @@ impl Component for PhoneCall {
                     end_time: 0,
                     connected: false,
                 });
-                // 显示视频窗口
-                // self.show_video = true;
                 let call_type = msg.invite_type.clone();
                 match call_type {
                     InviteType::Video => {
@@ -195,14 +193,15 @@ impl Component for PhoneCall {
                     }
                 }
                 let friend_id = msg.friend_id.clone();
-                // self.call_state.send_msg_event.emit(Msg::SingleVideoInvite(msg));
                 let send_msg_event = self.call_state.send_msg_event.clone();
                 ctx.link().send_future(async move {
+                    let friend = FriendRepo::new().await.get_friend(friend_id).await;
+
                     match call_type {
                         InviteType::Video => match utils::get_video_stream().await {
                             Ok(stream) => {
                                 send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
-                                PhoneCallMsg::ShowVideoWindow(stream)
+                                PhoneCallMsg::ShowVideoWindow(stream, Box::new(friend))
                             }
                             Err(e) => {
                                 let content = if let Some(dom_exception) =
@@ -228,7 +227,6 @@ impl Component for PhoneCall {
                         },
                         InviteType::Audio => {
                             // 查询好友信息
-                            let friend = FriendRepo::new().await.get_friend(friend_id).await;
                             match utils::get_audio_stream().await {
                                 Ok(stream) => {
                                     send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
@@ -496,8 +494,9 @@ impl Component for PhoneCall {
                 }
                 true
             }
-            PhoneCallMsg::ShowVideoWindow(stream) => {
+            PhoneCallMsg::ShowVideoWindow(stream, friend) => {
                 let video: HtmlVideoElement = self.video_node.cast().unwrap();
+                self.call_friend_info = Some(friend);
                 video.set_src_object(Some(&stream));
                 let _ = video.play().unwrap();
                 video.set_muted(true);
@@ -509,7 +508,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::CallTimeout => {
-                if self.show_video {
+                if self.show_video || self.show_audio {
                     let info = self.invite_info.as_ref().unwrap();
                     if info.connected {
                         return false;
@@ -621,7 +620,7 @@ impl Component for PhoneCall {
                         });
                     }
                     SingleCall::InviteCancel(ref mut msg) => {
-                        log::debug!("对方取消通话:{:?}", &msg);
+                        log::debug!("对方取消通话");
                         // 判断是否是当前用户
                         if let Some(info) = self.invite_info.as_ref() {
                             if info.send_id == msg.send_id {
@@ -668,7 +667,7 @@ impl Component for PhoneCall {
                                 }
                             }
                             self.save_call_msg(ctx, msg.clone_as_message(), message);
-
+                            self.finish_call();
                             return true;
                         }
                     }
@@ -1118,7 +1117,7 @@ impl PhoneCall {
                 .await
                 .map_err(|err| log::error!("消息入库失败:{:?}", err))
                 .unwrap();
-            log::debug!("正在发送消息:{:?}", &message);
+            // log::debug!("正在发送消息:{:?}", &message);
             PhoneCallMsg::SendInsideMessage(message)
         });
     }

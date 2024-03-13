@@ -125,10 +125,7 @@ impl Component for Home {
                 true
             }
             HomeMsg::SwitchConv(conv) => {
-                log::debug!("home switch conv listener:{:?}", conv);
                 let conv_state = Rc::make_mut(&mut self.conv_state);
-                log::debug!("home switch conv listener:{:?}", conv_state);
-
                 // 如果id没有变化，那么不更新数据库
                 if conv_state.conv.item_id == conv.item_id
                     && conv_state.conv.content_type == conv.content_type
@@ -167,7 +164,6 @@ impl Component for Home {
                 false
             }
             HomeMsg::RecSendMsgStateChange(msg) => {
-                // log::debug!("RecSendMsgStateChange:{:?}", &msg);
                 let conv_state = Rc::make_mut(&mut self.msg_state);
                 conv_state.msg = msg;
                 true
