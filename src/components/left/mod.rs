@@ -1,9 +1,9 @@
-pub mod add_conv;
 pub mod add_friend;
 pub mod contacts;
 pub mod conv_com;
 pub mod list_item;
 pub mod right_click_panel;
+pub mod select_friends;
 pub mod top;
 pub mod user_info;
 

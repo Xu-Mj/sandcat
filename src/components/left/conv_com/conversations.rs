@@ -4,8 +4,8 @@ use indexmap::IndexMap;
 use web_sys::NodeList;
 use yew::prelude::*;
 
-use crate::components::left::add_conv::AddConv;
 use crate::components::left::right_click_panel::RightClickPanel;
+use crate::components::left::select_friends::AddConv;
 use crate::db::group::GroupRepo;
 use crate::db::group_members::GroupMembersRepo;
 use crate::model::conversation::Conversation;
