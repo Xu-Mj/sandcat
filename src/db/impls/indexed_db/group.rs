@@ -6,7 +6,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
-use crate::model::group::{Group, GroupMember};
+use crate::{db::groups::GroupInterface, model::group::{Group, GroupMember}};
 
 use super::{
     repository::Repository, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,
@@ -22,19 +22,19 @@ impl Deref for GroupRepo {
     }
 }
 #[allow(dead_code)]
-impl GroupRepo {
-    pub async fn new() -> Self {
+impl GroupInterface for GroupRepo {
+    async fn new() -> Self {
         Self(Repository::new().await)
     }
 
-    pub async fn put(&self, group: &Group) -> Result<(), JsValue> {
+    async fn put(&self, group: &Group) -> Result<(), JsValue> {
         let store = self.store(GROUP_TABLE_NAME).await?;
         let value = serde_wasm_bindgen::to_value(group)?;
         store.put(&value)?;
         Ok(())
     }
 
-    pub async fn get(&self, id: AttrValue) -> Result<Option<Group>, JsValue> {
+    async fn get(&self, id: AttrValue) -> Result<Option<Group>, JsValue> {
         let (tx, rx) = oneshot::channel::<Option<Group>>();
         let store = self.store(GROUP_TABLE_NAME).await?;
         let request = store.get(&JsValue::from(id.as_str()))?;
@@ -61,7 +61,7 @@ impl GroupRepo {
         Ok(rx.await.unwrap())
     }
 
-    pub async fn get_list(&self) -> Result<IndexMap<AttrValue, Group>, JsValue> {
+    async fn get_list(&self) -> Result<IndexMap<AttrValue, Group>, JsValue> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Group>>();
         let store = self.store(GROUP_TABLE_NAME).await?;
         let request = store.open_cursor()?;
@@ -109,7 +109,7 @@ impl GroupRepo {
     }
 
     // delete group and related group members
-    pub async fn delete(&self, id: AttrValue) -> Result<(), JsValue> {
+    async fn delete(&self, id: AttrValue) -> Result<(), JsValue> {
         let store = self.store(GROUP_TABLE_NAME).await?;
         store.delete(&JsValue::from(id.as_str()))?;
 

@@ -31,6 +31,7 @@ zxcvbn = "2"
 # conversation list and friend list
 indexmap = { version = "2.2.3"}
 anyhow = "1.0.81"
+async-trait = "0.1.77"
 [dependencies.chrono]
 version = "0.4"
 features = ["wasmbind", "js-sys", "serde"]

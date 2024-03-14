@@ -6,6 +6,7 @@ use yew::prelude::*;
 use crate::components::right::set_drawer::SetDrawer;
 use crate::db::conv::ConvRepo;
 use crate::db::group::GroupRepo;
+use crate::db::groups::GroupInterface;
 use crate::model::{ItemInfo, RightContentType};
 use crate::pages::{ItemType, RemoveConvState, RemoveFriendState};
 use crate::{components::action::Action, db::friend::FriendRepo};
@@ -41,70 +42,6 @@ pub struct PostCard {
     _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
 }
 
-impl PostCard {
-    fn get_avatar(&self) -> Html {
-        // deal with group avatars
-        let avatar_str = self.info.as_ref().unwrap().avatar();
-
-        let mut avatar_style = "--avatar-column: 1";
-        // trim spliter
-        let avatar_str = avatar_str.trim_matches(',');
-        // get len
-        let len = avatar_str.matches(',').count() + 1;
-        let iter = avatar_str.split(',');
-        if len > 1 && len < 5 {
-            avatar_style = "--avatar-column: 2"
-        } else if len >= 5 {
-            avatar_style = "--avatar-column: 3"
-        }
-
-        let avatar = iter
-            .map(|v| {
-                html! {
-                    <img class="avatar" src={v.to_owned()} />
-                }
-            })
-            .collect::<Html>();
-        html! {
-            <div class="item-avatar" style={avatar_style}>
-                {avatar}
-            </div>
-        }
-    }
-
-    fn query(&self, ctx: &Context<Self>) {
-        ctx.link()
-            .send_message(PostCardMsg::QueryInformation(QueryState::Querying));
-        let id = ctx.props().id.clone();
-        log::debug!("friend_id :{:?}", &id);
-        if !id.is_empty() {
-            match ctx.props().conv_type {
-                RightContentType::Friend => {
-                    ctx.link().send_future(async move {
-                        let user_info = FriendRepo::new().await.get_friend(id).await;
-                        log::debug!("user info :{:?}", user_info);
-                        PostCardMsg::QueryInformation(QueryState::Success(Some(Box::new(
-                            user_info,
-                        ))))
-                    });
-                }
-                RightContentType::Group => ctx.link().send_future(async move {
-                    match GroupRepo::new().await.get(id).await {
-                        Ok(Some(group)) => PostCardMsg::QueryInformation(QueryState::Success(
-                            Some(Box::new(group)),
-                        )),
-                        _ => PostCardMsg::QueryInformation(QueryState::Failed),
-                    }
-                }),
-                _ => {}
-            }
-        }
-    }
-
-    fn reset(&mut self) {
-        self.info = None;
-    }
-}
 
 impl Component for PostCard {
     type Message = PostCardMsg;
@@ -249,5 +186,70 @@ impl Component for PostCard {
             }
         </div>
             }
+    }
+}
+
+impl PostCard {
+    fn get_avatar(&self) -> Html {
+        // deal with group avatars
+        let avatar_str = self.info.as_ref().unwrap().avatar();
+
+        let mut avatar_style = "--avatar-column: 1";
+        // trim spliter
+        let avatar_str = avatar_str.trim_matches(',');
+        // get len
+        let len = avatar_str.matches(',').count() + 1;
+        let iter = avatar_str.split(',');
+        if len > 1 && len < 5 {
+            avatar_style = "--avatar-column: 2"
+        } else if len >= 5 {
+            avatar_style = "--avatar-column: 3"
+        }
+
+        let avatar = iter
+            .map(|v| {
+                html! {
+                    <img class="avatar" src={v.to_owned()} />
+                }
+            })
+            .collect::<Html>();
+        html! {
+            <div class="item-avatar" style={avatar_style}>
+                {avatar}
+            </div>
+        }
+    }
+
+    fn query(&self, ctx: &Context<Self>) {
+        ctx.link()
+            .send_message(PostCardMsg::QueryInformation(QueryState::Querying));
+        let id = ctx.props().id.clone();
+        log::debug!("friend_id :{:?}", &id);
+        if !id.is_empty() {
+            match ctx.props().conv_type {
+                RightContentType::Friend => {
+                    ctx.link().send_future(async move {
+                        let user_info = FriendRepo::new().await.get_friend(id).await;
+                        log::debug!("user info :{:?}", user_info);
+                        PostCardMsg::QueryInformation(QueryState::Success(Some(Box::new(
+                            user_info,
+                        ))))
+                    });
+                }
+                RightContentType::Group => ctx.link().send_future(async move {
+                    match GroupRepo::new().await.get(id).await {
+                        Ok(Some(group)) => PostCardMsg::QueryInformation(QueryState::Success(
+                            Some(Box::new(group)),
+                        )),
+                        _ => PostCardMsg::QueryInformation(QueryState::Failed),
+                    }
+                }),
+                _ => {}
+            }
+        }
+    }
+
+    fn reset(&mut self) {
+        self.info = None;
     }
 }

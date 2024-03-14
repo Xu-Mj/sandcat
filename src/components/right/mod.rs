@@ -16,6 +16,7 @@ use yew::prelude::*;
 use crate::components::right::friendship_list::FriendShipList;
 use crate::db::friend::FriendRepo;
 use crate::db::group::GroupRepo;
+use crate::db::groups::GroupInterface;
 use crate::icons::{CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};

@@ -6,6 +6,7 @@ use yew::prelude::*;
 
 use crate::db::group::GroupRepo;
 use crate::db::group_msg::GroupMsgRepo;
+use crate::db::groups::GroupInterface;
 use crate::model::message::Msg;
 use crate::model::message::SingleCall;
 use crate::model::ItemInfo;

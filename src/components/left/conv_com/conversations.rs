@@ -8,15 +8,16 @@ use crate::components::left::right_click_panel::RightClickPanel;
 use crate::components::left::select_friends::AddConv;
 use crate::db::group::GroupRepo;
 use crate::db::group_members::GroupMembersRepo;
+use crate::db::groups::GroupInterface;
 use crate::model::conversation::Conversation;
 use crate::model::message::{Msg, SingleCall};
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::{ConvState, RecSendMessageState, RemoveConvState};
 use crate::{components::top_bar::TopBar, db::conv::ConvRepo};
 
-use super::Conversations;
+use super::Chats;
 
-pub enum ConversationsMsg {
+pub enum ChatsMsg {
     FilterContact(AttrValue),
     CleanupSearchResult,
     QueryConvs(IndexMap<AttrValue, Conversation>),
@@ -36,15 +37,15 @@ pub enum ConversationsMsg {
 }
 
 #[derive(Properties, PartialEq, Debug)]
-pub struct ConversationsProps {
+pub struct ChatsProps {
     pub user_id: AttrValue,
     pub avatar: AttrValue,
 }
 
-impl Component for Conversations {
-    type Message = ConversationsMsg;
+impl Component for Chats {
+    type Message = ChatsMsg;
 
-    type Properties = ConversationsProps;
+    type Properties = ChatsProps;
 
     fn create(ctx: &Context<Self>) -> Self {
         Self::new(ctx)
@@ -52,7 +53,7 @@ impl Component for Conversations {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            ConversationsMsg::FilterContact(pattern) => {
+            ChatsMsg::FilterContact(pattern) => {
                 self.is_searching = true;
                 // filter message list
                 if pattern.is_empty() {
@@ -66,19 +67,19 @@ impl Component for Conversations {
                 }
                 true
             }
-            ConversationsMsg::CleanupSearchResult => {
+            ChatsMsg::CleanupSearchResult => {
                 self.is_searching = false;
                 self.result.clear();
                 true
             }
-            ConversationsMsg::QueryConvs(convs) => {
+            ChatsMsg::QueryConvs(convs) => {
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
                 self.wait_state.ready.emit(());
                 true
             }
-            ConversationsMsg::ReceiveMessage(state) => {
+            ChatsMsg::ReceiveMessage(state) => {
                 let msg = state.msg.clone();
                 let conv_type = match msg {
                     Msg::Group(_) => RightContentType::Group,
@@ -112,10 +113,10 @@ impl Component for Conversations {
                                 log::error!("save group member error: {:?}", e);
                             }
                             // send back received message
-                            clone_ctx.send_message(ConversationsMsg::SendBackGroupInvitation(
+                            clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(
                                 msg.info.id,
                             ));
-                            ConversationsMsg::InsertConv(conv)
+                            ChatsMsg::InsertConv(conv)
                         });
 
                         false
@@ -157,20 +158,20 @@ impl Component for Conversations {
                     _ => false,
                 }
             }
-            ConversationsMsg::InsertConv(flag) => {
+            ChatsMsg::InsertConv(flag) => {
                 // self.list.insert(0, flag);
                 self.list.shift_insert(0, flag.friend_id.clone(), flag);
                 true
             }
-            ConversationsMsg::ShowSelectFriendList => {
+            ChatsMsg::ShowSelectFriendList => {
                 self.show_friend_list = !self.show_friend_list;
                 true
             }
-            ConversationsMsg::ConvStateChanged(state) => {
+            ChatsMsg::ConvStateChanged(state) => {
                 self.deal_with_conv_state_change(ctx, state)
             }
-            ConversationsMsg::WaitStateChanged => false,
-            ConversationsMsg::CreateGroup(nodes) => {
+            ChatsMsg::WaitStateChanged => false,
+            ChatsMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
                 if nodes.length() == 0 {
                     return true;
@@ -179,7 +180,7 @@ impl Component for Conversations {
                 self.get_group_mems(ctx, nodes);
                 false
             }
-            ConversationsMsg::SendBackGroupInvitation(group_id) => {
+            ChatsMsg::SendBackGroupInvitation(group_id) => {
                 self.msg_state
                     .send_back_event
                     .emit(Msg::GroupInvitationReceived((
@@ -188,24 +189,24 @@ impl Component for Conversations {
                     )));
                 false
             }
-            ConversationsMsg::ShowContextMenu((x, y), id, is_mute) => {
+            ChatsMsg::ShowContextMenu((x, y), id, is_mute) => {
                 // event.prevent_default();
                 self.context_menu_pos = (x, y, id, is_mute);
                 self.show_context_menu = true;
                 true
             }
-            ConversationsMsg::CloseContextMenu => {
+            ChatsMsg::CloseContextMenu => {
                 log::debug!("close context menu");
                 self.show_context_menu = false;
                 self.context_menu_pos = (0, 0, AttrValue::default(), false);
                 true
             }
-            ConversationsMsg::DeleteItem => {
+            ChatsMsg::DeleteItem => {
                 self.delete_item();
                 true
             }
-            ConversationsMsg::None => false,
-            ConversationsMsg::RemoveConvStateChanged(state) => {
+            ChatsMsg::None => false,
+            ChatsMsg::RemoveConvStateChanged(state) => {
                 // delete conversation from database should be here
                 if let Some(conv) = self.list.shift_remove(state.id.as_str()) {
                     if conv.unread_count > 0 {
@@ -219,7 +220,7 @@ impl Component for Conversations {
                 };
                 true
             }
-            ConversationsMsg::Mute => self.mute(),
+            ChatsMsg::Mute => self.mute(),
         }
     }
 
@@ -233,14 +234,14 @@ impl Component for Conversations {
         } else {
             self.render_list(ctx)
         };
-        let search_callback = ctx.link().callback(ConversationsMsg::FilterContact);
+        let search_callback = ctx.link().callback(ChatsMsg::FilterContact);
         let clean_callback = ctx
             .link()
-            .callback(move |_| ConversationsMsg::CleanupSearchResult);
+            .callback(move |_| ChatsMsg::CleanupSearchResult);
         let plus_click = ctx
             .link()
-            .callback(|_| ConversationsMsg::ShowSelectFriendList);
-        let submit_back = ctx.link().callback(ConversationsMsg::CreateGroup);
+            .callback(|_| ChatsMsg::ShowSelectFriendList);
+        let submit_back = ctx.link().callback(ChatsMsg::CreateGroup);
 
         // spawn friend list
         let mut friend_list = html!();
@@ -259,9 +260,9 @@ impl Component for Conversations {
                 <RightClickPanel
                     x={self.context_menu_pos.0}
                     y={self.context_menu_pos.1}
-                    close={ctx.link().callback( |_|ConversationsMsg::CloseContextMenu)}
-                    mute={ctx.link().callback(|_| ConversationsMsg::Mute)}
-                    delete={ctx.link().callback(|_|ConversationsMsg::DeleteItem)}
+                    close={ctx.link().callback( |_|ChatsMsg::CloseContextMenu)}
+                    mute={ctx.link().callback(|_| ChatsMsg::Mute)}
+                    delete={ctx.link().callback(|_|ChatsMsg::DeleteItem)}
                     is_mute={self.context_menu_pos.3}/>
             }
         }

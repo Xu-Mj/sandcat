@@ -6,6 +6,7 @@ use yew::prelude::*;
 use crate::components::left::add_friend::AddFriend;
 use crate::db::friend_ship::FriendShipRepo;
 use crate::db::group::GroupRepo;
+use crate::db::groups::GroupInterface;
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
 use crate::pages::{FriendListState, FriendShipState, ItemType, RemoveFriendState};

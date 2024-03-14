@@ -12,7 +12,7 @@ use std::rc::Rc;
 use yew::prelude::*;
 
 use crate::components::left::contacts::Contacts;
-use crate::components::left::conv_com::Conversations;
+use crate::components::left::conv_com::Chats;
 use crate::components::left::top::Top;
 use crate::model::ComponentType;
 use crate::pages::AppState;
@@ -76,7 +76,7 @@ impl Component for Left {
                 <Top avatar={self.state.login_user.avatar.clone()} name={self.state.login_user.name.clone()} />
                 <div class="left-down">
                     <div class={classes}>
-                    <Conversations user_id={self.state.login_user.id.clone()}
+                    <Chats user_id={self.state.login_user.id.clone()}
                             avatar={self.state.login_user.avatar.clone()} />
                     <Contacts user_id={self.state.login_user.id.clone()}/>
                     </div>

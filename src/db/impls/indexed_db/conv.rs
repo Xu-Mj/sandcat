@@ -1,12 +1,12 @@
 use std::ops::Deref;
 
+use crate::model::{conversation::Conversation, ContentType};
+
 use futures_channel::oneshot;
 use indexmap::IndexMap;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
-
-use crate::model::{conversation::Conversation, ContentType};
 
 use super::{
     repository::Repository, CONVERSATION_FRIEND_ID_INDEX, CONVERSATION_LAST_MSG_TIME_INDEX,
@@ -22,7 +22,6 @@ impl Deref for ConvRepo {
         &self.0
     }
 }
-
 impl ConvRepo {
     pub async fn new() -> Self {
         ConvRepo(Repository::new().await)

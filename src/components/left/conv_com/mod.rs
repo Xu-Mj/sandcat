@@ -13,8 +13,7 @@ use crate::{
     api,
     components::left::list_item::ListItem,
     db::{
-        conv::ConvRepo, friend::FriendRepo, group::GroupRepo, group_members::GroupMembersRepo,
-        message::MessageRepo, user::UserRepo,
+        conv::ConvRepo, friend::FriendRepo, group::GroupRepo, group_members::GroupMembersRepo, groups::GroupInterface, message::MessageRepo, user::UserRepo
     },
     model::{
         conversation::Conversation,
@@ -24,9 +23,9 @@ use crate::{
     pages::{ConvState, RecSendMessageState, RemoveConvState, UnreadState, WaitState},
 };
 
-use self::conversations::ConversationsMsg;
+use self::conversations::ChatsMsg;
 
-pub struct Conversations {
+pub struct Chats {
     list: IndexMap<AttrValue, Conversation>,
     result: IndexMap<AttrValue, Conversation>,
     is_searching: bool,
@@ -48,37 +47,34 @@ pub struct Conversations {
     _wait_listener: ContextHandle<Rc<WaitState>>,
 }
 
-impl Conversations {
+impl Chats {
     fn new(ctx: &Context<Self>) -> Self {
         // query conversation list
         ctx.link().send_future(async {
             let conv_repo = ConvRepo::new().await;
             let convs = conv_repo.get_convs2().await.unwrap_or_default();
-            ConversationsMsg::QueryConvs(convs)
+            ChatsMsg::QueryConvs(convs)
         });
         // register state
         let (msg_state, _msg_listener) = ctx
             .link()
-            .context(ctx.link().callback(ConversationsMsg::ReceiveMessage))
+            .context(ctx.link().callback(ChatsMsg::ReceiveMessage))
             .expect("need conv state in item");
         let (conv_state, _conv_listener) = ctx
             .link()
-            .context(ctx.link().callback(ConversationsMsg::ConvStateChanged))
+            .context(ctx.link().callback(ChatsMsg::ConvStateChanged))
             .expect("need state in item");
         let (unread_state, _unread_listener) = ctx
             .link()
-            .context(ctx.link().callback(|_| ConversationsMsg::None))
+            .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
         let (remove_conv_state, _remove_conv_listener) = ctx
             .link()
-            .context(
-                ctx.link()
-                    .callback(ConversationsMsg::RemoveConvStateChanged),
-            )
+            .context(ctx.link().callback(ChatsMsg::RemoveConvStateChanged))
             .expect("need state in item");
         let (wait_state, _wait_listener) = ctx
             .link()
-            .context(ctx.link().callback(|_| ConversationsMsg::WaitStateChanged))
+            .context(ctx.link().callback(|_| ChatsMsg::WaitStateChanged))
             .expect("need state in item");
         Self {
             list: IndexMap::new(),
@@ -146,9 +142,9 @@ impl Conversations {
     }
 
     fn render_result(&self, ctx: &Context<Self>) -> Html {
-        let oncontextmenu = ctx.link().callback(|((x, y), id, is_mute)| {
-            ConversationsMsg::ShowContextMenu((x, y), id, is_mute)
-        });
+        let oncontextmenu = ctx
+            .link()
+            .callback(|((x, y), id, is_mute)| ChatsMsg::ShowContextMenu((x, y), id, is_mute));
         self.result
             .iter()
             .map(|(_id, item)| Self::get_list_item(item, oncontextmenu.clone()))
@@ -156,9 +152,9 @@ impl Conversations {
     }
 
     fn render_list(&self, ctx: &Context<Self>) -> Html {
-        let oncontextmenu = ctx.link().callback(|((x, y), id, is_mute)| {
-            ConversationsMsg::ShowContextMenu((x, y), id, is_mute)
-        });
+        let oncontextmenu = ctx
+            .link()
+            .callback(|((x, y), id, is_mute)| ChatsMsg::ShowContextMenu((x, y), id, is_mute));
         self.list
             .iter()
             .map(|(_id, item)| Self::get_list_item(item, oncontextmenu.clone()))
@@ -237,7 +233,7 @@ impl Conversations {
                 conv_repo.put_conv(&conv, false).await.unwrap();
                 conv.unread_count = 1;
                 log::debug!("创建会话: {:?}", &conv);
-                ConversationsMsg::InsertConv(conv)
+                ChatsMsg::InsertConv(conv)
             });
             false
         }
@@ -299,7 +295,7 @@ impl Conversations {
                 let conv_repo = ConvRepo::new().await;
                 conv_repo.put_conv(&conv, true).await.unwrap();
                 log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
-                ConversationsMsg::InsertConv(conv)
+                ChatsMsg::InsertConv(conv)
             });
             false
         }
@@ -340,7 +336,7 @@ impl Conversations {
                 }
             }
             if ids.is_empty() {
-                return ConversationsMsg::ShowSelectFriendList;
+                return ChatsMsg::ShowSelectFriendList;
             }
             group_name.push_str("、Group");
             let group_req = GroupRequest {
@@ -360,7 +356,7 @@ impl Conversations {
                     log::debug!("group created: {:?}", g);
                     if let Err(err) = GroupRepo::new().await.put(&g).await {
                         log::error!("create group error: {:?}", err);
-                        return ConversationsMsg::None;
+                        return ChatsMsg::None;
                     }
                     for v in values.iter_mut() {
                         v.group_id = g.id.clone();
@@ -371,11 +367,11 @@ impl Conversations {
                     }
                     let conv = Conversation::from(g);
                     ConvRepo::new().await.put_conv(&conv, true).await.unwrap();
-                    ConversationsMsg::InsertConv(conv)
+                    ChatsMsg::InsertConv(conv)
                 }
                 Err(err) => {
                     log::error!("create group request error: {:?}", err);
-                    ConversationsMsg::None
+                    ChatsMsg::None
                 }
             }
         });
