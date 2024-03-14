@@ -10,9 +10,9 @@ use crate::db::group::GroupRepo;
 use crate::db::group_members::GroupMembersRepo;
 use crate::model::conversation::Conversation;
 use crate::model::message::{Msg, SingleCall};
-use crate::model::RightContentType;
-use crate::pages::{ConvState, CurrentItem, RecSendMessageState, RemoveConvState};
-use crate::{components::top_bar::TopBar, db::conv::ConvRepo, pages::ComponentType};
+use crate::model::{ComponentType, CurrentItem, RightContentType};
+use crate::pages::{ConvState, RecSendMessageState, RemoveConvState};
+use crate::{components::top_bar::TopBar, db::conv::ConvRepo};
 
 use super::Conversations;
 

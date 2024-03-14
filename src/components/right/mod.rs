@@ -17,12 +17,12 @@ use crate::components::right::friendship_list::FriendShipList;
 use crate::db::friend::FriendRepo;
 use crate::db::group::GroupRepo;
 use crate::icons::{CloseIcon, MaxIcon};
-use crate::model::ItemInfo;
 use crate::model::RightContentType;
+use crate::model::{ComponentType, ItemInfo};
 use crate::pages::{ConvState, FriendListState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
-    pages::{AppState, ComponentType},
+    pages::AppState,
 };
 
 pub struct Right {

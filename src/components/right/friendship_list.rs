@@ -6,7 +6,8 @@ use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef};
 use crate::api;
 use crate::db::friend_ship::FriendShipRepo;
 use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus};
-use crate::pages::{FriendShipState, FriendShipStateType};
+use crate::model::FriendShipStateType;
+use crate::pages::FriendShipState;
 
 pub struct FriendShipList {
     list: Vec<FriendShipWithUser>,

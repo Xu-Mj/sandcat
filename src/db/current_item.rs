@@ -2,7 +2,7 @@
 use gloo::utils::window;
 use wasm_bindgen::JsValue;
 
-use crate::pages::{ComponentType, CurrentItem, UnreadItem};
+use crate::model::{ComponentType, CurrentItem, UnreadItem};
 
 pub const CONV_LOCAL_STORAGE_KEY: &str = "__CURRENT_CONV__";
 pub const FRIEND_LOCAL_STORAGE_KEY: &str = "__CURRENT_FRIEND__";

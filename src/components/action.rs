@@ -5,11 +5,9 @@ use yew::prelude::*;
 
 use crate::icons::{MessagesIcon, PhoneIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
-use crate::pages::{ConvState, CurrentItem, RecSendCallState};
-use crate::{
-    model::RightContentType,
-    pages::{AppState, ComponentType},
-};
+use crate::model::{ComponentType, CurrentItem};
+use crate::pages::{ConvState, RecSendCallState};
+use crate::{model::RightContentType, pages::AppState};
 
 // 联系人卡面上的动作组件：发消息、点电话、打视频
 pub struct Action {

@@ -9,9 +9,8 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use super::{
-    AppState, ComponentType, ConvState, CurrentItem, FriendListState, FriendShipState, ItemType,
-    RecSendCallState, RecSendMessageState, RemoveConvState, RemoveFriendState, UnreadState,
-    WaitState,
+    AppState, ConvState, FriendListState, FriendShipState, ItemType, RecSendCallState,
+    RecSendMessageState, RemoveConvState, RemoveFriendState, UnreadState, WaitState,
 };
 use crate::components::phone_call::PhoneCall;
 use crate::db::current_item;
@@ -21,6 +20,7 @@ use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{InviteMsg, Msg, SingleCall};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
+use crate::model::{ComponentType, CurrentItem};
 use crate::ws::WebSocketManager;
 use crate::{
     components::{left::Left, right::Right},

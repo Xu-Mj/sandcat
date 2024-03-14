@@ -2,9 +2,10 @@ use chrono::TimeZone;
 use std::rc::Rc;
 use yew::prelude::*;
 
+use crate::model::{CommonProps, ComponentType, CurrentItem};
 use crate::{
     model::RightContentType,
-    pages::{CommonProps, ComponentType, ConvState, CurrentItem, FriendListState, UnreadState},
+    pages::{ConvState, FriendListState, UnreadState},
 };
 
 pub struct ListItem {

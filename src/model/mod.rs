@@ -113,3 +113,39 @@ impl From<RightContentType> for MessageType {
         }
     }
 }
+
+#[derive(Default, Clone, PartialEq, Debug)]
+pub enum FriendShipStateType {
+    #[default]
+    Req,
+    Res,
+}
+
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ComponentType {
+    Contacts,
+    #[default]
+    Messages,
+    Setting,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CurrentItem {
+    pub item_id: AttrValue,
+    pub content_type: RightContentType,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UnreadItem {
+    pub unread_msg: usize,
+    pub unread_contact: usize,
+}
+
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct CommonProps {
+    pub id: AttrValue,
+    pub name: AttrValue,
+    pub avatar: AttrValue,
+    pub time: i64,
+    pub remark: AttrValue,
+}

@@ -4,7 +4,8 @@ use yew::prelude::*;
 
 use crate::{
     icons::{ContactsIcon, MessagesIcon},
-    pages::{AppState, ComponentType, ConvState, UnreadState},
+    model::ComponentType,
+    pages::{AppState, ConvState, UnreadState},
 };
 
 /// 增加双击切换置顶未读消息

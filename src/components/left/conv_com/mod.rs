@@ -19,12 +19,9 @@ use crate::{
     model::{
         conversation::Conversation,
         group::{GroupMember, GroupRequest},
-        ContentType, RightContentType,
+        CommonProps, ComponentType, ContentType, RightContentType,
     },
-    pages::{
-        CommonProps, ComponentType, ConvState, RecSendMessageState, RemoveConvState, UnreadState,
-        WaitState,
-    },
+    pages::{ConvState, RecSendMessageState, RemoveConvState, UnreadState, WaitState},
 };
 
 use self::conversations::ConversationsMsg;

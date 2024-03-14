@@ -3,7 +3,7 @@ use yew::prelude::*;
 use crate::api::user::search_friend;
 use crate::components::left::user_info::UserInfoCom;
 use crate::model::user::User;
-use crate::{components::top_bar::TopBar, pages::ComponentType};
+use crate::{components::top_bar::TopBar, model::ComponentType};
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct AddFriendProps {

@@ -3,6 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use gloo::utils::window;
 use yew::{AttrValue, Context, NodeRef};
 
+use crate::model::{ComponentType, CurrentItem};
 use crate::{
     db::{
         current_item, friend::FriendRepo, friend_ship::FriendShipRepo, group_msg::GroupMsgRepo,
@@ -13,12 +14,12 @@ use crate::{
         message::{InviteMsg, Message, Msg, SingleCall, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
         user::User,
-        ContentType,
+        ContentType, FriendShipStateType,
     },
     pages::{
-        home_page::HomeMsg, AppState, ComponentType, ConvState, CurrentItem, FriendListState,
-        FriendShipState, FriendShipStateType, RecSendCallState, RecSendMessageState,
-        RemoveConvState, RemoveFriendState, UnreadState, WaitState,
+        home_page::HomeMsg, AppState, ConvState, FriendListState, FriendShipState,
+        RecSendCallState, RecSendMessageState, RemoveConvState, RemoveFriendState, UnreadState,
+        WaitState,
     },
     ws::WebSocketManager,
 };

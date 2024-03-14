@@ -2,14 +2,13 @@ pub mod home_page;
 pub mod login;
 pub mod register;
 
-use serde::{Deserialize, Serialize};
 use yew::{AttrValue, Callback};
 use yew_router::Routable;
 
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{InviteMsg, Msg};
 use crate::model::user::User;
-use crate::model::RightContentType;
+use crate::model::{ComponentType, CurrentItem, FriendShipStateType, UnreadItem};
 
 // 1. 对话卡片切换
 // 2. 朋友卡片切换
@@ -116,42 +115,6 @@ pub struct FriendShipState {
     pub state_type: FriendShipStateType,
     pub req_change_event: Callback<FriendShipWithUser>,
     pub res_change_event: Callback<(AttrValue, Friend)>,
-}
-
-#[derive(Default, Clone, PartialEq, Debug)]
-pub enum FriendShipStateType {
-    #[default]
-    Req,
-    Res,
-}
-
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-pub enum ComponentType {
-    Contacts,
-    #[default]
-    Messages,
-    Setting,
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CurrentItem {
-    pub item_id: AttrValue,
-    pub content_type: RightContentType,
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct UnreadItem {
-    pub unread_msg: usize,
-    pub unread_contact: usize,
-}
-
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct CommonProps {
-    pub id: AttrValue,
-    pub name: AttrValue,
-    pub avatar: AttrValue,
-    pub time: i64,
-    pub remark: AttrValue,
 }
 
 // 定义路由

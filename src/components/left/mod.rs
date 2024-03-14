@@ -14,7 +14,8 @@ use yew::prelude::*;
 use crate::components::left::contacts::Contacts;
 use crate::components::left::conv_com::Conversations;
 use crate::components::left::top::Top;
-use crate::pages::{AppState, ComponentType};
+use crate::model::ComponentType;
+use crate::pages::AppState;
 
 #[derive(Properties, PartialEq)]
 pub struct LeftProps;

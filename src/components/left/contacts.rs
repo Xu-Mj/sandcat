@@ -7,13 +7,13 @@ use crate::components::left::add_friend::AddFriend;
 use crate::db::friend_ship::FriendShipRepo;
 use crate::db::group::GroupRepo;
 use crate::model::group::Group;
-use crate::model::{ItemInfo, RightContentType};
-use crate::pages::{CurrentItem, FriendListState, FriendShipState, ItemType, RemoveFriendState};
+use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
+use crate::pages::{FriendListState, FriendShipState, ItemType, RemoveFriendState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     db::friend::FriendRepo,
     model::friend::Friend,
-    pages::{CommonProps, ComponentType},
+    model::{CommonProps, ComponentType},
 };
 
 #[derive(Properties, PartialEq, Debug)]
@@ -153,10 +153,10 @@ impl Component for Contacts {
             }
             ContactsMsg::RecFriendShipReq(friendship) => {
                 match friendship.state_type {
-                    crate::pages::FriendShipStateType::Req => {
+                    FriendShipStateType::Req => {
                         self.friendships_unread_count += 1;
                     }
-                    crate::pages::FriendShipStateType::Res => {
+                    FriendShipStateType::Res => {
                         let friend = friendship.friend.as_ref().unwrap().clone();
                         self.list.insert(friend.friend_id.clone(), friend);
                     }

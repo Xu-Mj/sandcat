@@ -4,8 +4,8 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 use crate::icons::{PeoplePlusIcon, PlusIcon, SearchIcon};
+use crate::model::ComponentType;
 use crate::pages::AppState;
-use crate::pages::ComponentType;
 
 /// 左侧组件顶部选项栏
 /// 包含搜索和设置按钮以及一个排序按钮
