@@ -63,7 +63,7 @@ impl Home {
         let add_contact_count = ctx.link().callback(|_| HomeMsg::AddUnreadContactCount);
         let sub_contact_count = ctx.link().callback(HomeMsg::SubUnreadContactCount);
         let sub_msg_count = ctx.link().callback(HomeMsg::SubUnreadMsgCount);
-        let add_msg_count = ctx.link().callback(|_| HomeMsg::AddUnreadMsgCount);
+        let add_msg_count = ctx.link().callback(HomeMsg::AddUnreadMsgCount);
         let ready = ctx.link().callback(|_| HomeMsg::WaitStateChanged);
         let rec_msg_event = ctx.link().callback(HomeMsg::RecSendMsgStateChange);
         let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);

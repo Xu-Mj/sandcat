@@ -79,7 +79,7 @@ pub enum HomeMsg {
     Notification(Notification),
     CleanNotification,
     CloseNotificationByIndex(usize),
-    AddUnreadMsgCount,
+    AddUnreadMsgCount(usize),
     SubUnreadMsgCount(usize),
     AddUnreadContactCount,
     SubUnreadContactCount(usize),
@@ -221,9 +221,9 @@ impl Component for Home {
                 }
                 false
             }
-            HomeMsg::AddUnreadMsgCount => {
+            HomeMsg::AddUnreadMsgCount(count) => {
                 let state = Rc::make_mut(&mut self.unread_state);
-                state.unread.unread_msg = state.unread.unread_msg.saturating_add(1);
+                state.unread.unread_msg = state.unread.unread_msg.saturating_add(count);
                 current_item::save_unread_count(state.unread.clone()).unwrap();
                 true
             }

@@ -23,7 +23,7 @@ pub struct ListItemProps {
     pub component_type: ComponentType,
     pub unread_count: usize,
     pub conv_type: RightContentType,
-    pub oncontextmenu: Callback<((i32, i32), AttrValue)>,
+    pub oncontextmenu: Callback<((i32, i32), AttrValue, bool)>,
     pub mute: bool,
 }
 
@@ -111,6 +111,7 @@ impl Component for ListItem {
                 ctx.props().oncontextmenu.emit((
                     (event.client_x(), event.client_y()),
                     ctx.props().props.id.clone(),
+                    ctx.props().mute,
                 ));
                 false
             }
