@@ -95,7 +95,7 @@ pub struct UnreadState {
     pub unread: UnreadItem,
     pub add_contact_count: Callback<()>,
     pub sub_contact_count: Callback<usize>,
-    pub add_msg_count: Callback<()>,
+    pub add_msg_count: Callback<usize>,
     pub sub_msg_count: Callback<usize>,
 }
 

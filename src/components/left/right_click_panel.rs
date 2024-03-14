@@ -12,6 +12,7 @@ pub struct RightClickPanelProps {
     pub close: Callback<()>,
     pub delete: Callback<()>,
     pub mute: Callback<()>,
+    pub is_mute: bool,
 }
 
 pub enum RightClickPanelMsg {}
@@ -34,6 +35,11 @@ impl Component for RightClickPanel {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let style = format!("left: {}px; top: {}px;", ctx.props().x, ctx.props().y);
+        let mute_str = if ctx.props().is_mute {
+            "取消免打扰"
+        } else {
+            "消息免打扰"
+        };
         html! {
             <div ref={self.node.clone()}
                 {style}
@@ -44,7 +50,7 @@ impl Component for RightClickPanel {
                     {"删除会话"}
                 </div>
                 <div class="right-click-panel-item hover" onclick={ctx.props().mute.reform(|_|())}>
-                    {"消息免打扰"}
+                    {mute_str}
                 </div>
             </div>
         }

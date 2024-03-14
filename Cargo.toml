@@ -18,18 +18,19 @@ serde_json = "1"
 thiserror = "1"
 nanoid = "0.4.0"
 yew-router = "0.18"
-lazy_static = "1.4"
+# lazy_static = "1.4"
 reqwasm = "0.5"
 wasm-bindgen-futures = "0.4.39"
 futures = "0.3.29"
 wasm-logger = "0.2.0"
 log = "0.4.6"
 gloo-net = "0.5.0"
-linked-hash-map = "0.5.6"
-console_error_panic_hook = "0.1.6"
 regex = "1"
+# password strong level
 zxcvbn = "2"
+# conversation list and friend list
 indexmap = { version = "2.2.3"}
+anyhow = "1.0.81"
 [dependencies.chrono]
 version = "0.4"
 features = ["wasmbind", "js-sys", "serde"]

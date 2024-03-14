@@ -1,8 +1,8 @@
 pub mod add_conv;
 pub mod add_friend;
 pub mod contacts;
+pub mod conv_com;
 pub mod list_item;
-pub mod messages;
 pub mod right_click_panel;
 pub mod top;
 pub mod user_info;
@@ -12,7 +12,7 @@ use std::rc::Rc;
 use yew::prelude::*;
 
 use crate::components::left::contacts::Contacts;
-use crate::components::left::messages::Messages;
+use crate::components::left::conv_com::Conversations;
 use crate::components::left::top::Top;
 use crate::pages::{AppState, ComponentType};
 
@@ -75,7 +75,7 @@ impl Component for Left {
                 <Top avatar={self.state.login_user.avatar.clone()} name={self.state.login_user.name.clone()} />
                 <div class="left-down">
                     <div class={classes}>
-                    <Messages user_id={self.state.login_user.id.clone()}
+                    <Conversations user_id={self.state.login_user.id.clone()}
                             avatar={self.state.login_user.avatar.clone()} />
                     <Contacts user_id={self.state.login_user.id.clone()}/>
                     </div>
