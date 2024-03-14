@@ -2,15 +2,25 @@ mod conversations;
 
 use std::rc::Rc;
 
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
+use web_sys::{HtmlInputElement, NodeList};
 use yew::prelude::*;
 
 use indexmap::IndexMap;
 
 use crate::{
+    api,
     components::left::list_item::ListItem,
-    db::{conv::ConvRepo, friend::FriendRepo, message::MessageRepo},
-    model::{conversation::Conversation, ContentType, RightContentType},
+    db::{
+        conv::ConvRepo, friend::FriendRepo, group::GroupRepo, group_members::GroupMembersRepo,
+        message::MessageRepo, user::UserRepo,
+    },
+    model::{
+        conversation::Conversation,
+        group::{GroupMember, GroupRequest},
+        ContentType, RightContentType,
+    },
     pages::{
         CommonProps, ComponentType, ConvState, RecSendMessageState, RemoveConvState, UnreadState,
         WaitState,
@@ -93,6 +103,7 @@ impl Conversations {
             _wait_listener,
         }
     }
+
     fn delete_item(&mut self) {
         // delete database data
         let id = self.context_menu_pos.2.clone();
@@ -114,6 +125,7 @@ impl Conversations {
         conv.content_type = RightContentType::Default;
         self.conv_state.state_change_event.emit(conv);
     }
+
     fn mute(&mut self) -> bool {
         if let Some(conv) = self.list.get_mut(&self.context_menu_pos.2) {
             // if concel mute need to notify unread count event
@@ -176,6 +188,7 @@ impl Conversations {
                 key={item.friend_id.clone().as_str()} />
         )
     }
+
     fn operate_msg(
         &mut self,
         ctx: &Context<Self>,
@@ -293,6 +306,82 @@ impl Conversations {
             });
             false
         }
+    }
+
+    fn get_group_mems(&mut self, ctx: &Context<Self>, nodes: NodeList) {
+        let user_id = ctx.props().user_id.clone();
+        let self_avatar = ctx.props().avatar.clone();
+        ctx.link().send_future(async move {
+            let mut values = Vec::with_capacity(nodes.length() as usize);
+            let mut ids = Vec::with_capacity(nodes.length() as usize);
+            let mut avatar = Vec::with_capacity(nodes.length() as usize);
+            // push self avatar
+            avatar.push(self_avatar.to_string());
+            let mut group_name = String::new();
+            for i in 0..nodes.length() {
+                let node = nodes.item(i).unwrap();
+                if let Ok(node) = node.dyn_into::<HtmlInputElement>() {
+                    let value = node.value();
+                    if !value.is_empty() {
+                        let friend = FriendRepo::new()
+                            .await
+                            .get_friend(value.clone().into())
+                            .await;
+                        if !friend.id.is_empty() {
+                            ids.push(value);
+                            let mut name = friend.name.clone();
+                            if friend.remark.is_some() {
+                                name = friend.remark.as_ref().unwrap().clone();
+                            }
+                            group_name.push_str(name.as_str());
+                            if i < 8 {
+                                avatar.push(friend.avatar.clone().to_string());
+                            }
+                            values.push(GroupMember::from(friend));
+                        }
+                    }
+                }
+            }
+            if ids.is_empty() {
+                return ConversationsMsg::ShowSelectFriendList;
+            }
+            group_name.push_str("、Group");
+            let group_req = GroupRequest {
+                owner: user_id.to_string(),
+                avatar: avatar.join(","),
+                group_name,
+                members_id: ids,
+                id: String::new(),
+            };
+            // push self
+            values.push(GroupMember::from(
+                UserRepo::new().await.get(user_id.clone()).await.unwrap(),
+            ));
+            // send create request
+            match api::group::create_group(group_req, user_id).await {
+                Ok(g) => {
+                    log::debug!("group created: {:?}", g);
+                    if let Err(err) = GroupRepo::new().await.put(&g).await {
+                        log::error!("create group error: {:?}", err);
+                        return ConversationsMsg::None;
+                    }
+                    for v in values.iter_mut() {
+                        v.group_id = g.id.clone();
+                        if let Err(e) = GroupMembersRepo::new().await.put(v).await {
+                            log::error!("save group member error: {:?}", e);
+                            continue;
+                        }
+                    }
+                    let conv = Conversation::from(g);
+                    ConvRepo::new().await.put_conv(&conv, true).await.unwrap();
+                    ConversationsMsg::InsertConv(conv)
+                }
+                Err(err) => {
+                    log::error!("create group request error: {:?}", err);
+                    ConversationsMsg::None
+                }
+            }
+        });
     }
 }
 

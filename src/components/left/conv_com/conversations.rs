@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
+use web_sys::NodeList;
 use yew::prelude::*;
 
 use crate::components::left::add_conv::AddConv;
@@ -8,7 +9,6 @@ use crate::components::left::right_click_panel::RightClickPanel;
 use crate::db::group::GroupRepo;
 use crate::db::group_members::GroupMembersRepo;
 use crate::model::conversation::Conversation;
-use crate::model::group::Group;
 use crate::model::message::{Msg, SingleCall};
 use crate::model::RightContentType;
 use crate::pages::{ConvState, CurrentItem, RecSendMessageState, RemoveConvState};
@@ -24,8 +24,8 @@ pub enum ConversationsMsg {
     InsertConv(Conversation),
     ConvStateChanged(Rc<ConvState>),
     WaitStateChanged,
-    AddConv,
-    CreateGroup(Group),
+    ShowSelectFriendList,
+    CreateGroup(NodeList),
     SendBackGroupInvitation(AttrValue),
     ShowContextMenu((i32, i32), AttrValue, bool),
     CloseContextMenu,
@@ -162,7 +162,7 @@ impl Component for Conversations {
                 self.list.shift_insert(0, flag.friend_id.clone(), flag);
                 true
             }
-            ConversationsMsg::AddConv => {
+            ConversationsMsg::ShowSelectFriendList => {
                 self.show_friend_list = !self.show_friend_list;
                 true
             }
@@ -170,14 +170,13 @@ impl Component for Conversations {
                 self.deal_with_conv_state_change(ctx, state)
             }
             ConversationsMsg::WaitStateChanged => false,
-            ConversationsMsg::CreateGroup(g) => {
+            ConversationsMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
+                if nodes.length() == 0 {
+                    return true;
+                }
                 // create group conversation and send 'create group' message
-                ctx.link().send_future(async move {
-                    let conv = Conversation::from(g);
-                    ConvRepo::new().await.put_conv(&conv, true).await.unwrap();
-                    ConversationsMsg::InsertConv(conv)
-                });
+                self.get_group_mems(ctx, nodes);
                 false
             }
             ConversationsMsg::SendBackGroupInvitation(group_id) => {
@@ -238,7 +237,9 @@ impl Component for Conversations {
         let clean_callback = ctx
             .link()
             .callback(move |_| ConversationsMsg::CleanupSearchResult);
-        let plus_click = ctx.link().callback(|_| ConversationsMsg::AddConv);
+        let plus_click = ctx
+            .link()
+            .callback(|_| ConversationsMsg::ShowSelectFriendList);
         let submit_back = ctx.link().callback(ConversationsMsg::CreateGroup);
 
         // spawn friend list

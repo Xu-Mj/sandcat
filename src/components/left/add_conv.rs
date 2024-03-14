@@ -1,18 +1,9 @@
 use gloo::utils::document;
 use indexmap::IndexMap;
-use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
-use web_sys::HtmlInputElement;
 use web_sys::NodeList;
 use yew::prelude::*;
 
-use crate::api;
-use crate::db::group::GroupRepo;
-use crate::db::group_members::GroupMembersRepo;
-use crate::db::user::UserRepo;
-use crate::model::group::Group;
-use crate::model::group::GroupMember;
-use crate::model::group::GroupRequest;
 use crate::{db::friend::FriendRepo, model::friend::Friend};
 
 #[derive(Debug, Default)]
@@ -26,9 +17,6 @@ pub enum AddConvMsg {
     Add,
     Close,
     QueryFriends(QueryStatus<IndexMap<AttrValue, Friend>>),
-    SubmitGroupMembers(Group),
-    SubmitEmpty,
-    RequestCreateGroupFail(JsValue),
 }
 #[derive(Debug, Clone)]
 pub enum QueryStatus<T> {
@@ -45,7 +33,7 @@ pub struct AddConvProps {
     pub user_id: AttrValue,
     pub avatar: AttrValue,
     pub close_back: Callback<()>,
-    pub submit_back: Callback<Group>,
+    pub submit_back: Callback<NodeList>,
 }
 
 impl Component for AddConv {
@@ -74,7 +62,7 @@ impl Component for AddConv {
                 // get selected checkbox value
                 match document().query_selector_all("input[type='checkbox']:checked") {
                     Ok(nodes) => {
-                        self.get_group_mems(ctx, nodes);
+                        ctx.props().submit_back.emit(nodes);
                     }
                     Err(_) => {
                         ctx.props().close_back.emit(());
@@ -98,18 +86,6 @@ impl Component for AddConv {
                 true
             }
             AddConvMsg::Close => {
-                ctx.props().close_back.emit(());
-                false
-            }
-            AddConvMsg::SubmitGroupMembers(g) => {
-                ctx.props().submit_back.emit(g);
-                false
-            }
-            AddConvMsg::RequestCreateGroupFail(err) => {
-                log::error!("request server to create group error: {:?}", err);
-                false
-            }
-            AddConvMsg::SubmitEmpty => {
                 ctx.props().close_back.emit(());
                 false
             }
@@ -161,77 +137,5 @@ impl Component for AddConv {
                 </div>
             </div>
         }
-    }
-}
-
-impl AddConv {
-    fn get_group_mems(&self, ctx: &Context<Self>, nodes: NodeList) {
-        let user_id = ctx.props().user_id.clone();
-        let self_avatar = ctx.props().avatar.clone();
-        ctx.link().send_future(async move {
-            let mut values = Vec::with_capacity(nodes.length() as usize);
-            let mut ids = Vec::with_capacity(nodes.length() as usize);
-            let mut avatar = Vec::with_capacity(nodes.length() as usize);
-            // push self avatar
-            avatar.push(self_avatar.to_string());
-            let mut group_name = String::new();
-            for i in 0..nodes.length() {
-                let node = nodes.item(i).unwrap();
-                if let Ok(node) = node.dyn_into::<HtmlInputElement>() {
-                    let value = node.value();
-                    if !value.is_empty() {
-                        let friend = FriendRepo::new()
-                            .await
-                            .get_friend(value.clone().into())
-                            .await;
-                        if !friend.id.is_empty() {
-                            ids.push(value);
-                            let mut name = friend.name.clone();
-                            if friend.remark.is_some() {
-                                name = friend.remark.as_ref().unwrap().clone();
-                            }
-                            group_name.push_str(name.as_str());
-                            if i < 8 {
-                                avatar.push(friend.avatar.clone().to_string());
-                            }
-                            values.push(GroupMember::from(friend));
-                        }
-                    }
-                }
-            }
-            if ids.is_empty() {
-                return AddConvMsg::SubmitEmpty;
-            }
-            group_name.push_str("、Group");
-            let group_req = GroupRequest {
-                owner: user_id.to_string(),
-                avatar: avatar.join(","),
-                group_name,
-                members_id: ids,
-                id: String::new(),
-            };
-            // push self
-            values.push(GroupMember::from(
-                UserRepo::new().await.get(user_id.clone()).await.unwrap(),
-            ));
-            // send create request
-            match api::group::create_group(group_req, user_id).await {
-                Ok(g) => {
-                    log::debug!("group created: {:?}", g);
-                    if let Err(err) = GroupRepo::new().await.put(&g).await {
-                        return AddConvMsg::RequestCreateGroupFail(err);
-                    }
-                    for v in values.iter_mut() {
-                        v.group_id = g.id.clone();
-                        if let Err(e) = GroupMembersRepo::new().await.put(v).await {
-                            log::error!("save group member error: {:?}", e);
-                            continue;
-                        }
-                    }
-                    AddConvMsg::SubmitGroupMembers(g)
-                }
-                Err(err) => AddConvMsg::RequestCreateGroupFail(err),
-            }
-        });
     }
 }
