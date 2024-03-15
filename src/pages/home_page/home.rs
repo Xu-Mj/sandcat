@@ -4,6 +4,7 @@ use gloo::utils::window;
 use yew::{AttrValue, Context, NodeRef};
 
 use crate::model::{ComponentType, CurrentItem};
+use crate::pages::CreateConvState;
 use crate::{
     db::{
         current_item, friend::FriendRepo, friend_ship::FriendShipRepo, group_msg::GroupMsgRepo,
@@ -74,6 +75,8 @@ impl Home {
         let rec_friend_req_event = ctx.link().callback(HomeMsg::ReceiveFriendShipReq);
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
         let error_event = ctx.link().callback(HomeMsg::Notification);
+        let create_friend_conv = ctx.link().callback(HomeMsg::CreateFriendConv);
+        let create_group_conv = ctx.link().callback(HomeMsg::CreateGroupConv);
         // 不能用这么多unwrap()
         let token = window()
             .local_storage()
@@ -149,6 +152,13 @@ impl Home {
                 ready,
             }),
             remove_friend_state: Rc::new(RemoveFriendState::with_event(remove_event)),
+            create_conv: Rc::new(CreateConvState {
+                friend: None,
+                group: None,
+                type_: crate::model::RightContentType::Default,
+                create_friend: create_friend_conv,
+                create_group: create_group_conv,
+            }),
         }
     }
     pub fn send_msg(&self, msg: &Msg) {

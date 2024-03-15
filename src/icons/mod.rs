@@ -9,18 +9,15 @@ pub fn close_icon() -> Html {
         </svg>
     }
 }
-//
-// #[function_component(AnswerPhoneIcon)]
-// pub fn answer_phone_icon() -> Html {
-//     html! {
-//         <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 16 16">
-//             <g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
-//                 <path d="M1.75 1.75c0 8.5 4 12.5 12.5 12.5v-4l-3.5-1l-1 1.5c-2 0-4.5-2.5-4.5-4.5l1.5-1l-1-3.5z"/>
-//                 <path d="m13.25 2.75l-3.5 3.5m0-3v3h3"/>
-//             </g>
-//         </svg>
-//     }
-// }
+
+#[function_component(PlusRectIcon)]
+pub fn plus_rect_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 256 256">
+            <path fill="#666666" d="M208 36H48a12 12 0 0 0-12 12v160a12 12 0 0 0 12 12h160a12 12 0 0 0 12-12V48a12 12 0 0 0-12-12m4 172a4 4 0 0 1-4 4H48a4 4 0 0 1-4-4V48a4 4 0 0 1 4-4h160a4 4 0 0 1 4 4Zm-40-80a4 4 0 0 1-4 4h-36v36a4 4 0 0 1-8 0v-36H88a4 4 0 0 1 0-8h36V88a4 4 0 0 1 8 0v36h36a4 4 0 0 1 4 4"/>
+        </svg>
+    }
+}
 
 #[function_component(AudioZoomInIcon)]
 pub fn audio_zoom_in_icon() -> Html {

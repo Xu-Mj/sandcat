@@ -76,6 +76,45 @@ impl From<User> for GroupMember {
         }
     }
 }
+
+impl ItemInfo for GroupMember {
+    fn name(&self) -> AttrValue {
+        self.group_name.clone()
+    }
+
+    fn id(&self) -> AttrValue {
+        self.user_id.clone()
+    }
+
+    fn get_type(&self) -> RightContentType {
+        RightContentType::Group
+    }
+
+    fn avatar(&self) -> AttrValue {
+        self.avatar.clone()
+    }
+
+    fn time(&self) -> i64 {
+        self.joined_at.timestamp_millis()
+    }
+
+    fn remark(&self) -> Option<AttrValue> {
+        None
+    }
+
+    fn signature(&self) -> Option<AttrValue> {
+        None
+    }
+
+    fn region(&self) -> Option<AttrValue> {
+        self.region.clone()
+    }
+
+    fn owner(&self) -> AttrValue {
+        self.user_id.clone()
+    }
+}
+
 impl ItemInfo for Group {
     fn name(&self) -> AttrValue {
         self.name.clone()

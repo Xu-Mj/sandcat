@@ -2,13 +2,14 @@ pub mod home_page;
 pub mod login;
 pub mod register;
 
+use web_sys::NodeList;
 use yew::{AttrValue, Callback};
 use yew_router::Routable;
 
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{InviteMsg, Msg};
 use crate::model::user::User;
-use crate::model::{ComponentType, CurrentItem, FriendShipStateType, UnreadItem};
+use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType, UnreadItem};
 
 // 1. 对话卡片切换
 // 2. 朋友卡片切换
@@ -45,6 +46,7 @@ pub struct RecSendMessageState {
     pub send_msg_event: Callback<Msg>,
     pub call_event: Callback<InviteMsg>,
 }
+
 #[derive(Default, Clone, PartialEq)]
 pub struct RecSendCallState {
     pub msg: InviteMsg,
@@ -115,6 +117,17 @@ pub struct FriendShipState {
     pub state_type: FriendShipStateType,
     pub req_change_event: Callback<FriendShipWithUser>,
     pub res_change_event: Callback<(AttrValue, Friend)>,
+}
+
+#[derive(Default, Clone, PartialEq, Debug)]
+pub struct CreateConvState {
+    pub type_: RightContentType,
+    // 可以是好友，或者其他实现了   ItemInfo的类型
+    pub friend: Option<Friend>,
+    // 创建群聊，接收一个NodeList，在chats中会生成群聊
+    pub group: Option<NodeList>,
+    pub create_friend: Callback<(RightContentType, Friend)>,
+    pub create_group: Callback<(RightContentType, NodeList)>,
 }
 
 // 定义路由

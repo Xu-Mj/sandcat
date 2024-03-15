@@ -1,13 +1,19 @@
+use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 
-use crate::model::conversation::Conversation;
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Test {
+    id: String,
+    name: String,
+}
 
+#[async_trait::async_trait]
 pub trait Conversations {
     async fn new() -> Self
     where
         Self: Sized;
 
-    async fn mute(&self, conv: &Conversation) -> Result<(), JsValue>;
+    async fn mute(&self, conv: &Test) -> Result<(), JsValue>;
 
     /*     async fn put_conv(
         &self,
@@ -23,12 +29,14 @@ pub trait Conversations {
 }
 
 pub struct ConversationsImpl;
+
+#[async_trait::async_trait]
 impl Conversations for ConversationsImpl {
     async fn new() -> Self {
         Self {}
     }
 
-    async fn mute(&self, conv: &Conversation) -> Result<(), JsValue> {
+    async fn mute(&self, conv: &Test) -> Result<(), JsValue> {
         log::debug!("conv: {:?}", conv);
         Ok(())
     }

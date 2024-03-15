@@ -6,7 +6,10 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
-use crate::{db::groups::GroupInterface, model::group::{Group, GroupMember}};
+use crate::{
+    db::groups::GroupInterface,
+    model::group::{Group, GroupMember},
+};
 
 use super::{
     repository::Repository, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,

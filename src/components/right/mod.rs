@@ -10,30 +10,37 @@ pub mod set_window;
 
 use std::rc::Rc;
 
+use web_sys::NodeList;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
+use crate::components::left::select_friends::SelectFriendList;
 use crate::components::right::friendship_list::FriendShipList;
+use crate::components::right::set_window::SetWindow;
 use crate::db::friend::FriendRepo;
 use crate::db::group::GroupRepo;
 use crate::db::groups::GroupInterface;
 use crate::icons::{CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
-use crate::pages::{ConvState, FriendListState};
+use crate::pages::{ConvState, CreateConvState, FriendListState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     pages::AppState,
 };
 
 pub struct Right {
-    pub state: Rc<AppState>,
-    pub _ctx_listener: ContextHandle<Rc<AppState>>,
-    pub conv_state: Rc<ConvState>,
-    pub _conv_listener: ContextHandle<Rc<ConvState>>,
-    pub cur_conv_info: Option<Box<dyn ItemInfo>>,
-    pub friend_list_state: Rc<FriendListState>,
-    pub _friend_list_listener: ContextHandle<Rc<FriendListState>>,
+    show_setting: bool,
+    show_friend_list: bool,
+    state: Rc<AppState>,
+    _ctx_listener: ContextHandle<Rc<AppState>>,
+    conv_state: Rc<ConvState>,
+    _conv_listener: ContextHandle<Rc<ConvState>>,
+    cur_conv_info: Option<Box<dyn ItemInfo>>,
+    friend_list_state: Rc<FriendListState>,
+    _friend_list_listener: ContextHandle<Rc<FriendListState>>,
+    create_conv: Rc<CreateConvState>,
+    _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
 }
 
 pub enum RightMsg {
@@ -42,6 +49,9 @@ pub enum RightMsg {
     ContentChange(Option<Box<dyn ItemInfo>>),
     FriendListStateChanged(Rc<FriendListState>),
     ShowSetting,
+    ShowSelectFriendList,
+    CreateGroup(NodeList),
+    None,
 }
 
 impl Right {
@@ -100,8 +110,14 @@ impl Component for Right {
             .link()
             .context(ctx.link().callback(RightMsg::FriendListStateChanged))
             .expect("expect state");
+        let (create_conv, _create_conv_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| RightMsg::None))
+            .expect("expect state");
         let cur_conv_info = None;
         Self {
+            show_setting: false,
+            show_friend_list: false,
             state,
             _ctx_listener,
             conv_state,
@@ -109,6 +125,8 @@ impl Component for Right {
             cur_conv_info,
             friend_list_state,
             _friend_list_listener,
+            create_conv,
+            _create_conv_listener,
         }
     }
 
@@ -134,14 +152,54 @@ impl Component for Right {
                 self.match_content(ctx);
                 true
             }
-            RightMsg::ShowSetting => true,
+            RightMsg::ShowSetting => {
+                if self.show_friend_list {
+                    return false;
+                }
+                self.show_setting = !self.show_setting;
+                true
+            }
+            RightMsg::ShowSelectFriendList => {
+                self.show_friend_list = !self.show_friend_list;
+                true
+            }
+            RightMsg::CreateGroup(nodes) => {
+                self.show_friend_list = false;
+                if nodes.length() == 0 {
+                    return true;
+                }
+                // create group conversation and send 'create group' message
+                self.create_conv
+                    .create_group
+                    .emit((RightContentType::Group, nodes));
+                self.show_friend_list = false;
+                self.show_setting = false;
+                false
+            }
+            RightMsg::None => false,
         }
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let mut top_bar_info = html!();
+        let mut setting = html!();
+        let mut friend_list = html!();
         if let Some(info) = &self.cur_conv_info {
-            let onclick = _ctx.link().callback(|_| RightMsg::ShowSetting);
+            let onclick = ctx.link().callback(|_| RightMsg::ShowSetting);
+            let close = ctx.link().callback(|_| RightMsg::ShowSelectFriendList);
+            let submit_back = ctx.link().callback(RightMsg::CreateGroup);
+
+            if self.show_setting {
+                setting = html! (
+                    <SetWindow
+                        id={info.id()}
+                        conv_type={info.get_type()}
+                        close={ctx.link().callback(|_| RightMsg::ShowSetting)}
+                        plus_click={close.clone()} />);
+            }
+            if self.show_friend_list {
+                friend_list = html!(<SelectFriendList close_back={close} {submit_back} />);
+            }
             top_bar_info = html! {
                 <div class="right-top-bar-friend">
                     <span>
@@ -208,6 +266,8 @@ impl Component for Right {
                     </div>
                     {top_bar_info}
                 </div>
+                    {setting}
+                    {friend_list}
                 <div class="msg-container">
                     {content}
                 </div>

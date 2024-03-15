@@ -42,7 +42,6 @@ pub struct PostCard {
     _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
 }
 
-
 impl Component for PostCard {
     type Message = PostCardMsg;
     type Properties = PostCardProps;

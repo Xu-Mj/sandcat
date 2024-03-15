@@ -4,13 +4,14 @@ use std::rc::Rc;
 
 use gloo::timers::callback::Interval;
 use gloo::utils::window;
-use web_sys::HtmlDivElement;
+use web_sys::{HtmlDivElement, NodeList};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use super::{
-    AppState, ConvState, FriendListState, FriendShipState, ItemType, RecSendCallState,
-    RecSendMessageState, RemoveConvState, RemoveFriendState, UnreadState, WaitState,
+    AppState, ConvState, CreateConvState, FriendListState, FriendShipState, ItemType,
+    RecSendCallState, RecSendMessageState, RemoveConvState, RemoveFriendState, UnreadState,
+    WaitState,
 };
 use crate::components::phone_call::PhoneCall;
 use crate::db::current_item;
@@ -20,7 +21,7 @@ use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{InviteMsg, Msg, SingleCall};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
-use crate::model::{ComponentType, CurrentItem};
+use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::ws::WebSocketManager;
 use crate::{
     components::{left::Left, right::Right},
@@ -28,26 +29,25 @@ use crate::{
 };
 
 pub struct Home {
+    // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
+    call_msg: SingleCall,
+    user: User,
+    ws: Rc<RefCell<WebSocketManager>>,
+    notification_node: NodeRef,
+    notification_interval: Option<Interval>,
     state: Rc<AppState>,
     msg_state: Rc<RecSendMessageState>,
     call_state: Rc<RecSendCallState>,
-    // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
-    call_msg: SingleCall,
     conv_state: Rc<ConvState>,
     remove_conv_state: Rc<RemoveConvState>,
     remove_friend_state: Rc<RemoveFriendState>,
     unread_state: Rc<UnreadState>,
     friend_state: Rc<FriendListState>,
-    // user_state: QueryStatus<QueryResult>,
-    user: User,
-    ws: Rc<RefCell<WebSocketManager>>,
     friend_ship_state: Rc<FriendShipState>,
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
-    notification_node: NodeRef,
-    notification_interval: Option<Interval>,
-    // need_wait_count: usize,
     wait_state: Rc<WaitState>,
+    create_conv: Rc<CreateConvState>,
 }
 const WAIT_COUNT: usize = 1;
 pub enum HomeMsg {
@@ -85,7 +85,9 @@ pub enum HomeMsg {
     SubUnreadContactCount(usize),
     RemoveConv(AttrValue),
     RemoveFriend((AttrValue, ItemType)),
-    // RecSendCallStateChange(Msg),
+    // 创建会话状态改变回调
+    CreateFriendConv((RightContentType, Friend)),
+    CreateGroupConv((RightContentType, NodeList)),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -256,6 +258,21 @@ impl Component for Home {
                 state.type_ = type_;
                 true
             }
+            HomeMsg::CreateFriendConv((t, info)) => {
+                let state = Rc::make_mut(&mut self.create_conv);
+                state.type_ = t;
+                state.friend = Some(info);
+                true
+            }
+            HomeMsg::CreateGroupConv((t, list)) => {
+                if list.is_null() || list.is_undefined() || list.length() == 0 {
+                    return false;
+                }
+                let state = Rc::make_mut(&mut self.create_conv);
+                state.type_ = t;
+                state.group = Some(list);
+                true
+            }
         }
     }
 
@@ -290,37 +307,39 @@ impl Component for Home {
 
         html! {
             <ContextProvider<Rc<AppState>> context={self.state.clone()}>
-                <ContextProvider<Rc<RecSendMessageState>> context={self.msg_state.clone()}>
-                    <ContextProvider<Rc<FriendShipState>> context={self.friend_ship_state.clone()}>
-                        <ContextProvider<Rc<FriendListState>> context={self.friend_state.clone()}>
-                            <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
-                                <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
-                                    <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
-                                        <ContextProvider<SingleCall> context={self.call_msg.clone()}>
-                                            <ContextProvider<Rc<WaitState>> context={self.wait_state.clone()}>
-                                            <ContextProvider<Rc<UnreadState>> context={self.unread_state.clone()}>
-                                            <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
-                                            <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
-                                                <div class="home" id="app">
-                                                    <Left />
-                                                    <Right />
-                                                    // 通知组件
-                                                    <PhoneCall ws={self.ws.clone()} user_id={self.user.id.clone()}/>
-                                                    <div class="notify" ref={self.notification_node.clone()}>
-                                                        {notify}
-                                                    </div>
-                                                </div>
-                                            </ContextProvider<Rc<RemoveFriendState>>>
-                                            </ContextProvider<Rc<RemoveConvState>>>
-                                            </ContextProvider<Rc<UnreadState>>>
-                                            </ContextProvider<Rc<WaitState>>>
-                                        </ContextProvider<SingleCall>>
-                                    </ContextProvider<Rc<RecSendCallState>>>
-                                </ContextProvider<Rc<NotificationState>>>
-                            </ContextProvider<Rc<ConvState>>>
-                        </ContextProvider<Rc<FriendListState>>>
-                    </ContextProvider<Rc<FriendShipState>>>
-                </ContextProvider<Rc<RecSendMessageState>>>
+            <ContextProvider<Rc<RecSendMessageState>> context={self.msg_state.clone()}>
+            <ContextProvider<Rc<FriendShipState>> context={self.friend_ship_state.clone()}>
+            <ContextProvider<Rc<FriendListState>> context={self.friend_state.clone()}>
+            <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
+            <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
+            <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
+            <ContextProvider<SingleCall> context={self.call_msg.clone()}>
+            <ContextProvider<Rc<WaitState>> context={self.wait_state.clone()}>
+            <ContextProvider<Rc<UnreadState>> context={self.unread_state.clone()}>
+            <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
+            <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
+            <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
+                <div class="home" id="app">
+                    <Left />
+                    <Right />
+                    // 通知组件
+                    <PhoneCall ws={self.ws.clone()} user_id={self.user.id.clone()}/>
+                    <div class="notify" ref={self.notification_node.clone()}>
+                        {notify}
+                    </div>
+                </div>
+            </ContextProvider<Rc<CreateConvState>>>
+            </ContextProvider<Rc<RemoveFriendState>>>
+            </ContextProvider<Rc<RemoveConvState>>>
+            </ContextProvider<Rc<UnreadState>>>
+            </ContextProvider<Rc<WaitState>>>
+            </ContextProvider<SingleCall>>
+            </ContextProvider<Rc<RecSendCallState>>>
+            </ContextProvider<Rc<NotificationState>>>
+            </ContextProvider<Rc<ConvState>>>
+            </ContextProvider<Rc<FriendListState>>>
+            </ContextProvider<Rc<FriendShipState>>>
+            </ContextProvider<Rc<RecSendMessageState>>>
             </ContextProvider<Rc<AppState>>>
         }
     }

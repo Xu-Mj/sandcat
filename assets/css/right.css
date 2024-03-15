@@ -42,6 +42,54 @@
             justify-content: space-between;
             font-size: larger;
         }
+
+    }
+    
+    .set-window {
+        width: 15rem;
+        height: 20rem;
+        padding: .5rem;
+        position: absolute;
+        right: 1rem;
+        top: 3rem;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background-color: white;
+        z-index: 3;
+
+        &[tabindex] {
+            outline: none;
+        }
+
+        .people {
+            width: 100%;
+            height: auto;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: .5rem;
+
+            .avatar-name {
+                width: 2rem;
+                overflow: hidden;
+
+                img {
+                    width: 100%;
+                    border-radius: .3rem;
+                }
+
+                span {
+                    text-overflow: ellipsis;
+                    word-break: keep-all;
+                }
+
+                svg {
+                    width: 2rem;
+                    height: 2rem;
+                }
+            }
+        }
     }
 
     .msg-container {

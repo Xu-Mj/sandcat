@@ -13,14 +13,17 @@ use crate::{
     api,
     components::left::list_item::ListItem,
     db::{
-        conv::ConvRepo, friend::FriendRepo, group::GroupRepo, group_members::GroupMembersRepo, groups::GroupInterface, message::MessageRepo, user::UserRepo
+        conv::ConvRepo, friend::FriendRepo, group::GroupRepo, group_members::GroupMembersRepo,
+        groups::GroupInterface, message::MessageRepo, user::UserRepo,
     },
     model::{
         conversation::Conversation,
         group::{GroupMember, GroupRequest},
         CommonProps, ComponentType, ContentType, RightContentType,
     },
-    pages::{ConvState, RecSendMessageState, RemoveConvState, UnreadState, WaitState},
+    pages::{
+        ConvState, CreateConvState, RecSendMessageState, RemoveConvState, UnreadState, WaitState,
+    },
 };
 
 use self::conversations::ChatsMsg;
@@ -45,6 +48,8 @@ pub struct Chats {
     _unread_listener: ContextHandle<Rc<UnreadState>>,
     wait_state: Rc<WaitState>,
     _wait_listener: ContextHandle<Rc<WaitState>>,
+    _create_conv: Rc<CreateConvState>,
+    _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
 }
 
 impl Chats {
@@ -76,6 +81,10 @@ impl Chats {
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::WaitStateChanged))
             .expect("need state in item");
+        let (create_conv, _create_conv_listener) = ctx
+            .link()
+            .context(ctx.link().callback(ChatsMsg::CreateConvStateChanged))
+            .expect("need state in item");
         Self {
             list: IndexMap::new(),
             result: IndexMap::new(),
@@ -94,6 +103,8 @@ impl Chats {
             _msg_listener,
             wait_state,
             _wait_listener,
+            _create_conv: create_conv,
+            _create_conv_listener,
         }
     }
 

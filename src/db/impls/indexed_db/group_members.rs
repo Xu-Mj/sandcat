@@ -1,10 +1,9 @@
 use std::ops::Deref;
 
 use futures_channel::oneshot;
-use indexmap::IndexMap;
 use js_sys::Array;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::IdbRequest;
+use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
 use crate::model::group::GroupMember;
@@ -105,17 +104,18 @@ impl GroupMembersRepo {
         Ok(rx.await.unwrap())
     }
 
-    pub async fn get_list(&self) -> Result<IndexMap<AttrValue, GroupMember>, JsValue> {
-        let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, GroupMember>>();
+    pub async fn get_list_by_group_id(&self, group_id: &str) -> Result<Vec<GroupMember>, JsValue> {
+        let (tx, rx) = oneshot::channel::<Vec<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
-        let request = store.open_cursor()?;
+        let index = store.index("group_id")?;
+        let range = IdbKeyRange::only(&JsValue::from(group_id))?;
+        let request = index.open_cursor_with_range(&range.into())?;
         let on_add_error = Closure::once(move |event: &Event| {
             web_sys::console::log_1(&String::from("读取数据失败").into());
             web_sys::console::log_1(&event.into());
         });
 
-        let groups = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
-        let groups = groups.clone();
+        let mut groups = Vec::new();
         let mut tx = Some(tx);
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         let success = Closure::wrap(Box::new(move |event: &Event| {
@@ -137,13 +137,12 @@ impl GroupMembersRepo {
                 let value = cursor.value().unwrap();
                 // 反序列化
                 let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
-                let id = group.user_id.to_string().into();
-                groups.borrow_mut().insert(id, group);
+                groups.push(group);
                 let _ = cursor.continue_();
             } else {
                 // 如果为null说明已经遍历完成
                 //将总的结果发送出来
-                let _ = tx.take().unwrap().send(groups.borrow().clone());
+                let _ = tx.take().unwrap().send(groups.to_owned());
             }
         }) as Box<dyn FnMut(&Event)>);
 

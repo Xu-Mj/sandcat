@@ -5,14 +5,14 @@ use web_sys::NodeList;
 use yew::prelude::*;
 
 use crate::components::left::right_click_panel::RightClickPanel;
-use crate::components::left::select_friends::AddConv;
+use crate::components::left::select_friends::SelectFriendList;
 use crate::db::group::GroupRepo;
 use crate::db::group_members::GroupMembersRepo;
 use crate::db::groups::GroupInterface;
 use crate::model::conversation::Conversation;
 use crate::model::message::{Msg, SingleCall};
 use crate::model::{ComponentType, CurrentItem, RightContentType};
-use crate::pages::{ConvState, RecSendMessageState, RemoveConvState};
+use crate::pages::{ConvState, CreateConvState, RecSendMessageState, RemoveConvState};
 use crate::{components::top_bar::TopBar, db::conv::ConvRepo};
 
 use super::Chats;
@@ -34,6 +34,7 @@ pub enum ChatsMsg {
     Mute,
     None,
     RemoveConvStateChanged(Rc<RemoveConvState>),
+    CreateConvStateChanged(Rc<CreateConvState>),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -113,9 +114,7 @@ impl Component for Chats {
                                 log::error!("save group member error: {:?}", e);
                             }
                             // send back received message
-                            clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(
-                                msg.info.id,
-                            ));
+                            clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(msg.info.id));
                             ChatsMsg::InsertConv(conv)
                         });
 
@@ -167,9 +166,7 @@ impl Component for Chats {
                 self.show_friend_list = !self.show_friend_list;
                 true
             }
-            ChatsMsg::ConvStateChanged(state) => {
-                self.deal_with_conv_state_change(ctx, state)
-            }
+            ChatsMsg::ConvStateChanged(state) => self.deal_with_conv_state_change(ctx, state),
             ChatsMsg::WaitStateChanged => false,
             ChatsMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
@@ -221,6 +218,20 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::Mute => self.mute(),
+            ChatsMsg::CreateConvStateChanged(state) => {
+                match state.type_ {
+                    RightContentType::Friend => {}
+                    RightContentType::Group => {
+                        if state.group.is_some() {
+                            let list = state.group.clone();
+                            self.get_group_mems(ctx, list.unwrap());
+                            return true;
+                        }
+                    }
+                    _ => {}
+                }
+                false
+            }
         }
     }
 
@@ -235,23 +246,15 @@ impl Component for Chats {
             self.render_list(ctx)
         };
         let search_callback = ctx.link().callback(ChatsMsg::FilterContact);
-        let clean_callback = ctx
-            .link()
-            .callback(move |_| ChatsMsg::CleanupSearchResult);
-        let plus_click = ctx
-            .link()
-            .callback(|_| ChatsMsg::ShowSelectFriendList);
+        let clean_callback = ctx.link().callback(move |_| ChatsMsg::CleanupSearchResult);
+        let plus_click = ctx.link().callback(|_| ChatsMsg::ShowSelectFriendList);
         let submit_back = ctx.link().callback(ChatsMsg::CreateGroup);
 
         // spawn friend list
         let mut friend_list = html!();
         if self.show_friend_list {
             friend_list = html! {
-                <AddConv
-                    user_id={ctx.props().user_id.clone()}
-                    close_back={plus_click.clone()} {submit_back}
-                    avatar={ctx.props().avatar.clone()}
-                    />
+                <SelectFriendList close_back={plus_click.clone()} {submit_back}/>
             };
         }
         let mut context_menu = html!();

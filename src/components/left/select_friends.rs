@@ -7,7 +7,7 @@ use yew::prelude::*;
 use crate::{db::friend::FriendRepo, model::friend::Friend};
 
 #[derive(Debug, Default)]
-pub struct AddConv {
+pub struct SelectFriendList {
     data: IndexMap<AttrValue, Friend>,
     querying: bool,
     err: JsValue,
@@ -30,13 +30,13 @@ pub enum QueryStatus<T> {
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct AddConvProps {
-    pub user_id: AttrValue,
-    pub avatar: AttrValue,
+    // pub user_id: AttrValue,
+    // pub avatar: AttrValue,
     pub close_back: Callback<()>,
     pub submit_back: Callback<NodeList>,
 }
 
-impl Component for AddConv {
+impl Component for SelectFriendList {
     type Message = AddConvMsg;
 
     type Properties = AddConvProps;
