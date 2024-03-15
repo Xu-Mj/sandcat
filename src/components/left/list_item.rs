@@ -2,9 +2,8 @@ use chrono::TimeZone;
 use std::rc::Rc;
 use yew::prelude::*;
 
-use crate::model::{CommonProps, ComponentType, CurrentItem};
 use crate::{
-    model::RightContentType,
+    model::{CommonProps, ComponentType, CurrentItem, RightContentType},
     pages::{ConvState, FriendListState, UnreadState},
 };
 
@@ -44,11 +43,6 @@ impl Component for ListItem {
     type Properties = ListItemProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        log::debug!(
-            "list item conv type:{:?}, friend id:{}",
-            ctx.props().conv_type.clone(),
-            ctx.props().props.id.clone()
-        );
         let (conv_state, _conv_listener) = ctx
             .link()
             .context(ctx.link().callback(ListItemMsg::ConvStateChanged))

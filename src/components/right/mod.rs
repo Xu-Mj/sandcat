@@ -173,7 +173,7 @@ impl Component for Right {
                     .emit((RightContentType::Group, nodes));
                 self.show_friend_list = false;
                 self.show_setting = false;
-                false
+                true
             }
             RightMsg::None => false,
         }
@@ -197,7 +197,8 @@ impl Component for Right {
                         plus_click={close.clone()} />);
             }
             if self.show_friend_list {
-                friend_list = html!(<SelectFriendList close_back={close} {submit_back} />);
+                friend_list =
+                    html!(<SelectFriendList except={info.id()} close_back={close} {submit_back} />);
             }
             top_bar_info = html! {
                 <div class="right-top-bar-friend">

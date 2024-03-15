@@ -310,23 +310,26 @@ impl Chats {
         }
     }
 
-    fn get_group_mems(&mut self, ctx: &Context<Self>, mut nodes: Vec<String>) {
+    fn get_group_mems(&mut self, ctx: &Context<Self>, nodes: Vec<String>) {
+        log::debug!("get group mems: {:?} ; ", nodes);
         let user_id = ctx.props().user_id.clone();
         let self_avatar = ctx.props().avatar.clone();
         ctx.link().send_future(async move {
+            if nodes.is_empty() {
+                return ChatsMsg::ShowSelectFriendList;
+            }
             let mut values = Vec::with_capacity(nodes.len());
-            let mut ids = Vec::with_capacity(nodes.len());
+            // let mut ids = Vec::with_capacity(nodes.len());
             let mut avatar = Vec::with_capacity(nodes.len());
             // push self avatar
             avatar.push(self_avatar.to_string());
             let mut group_name = String::new();
-            for i in 0..nodes.len() {
+            for (i, node) in nodes.iter().enumerate() {
                 let friend = FriendRepo::new()
                     .await
-                    .get_friend(nodes[i].clone().into())
+                    .get_friend(node.clone().into())
                     .await;
                 if !friend.id.is_empty() {
-                    ids.push(nodes.remove(i));
                     let mut name = friend.name.clone();
                     if friend.remark.is_some() {
                         name = friend.remark.as_ref().unwrap().clone();
@@ -338,15 +341,13 @@ impl Chats {
                     values.push(GroupMember::from(friend));
                 }
             }
-            if ids.is_empty() {
-                return ChatsMsg::ShowSelectFriendList;
-            }
+
             group_name.push_str("、Group");
             let group_req = GroupRequest {
                 owner: user_id.to_string(),
                 avatar: avatar.join(","),
                 group_name,
-                members_id: ids,
+                members_id: nodes,
                 id: String::new(),
             };
             // push self

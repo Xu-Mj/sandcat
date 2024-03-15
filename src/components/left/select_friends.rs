@@ -31,8 +31,8 @@ pub enum QueryStatus<T> {
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct AddConvProps {
-    // pub user_id: AttrValue,
-    // pub avatar: AttrValue,
+    // 该排除一个用户呢还是排除多个？
+    pub except: AttrValue,
     pub close_back: Callback<()>,
     pub submit_back: Callback<Vec<String>>,
 }
@@ -70,6 +70,7 @@ impl Component for SelectFriendList {
                                 v.push(node.value());
                             };
                         }
+                        v.push(ctx.props().except.clone().to_string().clone().to_string());
                         ctx.props().submit_back.emit(v);
                     }
                     Err(_) => {
@@ -82,7 +83,8 @@ impl Component for SelectFriendList {
             AddConvMsg::QueryFriends(result) => {
                 match result {
                     QueryStatus::Querying => self.querying = true,
-                    QueryStatus::Success(friends) => {
+                    QueryStatus::Success(mut friends) => {
+                        friends.shift_remove(&ctx.props().except);
                         self.data = friends;
                         self.querying = false;
                     }

@@ -169,7 +169,7 @@ impl Component for Chats {
             ChatsMsg::WaitStateChanged => false,
             ChatsMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
-                if nodes.len() == 0 {
+                if nodes.is_empty() {
                     return true;
                 }
                 // create group conversation and send 'create group' message
@@ -253,7 +253,7 @@ impl Component for Chats {
         let mut friend_list = html!();
         if self.show_friend_list {
             friend_list = html! {
-                <SelectFriendList close_back={plus_click.clone()} {submit_back}/>
+                <SelectFriendList except={AttrValue::default()} close_back={plus_click.clone()} {submit_back}/>
             };
         }
         let mut context_menu = html!();

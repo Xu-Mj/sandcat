@@ -46,7 +46,7 @@ impl Component for SetWindow {
                     info.push(Box::new(friend));
                 }
                 RightContentType::Group => {
-                    // query memebers by group id
+                    // query members by group id
                     if let Ok(list) = GroupMembersRepo::new()
                         .await
                         .get_list_by_group_id(id.as_str())
@@ -108,9 +108,9 @@ impl Component for SetWindow {
             <input id="msg-mute" type="switch" /* value={self.is_mute} *//>
             </>
         };
-        // let onblur = ctx.props().close.reform(|_| ());
+        let onblur = ctx.props().close.reform(|_| ());
         html! {
-            <div ref={self.node.clone()} tabindex="0"  /* {onblur} */ class="set-window box-shadow">
+            <div ref={self.node.clone()} tabindex="0"  {onblur} class="set-window box-shadow">
                 <div class="people">
                     {avatars}
                     {add_friend}
