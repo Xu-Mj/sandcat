@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
-use web_sys::NodeList;
 use yew::prelude::*;
 
 use crate::components::left::right_click_panel::RightClickPanel;
@@ -26,7 +25,7 @@ pub enum ChatsMsg {
     ConvStateChanged(Rc<ConvState>),
     WaitStateChanged,
     ShowSelectFriendList,
-    CreateGroup(NodeList),
+    CreateGroup(Vec<String>),
     SendBackGroupInvitation(AttrValue),
     ShowContextMenu((i32, i32), AttrValue, bool),
     CloseContextMenu,
@@ -170,7 +169,7 @@ impl Component for Chats {
             ChatsMsg::WaitStateChanged => false,
             ChatsMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
-                if nodes.length() == 0 {
+                if nodes.len() == 0 {
                     return true;
                 }
                 // create group conversation and send 'create group' message

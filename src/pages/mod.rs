@@ -2,7 +2,6 @@ pub mod home_page;
 pub mod login;
 pub mod register;
 
-use web_sys::NodeList;
 use yew::{AttrValue, Callback};
 use yew_router::Routable;
 
@@ -125,9 +124,9 @@ pub struct CreateConvState {
     // 可以是好友，或者其他实现了   ItemInfo的类型
     pub friend: Option<Friend>,
     // 创建群聊，接收一个NodeList，在chats中会生成群聊
-    pub group: Option<NodeList>,
+    pub group: Option<Vec<String>>,
     pub create_friend: Callback<(RightContentType, Friend)>,
-    pub create_group: Callback<(RightContentType, NodeList)>,
+    pub create_group: Callback<(RightContentType, Vec<String>)>,
 }
 
 // 定义路由

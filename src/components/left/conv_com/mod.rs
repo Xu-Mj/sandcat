@@ -2,9 +2,7 @@ mod conversations;
 
 use std::rc::Rc;
 
-use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
-use web_sys::{HtmlInputElement, NodeList};
 use yew::prelude::*;
 
 use indexmap::IndexMap;
@@ -312,38 +310,32 @@ impl Chats {
         }
     }
 
-    fn get_group_mems(&mut self, ctx: &Context<Self>, nodes: NodeList) {
+    fn get_group_mems(&mut self, ctx: &Context<Self>, mut nodes: Vec<String>) {
         let user_id = ctx.props().user_id.clone();
         let self_avatar = ctx.props().avatar.clone();
         ctx.link().send_future(async move {
-            let mut values = Vec::with_capacity(nodes.length() as usize);
-            let mut ids = Vec::with_capacity(nodes.length() as usize);
-            let mut avatar = Vec::with_capacity(nodes.length() as usize);
+            let mut values = Vec::with_capacity(nodes.len());
+            let mut ids = Vec::with_capacity(nodes.len());
+            let mut avatar = Vec::with_capacity(nodes.len());
             // push self avatar
             avatar.push(self_avatar.to_string());
             let mut group_name = String::new();
-            for i in 0..nodes.length() {
-                let node = nodes.item(i).unwrap();
-                if let Ok(node) = node.dyn_into::<HtmlInputElement>() {
-                    let value = node.value();
-                    if !value.is_empty() {
-                        let friend = FriendRepo::new()
-                            .await
-                            .get_friend(value.clone().into())
-                            .await;
-                        if !friend.id.is_empty() {
-                            ids.push(value);
-                            let mut name = friend.name.clone();
-                            if friend.remark.is_some() {
-                                name = friend.remark.as_ref().unwrap().clone();
-                            }
-                            group_name.push_str(name.as_str());
-                            if i < 8 {
-                                avatar.push(friend.avatar.clone().to_string());
-                            }
-                            values.push(GroupMember::from(friend));
-                        }
+            for i in 0..nodes.len() {
+                let friend = FriendRepo::new()
+                    .await
+                    .get_friend(nodes[i].clone().into())
+                    .await;
+                if !friend.id.is_empty() {
+                    ids.push(nodes.remove(i));
+                    let mut name = friend.name.clone();
+                    if friend.remark.is_some() {
+                        name = friend.remark.as_ref().unwrap().clone();
                     }
+                    group_name.push_str(name.as_str());
+                    if i < 8 {
+                        avatar.push(friend.avatar.clone().to_string());
+                    }
+                    values.push(GroupMember::from(friend));
                 }
             }
             if ids.is_empty() {

@@ -10,7 +10,6 @@ pub mod set_window;
 
 use std::rc::Rc;
 
-use web_sys::NodeList;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
@@ -50,7 +49,7 @@ pub enum RightMsg {
     FriendListStateChanged(Rc<FriendListState>),
     ShowSetting,
     ShowSelectFriendList,
-    CreateGroup(NodeList),
+    CreateGroup(Vec<String>),
     None,
 }
 
@@ -165,7 +164,7 @@ impl Component for Right {
             }
             RightMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
-                if nodes.length() == 0 {
+                if nodes.is_empty() {
                     return true;
                 }
                 // create group conversation and send 'create group' message

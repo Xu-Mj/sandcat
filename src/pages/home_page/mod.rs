@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use gloo::timers::callback::Interval;
 use gloo::utils::window;
-use web_sys::{HtmlDivElement, NodeList};
+use web_sys::HtmlDivElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
@@ -87,7 +87,7 @@ pub enum HomeMsg {
     RemoveFriend((AttrValue, ItemType)),
     // 创建会话状态改变回调
     CreateFriendConv((RightContentType, Friend)),
-    CreateGroupConv((RightContentType, NodeList)),
+    CreateGroupConv((RightContentType, Vec<String>)),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -265,7 +265,7 @@ impl Component for Home {
                 true
             }
             HomeMsg::CreateGroupConv((t, list)) => {
-                if list.is_null() || list.is_undefined() || list.length() == 0 {
+                if list.is_empty() {
                     return false;
                 }
                 let state = Rc::make_mut(&mut self.create_conv);

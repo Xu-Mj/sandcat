@@ -1,7 +1,8 @@
 use gloo::utils::document;
 use indexmap::IndexMap;
+use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
-use web_sys::NodeList;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 use crate::{db::friend::FriendRepo, model::friend::Friend};
@@ -33,7 +34,7 @@ pub struct AddConvProps {
     // pub user_id: AttrValue,
     // pub avatar: AttrValue,
     pub close_back: Callback<()>,
-    pub submit_back: Callback<NodeList>,
+    pub submit_back: Callback<Vec<String>>,
 }
 
 impl Component for SelectFriendList {
@@ -62,7 +63,14 @@ impl Component for SelectFriendList {
                 // get selected checkbox value
                 match document().query_selector_all("input[type='checkbox']:checked") {
                     Ok(nodes) => {
-                        ctx.props().submit_back.emit(nodes);
+                        let mut v = Vec::with_capacity(nodes.length() as usize);
+                        for i in 0..nodes.length() {
+                            if let Ok(node) = nodes.item(i).unwrap().dyn_into::<HtmlInputElement>()
+                            {
+                                v.push(node.value());
+                            };
+                        }
+                        ctx.props().submit_back.emit(v);
                     }
                     Err(_) => {
                         ctx.props().close_back.emit(());
