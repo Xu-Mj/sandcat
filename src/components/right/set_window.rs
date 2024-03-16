@@ -1,3 +1,4 @@
+use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
@@ -102,6 +103,11 @@ impl Component for SetWindow {
             }
             SetWindowMsg::MuteClicked => {
                 self.conv.mute = !self.conv.mute;
+                let conv = self.conv.clone();
+                // update conversation
+                spawn_local(async move {
+                    ConvRepo::new().await.mute(&conv).await.unwrap();
+                });
                 true
             }
         }
@@ -127,7 +133,7 @@ impl Component for SetWindow {
             </div>
         };
         let mute_click = ctx.link().callback(|_| SetWindowMsg::MuteClicked);
-        let mut switch = classes!("switch");
+        let mut switch = classes!("switch", "pointer");
         let mut slider = classes!("slider");
         if self.conv.mute {
             switch.push("background-change");
@@ -141,22 +147,33 @@ impl Component for SetWindow {
                 info = html! {
                     <div class="info">
                         <div class="group-name">
-                            {v.name()}
+                            <div>
+                                {"群聊名称"}
+                            </div>
+                            <input type="text" value={v.name()} />
                         </div>
                         <div class="group-announcement">
-                            {v.remark()}
+                            <div>
+                                {"群公告"}
+                            </div>
+                            <input type="text" value={v.remark()} />
                         </div>
                         <div class="group-desc">
-                            {v.signature()}
+                            <div>
+                                {"群描述"}
+                            </div>
+                            <input type="text" value={v.signature()} />
                         </div>
-
                     </div>
                 }
             }
         }
         let setting = html! {
-            <div class={switch} onclick={mute_click}>
-                <div class={slider}></div>
+            <div class="setting-item">
+            {"消息免打扰"}
+            <span class={switch} onclick={mute_click}>
+                <span class={slider}></span>
+            </span>
             </div>
         };
         let onblur = ctx.props().close.reform(|_| ());
