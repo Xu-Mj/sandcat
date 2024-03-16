@@ -2,19 +2,28 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use crate::{
-    db::{conv::ConvRepo, friend::FriendRepo, group_members::GroupMembersRepo},
+    db::{
+        conv::ConvRepo, friend::FriendRepo, group::GroupRepo, group_members::GroupMembersRepo,
+        groups::GroupInterface,
+    },
     icons::PlusRectIcon,
-    model::{ItemInfo, RightContentType},
+    model::{conversation::Conversation, ItemInfo, RightContentType},
 };
 #[derive(Default)]
 pub struct SetWindow {
     list: Vec<Box<dyn ItemInfo>>,
-    is_mute: bool,
+    info: Option<Box<dyn ItemInfo>>,
+    conv: Conversation,
     node: NodeRef,
 }
 
 pub enum SetWindowMsg {
-    QueryInfo(Vec<Box<dyn ItemInfo>>, bool),
+    QueryInfo(
+        Option<Box<dyn ItemInfo>>,
+        Vec<Box<dyn ItemInfo>>,
+        Conversation,
+    ),
+    MuteClicked,
 }
 
 #[derive(Properties, PartialEq)]
@@ -39,21 +48,31 @@ impl Component for SetWindow {
         let id = ctx.props().id.clone();
         let conv_type = ctx.props().conv_type.clone();
         ctx.link().send_future(async move {
-            let mut info: Vec<Box<dyn ItemInfo>> = vec![];
+            let mut list: Vec<Box<dyn ItemInfo>> = vec![];
+            let mut info: Option<Box<dyn ItemInfo>> = None;
             match conv_type {
                 RightContentType::Friend => {
                     let friend = FriendRepo::new().await.get_friend(id.clone()).await;
-                    info.push(Box::new(friend));
+                    info = Some(Box::new(friend.clone()));
+                    list.push(Box::new(friend));
                 }
                 RightContentType::Group => {
+                    // query group information
+                    let group = GroupRepo::new()
+                        .await
+                        .get(id.clone())
+                        .await
+                        .unwrap()
+                        .unwrap();
+                    info = Some(Box::new(group.clone()));
                     // query members by group id
-                    if let Ok(list) = GroupMembersRepo::new()
+                    if let Ok(members) = GroupMembersRepo::new()
                         .await
                         .get_list_by_group_id(id.as_str())
                         .await
                     {
-                        for v in list.into_iter() {
-                            info.push(Box::new(v));
+                        for v in members.into_iter() {
+                            list.push(Box::new(v));
                         }
                     }
                 }
@@ -61,7 +80,7 @@ impl Component for SetWindow {
             }
             // qeury conversation is mute
             let conv = ConvRepo::new().await.get_by_frined_id(id).await;
-            SetWindowMsg::QueryInfo(info, conv.mute)
+            SetWindowMsg::QueryInfo(info, list, conv)
         });
         Self {
             ..Default::default()
@@ -75,9 +94,14 @@ impl Component for SetWindow {
     }
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            SetWindowMsg::QueryInfo(info, mute) => {
-                self.list = info;
-                self.is_mute = mute;
+            SetWindowMsg::QueryInfo(info, list, mute) => {
+                self.list = list;
+                self.info = info;
+                self.conv = mute;
+                true
+            }
+            SetWindowMsg::MuteClicked => {
+                self.conv.mute = !self.conv.mute;
                 true
             }
         }
@@ -102,11 +126,38 @@ impl Component for SetWindow {
                 <span>{"添加"}</span>
             </div>
         };
+        let mute_click = ctx.link().callback(|_| SetWindowMsg::MuteClicked);
+        let mut switch = classes!("switch");
+        let mut slider = classes!("slider");
+        if self.conv.mute {
+            switch.push("background-change");
+            slider.push("right");
+        } else {
+            slider.push("left");
+        }
+        let mut info = html!();
+        if ctx.props().conv_type == RightContentType::Group {
+            if let Some(v) = self.info.as_ref() {
+                info = html! {
+                    <div class="info">
+                        <div class="group-name">
+                            {v.name()}
+                        </div>
+                        <div class="group-announcement">
+                            {v.remark()}
+                        </div>
+                        <div class="group-desc">
+                            {v.signature()}
+                        </div>
+
+                    </div>
+                }
+            }
+        }
         let setting = html! {
-            <>
-            <label for="msg-mute">{"消息免打扰"}</label>
-            <input id="msg-mute" type="switch" /* value={self.is_mute} *//>
-            </>
+            <div class={switch} onclick={mute_click}>
+                <div class={slider}></div>
+            </div>
         };
         let onblur = ctx.props().close.reform(|_| ());
         html! {
@@ -115,10 +166,11 @@ impl Component for SetWindow {
                     {avatars}
                     {add_friend}
                 </div>
+                {info}
                 <div class="setting">
                     {setting}
                 </div>
-                <div class="bottom">
+                <div class="bottom" >
                     {"删除"}
                 </div>
             </div>

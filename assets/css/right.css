@@ -44,7 +44,7 @@
         }
 
     }
-    
+
     .set-window {
         width: 15rem;
         height: 20rem;
@@ -89,6 +89,33 @@
                     height: 2rem;
                 }
             }
+        }
+
+        .switch {
+            width: 5rem;
+            height: 2rem;
+            border-radius: 2rem;
+            background-color: #c5c2c2;
+            position: relative;
+            transition: .5s;
+            .slider {
+                width: 2rem;
+                height: 2rem;
+                position: absolute;
+                left: 0;
+                border-radius: 50%;
+                background-color: white;
+                transition: .5s;
+            }
+            .left {
+                left: 0;
+            }
+            .right {
+                left: 3rem;
+            }
+        }
+        .background-change {
+            background-color: aqua;
         }
     }
 

@@ -137,7 +137,11 @@ impl ItemInfo for Group {
     }
 
     fn remark(&self) -> Option<AttrValue> {
-        None
+        if self.announcement.is_empty() {
+            None
+        } else {
+            Some(self.announcement.clone())
+        }
     }
 
     fn signature(&self) -> Option<AttrValue> {
