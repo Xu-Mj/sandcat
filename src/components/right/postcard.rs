@@ -5,9 +5,10 @@ use yew::prelude::*;
 
 use crate::components::action::Action;
 use crate::components::right::set_drawer::SetDrawer;
-use crate::db;
+use crate::model::group::GroupDelete;
 use crate::model::{ItemInfo, RightContentType};
 use crate::pages::{ItemType, RemoveConvState, RemoveFriendState};
+use crate::{api, db};
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct PostCardProps {
@@ -73,14 +74,13 @@ impl Component for PostCard {
         true
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             PostCardMsg::QueryInformation(state) => match state {
                 QueryState::Querying => true,
                 QueryState::Success(info) => {
                     if info.is_some() {
-                        self.is_group_owner =
-                            info.as_ref().unwrap().owner() == _ctx.props().user_id;
+                        self.is_group_owner = info.as_ref().unwrap().owner() == ctx.props().user_id;
                     }
                     self.info = info;
                     true
@@ -97,19 +97,36 @@ impl Component for PostCard {
                     match info.get_type() {
                         RightContentType::Friend => {}
                         RightContentType::Group => {
+                            let is_dismiss = self.is_group_owner;
                             if self.is_group_owner {
                                 // dismiss group
                             }
-                            // send leave group request
                             // delete data from local database
                             let id = info.id();
+                            let user_id = ctx.props().user_id.clone().to_string();
                             spawn_local(async move {
-                                if let Err(e) = db::groups().await.delete(id.as_str()).await {
-                                    log::error!("delete group failed: {:?}", e);
-                                }
-                                // delete conversation
-                                if let Err(e) = db::convs().await.delete(id.as_str()).await {
-                                    log::error!("delete conversation failed: {:?}", e);
+                                // send leave group request
+                                match api::group::delete_group(GroupDelete {
+                                    group_id: id.to_string(),
+                                    user_id,
+                                    is_dismiss,
+                                })
+                                .await
+                                {
+                                    Ok(_) => {
+                                        if let Err(e) = db::groups().await.delete(id.as_str()).await
+                                        {
+                                            log::error!("delete group failed: {:?}", e);
+                                        }
+                                        // delete conversation
+                                        if let Err(e) = db::convs().await.delete(id.as_str()).await
+                                        {
+                                            log::error!("delete conversation failed: {:?}", e);
+                                        }
+                                    }
+                                    Err(e) => {
+                                        log::error!("send delete group request error: {:?}", e);
+                                    }
                                 }
                             });
 

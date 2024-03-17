@@ -26,6 +26,12 @@ pub struct GroupRequest {
     pub group_name: String,
     pub members_id: Vec<String>,
 }
+#[derive(Deserialize, Serialize, Debug, Clone, Default)]
+pub struct GroupDelete {
+    pub user_id: String,
+    pub group_id: String,
+    pub is_dismiss: bool,
+}
 
 fn is_zero(id: &i32) -> bool {
     *id == 0

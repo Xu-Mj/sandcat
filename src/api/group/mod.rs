@@ -2,7 +2,7 @@ use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
 
 use crate::model::{
-    group::{Group, GroupRequest},
+    group::{Group, GroupDelete, GroupRequest},
     message::GroupInvitation,
 };
 
@@ -21,4 +21,16 @@ pub async fn create_group(data: GroupRequest, user_id: &str) -> Result<Group, Js
         .map_err(|err| JsValue::from(err.to_string()))?;
     // log::debug!("send create group reeques by {:?}", user_id);
     Ok(response.info)
+}
+
+pub async fn delete_group(data: GroupDelete) -> Result<(), JsValue> {
+    Request::post("/api/group/{}")
+        .header(AUTHORIZE_HEADER, token().as_str())
+        .json(&data)
+        .map_err(|err| JsValue::from(err.to_string()))?
+        .send()
+        .await
+        .map_err(|err| JsValue::from(err.to_string()))?;
+    log::debug!("send delete group reequest {:?}", data);
+    Ok(())
 }
