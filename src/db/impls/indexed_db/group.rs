@@ -8,7 +8,10 @@ use yew::{AttrValue, Event};
 
 use crate::{
     db::groups::GroupInterface,
-    model::group::{Group, GroupMember},
+    model::{
+        group::{Group, GroupMember},
+        message::Message,
+    },
 };
 
 use super::{
@@ -176,8 +179,10 @@ impl GroupInterface for GroupRepo {
                     .expect("result is IdbCursorWithValue; qed");
                 let value = cursor.value().unwrap();
                 // 反序列化
-                let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
-                store.delete(&JsValue::from(group.id)).unwrap();
+                let group: Message = serde_wasm_bindgen::from_value(value).unwrap();
+                store
+                    .delete(&JsValue::from(group.friend_id.as_str()))
+                    .unwrap();
                 let _ = cursor.continue_();
             }
         }) as Box<dyn FnMut(&Event)>);

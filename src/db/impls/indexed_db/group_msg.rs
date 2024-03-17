@@ -31,6 +31,8 @@ impl GroupMessages for GroupMsgRepo {
         Ok(())
     }
 
+    /// friend id is group id
+    /// send id is group member id
     async fn get_messages(
         &self,
         friend_id: &str,
