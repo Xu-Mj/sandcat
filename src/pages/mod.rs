@@ -63,6 +63,13 @@ pub struct ConvState {
 
 /// 记录当前会话状态
 #[derive(Default, Debug, Clone, PartialEq)]
+pub struct MuteState {
+    pub conv_id: AttrValue,
+    pub mute: Callback<AttrValue>,
+}
+
+/// 记录当前会话状态
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct RemoveConvState {
     pub id: AttrValue,
     pub remove_event: Callback<AttrValue>,

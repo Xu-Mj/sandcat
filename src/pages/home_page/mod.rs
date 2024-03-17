@@ -22,6 +22,7 @@ use crate::model::message::{InviteMsg, Msg, SingleCall};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
+use crate::pages::MuteState;
 use crate::ws::WebSocketManager;
 use crate::{
     components::{left::Left, right::Right},
@@ -39,6 +40,7 @@ pub struct Home {
     msg_state: Rc<RecSendMessageState>,
     call_state: Rc<RecSendCallState>,
     conv_state: Rc<ConvState>,
+    mute_state: Rc<MuteState>,
     remove_conv_state: Rc<RemoveConvState>,
     remove_friend_state: Rc<RemoveFriendState>,
     unread_state: Rc<UnreadState>,
@@ -88,6 +90,8 @@ pub enum HomeMsg {
     // 创建会话状态改变回调
     CreateFriendConv((RightContentType, Friend)),
     CreateGroupConv((RightContentType, Vec<String>)),
+    // mute state changed
+    MuteStateChange(AttrValue),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -273,6 +277,11 @@ impl Component for Home {
                 state.group = Some(list);
                 true
             }
+            HomeMsg::MuteStateChange(id) => {
+                let state = Rc::make_mut(&mut self.mute_state);
+                state.conv_id = id;
+                true
+            }
         }
     }
 
@@ -319,6 +328,7 @@ impl Component for Home {
             <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
             <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
             <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
+            <ContextProvider<Rc<MuteState>> context={self.mute_state.clone()}>
                 <div class="home" id="app">
                     <Left />
                     <Right />
@@ -328,6 +338,7 @@ impl Component for Home {
                         {notify}
                     </div>
                 </div>
+            </ContextProvider<Rc<MuteState>>>
             </ContextProvider<Rc<CreateConvState>>>
             </ContextProvider<Rc<RemoveFriendState>>>
             </ContextProvider<Rc<RemoveConvState>>>

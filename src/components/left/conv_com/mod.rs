@@ -17,7 +17,8 @@ use crate::{
         CommonProps, ComponentType, ContentType, RightContentType,
     },
     pages::{
-        ConvState, CreateConvState, RecSendMessageState, RemoveConvState, UnreadState, WaitState,
+        ConvState, CreateConvState, MuteState, RecSendMessageState, RemoveConvState, UnreadState,
+        WaitState,
     },
 };
 
@@ -45,6 +46,8 @@ pub struct Chats {
     _wait_listener: ContextHandle<Rc<WaitState>>,
     _create_conv: Rc<CreateConvState>,
     _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
+    _mute_state: Rc<MuteState>,
+    _mute_state_listener: ContextHandle<Rc<MuteState>>,
 }
 
 impl Chats {
@@ -79,6 +82,10 @@ impl Chats {
             .link()
             .context(ctx.link().callback(ChatsMsg::CreateConvStateChanged))
             .expect("need state in item");
+        let (mute_state, _mute_state_listener) = ctx
+            .link()
+            .context(ctx.link().callback(ChatsMsg::MuteStateChanged))
+            .expect("need state in item");
         Self {
             list: IndexMap::new(),
             result: IndexMap::new(),
@@ -99,6 +106,8 @@ impl Chats {
             _wait_listener,
             _create_conv: create_conv,
             _create_conv_listener,
+            _mute_state: mute_state,
+            _mute_state_listener,
         }
     }
 

@@ -10,7 +10,7 @@ use crate::db;
 use crate::model::conversation::Conversation;
 use crate::model::message::{Msg, SingleCall};
 use crate::model::{ComponentType, CurrentItem, RightContentType};
-use crate::pages::{ConvState, CreateConvState, RecSendMessageState, RemoveConvState};
+use crate::pages::{ConvState, CreateConvState, MuteState, RecSendMessageState, RemoveConvState};
 
 use super::Chats;
 
@@ -32,6 +32,7 @@ pub enum ChatsMsg {
     None,
     RemoveConvStateChanged(Rc<RemoveConvState>),
     CreateConvStateChanged(Rc<CreateConvState>),
+    MuteStateChanged(Rc<MuteState>),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -225,6 +226,12 @@ impl Component for Chats {
                     }
                     _ => {}
                 }
+                false
+            }
+            ChatsMsg::MuteStateChanged(state) => {
+                if let Some(item) = self.list.get_mut(&state.conv_id) {
+                    item.mute = !item.mute;
+                };
                 false
             }
         }

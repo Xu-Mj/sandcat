@@ -5,7 +5,7 @@ use yew::{AttrValue, Context, NodeRef};
 
 use crate::db;
 use crate::model::{ComponentType, CurrentItem};
-use crate::pages::CreateConvState;
+use crate::pages::{CreateConvState, MuteState};
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME, TOKEN, WS_ADDR},
     model::{
@@ -75,6 +75,7 @@ impl Home {
         let error_event = ctx.link().callback(HomeMsg::Notification);
         let create_friend_conv = ctx.link().callback(HomeMsg::CreateFriendConv);
         let create_group_conv = ctx.link().callback(HomeMsg::CreateGroupConv);
+        let mute = ctx.link().callback(HomeMsg::MuteStateChange);
         // 不能用这么多unwrap()
         let token = window()
             .local_storage()
@@ -156,6 +157,10 @@ impl Home {
                 type_: crate::model::RightContentType::Default,
                 create_friend: create_friend_conv,
                 create_group: create_group_conv,
+            }),
+            mute_state: Rc::new(MuteState {
+                mute,
+                ..Default::default()
             }),
         }
     }
