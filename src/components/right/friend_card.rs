@@ -5,7 +5,7 @@ use yew::prelude::*;
 
 use crate::{
     api::user::apply_friend,
-    db::friend_ship::FriendShipRepo,
+    db,
     model::{
         friend::{FriendShipRequest, FriendStatus, ReadStatus},
         user::User,
@@ -154,10 +154,7 @@ impl Component for FriendCard {
                             friendship.is_self = true;
                             friendship.read = ReadStatus::True;
                             // 数据入库
-                            FriendShipRepo::new()
-                                .await
-                                .put_friendship(&friendship)
-                                .await;
+                            db::friendships().await.put_friendship(&friendship).await;
                             FriendCardMsg::ApplyFriendResult(FriendShipRequestState::Success)
                         }
                     }

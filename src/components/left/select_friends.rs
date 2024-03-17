@@ -5,7 +5,8 @@ use wasm_bindgen::JsValue;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::{db::friend::FriendRepo, model::friend::Friend};
+use crate::db;
+use crate::model::friend::Friend;
 
 #[derive(Debug, Default)]
 pub struct SelectFriendList {
@@ -47,7 +48,7 @@ impl Component for SelectFriendList {
         ctx.link()
             .send_message(AddConvMsg::QueryFriends(QueryStatus::Querying));
         ctx.link().send_future(async {
-            match FriendRepo::new().await.get_list().await {
+            match db::friends().await.get_list().await {
                 Ok(friends) => AddConvMsg::QueryFriends(QueryStatus::Success(friends)),
                 Err(err) => AddConvMsg::QueryFriends(QueryStatus::Fail(err)),
             }

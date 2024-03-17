@@ -5,14 +5,12 @@ use yew::prelude::*;
 
 use crate::components::left::right_click_panel::RightClickPanel;
 use crate::components::left::select_friends::SelectFriendList;
-use crate::db::group::GroupRepo;
-use crate::db::group_members::GroupMembersRepo;
-use crate::db::groups::GroupInterface;
+use crate::components::top_bar::TopBar;
+use crate::db;
 use crate::model::conversation::Conversation;
 use crate::model::message::{Msg, SingleCall};
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::{ConvState, CreateConvState, RecSendMessageState, RemoveConvState};
-use crate::{components::top_bar::TopBar, db::conv::ConvRepo};
 
 use super::Chats;
 
@@ -103,13 +101,11 @@ impl Component for Chats {
                         let clone_ctx = ctx.link().clone();
                         ctx.link().send_future(async move {
                             let conv = Conversation::from(msg.info.clone());
-                            ConvRepo::new().await.put_conv(&conv, true).await.unwrap();
-                            if let Err(err) = GroupRepo::new().await.put(&msg.info).await {
+                            db::convs().await.put_conv(&conv, true).await.unwrap();
+                            if let Err(err) = db::groups().await.put(&msg.info).await {
                                 log::error!("store group error : {:?}", err);
                             };
-                            if let Err(e) =
-                                GroupMembersRepo::new().await.put_list(msg.members).await
-                            {
+                            if let Err(e) = db::group_mems().await.put_list(msg.members).await {
                                 log::error!("save group member error: {:?}", e);
                             }
                             // send back received message

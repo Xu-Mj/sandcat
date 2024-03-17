@@ -3,13 +3,11 @@ use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
+use crate::components::action::Action;
 use crate::components::right::set_drawer::SetDrawer;
-use crate::db::conv::ConvRepo;
-use crate::db::group::GroupRepo;
-use crate::db::groups::GroupInterface;
+use crate::db;
 use crate::model::{ItemInfo, RightContentType};
 use crate::pages::{ItemType, RemoveConvState, RemoveFriendState};
-use crate::{components::action::Action, db::friend::FriendRepo};
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct PostCardProps {
@@ -106,11 +104,11 @@ impl Component for PostCard {
                             // delete data from local database
                             let id = info.id();
                             spawn_local(async move {
-                                if let Err(e) = GroupRepo::new().await.delete(id.clone()).await {
+                                if let Err(e) = db::groups().await.delete(id.as_str()).await {
                                     log::error!("delete group failed: {:?}", e);
                                 }
                                 // delete conversation
-                                if let Err(e) = ConvRepo::new().await.delete(id).await {
+                                if let Err(e) = db::convs().await.delete(id.as_str()).await {
                                     log::error!("delete conversation failed: {:?}", e);
                                 }
                             });
@@ -228,7 +226,7 @@ impl PostCard {
             match ctx.props().conv_type {
                 RightContentType::Friend => {
                     ctx.link().send_future(async move {
-                        let user_info = FriendRepo::new().await.get_friend(id).await;
+                        let user_info = db::friends().await.get_friend(id.as_str()).await;
                         log::debug!("user info :{:?}", user_info);
                         PostCardMsg::QueryInformation(QueryState::Success(Some(Box::new(
                             user_info,
@@ -236,7 +234,7 @@ impl PostCard {
                     });
                 }
                 RightContentType::Group => ctx.link().send_future(async move {
-                    match GroupRepo::new().await.get(id).await {
+                    match db::groups().await.get(id.as_str()).await {
                         Ok(Some(group)) => PostCardMsg::QueryInformation(QueryState::Success(
                             Some(Box::new(group)),
                         )),

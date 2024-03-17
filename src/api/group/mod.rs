@@ -1,6 +1,5 @@
 use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
-use yew::AttrValue;
 
 use crate::model::{
     group::{Group, GroupRequest},
@@ -9,7 +8,7 @@ use crate::model::{
 
 use super::{token, AUTHORIZE_HEADER};
 
-pub async fn create_group(data: GroupRequest, user_id: AttrValue) -> Result<Group, JsValue> {
+pub async fn create_group(data: GroupRequest, user_id: &str) -> Result<Group, JsValue> {
     let response: GroupInvitation = Request::post(format!("/api/group/{}", user_id).as_str())
         .header(AUTHORIZE_HEADER, token().as_str())
         .json(&data)

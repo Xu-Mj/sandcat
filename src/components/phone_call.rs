@@ -13,8 +13,6 @@ use web_sys::{
 use yew::platform::spawn_local;
 use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef, Properties};
 
-use crate::db::friend::FriendRepo;
-use crate::db::message::MessageRepo;
 use crate::icons::{
     AnswerPhoneIcon, HangupInNotifyIcon, MicrophoneIcon, MicrophoneMuteIcon, VideoRecordIcon,
     VolumeIcon, VolumeMuteIcon,
@@ -28,7 +26,7 @@ use crate::model::ContentType;
 use crate::model::ItemInfo;
 use crate::pages::{RecSendCallState, RecSendMessageState};
 use crate::ws::WebSocketManager;
-use crate::{utils, web_rtc};
+use crate::{db, utils, web_rtc};
 
 pub struct PhoneCall {
     /// 显示视频通话
@@ -204,7 +202,7 @@ impl Component for PhoneCall {
                 let friend_id = msg.friend_id.clone();
                 let send_msg_event = self.call_state.send_msg_event.clone();
                 ctx.link().send_future(async move {
-                    let friend = FriendRepo::new().await.get_friend(friend_id).await;
+                    let friend = db::friends().await.get_friend(friend_id.as_str()).await;
 
                     match call_type {
                         InviteType::Video => match utils::get_video_stream().await {
@@ -282,7 +280,7 @@ impl Component for PhoneCall {
                 };
                 let invite_type = info.invite_type.clone();
                 ctx.link().send_future(async move {
-                    let _ = MessageRepo::new()
+                    let _ = db::messages()
                         .await
                         .add_message(&mut Message {
                             id: 0,
@@ -354,7 +352,7 @@ impl Component for PhoneCall {
                 let invite_type = info.invite_type.clone();
                 // 消息入库
                 ctx.link().send_future(async move {
-                    MessageRepo::new()
+                    db::messages()
                         .await
                         .add_message(&mut Message {
                             id: 0,
@@ -466,7 +464,7 @@ impl Component for PhoneCall {
                 let invite_type = info.invite_type.clone();
                 self.show_notify = false;
                 ctx.link().send_future(async move {
-                    let _ = MessageRepo::new()
+                    let _ = db::messages()
                         .await
                         .add_message(&mut Message {
                             id: 0,
@@ -533,7 +531,7 @@ impl Component for PhoneCall {
                     };
                     let invite_type = info.invite_type.clone();
                     ctx.link().send_future(async move {
-                        let _ = MessageRepo::new()
+                        let _ = db::messages()
                             .await
                             .add_message(&mut Message {
                                 id: 0,
@@ -624,7 +622,7 @@ impl Component for PhoneCall {
                         });
                         ctx.link().send_future(async move {
                             // 查询好友数据
-                            let friend = FriendRepo::new().await.get_friend(friend_id).await;
+                            let friend = db::friends().await.get_friend(friend_id.as_str()).await;
                             PhoneCallMsg::ShowCallNotify(Box::new(friend))
                         });
                     }
@@ -1120,7 +1118,7 @@ impl PhoneCall {
     fn save_call_msg(&self, ctx: &Context<Self>, mut msg: Message, message: SingleCall) {
         let msg_id = msg.msg_id.clone();
         ctx.link().send_future(async move {
-            MessageRepo::new()
+            db::messages()
                 .await
                 .add_message(&mut msg)
                 .await

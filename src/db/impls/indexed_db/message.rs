@@ -3,9 +3,8 @@ use std::ops::Deref;
 use futures_channel::oneshot;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
-use yew::AttrValue;
 
-use crate::model::message::Message;
+use crate::{db::messages::Messages, model::message::Message};
 
 use super::{
     repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_TABLE_NAME,
@@ -25,15 +24,18 @@ impl MessageRepo {
     pub async fn new() -> Self {
         MessageRepo(Repository::new().await)
     }
+}
 
+#[async_trait::async_trait(?Send)]
+impl Messages for MessageRepo {
     // todo 分页
-    pub async fn get_last_msg(&self, friend_id: AttrValue) -> Result<Message, JsValue> {
+    async fn get_last_msg(&self, friend_id: &str) -> Result<Message, JsValue> {
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<Message>();
         let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
 
         // let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
-        let rang = IdbKeyRange::only(&JsValue::from(friend_id.as_str()));
+        let rang = IdbKeyRange::only(&JsValue::from(friend_id));
         let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
 
         let request = index
@@ -76,9 +78,9 @@ impl MessageRepo {
         Ok(rx.await.unwrap())
     }
 
-    pub async fn get_messages(
+    async fn get_messages(
         &self,
-        friend_id: AttrValue,
+        friend_id: &str,
         page: u32,
         page_size: u32,
     ) -> Result<Vec<Message>, JsValue> {
@@ -87,7 +89,7 @@ impl MessageRepo {
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<Vec<Message>>();
         let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
-        let rang = IdbKeyRange::only(&JsValue::from(friend_id.as_str()));
+        let rang = IdbKeyRange::only(&JsValue::from(friend_id));
         let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
         let request = index
             .open_cursor_with_range_and_direction(
@@ -141,7 +143,7 @@ impl MessageRepo {
         Ok(rx.await.unwrap())
     }
 
-    pub async fn add_message(&self, msg: &mut Message) -> Result<(), JsValue> {
+    async fn add_message(&self, msg: &mut Message) -> Result<(), JsValue> {
         let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
         let index = store.index(MESSAGE_ID_INDEX).unwrap();
         let (tx, rx) = oneshot::channel::<Option<Message>>();

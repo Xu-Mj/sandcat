@@ -2,9 +2,11 @@ use futures_channel::oneshot;
 use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
-use yew::AttrValue;
 
-use crate::model::friend::{FriendShipWithUser, FriendStatus, ReadStatus};
+use crate::{
+    db::friendships::Friendships,
+    model::friend::{FriendShipWithUser, FriendStatus, ReadStatus},
+};
 
 use super::{
     repository::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
@@ -25,20 +27,22 @@ impl FriendShipRepo {
     pub async fn new() -> Self {
         Self(Repository::new().await)
     }
-
-    pub async fn agree(&self, friendship_id: AttrValue) {
+}
+#[async_trait::async_trait(?Send)]
+impl Friendships for FriendShipRepo {
+    async fn agree(&self, friendship_id: &str) {
         let mut friendship = self.get_friendship(friendship_id).await.unwrap();
         friendship.status = FriendStatus::Accepted;
         self.put_friendship(&friendship).await;
     }
 
-    pub async fn agree_by_friend_id(&self, friend_id: AttrValue) {
+    async fn agree_by_friend_id(&self, friend_id: &str) {
         let mut friendship = self.get_friendship_by_friend_id(friend_id).await.unwrap();
         friendship.status = FriendStatus::Accepted;
         self.put_friendship(&friendship).await;
     }
 
-    pub async fn put_friendship(&self, friendship: &FriendShipWithUser) {
+    async fn put_friendship(&self, friendship: &FriendShipWithUser) {
         log::debug!("friendship: {:?}", friendship);
         let store = self
             .store(&String::from(FRIENDSHIP_TABLE_NAME))
@@ -48,7 +52,7 @@ impl FriendShipRepo {
         store.put(&value).unwrap();
     }
     /*
-       pub async fn put_friendships(&self, friends: &[FriendShipWithUser]) {
+       async fn put_friendships(&self, friends: &[FriendShipWithUser]) {
            let store = self
                .store(&String::from(FRIENDSHIP_TABLE_NAME))
                .await
@@ -60,7 +64,7 @@ impl FriendShipRepo {
        }
     */
     // todo 增加错误结果，用来标识
-    pub async fn get_friendship(&self, friendship_id: AttrValue) -> Option<FriendShipWithUser> {
+    async fn get_friendship(&self, friendship_id: &str) -> Option<FriendShipWithUser> {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Option<FriendShipWithUser>>();
         let store = self
@@ -71,7 +75,7 @@ impl FriendShipRepo {
             .index(FRIENDSHIP_ID_INDEX)
             .expect("friend select index error");
         let request = index
-            .get(&JsValue::from(friendship_id.as_str()))
+            .get(&JsValue::from(friendship_id))
             .expect("friend select get error");
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
@@ -97,10 +101,7 @@ impl FriendShipRepo {
     }
 
     // todo 增加错误结果，用来标识
-    pub async fn get_friendship_by_friend_id(
-        &self,
-        friend_id: AttrValue,
-    ) -> Option<FriendShipWithUser> {
+    async fn get_friendship_by_friend_id(&self, friend_id: &str) -> Option<FriendShipWithUser> {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Option<FriendShipWithUser>>();
         let store = self
@@ -111,7 +112,7 @@ impl FriendShipRepo {
             .index(FRIEND_USER_ID_INDEX)
             .expect("friend select index error");
         let request = index
-            .get(&JsValue::from(friend_id.as_str()))
+            .get(&JsValue::from(friend_id))
             .expect("friend select get error");
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
@@ -136,7 +137,7 @@ impl FriendShipRepo {
         rx.await.unwrap()
     }
 
-    pub async fn get_unread_count(&self) -> usize {
+    async fn get_unread_count(&self) -> usize {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<usize>();
         let store = self
@@ -165,7 +166,7 @@ impl FriendShipRepo {
         rx.await.unwrap()
     }
 
-    pub async fn clean_unread_count(&self) -> Result<(), JsValue> {
+    async fn clean_unread_count(&self) -> Result<(), JsValue> {
         // 声明一个channel，接收查询结果
         let store = self
             .store(&String::from(FRIENDSHIP_TABLE_NAME))
@@ -208,7 +209,7 @@ impl FriendShipRepo {
         Ok(())
     }
 
-    pub async fn get_list(&self) -> Vec<FriendShipWithUser> {
+    async fn get_list(&self) -> Vec<FriendShipWithUser> {
         let (tx, rx) = oneshot::channel::<Vec<FriendShipWithUser>>();
         let store = self
             .store(&String::from(FRIENDSHIP_TABLE_NAME))

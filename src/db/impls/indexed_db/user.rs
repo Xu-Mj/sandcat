@@ -3,10 +3,9 @@ use std::ops::Deref;
 use futures_channel::oneshot;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{console, Event, IdbRequest};
-use yew::AttrValue;
 
 use super::repository::Repository;
-use crate::model::user::User;
+use crate::{db::users::Users, model::user::User};
 
 const USER_STORE_NAME: &str = "users";
 // 用户仓库，增删改查
@@ -25,8 +24,10 @@ impl UserRepo {
     pub async fn new() -> Self {
         UserRepo(Repository::new().await)
     }
-
-    pub async fn add(&self, user: &User) /* -> Result<i32, String> */
+}
+#[async_trait::async_trait(?Send)]
+impl Users for UserRepo {
+    async fn add(&self, user: &User) /* -> Result<i32, String> */
     {
         let store = self.store(&String::from(USER_STORE_NAME)).await.unwrap();
         let add_request = store
@@ -48,13 +49,11 @@ impl UserRepo {
     }
 
     // 需要优化
-    pub async fn get(&self, id: AttrValue) -> Result<User, JsValue> {
+    async fn get(&self, id: &str) -> Result<User, JsValue> {
         let (tx, rx) = oneshot::channel::<User>();
 
         let store = self.store(&String::from(USER_STORE_NAME)).await.unwrap();
-        let request = store
-            .get(&JsValue::from(id.as_str()))
-            .expect("get all error");
+        let request = store.get(&JsValue::from(id)).expect("get all error");
         let on_add_error = Closure::once(move |event: &Event| {
             console::log_1(&String::from("读取数据失败").into());
             console::log_1(&event.into());

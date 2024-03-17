@@ -1,5 +1,9 @@
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
+use yew::AttrValue;
+
+use crate::model::conversation::Conversation;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Test {
@@ -7,37 +11,19 @@ pub struct Test {
     name: String,
 }
 
-#[async_trait::async_trait]
+#[async_trait::async_trait(?Send)]
 pub trait Conversations {
-    async fn new() -> Self
-    where
-        Self: Sized;
+    async fn mute(&self, conv: &Conversation) -> Result<(), JsValue>;
 
-    async fn mute(&self, conv: &Test) -> Result<(), JsValue>;
-
-    /*     async fn put_conv(
+    async fn put_conv(
         &self,
         conv: &Conversation,
         is_clean_unread_count: bool,
-    ) -> Result<Conversation, JsValue>;
+    ) -> Result<(), JsValue>;
 
     async fn get_convs2(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue>;
 
-    async fn get_by_frined_id(&self, friend_id: AttrValue) -> Conversation;
+    async fn get_by_frined_id(&self, friend_id: &str) -> Conversation;
 
-    async fn delete(&self, friend_id: AttrValue) -> Result<(), JsValue>; */
-}
-
-pub struct ConversationsImpl;
-
-#[async_trait::async_trait]
-impl Conversations for ConversationsImpl {
-    async fn new() -> Self {
-        Self {}
-    }
-
-    async fn mute(&self, conv: &Test) -> Result<(), JsValue> {
-        log::debug!("conv: {:?}", conv);
-        Ok(())
-    }
+    async fn delete(&self, friend_id: &str) -> Result<(), JsValue>;
 }

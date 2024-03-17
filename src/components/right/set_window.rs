@@ -3,10 +3,7 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use crate::{
-    db::{
-        conv::ConvRepo, friend::FriendRepo, group::GroupRepo, group_members::GroupMembersRepo,
-        groups::GroupInterface,
-    },
+    db::{self, conv::ConvRepo, conversations::Conversations},
     icons::PlusRectIcon,
     model::{conversation::Conversation, ItemInfo, RightContentType},
 };
@@ -49,25 +46,23 @@ impl Component for SetWindow {
         let id = ctx.props().id.clone();
         let conv_type = ctx.props().conv_type.clone();
         ctx.link().send_future(async move {
+            // init interfaces
+            let group_db = db::groups().await;
+            let friend_db = db::friends().await;
             let mut list: Vec<Box<dyn ItemInfo>> = vec![];
             let mut info: Option<Box<dyn ItemInfo>> = None;
             match conv_type {
                 RightContentType::Friend => {
-                    let friend = FriendRepo::new().await.get_friend(id.clone()).await;
+                    let friend = friend_db.get_friend(id.as_str()).await;
                     info = Some(Box::new(friend.clone()));
                     list.push(Box::new(friend));
                 }
                 RightContentType::Group => {
                     // query group information
-                    let group = GroupRepo::new()
-                        .await
-                        .get(id.clone())
-                        .await
-                        .unwrap()
-                        .unwrap();
+                    let group = group_db.get(id.as_str()).await.unwrap().unwrap();
                     info = Some(Box::new(group.clone()));
                     // query members by group id
-                    if let Ok(members) = GroupMembersRepo::new()
+                    if let Ok(members) = db::group_mems()
                         .await
                         .get_list_by_group_id(id.as_str())
                         .await
@@ -80,7 +75,7 @@ impl Component for SetWindow {
                 _ => {}
             }
             // qeury conversation is mute
-            let conv = ConvRepo::new().await.get_by_frined_id(id).await;
+            let conv = ConvRepo::new().await.get_by_frined_id(id.as_str()).await;
             SetWindowMsg::QueryInfo(info, list, conv)
         });
         Self {

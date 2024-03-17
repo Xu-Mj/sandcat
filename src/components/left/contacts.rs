@@ -4,7 +4,7 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::components::left::add_friend::AddFriend;
-use crate::db::friend_ship::FriendShipRepo;
+use crate::db;
 use crate::db::group::GroupRepo;
 use crate::db::groups::GroupInterface;
 use crate::model::group::Group;
@@ -12,7 +12,6 @@ use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType}
 use crate::pages::{FriendListState, FriendShipState, ItemType, RemoveFriendState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
-    db::friend::FriendRepo,
     model::friend::Friend,
     model::{CommonProps, ComponentType},
 };
@@ -70,8 +69,7 @@ impl Component for Contacts {
         ctx.link()
             .send_message(ContactsMsg::QueryFriends(QueryState::Querying));
         ctx.link().send_future(async {
-            let friend_repo = FriendRepo::new().await;
-            let friends = friend_repo.get_list().await.unwrap_or_default();
+            let friends = db::friends().await.get_list().await.unwrap_or_default();
             ContactsMsg::QueryFriends(QueryState::Success(friends))
         });
         ctx.link().send_future(async {
@@ -81,8 +79,7 @@ impl Component for Contacts {
         });
         // 查询好友请求列表
         ctx.link().send_future(async {
-            let friend_repo = FriendShipRepo::new().await;
-            let count = friend_repo.get_unread_count().await;
+            let count = db::friendships().await.get_unread_count().await;
             log::debug!("查询好友请求列表, 未读数量{}", count);
             ContactsMsg::QueryFriendship(count)
         });
@@ -182,7 +179,7 @@ impl Component for Contacts {
                 });
                 // clean unread count
                 spawn_local(async {
-                    let _ = FriendShipRepo::new().await.clean_unread_count().await;
+                    let _ = db::friendships().await.clean_unread_count().await;
                 });
                 true
             }

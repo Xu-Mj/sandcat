@@ -1,6 +1,9 @@
 use std::ops::Deref;
 
-use crate::model::{conversation::Conversation, ContentType};
+use crate::{
+    db::conversations::Conversations,
+    model::{conversation::Conversation, ContentType},
+};
 
 use futures_channel::oneshot;
 use indexmap::IndexMap;
@@ -22,22 +25,26 @@ impl Deref for ConvRepo {
         &self.0
     }
 }
+
 impl ConvRepo {
     pub async fn new() -> Self {
         ConvRepo(Repository::new().await)
     }
+}
 
-    pub async fn mute(&self, conv: &Conversation) -> Result<(), JsValue> {
+#[async_trait::async_trait(?Send)]
+impl Conversations for ConvRepo {
+    async fn mute(&self, conv: &Conversation) -> Result<(), JsValue> {
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
-        store.put(&serde_wasm_bindgen::to_value(conv).unwrap())?;
+        store.put(&serde_wasm_bindgen::to_value(&conv).unwrap())?;
         Ok(())
     }
     // 使用put方法，不存在创建，存在则直接更新
-    pub async fn put_conv(
+    async fn put_conv(
         &self,
         conv: &Conversation,
         is_clean_unread_count: bool,
-    ) -> Result<Conversation, JsValue> {
+    ) -> Result<(), JsValue> {
         let store = self
             .store(&String::from(CONVERSATION_TABLE_NAME))
             .await
@@ -93,10 +100,10 @@ impl ConvRepo {
         });
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         on_add_error.forget();
-        Ok(result)
+        Ok(())
     }
 
-    pub async fn get_convs2(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue> {
+    async fn get_convs2(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Conversation>>();
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         let index = store.index(CONVERSATION_LAST_MSG_TIME_INDEX).unwrap();
@@ -148,7 +155,7 @@ impl ConvRepo {
         Ok(rx.await.unwrap())
     }
 
-    pub async fn get_by_frined_id(&self, friend_id: AttrValue) -> Conversation {
+    async fn get_by_frined_id(&self, friend_id: &str) -> Conversation {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Conversation>();
         let store = self.store(CONVERSATION_TABLE_NAME).await.unwrap();
@@ -158,7 +165,7 @@ impl ConvRepo {
         // let key = IdbKeyRange::only(&JsValue::from(friend_id.as_str())).unwrap();
         let request = index
             // .open_cursor_with_range(&key)
-            .get(&JsValue::from(friend_id.as_str()))
+            .get(&JsValue::from(friend_id))
             .expect("friend select get error");
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
@@ -183,7 +190,7 @@ impl ConvRepo {
         rx.await.unwrap()
     }
 
-    pub async fn delete(&self, friend_id: AttrValue) -> Result<(), JsValue> {
+    async fn delete(&self, friend_id: &str) -> Result<(), JsValue> {
         let conv = self.get_by_frined_id(friend_id).await;
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         if conv.id > 0 {

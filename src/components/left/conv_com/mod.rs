@@ -10,10 +10,7 @@ use indexmap::IndexMap;
 use crate::{
     api,
     components::left::list_item::ListItem,
-    db::{
-        conv::ConvRepo, friend::FriendRepo, group::GroupRepo, group_members::GroupMembersRepo,
-        groups::GroupInterface, message::MessageRepo, user::UserRepo,
-    },
+    db,
     model::{
         conversation::Conversation,
         group::{GroupMember, GroupRequest},
@@ -54,8 +51,7 @@ impl Chats {
     fn new(ctx: &Context<Self>) -> Self {
         // query conversation list
         ctx.link().send_future(async {
-            let conv_repo = ConvRepo::new().await;
-            let convs = conv_repo.get_convs2().await.unwrap_or_default();
+            let convs = db::convs().await.get_convs2().await.unwrap_or_default();
             ChatsMsg::QueryConvs(convs)
         });
         // register state
@@ -110,7 +106,7 @@ impl Chats {
         // delete database data
         let id = self.context_menu_pos.2.clone();
         spawn_local(async move {
-            if let Err(e) = ConvRepo::new().await.delete(id).await {
+            if let Err(e) = db::convs().await.delete(id.as_str()).await {
                 log::error!("delete conversation error: {:?}", e);
             }
         });
@@ -140,7 +136,7 @@ impl Chats {
             conv.mute = !conv.mute;
             let conv = conv.clone();
             spawn_local(async move {
-                if let Err(e) = ConvRepo::new().await.mute(&conv).await {
+                if let Err(e) = db::convs().await.mute(&conv).await {
                     log::error!("mute conversation err: {:?}", e);
                 }
             });
@@ -220,8 +216,7 @@ impl Chats {
             conv.mute = old.mute;
             self.list.shift_insert(0, friend_id, conv.clone());
             spawn_local(async move {
-                let conv_repo = ConvRepo::new().await;
-                conv_repo.put_conv(&conv, clean).await.unwrap();
+                db::convs().await.put_conv(&conv, clean).await.unwrap();
             });
             true
         } else {
@@ -230,16 +225,14 @@ impl Chats {
             }
             // 如果会话列表中不存在那么需要新建
             ctx.link().send_future(async move {
-                let friend_repo = FriendRepo::new().await;
-                let friend = friend_repo.get_friend(friend_id).await;
+                let friend = db::friends().await.get_friend(friend_id.as_str()).await;
                 conv.avatar = friend.avatar;
                 if let Some(name) = friend.remark {
                     conv.name = name;
                 } else {
                     conv.name = friend.name;
                 }
-                let conv_repo = ConvRepo::new().await;
-                conv_repo.put_conv(&conv, false).await.unwrap();
+                db::convs().await.put_conv(&conv, false).await.unwrap();
                 conv.unread_count = 1;
                 log::debug!("创建会话: {:?}", &conv);
                 ChatsMsg::InsertConv(conv)
@@ -266,8 +259,7 @@ impl Chats {
             // self.list.shift_insert(index, cur_conv_id, conv.clone());
             let conv = conv.clone();
             spawn_local(async move {
-                let conv_repo = ConvRepo::new().await;
-                conv_repo.put_conv(&conv, true).await.unwrap();
+                db::convs().await.put_conv(&conv, true).await.unwrap();
             });
             true
         } else {
@@ -276,12 +268,11 @@ impl Chats {
             let conv_type = self.conv_state.conv.content_type.clone();
             log::debug!("conv type in messages: {:?}", conv_type.clone());
             ctx.link().send_future(async move {
-                let friend_repo = FriendRepo::new().await;
-                let friend = friend_repo.get_friend(friend_id.clone()).await;
+                let friend = db::friends().await.get_friend(friend_id.as_str()).await;
                 // todo查询上一条消息
-                let msg_repo = MessageRepo::new().await;
-                let result = msg_repo
-                    .get_last_msg(friend_id.clone())
+                let result = db::messages()
+                    .await
+                    .get_last_msg(friend_id.as_str())
                     .await
                     .unwrap_or_default();
                 let content = if result.id != 0 {
@@ -301,8 +292,7 @@ impl Chats {
                     conv_type,
                     mute: false,
                 };
-                let conv_repo = ConvRepo::new().await;
-                conv_repo.put_conv(&conv, true).await.unwrap();
+                db::convs().await.put_conv(&conv, true).await.unwrap();
                 log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
                 ChatsMsg::InsertConv(conv)
             });
@@ -325,10 +315,7 @@ impl Chats {
             avatar.push(self_avatar.to_string());
             let mut group_name = String::new();
             for (i, node) in nodes.iter().enumerate() {
-                let friend = FriendRepo::new()
-                    .await
-                    .get_friend(node.clone().into())
-                    .await;
+                let friend = db::friends().await.get_friend(node).await;
                 if !friend.id.is_empty() {
                     let mut name = friend.name.clone();
                     if friend.remark.is_some() {
@@ -352,25 +339,25 @@ impl Chats {
             };
             // push self
             values.push(GroupMember::from(
-                UserRepo::new().await.get(user_id.clone()).await.unwrap(),
+                db::users().await.get(user_id.as_str()).await.unwrap(),
             ));
             // send create request
-            match api::group::create_group(group_req, user_id).await {
+            match api::group::create_group(group_req, user_id.as_str()).await {
                 Ok(g) => {
                     log::debug!("group created: {:?}", g);
-                    if let Err(err) = GroupRepo::new().await.put(&g).await {
+                    if let Err(err) = db::groups().await.put(&g).await {
                         log::error!("create group error: {:?}", err);
                         return ChatsMsg::None;
                     }
                     for v in values.iter_mut() {
                         v.group_id = g.id.clone();
-                        if let Err(e) = GroupMembersRepo::new().await.put(v).await {
+                        if let Err(e) = db::group_mems().await.put(v).await {
                             log::error!("save group member error: {:?}", e);
                             continue;
                         }
                     }
                     let conv = Conversation::from(g);
-                    ConvRepo::new().await.put_conv(&conv, true).await.unwrap();
+                    db::convs().await.put_conv(&conv, true).await.unwrap();
                     ChatsMsg::InsertConv(conv)
                 }
                 Err(err) => {

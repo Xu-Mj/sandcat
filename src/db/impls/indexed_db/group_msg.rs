@@ -3,9 +3,9 @@ use std::ops::Deref;
 use futures_channel::oneshot;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
-use yew::{AttrValue, Event};
+use yew::Event;
 
-use crate::model::message::Message;
+use crate::{db::group_msg::GroupMessages, model::message::Message};
 
 use super::{repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX};
 
@@ -21,17 +21,19 @@ impl GroupMsgRepo {
     pub async fn new() -> Self {
         Self(Repository::new().await)
     }
-
-    pub async fn put(&self, group: &Message) -> Result<(), JsValue> {
+}
+#[async_trait::async_trait(?Send)]
+impl GroupMessages for GroupMsgRepo {
+    async fn put(&self, group: &Message) -> Result<(), JsValue> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
         let value = serde_wasm_bindgen::to_value(group)?;
         store.put(&value)?;
         Ok(())
     }
 
-    pub async fn get_messages(
+    async fn get_messages(
         &self,
-        friend_id: AttrValue,
+        friend_id: &str,
         page: u32,
         page_size: u32,
     ) -> Result<Vec<Message>, JsValue> {
@@ -43,7 +45,7 @@ impl GroupMsgRepo {
             .store(&String::from(GROUP_MSG_TABLE_NAME))
             .await
             .unwrap();
-        let rang = IdbKeyRange::only(&JsValue::from(friend_id.as_str()));
+        let rang = IdbKeyRange::only(&JsValue::from(friend_id));
         let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
         let request = index
             .open_cursor_with_range_and_direction(

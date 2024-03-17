@@ -3,11 +3,10 @@ use std::rc::Rc;
 use web_sys::{HtmlInputElement, MouseEvent};
 use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef};
 
-use crate::api;
-use crate::db::friend_ship::FriendShipRepo;
 use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus};
 use crate::model::FriendShipStateType;
 use crate::pages::FriendShipState;
+use crate::{api, db};
 
 pub struct FriendShipList {
     list: Vec<FriendShipWithUser>,
@@ -40,7 +39,7 @@ impl Component for FriendShipList {
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async {
-            FriendShipListMsg::QueryFriendships(FriendShipRepo::new().await.get_list().await)
+            FriendShipListMsg::QueryFriendships(db::friendships().await.get_list().await)
         });
         let (friendship_state, _listener) = ctx
             .link()

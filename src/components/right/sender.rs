@@ -12,13 +12,12 @@ use web_sys::{
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
-use crate::db::group_msg::GroupMsgRepo;
+use crate::db;
 use crate::icons::{CloseIcon, ImageIcon};
 use crate::model::message::{InviteMsg, InviteType, Msg};
 use crate::model::RightContentType;
 use crate::{
     components::right::emoji::EmojiSpan,
-    db::message::MessageRepo,
     icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon},
     model::message::Message,
     model::ContentType,
@@ -92,11 +91,10 @@ impl Sender {
         spawn_local(async move {
             match conv_type {
                 RightContentType::Friend => {
-                    let msg_repo = MessageRepo::new().await;
-                    msg_repo.add_message(&mut msg).await.unwrap();
+                    db::messages().await.add_message(&mut msg).await.unwrap();
                 }
                 RightContentType::Group => {
-                    GroupMsgRepo::new().await.put(&msg).await.unwrap();
+                    db::group_msgs().await.put(&msg).await.unwrap();
                 }
                 _ => {}
             }

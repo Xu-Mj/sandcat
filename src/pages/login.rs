@@ -5,12 +5,9 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
-use crate::db::{TOKEN, WS_ADDR};
+use crate::db::{self, TOKEN, WS_ADDR};
 use crate::model::user::User;
-use crate::{
-    api,
-    db::{friend::FriendRepo, user::UserRepo, DB_NAME},
-};
+use crate::{api, db::DB_NAME};
 
 use super::Page;
 
@@ -73,7 +70,7 @@ async fn init_db(id: AttrValue) {
     match api::user::get_friend_list_by_id(id.to_string()).await {
         Ok(res) => {
             // 写入数据库
-            FriendRepo::new().await.put_friend_list(&res).await;
+            db::friends().await.put_friend_list(&res).await;
         }
         Err(e) => {
             log::error!("获取联系人列表错误: {:?}", e)
@@ -133,7 +130,7 @@ impl Component for Login {
                     init_db(id.clone()).await;
                     // 将用户信息存入数据库
                     // 先查询是否登录过
-                    let user_repo = UserRepo::new().await;
+                    let user_repo = db::users().await;
                     // let user_former = user_repo.get(id.clone()).await;
                     user_repo.add(&user).await;
                     // if user_former.is_ok() && user_former.unwrap().id != AttrValue::default() {

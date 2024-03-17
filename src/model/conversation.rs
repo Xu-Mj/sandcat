@@ -19,8 +19,8 @@ fn is_zero(id: &i32) -> bool {
 // 数据结构
 // 表
 
-pub fn attr_value_string_empty(value: &AttrValue) -> bool {
-    value.to_string().is_empty()
+pub fn attr_value_is_empty(value: &AttrValue) -> bool {
+    value.is_empty()
 }
 
 /// 会话表
@@ -32,9 +32,9 @@ pub struct Conversation {
     pub conv_type: RightContentType,
     // pub user_id: i32,
     pub friend_id: AttrValue,
-    #[serde(skip_serializing_if = "attr_value_string_empty")]
+    #[serde(skip_serializing_if = "attr_value_is_empty")]
     pub name: AttrValue,
-    #[serde(skip_serializing_if = "attr_value_string_empty")]
+    #[serde(skip_serializing_if = "attr_value_is_empty")]
     pub avatar: AttrValue,
     pub last_msg: AttrValue,
     // 需要根据时间来排序

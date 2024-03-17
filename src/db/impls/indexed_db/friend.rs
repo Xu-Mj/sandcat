@@ -5,8 +5,8 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
 
-use crate::model;
 use crate::model::friend::Friend;
+use crate::{db::friends::Friends, model};
 
 use super::{repository::Repository, FRIEND_FRIEND_ID_INDEX, FRIEND_TABLE_NAME};
 
@@ -24,14 +24,16 @@ impl FriendRepo {
     pub async fn new() -> Self {
         Self(Repository::new().await)
     }
-
-    pub async fn put_friend(&self, friend: &Friend) {
+}
+#[async_trait::async_trait(?Send)]
+impl Friends for FriendRepo {
+    async fn put_friend(&self, friend: &Friend) {
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
         let value = serde_wasm_bindgen::to_value(friend).unwrap();
         store.put(&value).unwrap();
     }
 
-    pub async fn put_friend_list(&self, friends: &[model::friend::Friend]) {
+    async fn put_friend_list(&self, friends: &[model::friend::Friend]) {
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
         friends.iter().for_each(|item| {
             let value = serde_wasm_bindgen::to_value(item).unwrap();
@@ -40,12 +42,12 @@ impl FriendRepo {
     }
 
     #[allow(dead_code)]
-    pub async fn get(&self, id: AttrValue) -> Friend {
+    async fn get(&self, id: &str) -> Friend {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Friend>();
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
         let request = store
-            .get(&JsValue::from(id.as_str()))
+            .get(&JsValue::from(id))
             .expect("friend select get error");
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
@@ -70,7 +72,7 @@ impl FriendRepo {
         rx.await.unwrap()
     }
 
-    pub async fn get_friend(&self, friend_id: AttrValue) -> Friend {
+    async fn get_friend(&self, friend_id: &str) -> Friend {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Friend>();
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
@@ -78,7 +80,7 @@ impl FriendRepo {
             .index(FRIEND_FRIEND_ID_INDEX)
             .expect("friend select index error");
         let request = index
-            .get(&JsValue::from(friend_id.as_str()))
+            .get(&JsValue::from(friend_id))
             .expect("friend select get error");
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
@@ -103,7 +105,7 @@ impl FriendRepo {
         rx.await.unwrap()
     }
 
-    pub async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue> {
+    async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Friend>>();
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
         let request = store.open_cursor().unwrap();

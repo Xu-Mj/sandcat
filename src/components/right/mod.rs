@@ -16,9 +16,7 @@ use yew::prelude::*;
 use crate::components::left::select_friends::SelectFriendList;
 use crate::components::right::friendship_list::FriendShipList;
 use crate::components::right::set_window::SetWindow;
-use crate::db::friend::FriendRepo;
-use crate::db::group::GroupRepo;
-use crate::db::groups::GroupInterface;
+use crate::db;
 use crate::icons::{CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
@@ -69,15 +67,15 @@ impl Right {
                 match self.conv_state.conv.content_type {
                     RightContentType::Default => {}
                     RightContentType::Friend => {
-                        ctx.link().send_future(async {
-                            let friend = FriendRepo::new().await.get_friend(id).await;
+                        ctx.link().send_future(async move {
+                            let friend = db::friends().await.get_friend(id.as_str()).await;
                             RightMsg::ContentChange(Some(Box::new(friend)))
                         });
                     }
                     RightContentType::Group => {
                         let ctx = ctx.link().clone();
                         spawn_local(async move {
-                            if let Ok(Some(group)) = GroupRepo::new().await.get(id).await {
+                            if let Ok(Some(group)) = db::groups().await.get(id.as_str()).await {
                                 ctx.send_message(RightMsg::ContentChange(Some(Box::new(group))));
                             }
                         });

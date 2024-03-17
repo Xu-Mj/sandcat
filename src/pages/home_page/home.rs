@@ -3,13 +3,11 @@ use std::{cell::RefCell, rc::Rc};
 use gloo::utils::window;
 use yew::{AttrValue, Context, NodeRef};
 
+use crate::db;
 use crate::model::{ComponentType, CurrentItem};
 use crate::pages::CreateConvState;
 use crate::{
-    db::{
-        current_item, friend::FriendRepo, friend_ship::FriendShipRepo, group_msg::GroupMsgRepo,
-        message::MessageRepo, user::UserRepo, QueryError, QueryStatus, DB_NAME, TOKEN, WS_ADDR,
-    },
+    db::{current_item, QueryError, QueryStatus, DB_NAME, TOKEN, WS_ADDR},
     model::{
         friend::{Friend, FriendShipWithUser},
         message::{InviteMsg, Message, Msg, SingleCall, DEFAULT_HELLO_MESSAGE},
@@ -27,8 +25,8 @@ use crate::{
 
 use super::{Home, QueryResult, WAIT_COUNT};
 
-async fn query(id: AttrValue) -> Result<QueryResult, QueryError> {
-    let user_repo = UserRepo::new().await;
+async fn query(id: &str) -> Result<QueryResult, QueryError> {
+    let user_repo = db::users().await;
     let user = user_repo.get(id).await.unwrap();
     Ok((
         user,
@@ -45,10 +43,10 @@ impl Home {
         let id = ctx.props().id.clone();
         // 每次创建Home组件时，检查一下数据库名是否存在，不存在则创建
         // 这样就能保证每次创建Home组件时，数据库名都是当前登录用户的id
-        DB_NAME.get_or_init(|| format!("im-{}", id.clone()));
-        let cloned_id = id.clone();
+        DB_NAME.get_or_init(|| format!("im-{}", id));
+        let clone_id = id.clone();
         ctx.link().send_future(async move {
-            match query(cloned_id).await {
+            match query(clone_id.as_str()).await {
                 Ok(data) => HomeMsg::Query(QueryStatus::QuerySuccess(data)),
                 Err(err) => HomeMsg::Query(QueryStatus::QueryFail(err)),
             }
@@ -222,10 +220,7 @@ impl Home {
         state.state_type = FriendShipStateType::Req;
         // 入库
         ctx.link().send_future(async move {
-            FriendShipRepo::new()
-                .await
-                .put_friendship(&friendship)
-                .await;
+            db::friendships().await.put_friendship(&friendship).await;
             // 发送收到通知
             HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(id))
         });
@@ -252,8 +247,8 @@ impl Home {
         let send_id = self.state.login_user.id.clone();
         // 入库
         ctx.link().send_future(async move {
-            FriendShipRepo::new().await.agree(friendship_id).await;
-            FriendRepo::new().await.put_friend(&friend).await;
+            db::friendships().await.agree(friendship_id.as_str()).await;
+            db::friends().await.put_friend(&friend).await;
             let mut msg = Message {
                 msg_id: nanoid::nanoid!().into(),
                 send_id,
@@ -269,7 +264,7 @@ impl Home {
                 file_content: AttrValue::default(),
                 id: 0,
             };
-            let _ = MessageRepo::new()
+            let _ = db::messages()
                 .await
                 .add_message(&mut msg)
                 .await
@@ -297,7 +292,7 @@ impl Home {
                 }
                 ctx.link().send_future(async move {
                     // 数据入库
-                    if let Err(err) = MessageRepo::new().await.add_message(&mut msg).await {
+                    if let Err(err) = db::messages().await.add_message(&mut msg).await {
                         HomeMsg::Notification(Notification::error_from_content(
                             format!("内部错误:{:?}", err).into(),
                         ))
@@ -319,7 +314,7 @@ impl Home {
                 }
                 ctx.link().send_future(async move {
                     // 数据入库
-                    if let Err(err) = GroupMsgRepo::new().await.put(&msg).await {
+                    if let Err(err) = db::group_msgs().await.put(&msg).await {
                         HomeMsg::Notification(Notification::error_from_content(
                             format!("内部错误:{:?}", err).into(),
                         ))
@@ -352,11 +347,11 @@ impl Home {
                 // 数据入库
                 let cloned_ctx = ctx.link().clone();
                 ctx.link().send_future(async move {
-                    FriendShipRepo::new()
+                    db::friendships()
                         .await
-                        .agree_by_friend_id(friend.friend_id.clone())
+                        .agree_by_friend_id(friend.friend_id.as_str())
                         .await;
-                    FriendRepo::new().await.put_friend(&friend).await;
+                    db::friends().await.put_friend(&friend).await;
                     // send received message
                     cloned_ctx.send_message(HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(
                         friend.id.to_string(),
@@ -376,7 +371,7 @@ impl Home {
                         file_content: AttrValue::default(),
                         id: 0,
                     };
-                    let _ = MessageRepo::new()
+                    let _ = db::messages()
                         .await
                         .add_message(&mut msg)
                         .await

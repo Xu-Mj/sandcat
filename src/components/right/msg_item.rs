@@ -4,9 +4,7 @@ use nanoid::nanoid;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
-use crate::db::friend::FriendRepo;
-use crate::db::group_members::GroupMembersRepo;
-use crate::db::user::UserRepo;
+use crate::db;
 use crate::icons::{MsgPhoneIcon, VideoRecordIcon};
 use crate::model::group::GroupMember;
 use crate::model::message::{InviteMsg, InviteType, Message};
@@ -50,9 +48,9 @@ impl Component for MsgItem {
             let friend_id = ctx.props().msg.send_id.clone();
             let group_id = ctx.props().msg.friend_id.clone();
             ctx.link().send_future(async move {
-                let member = GroupMembersRepo::new()
+                let member = db::group_mems()
                     .await
-                    .get_by_group_id_and_friend_id(group_id, friend_id)
+                    .get_by_group_id_and_friend_id(group_id.as_str(), friend_id.as_str())
                     .await
                     .unwrap();
                 MsgItemMsg::QueryGroupMember(member.unwrap())
@@ -108,18 +106,22 @@ impl Component for MsgItem {
                 spawn_local(async move {
                     // 查询好友信息
                     let user = if is_self {
-                        UserRepo::new().await.get(user_id).await.unwrap()
+                        db::users().await.get(user_id.as_str()).await.unwrap()
                     } else {
                         match conv_type {
                             RightContentType::Friend => {
-                                let friend = FriendRepo::new().await.get_friend(friend_id).await;
+                                let friend =
+                                    db::friends().await.get_friend(friend_id.as_str()).await;
                                 User::from(friend)
                             }
                             // query group member
                             RightContentType::Group => {
-                                let member = GroupMembersRepo::new()
+                                let member = db::group_mems()
                                     .await
-                                    .get_by_group_id_and_friend_id(group_id, send_id)
+                                    .get_by_group_id_and_friend_id(
+                                        group_id.as_str(),
+                                        send_id.as_str(),
+                                    )
                                     .await
                                     .unwrap()
                                     .unwrap();

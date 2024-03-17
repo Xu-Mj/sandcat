@@ -24,12 +24,16 @@ impl Deref for GroupRepo {
         &self.0
     }
 }
-#[allow(dead_code)]
-impl GroupInterface for GroupRepo {
-    async fn new() -> Self {
+
+impl GroupRepo {
+    pub async fn new() -> Self {
         Self(Repository::new().await)
     }
+}
 
+#[allow(dead_code)]
+#[async_trait::async_trait(?Send)]
+impl GroupInterface for GroupRepo {
     async fn put(&self, group: &Group) -> Result<(), JsValue> {
         let store = self.store(GROUP_TABLE_NAME).await?;
         let value = serde_wasm_bindgen::to_value(group)?;
@@ -37,10 +41,10 @@ impl GroupInterface for GroupRepo {
         Ok(())
     }
 
-    async fn get(&self, id: AttrValue) -> Result<Option<Group>, JsValue> {
+    async fn get(&self, id: &str) -> Result<Option<Group>, JsValue> {
         let (tx, rx) = oneshot::channel::<Option<Group>>();
         let store = self.store(GROUP_TABLE_NAME).await?;
-        let request = store.get(&JsValue::from(id.as_str()))?;
+        let request = store.get(&JsValue::from(id))?;
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()
@@ -112,16 +116,16 @@ impl GroupInterface for GroupRepo {
     }
 
     // delete group and related group members
-    async fn delete(&self, id: AttrValue) -> Result<(), JsValue> {
+    async fn delete(&self, id: &str) -> Result<(), JsValue> {
         let store = self.store(GROUP_TABLE_NAME).await?;
-        store.delete(&JsValue::from(id.as_str()))?;
+        store.delete(&JsValue::from(id))?;
 
         // delete group members
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         // need query group members first
         // use group id index
         let index = store.index(GROUP_ID_INDEX)?;
-        let range = JsValue::from(IdbKeyRange::only(&JsValue::from(id.as_str()))?);
+        let range = JsValue::from(IdbKeyRange::only(&JsValue::from(id))?);
         let request = index.open_cursor_with_range(&range)?;
         let success = Closure::wrap(Box::new(move |event: &Event| {
             let target = event.target().expect("msg");
@@ -152,7 +156,7 @@ impl GroupInterface for GroupRepo {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
         // use group id index
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
-        let range = JsValue::from(IdbKeyRange::only(&JsValue::from(id.as_str()))?);
+        let range = JsValue::from(IdbKeyRange::only(&JsValue::from(id))?);
         let request = index.open_cursor_with_range(&range)?;
         let success = Closure::wrap(Box::new(move |event: &Event| {
             let target = event.target().expect("msg");
