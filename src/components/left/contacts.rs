@@ -9,7 +9,7 @@ use crate::db::group::GroupRepo;
 use crate::db::groups::GroupInterface;
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use crate::pages::{FriendListState, FriendShipState, ItemType, RemoveFriendState};
+use crate::pages::{AddFriendState, FriendListState, FriendShipState, ItemType, RemoveFriendState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     model::friend::Friend,
@@ -21,8 +21,9 @@ pub struct ContactsProps {
     pub user_id: AttrValue,
 }
 
+/// listen group invitation state to add group to group list
 pub struct Contacts {
-    list: IndexMap<AttrValue, Friend>,
+    friends: IndexMap<AttrValue, Friend>,
     result: IndexMap<AttrValue, Friend>,
     groups: IndexMap<AttrValue, Group>,
     // 未读消息数量
@@ -37,6 +38,8 @@ pub struct Contacts {
     _friend_listener: ContextHandle<Rc<FriendListState>>,
     _remove_friend_state: Rc<RemoveFriendState>,
     _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
+    _add_friend_state: Rc<AddFriendState>,
+    _add_friend_listener: ContextHandle<Rc<AddFriendState>>,
 }
 
 pub enum QueryState<T> {
@@ -50,13 +53,14 @@ pub enum ContactsMsg {
     CleanupSearchResult,
     QueryFriends(QueryState<IndexMap<AttrValue, Friend>>),
     QueryGroups(QueryState<IndexMap<AttrValue, Group>>),
-    AddFriend,
+    ShowAddFriend,
     RecFriendShipReq(Rc<FriendShipState>),
     FriendListStateChanged(Rc<FriendListState>),
     QueryFriendship(usize),
     NewFriendClicked,
     ShowContextMenu((i32, i32), AttrValue, bool),
     RemoveFriend(Rc<RemoveFriendState>),
+    AddFriend(Rc<AddFriendState>),
 }
 
 impl Component for Contacts {
@@ -96,8 +100,12 @@ impl Component for Contacts {
             .link()
             .context(ctx.link().callback(ContactsMsg::RemoveFriend))
             .expect("postcard friend_state needed");
+        let (_add_friend_state, _add_friend_listener) = ctx
+            .link()
+            .context(ctx.link().callback(ContactsMsg::AddFriend))
+            .expect("postcard friend_state needed");
         Self {
-            list: IndexMap::new(),
+            friends: IndexMap::new(),
             result: IndexMap::new(),
             groups: IndexMap::new(),
             friendships_unread_count: 0,
@@ -110,6 +118,8 @@ impl Component for Contacts {
             _friend_listener,
             _remove_friend_state,
             _remove_friend_listener,
+            _add_friend_state,
+            _add_friend_listener,
         }
     }
 
@@ -121,7 +131,7 @@ impl Component for Contacts {
                 if pattern.is_empty() {
                     self.result.clear();
                 } else {
-                    self.list.iter().for_each(|(key, item)| {
+                    self.friends.iter().for_each(|(key, item)| {
                         if item.name.contains(pattern.as_str()) {
                             self.result.insert((*key).clone(), (*item).clone());
                         }
@@ -137,7 +147,7 @@ impl Component for Contacts {
             }
             ContactsMsg::QueryFriends(friends) => match friends {
                 QueryState::Success(list) => {
-                    self.list = list;
+                    self.friends = list;
                     true
                 }
                 // QueryState::Failure => {
@@ -145,7 +155,7 @@ impl Component for Contacts {
                 // }
                 QueryState::Querying => false,
             },
-            ContactsMsg::AddFriend => {
+            ContactsMsg::ShowAddFriend => {
                 self.is_add_friend = !self.is_add_friend;
                 true
             }
@@ -156,7 +166,7 @@ impl Component for Contacts {
                     }
                     FriendShipStateType::Res => {
                         let friend = friendship.friend.as_ref().unwrap().clone();
-                        self.list.insert(friend.friend_id.clone(), friend);
+                        self.friends.insert(friend.friend_id.clone(), friend);
                     }
                 }
                 true
@@ -207,7 +217,7 @@ impl Component for Contacts {
                         }
                     }
                     ItemType::Friend => {
-                        if let Some(item) = self.list.shift_remove(&state.id) {
+                        if let Some(item) = self.friends.shift_remove(&state.id) {
                             friend_id = item.id;
                         }
                     }
@@ -217,6 +227,26 @@ impl Component for Contacts {
                         .state_change_event
                         .emit(CurrentItem::default());
                     return true;
+                }
+                false
+            }
+            ContactsMsg::AddFriend(state) => {
+                match state.item.type_ {
+                    RightContentType::Friend => {
+                        if let Some(friend) = state.item.friend.clone() {
+                            self.friends.insert(friend.friend_id.clone(), friend);
+                            return true;
+                        }
+                    }
+                    RightContentType::Group => {
+                        if let Some(group) = state.item.group.clone() {
+                            self.groups.insert(group.id.clone(), group);
+                            return true;
+                        }
+                    }
+                    _ => {
+                        return false;
+                    }
                 }
                 false
             }
@@ -239,7 +269,7 @@ impl Component for Contacts {
                     .collect::<Html>()
             }
         } else {
-            self.list
+            self.friends
                 .iter()
                 .map(|item| get_list_item(item.1, oncontextmenu.clone()))
                 .collect::<Html>()
@@ -248,7 +278,7 @@ impl Component for Contacts {
         let clean_callback = ctx
             .link()
             .callback(move |_| ContactsMsg::CleanupSearchResult);
-        let plus_click = ctx.link().callback(|_| ContactsMsg::AddFriend);
+        let plus_click = ctx.link().callback(|_| ContactsMsg::ShowAddFriend);
         let friendship_click = ctx.link().callback(|_| ContactsMsg::NewFriendClicked);
         let groups_con = self
             .groups

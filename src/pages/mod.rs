@@ -6,6 +6,7 @@ use yew::{AttrValue, Callback};
 use yew_router::Routable;
 
 use crate::model::friend::{Friend, FriendShipWithUser};
+use crate::model::group::Group;
 use crate::model::message::{InviteMsg, Msg};
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType, UnreadItem};
@@ -111,6 +112,31 @@ pub struct UnreadState {
 pub struct FriendListState {
     pub friend: CurrentItem,
     pub state_change_event: Callback<CurrentItem>,
+}
+
+/// 记录当前朋友列表状态
+#[derive(Default, Clone, PartialEq)]
+pub struct AddFriendState {
+    pub item: AddFriendStateItem,
+    pub add: Callback<AddFriendStateItem>,
+}
+
+/// 记录当前朋友列表状态
+#[derive(Default, Clone, PartialEq)]
+pub struct AddFriendStateItem {
+    pub friend: Option<Friend>,
+    pub group: Option<Group>,
+    pub type_: RightContentType,
+}
+
+impl From<Group> for AddFriendStateItem {
+    fn from(value: Group) -> Self {
+        Self {
+            friend: None,
+            group: Some(value),
+            type_: RightContentType::Group,
+        }
+    }
 }
 
 /// 好友请求状态，当收到好友请求时触发状态改变的钩子

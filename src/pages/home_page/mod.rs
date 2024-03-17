@@ -9,9 +9,9 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use super::{
-    AppState, ConvState, CreateConvState, FriendListState, FriendShipState, ItemType,
-    RecSendCallState, RecSendMessageState, RemoveConvState, RemoveFriendState, UnreadState,
-    WaitState,
+    AddFriendState, AddFriendStateItem, AppState, ConvState, CreateConvState, FriendListState,
+    FriendShipState, ItemType, RecSendCallState, RecSendMessageState, RemoveConvState,
+    RemoveFriendState, UnreadState, WaitState,
 };
 use crate::components::phone_call::PhoneCall;
 use crate::db::current_item;
@@ -46,6 +46,7 @@ pub struct Home {
     unread_state: Rc<UnreadState>,
     friend_state: Rc<FriendListState>,
     friend_ship_state: Rc<FriendShipState>,
+    add_friend_state: Rc<AddFriendState>,
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
     wait_state: Rc<WaitState>,
@@ -92,6 +93,7 @@ pub enum HomeMsg {
     CreateGroupConv((RightContentType, Vec<String>)),
     // mute state changed
     MuteStateChange(AttrValue),
+    AddFriendStateChange(AddFriendStateItem),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -282,6 +284,11 @@ impl Component for Home {
                 state.conv_id = id;
                 true
             }
+            HomeMsg::AddFriendStateChange(item) => {
+                let state = Rc::make_mut(&mut self.add_friend_state);
+                state.item = item;
+                true
+            }
         }
     }
 
@@ -329,6 +336,7 @@ impl Component for Home {
             <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
             <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
             <ContextProvider<Rc<MuteState>> context={self.mute_state.clone()}>
+            <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
                 <div class="home" id="app">
                     <Left />
                     <Right />
@@ -338,6 +346,7 @@ impl Component for Home {
                         {notify}
                     </div>
                 </div>
+            </ContextProvider<Rc<AddFriendState>>>
             </ContextProvider<Rc<MuteState>>>
             </ContextProvider<Rc<CreateConvState>>>
             </ContextProvider<Rc<RemoveFriendState>>>

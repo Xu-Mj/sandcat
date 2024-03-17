@@ -5,7 +5,7 @@ use yew::{AttrValue, Context, NodeRef};
 
 use crate::db;
 use crate::model::{ComponentType, CurrentItem};
-use crate::pages::{CreateConvState, MuteState};
+use crate::pages::{AddFriendState, CreateConvState, MuteState};
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME, TOKEN, WS_ADDR},
     model::{
@@ -76,6 +76,7 @@ impl Home {
         let create_friend_conv = ctx.link().callback(HomeMsg::CreateFriendConv);
         let create_group_conv = ctx.link().callback(HomeMsg::CreateGroupConv);
         let mute = ctx.link().callback(HomeMsg::MuteStateChange);
+        let add = ctx.link().callback(HomeMsg::AddFriendStateChange);
         // 不能用这么多unwrap()
         let token = window()
             .local_storage()
@@ -160,6 +161,10 @@ impl Home {
             }),
             mute_state: Rc::new(MuteState {
                 mute,
+                ..Default::default()
+            }),
+            add_friend_state: Rc::new(AddFriendState {
+                add,
                 ..Default::default()
             }),
         }

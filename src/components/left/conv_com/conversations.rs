@@ -8,9 +8,12 @@ use crate::components::left::select_friends::SelectFriendList;
 use crate::components::top_bar::TopBar;
 use crate::db;
 use crate::model::conversation::Conversation;
+use crate::model::group::Group;
 use crate::model::message::{Msg, SingleCall};
 use crate::model::{ComponentType, CurrentItem, RightContentType};
-use crate::pages::{ConvState, CreateConvState, MuteState, RecSendMessageState, RemoveConvState};
+use crate::pages::{
+    AddFriendStateItem, ConvState, CreateConvState, MuteState, RecSendMessageState, RemoveConvState,
+};
 
 use super::Chats;
 
@@ -33,6 +36,7 @@ pub enum ChatsMsg {
     RemoveConvStateChanged(Rc<RemoveConvState>),
     CreateConvStateChanged(Rc<CreateConvState>),
     MuteStateChanged(Rc<MuteState>),
+    SendCreateGroupToContacts(Group),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -101,16 +105,27 @@ impl Component for Chats {
                         // create group conversation directly
                         let clone_ctx = ctx.link().clone();
                         ctx.link().send_future(async move {
+                            // store conversation
                             let conv = Conversation::from(msg.info.clone());
                             db::convs().await.put_conv(&conv, true).await.unwrap();
+
+                            // store group information
                             if let Err(err) = db::groups().await.put(&msg.info).await {
                                 log::error!("store group error : {:?}", err);
                             };
+
+                            // store group members
                             if let Err(e) = db::group_mems().await.put_list(msg.members).await {
                                 log::error!("save group member error: {:?}", e);
                             }
+
                             // send back received message
-                            clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(msg.info.id));
+                            clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(
+                                msg.info.id.clone(),
+                            ));
+
+                            // send add friend state
+                            clone_ctx.send_message(ChatsMsg::SendCreateGroupToContacts(msg.info));
                             ChatsMsg::InsertConv(conv)
                         });
 
@@ -170,7 +185,8 @@ impl Component for Chats {
                     return true;
                 }
                 // create group conversation and send 'create group' message
-                self.get_group_mems(ctx, nodes);
+                self.create_group(ctx, nodes);
+                // send message to contacts component
                 false
             }
             ChatsMsg::SendBackGroupInvitation(group_id) => {
@@ -220,7 +236,7 @@ impl Component for Chats {
                     RightContentType::Group => {
                         if state.group.is_some() {
                             let list = state.group.clone();
-                            self.get_group_mems(ctx, list.unwrap());
+                            self.create_group(ctx, list.unwrap());
                             return true;
                         }
                     }
@@ -232,6 +248,12 @@ impl Component for Chats {
                 if let Some(item) = self.list.get_mut(&state.conv_id) {
                     item.mute = !item.mute;
                 };
+                false
+            }
+            ChatsMsg::SendCreateGroupToContacts(group) => {
+                self._add_friend_state
+                    .add
+                    .emit(AddFriendStateItem::from(group));
                 false
             }
         }

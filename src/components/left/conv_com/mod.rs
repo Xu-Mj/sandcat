@@ -17,8 +17,8 @@ use crate::{
         CommonProps, ComponentType, ContentType, RightContentType,
     },
     pages::{
-        ConvState, CreateConvState, MuteState, RecSendMessageState, RemoveConvState, UnreadState,
-        WaitState,
+        AddFriendState, ConvState, CreateConvState, MuteState, RecSendMessageState,
+        RemoveConvState, UnreadState, WaitState,
     },
 };
 
@@ -48,6 +48,8 @@ pub struct Chats {
     _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
     _mute_state: Rc<MuteState>,
     _mute_state_listener: ContextHandle<Rc<MuteState>>,
+    _add_friend_state: Rc<AddFriendState>,
+    _add_friend_state_listener: ContextHandle<Rc<AddFriendState>>,
 }
 
 impl Chats {
@@ -82,9 +84,13 @@ impl Chats {
             .link()
             .context(ctx.link().callback(ChatsMsg::CreateConvStateChanged))
             .expect("need state in item");
-        let (mute_state, _mute_state_listener) = ctx
+        let (_mute_state, _mute_state_listener) = ctx
             .link()
             .context(ctx.link().callback(ChatsMsg::MuteStateChanged))
+            .expect("need state in item");
+        let (_add_friend_state, _add_friend_state_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
         Self {
             list: IndexMap::new(),
@@ -106,8 +112,10 @@ impl Chats {
             _wait_listener,
             _create_conv: create_conv,
             _create_conv_listener,
-            _mute_state: mute_state,
+            _mute_state,
             _mute_state_listener,
+            _add_friend_state,
+            _add_friend_state_listener,
         }
     }
 
@@ -309,10 +317,14 @@ impl Chats {
         }
     }
 
-    fn get_group_mems(&mut self, ctx: &Context<Self>, nodes: Vec<String>) {
+    fn create_group(&mut self, ctx: &Context<Self>, nodes: Vec<String>) {
         log::debug!("get group mems: {:?} ; ", nodes);
         let user_id = ctx.props().user_id.clone();
         let self_avatar = ctx.props().avatar.clone();
+
+        // clone ctx to send message
+        let cloned_ctx = ctx.link().clone();
+
         ctx.link().send_future(async move {
             if nodes.is_empty() {
                 return ChatsMsg::ShowSelectFriendList;
@@ -354,10 +366,14 @@ impl Chats {
             match api::group::create_group(group_req, user_id.as_str()).await {
                 Ok(g) => {
                     log::debug!("group created: {:?}", g);
+
+                    // sotre the group info to database
                     if let Err(err) = db::groups().await.put(&g).await {
                         log::error!("create group error: {:?}", err);
                         return ChatsMsg::None;
                     }
+
+                    // store group members to db
                     for v in values.iter_mut() {
                         v.group_id = g.id.clone();
                         if let Err(e) = db::group_mems().await.put(v).await {
@@ -365,8 +381,15 @@ impl Chats {
                             continue;
                         }
                     }
+
+                    // send message to contacts component
+                    cloned_ctx.send_message(ChatsMsg::SendCreateGroupToContacts(g.clone()));
+
+                    // store conversation info to db
                     let conv = Conversation::from(g);
                     db::convs().await.put_conv(&conv, true).await.unwrap();
+
+                    // insert conversation to ui list
                     ChatsMsg::InsertConv(conv)
                 }
                 Err(err) => {
