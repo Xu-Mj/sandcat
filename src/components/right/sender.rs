@@ -597,8 +597,17 @@ impl Component for Sender {
 
         }
     }
-    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        if !self.show_emoji {
+
+    fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
+        if ctx.props().disable {
+            self.input_ref
+                .cast::<HtmlElement>()
+                .unwrap()
+                .blur()
+                .unwrap();
+            return;
+        }
+        if !self.show_emoji && !ctx.props().disable {
             self.input_ref
                 .cast::<HtmlElement>()
                 .unwrap()

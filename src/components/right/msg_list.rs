@@ -5,6 +5,7 @@ use web_sys::HtmlElement;
 use yew::prelude::*;
 
 use crate::db;
+use crate::model::friend::FriendStatus;
 use crate::model::message::GroupMsg;
 use crate::model::message::Msg;
 use crate::model::message::SingleCall;
@@ -272,6 +273,9 @@ impl Component for MessageList {
                 true
             }
             MessageListMsg::QueryFriend(item) => {
+                if let Some(item) = item.as_ref() {
+                    self.is_black = item.status() == FriendStatus::Blacked;
+                }
                 self.friend = item;
                 true
             }

@@ -10,7 +10,7 @@ use crate::db;
 use crate::model::conversation::Conversation;
 use crate::model::group::Group;
 use crate::model::message::{GroupMsg, Msg, SingleCall};
-use crate::model::{ComponentType, CurrentItem, RightContentType};
+use crate::model::{ComponentType, ContentType, CurrentItem, RightContentType};
 use crate::pages::{
     AddFriendStateItem, ConvState, CreateConvState, MuteState, RecSendMessageState, RemoveConvState,
 };
@@ -77,6 +77,7 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::QueryConvs(convs) => {
+                log::debug!("query complete:{:?}", convs);
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
@@ -138,24 +139,44 @@ impl Component for Chats {
                                     ChatsMsg::InsertConv(conv)
                                 });
                             }
-                            GroupMsg::Dismiss(group_id) => ctx.link().send_future(async move {
-                                // query group information and owner info
-                                if let Ok(Some(group)) = db::groups().await.get(&group_id).await {
-                                    if let Ok(Some(mem)) = db::group_members()
-                                        .await
-                                        .get_by_group_id_and_friend_id(
-                                            &group_id,
-                                            group.owner.as_str(),
-                                        )
-                                        .await
-                                    {
-                                        let message =
-                                            format!("{} dismissed this group", mem.group_name);
-                                        return ChatsMsg::DismissGroup(group_id.into(), message);
-                                    }
+                            GroupMsg::Dismiss(group_id) => {
+                                let key = AttrValue::from(group_id.clone());
+                                if let Some(conv) = self.list.get_mut(&key) {
+                                    conv.last_msg_time = chrono::Local::now().timestamp_millis();
+                                    conv.last_msg_type = ContentType::Text;
+                                    let mut conv = conv.clone();
+                                    ctx.link().send_future(async move {
+                                        // query group information and owner info
+                                        if let Ok(Some(group)) =
+                                            db::groups().await.get(&group_id).await
+                                        {
+                                            if let Ok(Some(mem)) = db::group_members()
+                                                .await
+                                                .get_by_group_id_and_friend_id(
+                                                    &group_id,
+                                                    group.owner.as_str(),
+                                                )
+                                                .await
+                                            {
+                                                let message = format!(
+                                                    "{} dismissed this group",
+                                                    mem.group_name
+                                                );
+                                                conv.last_msg = message.clone().into();
+
+                                                if let Err(e) =
+                                                    db::convs().await.put_conv(&conv, true).await
+                                                {
+                                                    log::error!("dismiss group error: {:?}", e);
+                                                } else {
+                                                    return ChatsMsg::DismissGroup(key, message);
+                                                }
+                                            }
+                                        }
+                                        ChatsMsg::None
+                                    })
                                 }
-                                ChatsMsg::None
-                            }),
+                            }
                             // don't handle it now
                             _ => {}
                         }

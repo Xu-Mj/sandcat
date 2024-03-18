@@ -377,6 +377,8 @@ impl Home {
                             if let Err(err) = db::groups().await.dismiss(&group_id).await {
                                 log::error!("remove group fail:{:?}", err);
                             } else {
+                                // send message to other component
+                                ctx.send_message(HomeMsg::RecSendMsgStateChange(message));
                                 // send message received
                                 ctx.send_message(HomeMsg::SendBackMsg(Msg::Group(
                                     GroupMsg::DismissOrExitReceived((

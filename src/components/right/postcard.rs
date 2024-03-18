@@ -114,6 +114,7 @@ impl Component for PostCard {
                                 .await
                                 {
                                     Ok(_) => {
+                                        log::debug!("send delete group request success");
                                         if let Err(e) = db::groups().await.delete(id.as_str()).await
                                         {
                                             log::error!("delete group failed: {:?}", e);
