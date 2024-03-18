@@ -24,7 +24,7 @@ pub async fn create_group(data: GroupRequest, user_id: &str) -> Result<Group, Js
 }
 
 pub async fn delete_group(data: GroupDelete) -> Result<(), JsValue> {
-    Request::post("/api/group/{}")
+    Request::delete("/api/group")
         .header(AUTHORIZE_HEADER, token().as_str())
         .json(&data)
         .map_err(|err| JsValue::from(err.to_string()))?

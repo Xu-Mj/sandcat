@@ -81,6 +81,7 @@ pub struct SenderProps {
     pub friend_id: AttrValue,
     pub conv_type: RightContentType,
     pub cur_user_id: AttrValue,
+    pub disable: bool,
     pub on_file_send: Callback<Message>,
 }
 
@@ -450,6 +451,20 @@ impl Component for Sender {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        // spawn disable layer
+        let mut disable = html!();
+        if ctx.props().disable {
+            let message = match ctx.props().conv_type {
+                RightContentType::Friend => "对方开启了好友验证，请先通过验证",
+                RightContentType::Group => "群聊已经解散",
+                _ => "暂时无法发送消息",
+            };
+            disable = html! {
+                <div class="sender-disabled">
+                    {message}
+                </div>
+            }
+        }
         // 绘制警告tip
         let mut warn = html!();
         if self.is_empty_warn_needed {
@@ -576,13 +591,14 @@ impl Component for Sender {
                         {"发送"}
                     </button>
                 </div>
+                {disable}
             </div>
             </>
 
         }
     }
-    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
-        if first_render {
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        if !self.show_emoji {
             self.input_ref
                 .cast::<HtmlElement>()
                 .unwrap()

@@ -130,8 +130,10 @@ impl Component for PostCard {
                                 }
                             });
 
+                            // todo move below to single patch, handle the http request error
                             // send state message to remove conversation from conversation lis
                             self.remove_conv_state.remove_event.emit(info.id());
+
                             // send state message to remove friend from friend list
                             self.remove_friend_state
                                 .remove_event

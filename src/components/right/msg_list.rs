@@ -23,11 +23,12 @@ pub struct MessageList {
     page_size: u32,
     is_all: bool,
     scroll_state: ScrollState,
+    friend: Option<Box<dyn ItemInfo>>,
+    new_msg_count: u32,
+    is_black: bool,
     // 监听消息接收状态，用来更新当前对话框消息列表
     _msg_state: Rc<RecSendMessageState>,
     _listener: ContextHandle<Rc<RecSendMessageState>>,
-    friend: Option<Box<dyn ItemInfo>>,
-    new_msg_count: u32,
 }
 
 pub enum MessageListMsg {
@@ -170,6 +171,7 @@ impl Component for MessageList {
             _listener,
             friend: None,
             new_msg_count: 0,
+            is_black: false,
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -227,7 +229,13 @@ impl Component for MessageList {
                             GroupMsg::Message(msg) => self.insert_msg(msg, friend_id),
                             // need to handle, as system notify
                             GroupMsg::MemberExit(_) => false,
-                            GroupMsg::Dismiss(_) => false,
+                            GroupMsg::Dismiss(group_id) => {
+                                if group_id == ctx.props().friend_id {
+                                    self.is_black = true;
+                                    return true;
+                                }
+                                false
+                            }
                             _ => false,
                         }
                     }
@@ -330,6 +338,7 @@ impl Component for MessageList {
                     friend_id={props.friend_id.clone()}
                     cur_user_id={props.cur_user_id.clone()}
                     conv_type={ctx.props().conv_type.clone()}
+                    disable = {self.is_black}
                     {on_file_send}
                 />
             </>
