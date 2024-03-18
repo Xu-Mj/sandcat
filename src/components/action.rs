@@ -103,14 +103,17 @@ impl Component for Action {
                     <MessagesIcon/>
                     <span>{"发消息"}</span>
                 </div>
-                <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Audio))}>
-                    <PhoneIcon/>
-                    <span>{"语音聊天"}</span>
-                </div>
-                <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Video))}>
-                    <VideoIcon/>
-                    <span>{"视频通话"}</span>
-                </div>
+                // don't support call for group
+                if ctx.props().conv_type == RightContentType::Friend {
+                    <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Audio))}>
+                       <PhoneIcon/>
+                        <span>{"语音聊天"}</span>
+                    </div>
+                    <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Video))}>
+                        <VideoIcon/>
+                        <span>{"视频通话"}</span>
+                    </div>
+                }
             </div>
         }
     }

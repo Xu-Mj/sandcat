@@ -285,30 +285,71 @@ impl Chats {
             let conv_type = self.conv_state.conv.content_type.clone();
             log::debug!("conv type in messages: {:?}", conv_type.clone());
             ctx.link().send_future(async move {
-                let friend = db::friends().await.get_friend(friend_id.as_str()).await;
-                // todo查询上一条消息
-                let result = db::messages()
-                    .await
-                    .get_last_msg(friend_id.as_str())
-                    .await
-                    .unwrap_or_default();
-                let content = if result.id != 0 {
-                    get_msg_type(result.content_type, &result.content)
-                } else {
-                    AttrValue::default()
+                // query information by conv_type
+                let conv = match conv_type {
+                    RightContentType::Friend => {
+                        let friend = db::friends().await.get_friend(friend_id.as_str()).await;
+                        // todo查询上一条消息
+                        let result = db::messages()
+                            .await
+                            .get_last_msg(friend_id.as_str())
+                            .await
+                            .unwrap_or_default();
+                        let content = if result.id != 0 {
+                            get_msg_type(result.content_type, &result.content)
+                        } else {
+                            AttrValue::default()
+                        };
+                        Conversation {
+                            id: 0,
+                            name: friend.name,
+                            avatar: friend.avatar,
+                            last_msg: content,
+                            last_msg_time: result.create_time,
+                            last_msg_type: result.content_type,
+                            unread_count: 0,
+                            friend_id,
+                            conv_type,
+                            mute: false,
+                        }
+                    }
+                    RightContentType::Group => {
+                        let group = db::groups()
+                            .await
+                            .get(friend_id.as_str())
+                            .await
+                            .unwrap()
+                            .unwrap();
+                        // todo查询上一条消息
+                        let result = db::group_msgs()
+                            .await
+                            .get_last_msg(friend_id.as_str())
+                            .await
+                            .unwrap_or_default();
+                        let content = if result.id != 0 {
+                            get_msg_type(result.content_type, &result.content)
+                        } else {
+                            AttrValue::default()
+                        };
+                        Conversation {
+                            id: 0,
+                            name: group.name,
+                            avatar: group.avatar,
+                            last_msg: content,
+                            last_msg_time: result.create_time,
+                            last_msg_type: result.content_type,
+                            unread_count: 0,
+                            friend_id,
+                            conv_type,
+                            mute: false,
+                        }
+                    }
+                    _ => {
+                        log::warn!("not support this type {:?} for now", conv_type);
+                        return ChatsMsg::None;
+                    }
                 };
-                let conv = Conversation {
-                    id: 0,
-                    name: friend.name,
-                    avatar: friend.avatar,
-                    last_msg: content,
-                    last_msg_time: result.create_time,
-                    last_msg_type: result.content_type,
-                    unread_count: 0,
-                    friend_id,
-                    conv_type,
-                    mute: false,
-                };
+
                 db::convs().await.put_conv(&conv, true).await.unwrap();
                 log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
                 ChatsMsg::InsertConv(conv)

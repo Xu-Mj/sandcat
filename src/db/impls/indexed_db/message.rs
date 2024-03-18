@@ -28,7 +28,6 @@ impl MessageRepo {
 
 #[async_trait::async_trait(?Send)]
 impl Messages for MessageRepo {
-    // todo 分页
     async fn get_last_msg(&self, friend_id: &str) -> Result<Message, JsValue> {
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<Message>();

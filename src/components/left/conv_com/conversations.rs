@@ -90,7 +90,9 @@ impl Component for Chats {
                     _ => RightContentType::Default,
                 };
                 match msg {
-                    Msg::Single(msg) | Msg::OfflineSync(msg) => {
+                    Msg::Single(msg)
+                    | Msg::Group(GroupMsg::Message(msg))
+                    | Msg::OfflineSync(msg) => {
                         let conv = Conversation {
                             last_msg: msg.content.clone(),
                             last_msg_time: msg.create_time,

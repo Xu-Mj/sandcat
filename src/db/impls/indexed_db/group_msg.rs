@@ -100,4 +100,53 @@ impl GroupMessages for GroupMsgRepo {
         success.forget();
         Ok(rx.await.unwrap())
     }
+
+    async fn get_last_msg(&self, group_id: &str) -> Result<Message, JsValue> {
+        // 使用channel异步获取数据
+        let (tx, rx) = oneshot::channel::<Message>();
+        let store = self.store(GROUP_MSG_TABLE_NAME).await.unwrap();
+
+        // let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
+        let rang = IdbKeyRange::only(&JsValue::from(group_id));
+        let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
+
+        let request = index
+            .open_cursor_with_range_and_direction(
+                &JsValue::from(&rang.unwrap()),
+                web_sys::IdbCursorDirection::Prev,
+            )
+            .unwrap();
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("读取数据失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+
+        let mut tx = Some(tx);
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = req.result().unwrap_or_else(|_err| JsValue::null());
+
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+
+                let value = cursor.value().unwrap();
+                // 反序列化
+                let msg: Message = serde_wasm_bindgen::from_value(value).unwrap();
+
+                let _ = tx.take().unwrap().send(msg);
+            } else {
+                let _ = tx.take().unwrap().send(Message::default());
+            }
+        }) as Box<dyn FnMut(&Event)>);
+
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        success.forget();
+        Ok(rx.await.unwrap())
+    }
 }
