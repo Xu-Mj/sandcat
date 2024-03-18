@@ -37,6 +37,7 @@ pub enum ChatsMsg {
     CreateConvStateChanged(Rc<CreateConvState>),
     MuteStateChanged(Rc<MuteState>),
     SendCreateGroupToContacts(Group),
+    DismissGroup(AttrValue, String),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -103,35 +104,61 @@ impl Component for Chats {
                         };
                         self.operate_msg(ctx, msg.friend_id, conv, msg.is_self)
                     }
-                    Msg::Group(GroupMsg::Invitation(msg)) => {
-                        // create group conversation directly
-                        let clone_ctx = ctx.link().clone();
-                        ctx.link().send_future(async move {
-                            // store conversation
-                            let conv = Conversation::from(msg.info.clone());
-                            db::convs().await.put_conv(&conv, true).await.unwrap();
+                    Msg::Group(group_msg) => {
+                        match group_msg {
+                            GroupMsg::Invitation(msg) => {
+                                // create group conversation directly
+                                let clone_ctx = ctx.link().clone();
+                                ctx.link().send_future(async move {
+                                    // store conversation
+                                    let conv = Conversation::from(msg.info.clone());
+                                    db::convs().await.put_conv(&conv, true).await.unwrap();
 
-                            // store group information
-                            if let Err(err) = db::groups().await.put(&msg.info).await {
-                                log::error!("store group error : {:?}", err);
-                            };
+                                    // store group information
+                                    if let Err(err) = db::groups().await.put(&msg.info).await {
+                                        log::error!("store group error : {:?}", err);
+                                    };
 
-                            // store group members
-                            if let Err(e) = db::group_members().await.put_list(msg.members).await {
-                                log::error!("save group member error: {:?}", e);
+                                    // store group members
+                                    if let Err(e) =
+                                        db::group_members().await.put_list(msg.members).await
+                                    {
+                                        log::error!("save group member error: {:?}", e);
+                                    }
+
+                                    // send back received message
+                                    clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(
+                                        msg.info.id.clone(),
+                                    ));
+
+                                    // send add friend state
+                                    clone_ctx.send_message(ChatsMsg::SendCreateGroupToContacts(
+                                        msg.info,
+                                    ));
+                                    ChatsMsg::InsertConv(conv)
+                                });
                             }
-
-                            // send back received message
-                            clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(
-                                msg.info.id.clone(),
-                            ));
-
-                            // send add friend state
-                            clone_ctx.send_message(ChatsMsg::SendCreateGroupToContacts(msg.info));
-                            ChatsMsg::InsertConv(conv)
-                        });
-                        // don't handle it now
-                        // _ => {}
+                            GroupMsg::Dismiss(group_id) => ctx.link().send_future(async move {
+                                // query group information and owner info
+                                if let Ok(Some(group)) = db::groups().await.get(&group_id).await {
+                                    if let Ok(Some(mem)) = db::group_members()
+                                        .await
+                                        .get_by_group_id_and_friend_id(
+                                            &group_id,
+                                            group.owner.as_str(),
+                                        )
+                                        .await
+                                    {
+                                        let message =
+                                            format!("{} dismissed this group", mem.group_name);
+                                        return ChatsMsg::DismissGroup(group_id.into(), message);
+                                    }
+                                }
+                                ChatsMsg::None
+                            }),
+                            // don't handle it now
+                            _ => {}
+                        }
                         false
                     }
 
@@ -259,6 +286,13 @@ impl Component for Chats {
                     .add
                     .emit(AddFriendStateItem::from(group));
                 false
+            }
+            ChatsMsg::DismissGroup(group_id, msg) => {
+                if let Some(conv) = self.list.get_mut(&group_id) {
+                    conv.last_msg = msg.into();
+                    conv.last_msg_time = chrono::Local::now().timestamp_millis();
+                }
+                true
             }
         }
     }

@@ -1,7 +1,11 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
-use super::{friend::Friend, user::User, ItemInfo, RightContentType};
+use super::{
+    friend::{Friend, FriendStatus},
+    user::User,
+    ItemInfo, RightContentType,
+};
 
 #[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq)]
 pub struct Group {
@@ -14,7 +18,7 @@ pub struct Group {
     pub description: AttrValue,
     pub announcement: AttrValue,
     // mark this group if deleted, local only
-    #[serde(skip)]
+    #[serde(default)]
     pub deleted: bool,
 }
 
@@ -119,6 +123,10 @@ impl ItemInfo for GroupMember {
     fn owner(&self) -> AttrValue {
         self.user_id.clone()
     }
+
+    fn status(&self) -> FriendStatus {
+        FriendStatus::Accepted
+    }
 }
 
 impl ItemInfo for Group {
@@ -164,5 +172,13 @@ impl ItemInfo for Group {
 
     fn owner(&self) -> AttrValue {
         self.owner.clone()
+    }
+
+    fn status(&self) -> FriendStatus {
+        if self.deleted {
+            FriendStatus::Blacked
+        } else {
+            FriendStatus::Accepted
+        }
     }
 }

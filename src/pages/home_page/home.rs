@@ -374,7 +374,7 @@ impl Home {
                         let group_id = group_id.clone();
                         let ctx = ctx.link().clone();
                         spawn_local(async move {
-                            if let Err(err) = db::groups().await.delete(&group_id).await {
+                            if let Err(err) = db::groups().await.dismiss(&group_id).await {
                                 log::error!("remove group fail:{:?}", err);
                             } else {
                                 // send message received

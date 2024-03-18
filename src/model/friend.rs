@@ -130,4 +130,8 @@ impl ItemInfo for Friend {
     fn owner(&self) -> AttrValue {
         self.friend_id.clone()
     }
+
+    fn status(&self) -> FriendStatus {
+        self.status.clone()
+    }
 }

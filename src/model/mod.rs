@@ -10,6 +10,8 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
+use self::friend::FriendStatus;
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ContentType {
     #[default]
@@ -42,6 +44,8 @@ pub trait ItemInfo {
     fn region(&self) -> Option<AttrValue>;
 
     fn owner(&self) -> AttrValue;
+
+    fn status(&self) -> FriendStatus;
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]

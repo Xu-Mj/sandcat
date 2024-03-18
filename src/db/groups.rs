@@ -12,4 +12,6 @@ pub trait GroupInterface {
     async fn get_list(&self) -> Result<IndexMap<AttrValue, Group>, JsValue>;
 
     async fn delete(&self, id: &str) -> Result<(), JsValue>;
+
+    async fn dismiss(&self, id: &str) -> Result<(), JsValue>;
 }

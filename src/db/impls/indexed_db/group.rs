@@ -190,4 +190,12 @@ impl GroupInterface for GroupRepo {
         success.forget();
         Ok(())
     }
+
+    async fn dismiss(&self, id: &str) -> Result<(), JsValue> {
+        if let Ok(Some(mut group)) = self.get(id).await {
+            group.deleted = true;
+            return self.put(&group).await;
+        }
+        Ok(())
+    }
 }
