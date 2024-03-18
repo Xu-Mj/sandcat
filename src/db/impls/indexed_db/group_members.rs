@@ -153,4 +153,35 @@ impl GroupMembers for GroupMembersRepo {
         success.forget();
         Ok(rx.await.unwrap())
     }
+
+    async fn delete(&self, group_id: &str, user_id: &str) -> Result<(), JsValue> {
+        let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
+        let index = store.index(GROUP_ID_AND_USER_ID)?;
+        let indices = Array::new();
+        indices.push(&JsValue::from(user_id));
+        indices.push(&JsValue::from(group_id));
+        let request = index.get(&JsValue::from(indices))?;
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            if !result.is_undefined() && !result.is_null() {
+                let group: GroupMember = serde_wasm_bindgen::from_value(result).unwrap();
+                if let Err(err) = store.delete(&JsValue::from(group.id)) {
+                    log::error!("delete group member error: {:?}", err);
+                }
+            }
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("读取数据失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        Ok(())
+    }
 }

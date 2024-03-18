@@ -9,7 +9,7 @@ use crate::components::top_bar::TopBar;
 use crate::db;
 use crate::model::conversation::Conversation;
 use crate::model::group::Group;
-use crate::model::message::{Msg, SingleCall};
+use crate::model::message::{GroupMsg, Msg, SingleCall};
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::{
     AddFriendStateItem, ConvState, CreateConvState, MuteState, RecSendMessageState, RemoveConvState,
@@ -90,7 +90,7 @@ impl Component for Chats {
                     _ => RightContentType::Default,
                 };
                 match msg {
-                    Msg::Single(msg) | Msg::Group(msg) | Msg::OfflineSync(msg) => {
+                    Msg::Single(msg) | Msg::OfflineSync(msg) => {
                         let conv = Conversation {
                             last_msg: msg.content.clone(),
                             last_msg_time: msg.create_time,
@@ -101,7 +101,7 @@ impl Component for Chats {
                         };
                         self.operate_msg(ctx, msg.friend_id, conv, msg.is_self)
                     }
-                    Msg::GroupInvitation(msg) => {
+                    Msg::Group(GroupMsg::Invitation(msg)) => {
                         // create group conversation directly
                         let clone_ctx = ctx.link().clone();
                         ctx.link().send_future(async move {
@@ -115,7 +115,7 @@ impl Component for Chats {
                             };
 
                             // store group members
-                            if let Err(e) = db::group_mems().await.put_list(msg.members).await {
+                            if let Err(e) = db::group_members().await.put_list(msg.members).await {
                                 log::error!("save group member error: {:?}", e);
                             }
 
@@ -128,9 +128,11 @@ impl Component for Chats {
                             clone_ctx.send_message(ChatsMsg::SendCreateGroupToContacts(msg.info));
                             ChatsMsg::InsertConv(conv)
                         });
-
+                        // don't handle it now
+                        // _ => {}
                         false
                     }
+
                     Msg::SingleCall(SingleCall::Invite(msg)) => {
                         let friend_id = msg.friend_id.clone();
                         let mut conv = Conversation::from(msg);
@@ -192,10 +194,10 @@ impl Component for Chats {
             ChatsMsg::SendBackGroupInvitation(group_id) => {
                 self.msg_state
                     .send_back_event
-                    .emit(Msg::GroupInvitationReceived((
+                    .emit(Msg::Group(GroupMsg::InvitationReceived((
                         ctx.props().user_id.to_string(),
                         group_id.to_string(),
-                    )));
+                    ))));
                 false
             }
             ChatsMsg::ShowContextMenu((x, y), id, is_mute) => {

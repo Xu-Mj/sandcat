@@ -14,7 +14,7 @@ use yew::prelude::*;
 
 use crate::db;
 use crate::icons::{CloseIcon, ImageIcon};
-use crate::model::message::{InviteMsg, InviteType, Msg};
+use crate::model::message::{GroupMsg, InviteMsg, InviteType, Msg};
 use crate::model::RightContentType;
 use crate::{
     components::right::emoji::EmojiSpan,
@@ -107,7 +107,9 @@ impl Sender {
                 self.rec_send_msg.send_msg_event.emit(Msg::Single(msg));
             }
             RightContentType::Group => {
-                self.rec_send_msg.send_msg_event.emit(Msg::Group(msg));
+                self.rec_send_msg
+                    .send_msg_event
+                    .emit(Msg::Group(GroupMsg::Message(msg)));
             }
             _ => {}
         }

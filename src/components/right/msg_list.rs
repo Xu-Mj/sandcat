@@ -5,6 +5,7 @@ use web_sys::HtmlElement;
 use yew::prelude::*;
 
 use crate::db;
+use crate::model::message::GroupMsg;
 use crate::model::message::Msg;
 use crate::model::message::SingleCall;
 use crate::model::ItemInfo;
@@ -220,7 +221,16 @@ impl Component for MessageList {
             MessageListMsg::ReceiveMsg(msg_state) => {
                 let msg = msg_state.msg.clone();
                 match msg {
-                    Msg::Single(msg) | Msg::Group(msg) => self.insert_msg(msg, friend_id),
+                    Msg::Single(msg) => self.insert_msg(msg, friend_id),
+                    Msg::Group(msg) => {
+                        match msg {
+                            GroupMsg::Message(msg) => self.insert_msg(msg, friend_id),
+                            // need to handle, as system notify
+                            GroupMsg::MemberExit(_) => false,
+                            GroupMsg::Dismiss(_) => false,
+                            _ => false,
+                        }
+                    }
 
                     Msg::SingleCall(m) => match m {
                         SingleCall::InviteCancel(msg) => self.insert_msg(msg.into(), friend_id),
@@ -245,9 +255,7 @@ impl Component for MessageList {
                     | Msg::SingleDeliveredNotice(_)
                     | Msg::OfflineSync(_)
                     | Msg::RelationshipRes(_)
-                    | Msg::FriendshipDeliveredNotice(_)
-                    | Msg::GroupInvitationReceived(_)
-                    | Msg::GroupInvitation(_) => false,
+                    | Msg::FriendshipDeliveredNotice(_) => false,
                 }
             }
             MessageListMsg::GoBottom => {

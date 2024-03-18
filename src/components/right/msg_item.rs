@@ -48,7 +48,7 @@ impl Component for MsgItem {
             let friend_id = ctx.props().msg.send_id.clone();
             let group_id = ctx.props().msg.friend_id.clone();
             ctx.link().send_future(async move {
-                let member = db::group_mems()
+                let member = db::group_members()
                     .await
                     .get_by_group_id_and_friend_id(group_id.as_str(), friend_id.as_str())
                     .await
@@ -116,7 +116,7 @@ impl Component for MsgItem {
                             }
                             // query group member
                             RightContentType::Group => {
-                                let member = db::group_mems()
+                                let member = db::group_members()
                                     .await
                                     .get_by_group_id_and_friend_id(
                                         group_id.as_str(),

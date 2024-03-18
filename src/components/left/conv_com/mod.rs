@@ -376,7 +376,7 @@ impl Chats {
                     // store group members to db
                     for v in values.iter_mut() {
                         v.group_id = g.id.clone();
-                        if let Err(e) = db::group_mems().await.put(v).await {
+                        if let Err(e) = db::group_members().await.put(v).await {
                             log::error!("save group member error: {:?}", e);
                             continue;
                         }

@@ -147,8 +147,8 @@ pub type UserID = String;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Msg {
     Single(Message),
-    Group(Message),
-    GroupInvitation(GroupInvitation),
+    Group(GroupMsg),
+    // GroupInvitation(GroupInvitation),
     SendRelationshipReq(FriendShipRequest),
     RecRelationship(FriendShipWithUser),
     RelationshipRes(Friend),
@@ -157,21 +157,23 @@ pub enum Msg {
     FriendshipDeliveredNotice(MessageID),
     OfflineSync(Message),
     SingleCall(SingleCall),
-    // SingleCallOffer(Offer),
-    // SingleCallInvite(InviteMsg),
-    // SingleCallInviteCancel(InviteCancelMsg),
-    // SingleCallNotAnswer(InviteNotAnswerMsg),
-    // SingleCallInviteAnswer(InviteAnswerMsg),
-    // SingleCallAgree(Agree),
-    // SingleCallHangUp(Hangup),
-    // NewIceCandidate(Candidate),
-    GroupInvitationReceived((UserID, GroupID)),
+    // GroupInvitationReceived((UserID, GroupID)),
 }
 
 impl Default for Msg {
     fn default() -> Self {
         Self::Single(Message::default())
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub enum GroupMsg {
+    Message(Message),
+    Invitation(GroupInvitation),
+    MemberExit((UserID, GroupID)),
+    Dismiss(GroupID),
+    DismissOrExitReceived((UserID, GroupID)),
+    InvitationReceived((UserID, GroupID)),
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]

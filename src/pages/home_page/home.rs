@@ -1,9 +1,11 @@
 use std::{cell::RefCell, rc::Rc};
 
 use gloo::utils::window;
+use wasm_bindgen_futures::spawn_local;
 use yew::{AttrValue, Context, NodeRef};
 
 use crate::db;
+use crate::model::message::GroupMsg;
 use crate::model::{ComponentType, CurrentItem};
 use crate::pages::{AddFriendState, CreateConvState, MuteState};
 use crate::{
@@ -314,27 +316,79 @@ impl Home {
                 ctx.link()
                     .send_message(HomeMsg::RecSendMsgStateChange(message));
             }
-            Msg::Group(ref msg) => {
-                let msg = msg.clone();
-                let msg_id = msg.msg_id.to_string();
-                if self.conv_state.conv.item_id != msg.friend_id {
-                    let conv_state = Rc::make_mut(&mut self.conv_state);
-                    let _ = current_item::save_conv(&conv_state.conv)
-                        .map_err(|err| log::error!("save conv fail{:?}", err));
-                }
-                ctx.link().send_future(async move {
-                    // 数据入库
-                    if let Err(err) = db::group_msgs().await.put(&msg).await {
-                        HomeMsg::Notification(Notification::error_from_content(
-                            format!("内部错误:{:?}", err).into(),
-                        ))
-                    } else {
-                        HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
+            Msg::Group(ref group_msg) => {
+                match group_msg {
+                    GroupMsg::Invitation(_) => {
+                        // receive create group message
+                        ctx.link()
+                            .send_message(HomeMsg::RecSendMsgStateChange(message));
                     }
-                });
+                    GroupMsg::Message(msg) => {
+                        let msg = msg.clone();
+                        let msg_id = msg.msg_id.to_string();
+                        if self.conv_state.conv.item_id != msg.friend_id {
+                            let conv_state = Rc::make_mut(&mut self.conv_state);
+                            let _ = current_item::save_conv(&conv_state.conv)
+                                .map_err(|err| log::error!("save conv fail{:?}", err));
+                        }
+                        ctx.link().send_future(async move {
+                            // 数据入库
+                            if let Err(err) = db::group_msgs().await.put(&msg).await {
+                                HomeMsg::Notification(Notification::error_from_content(
+                                    format!("内部错误:{:?}", err).into(),
+                                ))
+                            } else {
+                                HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
+                            }
+                        });
 
-                ctx.link()
-                    .send_message(HomeMsg::RecSendMsgStateChange(message));
+                        ctx.link()
+                            .send_message(HomeMsg::RecSendMsgStateChange(message));
+                    }
+                    GroupMsg::MemberExit((mem_id, group_id)) => {
+                        // delete member information from da
+                        let user_id = self.state.login_user.id.clone();
+                        let mem_id = mem_id.clone();
+                        let group_id = group_id.clone();
+                        let ctx = ctx.link().clone();
+                        spawn_local(async move {
+                            if let Err(err) =
+                                db::group_members().await.delete(&mem_id, &group_id).await
+                            {
+                                log::error!("remove group member fail:{:?}", err);
+                            } else {
+                                // send message received
+                                ctx.send_message(HomeMsg::SendBackMsg(Msg::Group(
+                                    GroupMsg::DismissOrExitReceived((
+                                        user_id.to_string(),
+                                        group_id,
+                                    )),
+                                )));
+                            }
+                        })
+                    }
+                    GroupMsg::Dismiss(group_id) => {
+                        // delete group from db
+                        let user_id = self.state.login_user.id.clone();
+                        // we can consume the group_msg here because it is behind in the reference
+                        let group_id = group_id.clone();
+                        let ctx = ctx.link().clone();
+                        spawn_local(async move {
+                            if let Err(err) = db::groups().await.delete(&group_id).await {
+                                log::error!("remove group fail:{:?}", err);
+                            } else {
+                                // send message received
+                                ctx.send_message(HomeMsg::SendBackMsg(Msg::Group(
+                                    GroupMsg::DismissOrExitReceived((
+                                        user_id.to_string(),
+                                        group_id,
+                                    )),
+                                )));
+                            }
+                        });
+                    }
+                    GroupMsg::DismissOrExitReceived(_) | GroupMsg::InvitationReceived(_) => {}
+                }
             }
             Msg::SendRelationshipReq(_msg) => {}
             Msg::RecRelationship(msg) => {
@@ -389,12 +443,6 @@ impl Home {
                     HomeMsg::SendMessage(Msg::Single(msg))
                 });
             }
-            Msg::GroupInvitation(_) => {
-                // receive create group message
-                ctx.link()
-                    .send_message(HomeMsg::RecSendMsgStateChange(message));
-            }
-            Msg::GroupInvitationReceived(_) => {}
         }
         false
     }

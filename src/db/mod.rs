@@ -44,7 +44,7 @@ pub async fn friendships() -> Box<dyn Friendships> {
     Box::new(FriendShipRepo::new().await)
 }
 
-pub async fn group_mems() -> Box<dyn GroupMembers> {
+pub async fn group_members() -> Box<dyn GroupMembers> {
     Box::new(GroupMembersRepo::new().await)
 }
 

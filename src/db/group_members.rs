@@ -13,4 +13,5 @@ pub trait GroupMembers {
         friend_id: &str,
     ) -> Result<Option<GroupMember>, JsValue>;
     async fn get_list_by_group_id(&self, group_id: &str) -> Result<Vec<GroupMember>, JsValue>;
+    async fn delete(&self, group_id: &str, user_id: &str) -> Result<(), JsValue>;
 }

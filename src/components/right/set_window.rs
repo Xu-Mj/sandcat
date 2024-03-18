@@ -62,7 +62,7 @@ impl Component for SetWindow {
                     let group = group_db.get(id.as_str()).await.unwrap().unwrap();
                     info = Some(Box::new(group.clone()));
                     // query members by group id
-                    if let Ok(members) = db::group_mems()
+                    if let Ok(members) = db::group_members()
                         .await
                         .get_list_by_group_id(id.as_str())
                         .await
