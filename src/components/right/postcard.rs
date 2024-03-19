@@ -106,12 +106,13 @@ impl Component for PostCard {
                             let user_id = ctx.props().user_id.clone().to_string();
                             spawn_local(async move {
                                 // send leave group request
-                                match api::group::delete_group(GroupDelete {
-                                    group_id: id.to_string(),
-                                    user_id,
-                                    is_dismiss,
-                                })
-                                .await
+                                match api::groups()
+                                    .delete_group(GroupDelete {
+                                        group_id: id.to_string(),
+                                        user_id,
+                                        is_dismiss,
+                                    })
+                                    .await
                                 {
                                     Ok(_) => {
                                         log::debug!("send delete group request success");

@@ -1,6 +1,6 @@
 use yew::prelude::*;
 
-use crate::api::user::search_friend;
+use crate::api;
 use crate::components::left::user_info::UserInfoCom;
 use crate::model::user::User;
 use crate::{components::top_bar::TopBar, model::ComponentType};
@@ -51,7 +51,10 @@ impl Component for AddFriend {
                 ctx.link()
                     .send_message(AddFriendMsg::SearchFriends(SearchState::Searching));
                 ctx.link().send_future(async move {
-                    match search_friend(pattern.to_string(), user_id).await {
+                    match api::users()
+                        .search_friend(pattern.to_string(), user_id.as_str())
+                        .await
+                    {
                         Ok(list) => AddFriendMsg::SearchFriends(SearchState::Success(list)),
                         Err(err) => {
                             log::error!("搜索用户错误:{:?}", err);

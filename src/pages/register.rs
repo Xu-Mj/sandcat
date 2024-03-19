@@ -117,7 +117,7 @@ impl Component for Register {
                     log::debug!("register5");
                     ctx.send_message(RegisterMsg::Request(RequestStatus::Pendding));
                     // 注册请求
-                    match api::user::register(register).await {
+                    match api::users().register(register).await {
                         Ok(_) => ctx.send_message(RegisterMsg::Request(RequestStatus::Success)),
                         Err(_) => ctx.send_message(RegisterMsg::Request(RequestStatus::Failed)),
                     }
@@ -150,7 +150,7 @@ impl Component for Register {
 
                 ctx.link().send_future(async move {
                     // 发送邮件
-                    match api::user::send_mail(email.value()).await {
+                    match api::users().send_mail(email.value()).await {
                         Ok(_) => RegisterMsg::SendCodeSuccess,
                         Err(e) => RegisterMsg::SendCodeFailed(e),
                     }

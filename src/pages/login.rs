@@ -67,7 +67,7 @@ pub struct LoginRequest {
 async fn init_db(id: AttrValue) {
     // 拉取联系人
     // 查询是否需要更新联系人
-    match api::user::get_friend_list_by_id(id.to_string()).await {
+    match api::friends().get_friend_list_by_id(id.to_string()).await {
         Ok(res) => {
             // 写入数据库
             db::friends().await.put_friend_list(&res).await;

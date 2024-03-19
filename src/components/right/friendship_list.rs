@@ -96,7 +96,7 @@ impl Component for FriendShipList {
                     let friendship_id = item.friendship_id.clone();
                     // 发送好友同意请求
                     ctx.link().send_future(async move {
-                        match api::user::agree_friend(friendship_req).await {
+                        match api::friends().agree_friend(friendship_req).await {
                             Ok(res) => {
                                 log::debug!("好友请求成功:{:?}", &res);
                                 FriendShipListMsg::AgreeFriendShipRes(RequestStatus::Success(

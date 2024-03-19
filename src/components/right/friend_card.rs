@@ -4,8 +4,7 @@ use web_sys::{Element, HtmlDivElement, HtmlInputElement};
 use yew::prelude::*;
 
 use crate::{
-    api::user::apply_friend,
-    db,
+    api, db,
     model::{
         friend::{FriendShipRequest, FriendStatus, ReadStatus},
         user::User,
@@ -145,7 +144,7 @@ impl Component for FriendCard {
                     FriendShipRequestState::Pendding,
                 ));
                 ctx.link().send_future(async move {
-                    match apply_friend(new_friend).await {
+                    match api::friends().apply_friend(new_friend).await {
                         Err(err) => {
                             log::error!("发送好友申请错误: {:?}", err);
                             FriendCardMsg::ApplyFriendResult(FriendShipRequestState::Fail)
