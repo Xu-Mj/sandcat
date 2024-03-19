@@ -373,6 +373,7 @@ impl Home {
                         // we can consume the group_msg here because it is behind in the reference
                         let group_id = group_id.clone();
                         let ctx = ctx.link().clone();
+                        log::debug!("received dismiss message, group id : {}", group_id);
                         spawn_local(async move {
                             if let Err(err) = db::groups().await.dismiss(&group_id).await {
                                 log::error!("remove group fail:{:?}", err);

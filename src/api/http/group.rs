@@ -38,14 +38,20 @@ impl GroupApi for GroupHttp {
     }
 
     async fn delete_group(&self, data: GroupDelete) -> Result<(), JsValue> {
-        Request::delete("/api/group")
+        let response = Request::delete("/api/group")
             .header(&self.auth_header, &self.token)
             .json(&data)
             .map_err(|err| JsValue::from(err.to_string()))?
             .send()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
-        log::debug!("send delete group reequest {:?}", data);
+        let code = response.status();
+        if !(200..=299).contains(&code) {
+            log::error!("server response with error: {}", code);
+            return Err(JsValue::from_str(&format!(
+                "Server responded with error: {code}"
+            )));
+        }
         Ok(())
     }
 }
