@@ -7,6 +7,7 @@ use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 use yew::Callback;
 
 use crate::model::message::Msg;
+use crate::ws::convert;
 // 定义WebSocket管理器结构体
 pub struct WebSocketManager {
     url: String,
@@ -47,7 +48,7 @@ impl WebSocketManager {
     // 初始化WebSocket连接
     pub fn connect(ws_manager: Rc<RefCell<Self>>) {
         let ws = WebSocket::new(ws_manager.borrow().url.as_str()).unwrap();
-
+        ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
         let cloned_ws = ws_manager.clone();
         let on_open = Closure::wrap(Box::new(move || {
             log::info!("WebSocket connection opened");
@@ -57,18 +58,52 @@ impl WebSocketManager {
         // ON_OPEN.get_or_init(on_open);
         let ws_manager_clone = ws_manager.clone();
         let on_message = Closure::wrap(Box::new(move |e: MessageEvent| {
-            // log::info!("Message received event...");
+            web_sys::console::log_1(&e.data());
+            if let Ok(ab) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
+                let arr = js_sys::Uint8Array::new(&ab);
+                let mut body = vec![0; arr.length() as usize];
+                arr.copy_to(&mut body[..]);
+                match bincode::deserialize(&body) {
+                    Ok(msg) => match convert(msg) {
+                        Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
+                        Err(e) => log::error!("convert message error {e}"),
+                    },
+                    Err(err) => log::error!("反序列化消息失败: {:?}", err),
+                }
+            } else if let Ok(blob) = e.data().dyn_into::<web_sys::Blob>() {
+                // 如果消息是一个Blob，我们需要将它先转换为ArrayBuffer
+                // 然后再按同样的方式处理
+                log::info!("Message received as a Blob, size: {}", blob.size());
+                web_sys::console::log_1(&blob);
+                let arr = js_sys::Uint8Array::new(&blob);
+                let mut body = vec![0; arr.length() as usize];
+                arr.copy_to(&mut body[..]);
+                match bincode::deserialize(&body) {
+                    Ok(msg) => match convert(msg) {
+                        Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
+                        Err(e) => log::error!("convert message error {e}"),
+                    },
+                    Err(err) => log::error!("反序列化消息失败: {:?}", err),
+                }
+                // 要做的操作...
+            } else {
+                log::error!("Unexpected message format!")
+            }
 
+            /*
             if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
                 if let Some(msg) = txt.as_string() {
                     log::info!("Message received: {}", msg.clone());
                     let result = serde_json::from_str(&msg);
                     match result {
-                        Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
+                        Ok(msg) => match convert(msg) {
+                            Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
+                            Err(e) => log::error!("convert message error {e}"),
+                        },
                         Err(err) => log::error!("反序列化消息失败: {:?}", err),
                     }
                 }
-            }
+            } */
         }) as Box<dyn FnMut(MessageEvent)>);
 
         let on_error = Closure::wrap(Box::new(move |e: ErrorEvent| {
@@ -98,9 +133,12 @@ impl WebSocketManager {
     }
 
     // 发送消息
-    pub fn send_message(&self, message: &str) -> Result<(), JsValue> {
+    pub fn send_message(&self, message: &Msg) -> Result<(), JsValue> {
         if let Some(ws) = &self.ws {
-            ws.send_with_str(message)
+            // encode message
+            let msg =
+                bincode::serialize(message).map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+            ws.send_with_u8_array(&msg)
         } else {
             Err(JsValue::from_str("websocket is none"))
         }

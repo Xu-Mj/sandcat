@@ -1,3 +1,5 @@
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
 use gloo::utils::window;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
@@ -30,7 +32,8 @@ pub enum LoginState {
     Nothing,
 }
 
-async fn login_simulate(account: String, password: String) -> Result<Response, JsValue> {
+async fn login_simulate(account: String, mut password: String) -> Result<Response, JsValue> {
+    password = STANDARD.encode(password);
     let body = serde_json::to_string(&LoginRequest { account, password }).unwrap();
     let res = reqwasm::http::Request::post("/api/user/login")
         .header("Content-Type", "application/json")

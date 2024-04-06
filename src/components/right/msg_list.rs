@@ -265,6 +265,8 @@ impl Component for MessageList {
                     | Msg::OfflineSync(_)
                     | Msg::RelationshipRes(_)
                     | Msg::FriendshipDeliveredNotice(_) => false,
+                    // todo query list item , update state
+                    Msg::ServerRecResp(_) => false,
                 }
             }
             MessageListMsg::GoBottom => {

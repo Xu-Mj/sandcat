@@ -34,7 +34,7 @@ pub fn token() -> String {
 }
 
 pub fn users() -> Box<dyn UserApi> {
-    Box::new(UserHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+    Box::new(UserHttp::new(token, AUTHORIZE_HEADER.to_string()))
 }
 
 pub fn groups() -> Box<dyn GroupApi> {

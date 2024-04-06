@@ -23,7 +23,7 @@ pub enum FriendShipListMsg {
     QueryFriendships(Vec<FriendShipWithUser>),
     AgreeFriendShip,
     AgreeFriendShipRes(RequestStatus),
-    ShowDetail(FriendShipWithUser),
+    ShowDetail(Box<FriendShipWithUser>),
     Cancel,
 }
 
@@ -74,7 +74,7 @@ impl Component for FriendShipList {
                 if self.detail.is_some() {
                     // let item = self.list.get_mut(pos.unwrap()).unwrap();
                     let item = self.detail.as_mut().unwrap();
-                    item.status = FriendStatus::Accepted;
+                    item.status = FriendStatus::Accepted as i32;
 
                     let remark = self.apply_msg_node.cast::<HtmlInputElement>().unwrap();
                     let response_msg = self.response_msg_node.cast::<HtmlInputElement>().unwrap();
@@ -89,11 +89,11 @@ impl Component for FriendShipList {
                         Some(response_msg.value())
                     };
                     let friendship_req = FriendShipAgree {
-                        friendship_id: item.friendship_id.clone(),
+                        friendship_id: item.fs_id.clone(),
                         response_msg,
                         remark,
                     };
-                    let friendship_id = item.friendship_id.clone();
+                    let friendship_id = item.fs_id.clone();
                     // 发送好友同意请求
                     ctx.link().send_future(async move {
                         match api::friends().agree_friend(friendship_req).await {
@@ -121,10 +121,10 @@ impl Component for FriendShipList {
                         let pos = self
                             .list
                             .iter()
-                            .position(|item| item.friendship_id == friendship_id);
+                            .position(|item| item.fs_id == friendship_id);
                         if pos.is_some() {
                             let item = self.list.get_mut(pos.unwrap()).unwrap();
-                            item.status = FriendStatus::Accepted;
+                            item.status = FriendStatus::Accepted as i32;
                             item.read = ReadStatus::True;
                         }
                         self.friendship_state
@@ -135,14 +135,11 @@ impl Component for FriendShipList {
                         // 发送通知给contacts，刷新列表
                     }
                     RequestStatus::Failed(id) => {
-                        let pos = self
-                            .list
-                            .iter()
-                            .position(|item| item.friendship_id == id.clone());
+                        let pos = self.list.iter().position(|item| item.fs_id == id.clone());
                         if pos.is_some() {
                             let item = self.list.get_mut(pos.unwrap()).unwrap();
                             // 000 标识请求失败
-                            item.status = FriendStatus::Failed;
+                            item.status = FriendStatus::Failed as i32;
                         }
                     }
                 }
@@ -167,7 +164,7 @@ impl Component for FriendShipList {
                 }
             }
             FriendShipListMsg::ShowDetail(item) => {
-                self.detail = Some(item);
+                self.detail = Some(*item);
                 self.show_detail = true;
                 true
             }
@@ -185,7 +182,7 @@ impl Component for FriendShipList {
             .map(|item| {
                 let cloned_item = item.clone();
                 let onclick = ctx.link().callback(move |_: MouseEvent| {
-                    FriendShipListMsg::ShowDetail(cloned_item.clone())
+                    FriendShipListMsg::ShowDetail(Box::new(cloned_item.clone()))
                 });
 
                 let mut action = html!(<span>{"已请求"}</span>);

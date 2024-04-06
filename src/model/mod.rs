@@ -13,19 +13,35 @@ use yew::AttrValue;
 use self::friend::FriendStatus;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(i32)]
 pub enum ContentType {
     #[default]
-    Default,
-    Text,
-    Image,
-    Video,
-    Audio,
-    File,
-    Emoji,
-    VideoCall,
-    AudioCall,
+    Default = 0,
+    Text = 1,
+    Image = 2,
+    Video = 3,
+    Audio = 4,
+    File = 5,
+    Emoji = 6,
+    VideoCall = 7,
+    AudioCall = 8,
 }
 
+impl From<i32> for ContentType {
+    fn from(value: i32) -> Self {
+        match value {
+            1 => ContentType::Text,
+            2 => ContentType::Image,
+            3 => ContentType::Video,
+            4 => ContentType::Audio,
+            5 => ContentType::File,
+            6 => ContentType::Emoji,
+            7 => ContentType::VideoCall,
+            8 => ContentType::AudioCall,
+            _ => ContentType::Default,
+        }
+    }
+}
 pub trait ItemInfo {
     fn name(&self) -> AttrValue;
 

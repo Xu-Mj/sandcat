@@ -32,7 +32,7 @@ pub const GROUP_MSG_TABLE_NAME: &str = "group_messages";
 pub const GROUP_MEMBERS_TABLE_NAME: &str = "group_members";
 
 pub const FRIENDSHIP_UNREAD_INDEX: &str = "read";
-pub const FRIENDSHIP_ID_INDEX: &str = "friendship_id";
+pub const FRIENDSHIP_ID_INDEX: &str = "fs_id";
 pub const GROUP_ID_INDEX: &str = "group_id";
 // 定义索引常量
 pub const GROUP_ID_AND_USER_ID: &str = "group_id_and_friend_id";

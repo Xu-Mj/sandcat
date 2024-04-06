@@ -6,6 +6,7 @@ mod error;
 mod icons;
 mod model;
 mod pages;
+mod pb;
 mod utils;
 mod web_rtc;
 mod ws;

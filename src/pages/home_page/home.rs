@@ -173,11 +173,7 @@ impl Home {
     }
     pub fn send_msg(&self, msg: &Msg) {
         // 发送已收到消息给服务器
-        match self
-            .ws
-            .borrow()
-            .send_message(&serde_json::to_string(&msg).unwrap())
-        {
+        match self.ws.borrow().send_message(msg) {
             Ok(_) => {
                 log::info!("发送成功")
             }
@@ -226,7 +222,7 @@ impl Home {
         friendship: FriendShipWithUser,
     ) -> bool {
         log::debug!("ReceiveFriendShipReq:{:?}", &friendship);
-        let id = friendship.friendship_id.clone().to_string();
+        let id = friendship.fs_id.clone().to_string();
         let state = Rc::make_mut(&mut self.friend_ship_state);
         state.ship = Some(friendship.clone());
         state.state_type = FriendShipStateType::Req;
@@ -446,6 +442,7 @@ impl Home {
                     HomeMsg::SendMessage(Msg::Single(msg))
                 });
             }
+            Msg::ServerRecResp(_) => {}
         }
         false
     }

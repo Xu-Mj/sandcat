@@ -4,13 +4,15 @@ use yew::AttrValue;
 use super::{ItemInfo, RightContentType};
 #[derive(Debug, Default, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum FriendStatus {
+    Default = 0,
     #[default]
-    Pending,
-    Accepted,
-    Rejected,
-    Blacked,
-    Cancelled,
-    Failed,
+    Pending = 1,
+    Accepted = 2,
+    Rejected = 3,
+    Blacked = 4,
+    Cancelled = 5,
+    Delete = 6,
+    Failed = 7,
 }
 
 #[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
@@ -20,7 +22,6 @@ pub struct FriendShipRequest {
     // pub id: i32,
     pub user_id: AttrValue,
     pub friend_id: AttrValue,
-    pub status: FriendStatus,
     pub apply_msg: Option<AttrValue>,
     pub source: Option<AttrValue>,
     pub remark: Option<AttrValue>,
@@ -76,23 +77,62 @@ pub struct Friend {
 
 #[derive(Serialize, Debug, Default, Clone, Deserialize, PartialEq)]
 pub struct FriendShipWithUser {
-    pub friendship_id: AttrValue,
+    pub fs_id: AttrValue,
     pub user_id: AttrValue,
     pub name: AttrValue,
+    pub account: AttrValue,
     pub avatar: AttrValue,
     pub gender: AttrValue,
     pub age: i32,
-    pub status: FriendStatus,
+    pub status: i32,
     pub apply_msg: Option<AttrValue>,
-    pub source: Option<AttrValue>,
-    #[serde(default)]
-    pub update_time: chrono::NaiveDateTime,
+    pub source: AttrValue,
+    pub region: Option<AttrValue>,
+    pub create_time: i64,
     #[serde(default)]
     pub read: ReadStatus,
     #[serde(default)]
     pub is_self: bool,
 }
 
+/// we must guarantee the order of the fields and the count of the fields
+/// the bincode has not support the default value for the lack fields of structure
+#[derive(serde::Serialize, serde::Deserialize, Clone, PartialEq, Debug)]
+pub struct FriendshipWithUser4Response {
+    pub fs_id: AttrValue,
+    pub user_id: AttrValue,
+    pub name: AttrValue,
+    pub avatar: AttrValue,
+    pub gender: AttrValue,
+    pub age: i32,
+    pub region: Option<AttrValue>,
+    pub status: i32,
+    pub apply_msg: Option<AttrValue>,
+    pub source: AttrValue,
+    pub create_time: i64,
+    pub account: AttrValue,
+}
+
+impl From<FriendshipWithUser4Response> for FriendShipWithUser {
+    fn from(value: FriendshipWithUser4Response) -> Self {
+        Self {
+            fs_id: value.fs_id,
+            user_id: value.user_id,
+            name: value.name,
+            account: value.account,
+            avatar: value.avatar,
+            age: value.age,
+            read: ReadStatus::False,
+            region: value.region,
+            status: value.status,
+            apply_msg: value.apply_msg,
+            source: value.source,
+            create_time: value.create_time,
+            is_self: false,
+            gender: value.gender,
+        }
+    }
+}
 impl ItemInfo for Friend {
     fn name(&self) -> AttrValue {
         self.name.clone()

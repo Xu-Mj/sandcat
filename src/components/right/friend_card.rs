@@ -6,14 +6,14 @@ use yew::prelude::*;
 use crate::{
     api, db,
     model::{
-        friend::{FriendShipRequest, FriendStatus, ReadStatus},
-        user::User,
+        friend::{FriendShipRequest, ReadStatus},
+        user::{User, UserWithMatchType},
     },
 };
 
 #[derive(Default)]
 pub struct FriendCard {
-    friend: User,
+    friend: UserWithMatchType,
     node_ref: NodeRef,
     show_apply: bool,
     is_apply: bool,
@@ -38,7 +38,7 @@ pub enum FriendShipRequestState {
 #[derive(Properties, Clone, PartialEq)]
 pub struct FriendCardProps {
     container: Element,
-    friend_info: User,
+    friend_info: UserWithMatchType,
     user_info: Option<User>,
     is_friend: bool,
     x: i32,
@@ -68,7 +68,13 @@ impl FriendCard {
         container
     }
 
-    pub fn show(friend_info: User, user_info: Option<User>, is_friend: bool, x: i32, y: i32) {
+    pub fn show(
+        friend_info: UserWithMatchType,
+        user_info: Option<User>,
+        is_friend: bool,
+        x: i32,
+        y: i32,
+    ) {
         log::debug!("x: {}, y: {}", x, y);
         let container = FriendCard::container_with_position(x, y);
         let props = FriendCardProps {
@@ -100,22 +106,13 @@ impl Component for FriendCard {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            // FriendCardMsg::Close => {
-            //     let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
-            //     let node = node
-            //         .parent_node()
-            //         .unwrap()
-            //         .dyn_into::<HtmlDivElement>()
-            //         .unwrap();
-            //     node.remove();
-            //     true
-            // }
             FriendCardMsg::ShowApply => {
                 self.show_apply = true;
                 true
             }
             FriendCardMsg::Apply => {
                 let friend_id = ctx.props().friend_info.id.clone();
+                let source = ctx.props().friend_info.match_type.clone();
                 let user_id = ctx.props().user_info.as_ref().unwrap().id.clone();
                 let apply_node: HtmlInputElement = self.apply_node.cast().unwrap();
                 let apply_msg = if apply_node.value().is_empty() {
@@ -133,9 +130,8 @@ impl Component for FriendCard {
                 let new_friend = FriendShipRequest {
                     user_id,
                     friend_id,
-                    status: FriendStatus::Pending,
                     apply_msg,
-                    source: None,
+                    source,
                     remark,
                 };
 
@@ -211,7 +207,7 @@ impl Component for FriendCard {
                 class="friend-card box-shadow"
                 tabindex="1"
                 ref={self.node_ref.clone()}
-                onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
+                /* onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)} */
                 >
                 <div class="friend-card-header">
                     <img src={&self.friend.avatar} class="friend-card-avatar"/>
@@ -219,7 +215,7 @@ impl Component for FriendCard {
                         // <span><b>{&self.friend.remark}</b></span>
                         <span>{"昵称："}{&self.friend.name}</span>
                         <span>{"账号："}{&self.friend.account}</span>
-                        <span>{"地区："}{&self.friend.address.clone().unwrap_or_default()} </span>
+                        <span>{"地区："}{&self.friend.region.clone().unwrap_or_default()} </span>
                     </div>
                 </div>
                 // <div class="user-card-body">

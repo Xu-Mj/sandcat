@@ -32,13 +32,13 @@ impl FriendShipRepo {
 impl Friendships for FriendShipRepo {
     async fn agree(&self, friendship_id: &str) {
         let mut friendship = self.get_friendship(friendship_id).await.unwrap();
-        friendship.status = FriendStatus::Accepted;
+        friendship.status = FriendStatus::Accepted as i32;
         self.put_friendship(&friendship).await;
     }
 
     async fn agree_by_friend_id(&self, friend_id: &str) {
         let mut friendship = self.get_friendship_by_friend_id(friend_id).await.unwrap();
-        friendship.status = FriendStatus::Accepted;
+        friendship.status = FriendStatus::Accepted as i32;
         self.put_friendship(&friendship).await;
     }
 

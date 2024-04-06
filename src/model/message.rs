@@ -3,7 +3,7 @@ use yew::AttrValue;
 
 use crate::model::friend::{FriendShipRequest, FriendShipWithUser};
 use crate::model::ContentType;
-use crate::utils;
+use crate::{pb, utils};
 
 use super::friend::Friend;
 use super::group::{Group, GroupMember};
@@ -157,7 +157,15 @@ pub enum Msg {
     FriendshipDeliveredNotice(MessageID),
     OfflineSync(Message),
     SingleCall(SingleCall),
-    // GroupInvitationReceived((UserID, GroupID)),
+    ServerRecResp(ServerResponse), // GroupInvitationReceived((UserID, GroupID)),
+}
+
+/// server received message and return the result(success/failed)
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+pub struct ServerResponse {
+    pub msg_id: AttrValue,
+    pub success: bool,
+    pub err_msg: Option<AttrValue>,
 }
 
 impl Default for Msg {
@@ -344,7 +352,7 @@ pub struct Candidate {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Agree {
-    pub sdp: Option<AttrValue>,
+    pub sdp: Option<String>,
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
@@ -407,4 +415,25 @@ pub struct ReadNotice {
     pub send_id: String,
     pub friend_id: String,
     pub create_time: i64,
+}
+
+impl TryFrom<pb::message::Msg> for Message {
+    type Error = String;
+
+    fn try_from(value: pb::message::Msg) -> Result<Self, Self::Error> {
+        Ok(Self {
+            id: 0,
+            msg_id: value.server_id.into(),
+            send_id: value.send_id.into(),
+            friend_id: value.receiver_id.into(),
+            content_type: ContentType::from(value.content_type),
+            content: String::from_utf8(value.content)
+                .map_err(|e| e.to_string())?
+                .into(),
+            create_time: value.send_time,
+            is_read: false,
+            is_self: false,
+            file_content: AttrValue::default(),
+        })
+    }
 }

@@ -35,8 +35,40 @@ pub struct User {
     pub email: Option<AttrValue>,
     pub address: Option<AttrValue>,
     pub birthday: Option<chrono::NaiveDateTime>,
+    pub signature: AttrValue,
+}
+#[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
+pub struct UserWithMatchType {
+    pub id: AttrValue,
+    pub name: AttrValue,
+    pub account: AttrValue,
+    pub avatar: AttrValue,
+    pub gender: AttrValue,
+    pub age: i32,
+    pub email: Option<AttrValue>,
+    pub region: Option<AttrValue>,
+    pub birthday: Option<i64>,
+    pub match_type: Option<AttrValue>,
+    pub signature: AttrValue,
 }
 
+impl From<User> for UserWithMatchType {
+    fn from(value: User) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+            account: value.account,
+            avatar: value.avatar,
+            gender: value.gender,
+            age: value.age,
+            email: value.email,
+            region: value.address,
+            birthday: value.birthday.map(|x| x.timestamp_millis()),
+            match_type: None,
+            signature: value.signature,
+        }
+    }
+}
 impl From<GroupMember> for User {
     fn from(value: GroupMember) -> Self {
         Self {
@@ -50,6 +82,7 @@ impl From<GroupMember> for User {
             address: None,
             email: None,
             birthday: None,
+            signature: AttrValue::default(),
         }
     }
 }
@@ -67,6 +100,7 @@ impl From<Friend> for User {
             email: value.email,
             address: value.address,
             birthday: value.birthday,
+            signature: AttrValue::default(),
         }
     }
 }

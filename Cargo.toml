@@ -32,6 +32,10 @@ zxcvbn = "2"
 indexmap = { version = "2.2.3"}
 anyhow = "1.0.81"
 async-trait = "0.1.77"
+prost = "0.12.3"
+prost-types = "0.12.3"
+bincode = "1.3.3"
+base64 = "0.22.0"
 [dependencies.chrono]
 version = "0.4"
 features = ["wasmbind", "js-sys", "serde"]

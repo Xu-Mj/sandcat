@@ -1,17 +1,23 @@
 use crate::api::user::UserApi;
-use crate::model::user::{User, UserRegister};
+use crate::model::user::{UserRegister, UserWithMatchType};
 use gloo_net::http::Request;
 use serde::Serialize;
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
-pub struct UserHttp {
-    token: String,
+pub struct UserHttp<'a> {
+    token: Box<dyn Fn() -> String + 'a>,
     auth_header: String,
 }
 
-impl UserHttp {
-    pub fn new(token: String, auth_header: String) -> Self {
-        Self { token, auth_header }
+impl<'a> UserHttp<'a> {
+    pub fn new(token: impl Fn() -> String + 'a, auth_header: String) -> Self {
+        Self {
+            token: Box::new(token),
+            auth_header,
+        }
+    }
+    pub fn get_token(&self) -> String {
+        (self.token)()
     }
 }
 
@@ -21,16 +27,16 @@ pub struct MailRequest {
 }
 
 #[async_trait::async_trait(?Send)]
-impl UserApi for UserHttp {
+impl<'a> UserApi for UserHttp<'a> {
     // 查找好友
     async fn search_friend(
         &self,
         pattern: String,
         search_user: &str,
-    ) -> Result<Vec<User>, JsValue> {
-        let friends: Vec<User> =
+    ) -> Result<Vec<UserWithMatchType>, JsValue> {
+        let friends: Vec<UserWithMatchType> =
             Request::get(format!("/api/user/{}/search/{}", search_user, pattern).as_str())
-                .header(&self.auth_header, &self.token)
+                .header(&self.auth_header, &self.get_token())
                 .send()
                 .await
                 .map_err(|err| JsValue::from(err.to_string()))?
@@ -54,12 +60,15 @@ impl UserApi for UserHttp {
 
     /// 用户注册
     async fn register(&self, register: UserRegister) -> Result<AttrValue, JsValue> {
-        Request::post("/api/user")
+        let resp = Request::post("/api/user")
             .json(&register)
             .map_err(|err| JsValue::from(err.to_string()))?
             .send()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
+        if resp.status() != 200 {
+            return Err(JsValue::from("注册失败"));
+        }
         Ok(AttrValue::from("value"))
     }
 }

@@ -8,7 +8,7 @@ use crate::db;
 use crate::icons::{MsgPhoneIcon, VideoRecordIcon};
 use crate::model::group::GroupMember;
 use crate::model::message::{InviteMsg, InviteType, Message};
-use crate::model::user::User;
+use crate::model::user::{User, UserWithMatchType};
 use crate::model::RightContentType;
 use crate::pages::RecSendMessageState;
 use crate::{components::right::friend_card::FriendCard, model::ContentType};
@@ -130,7 +130,7 @@ impl Component for MsgItem {
                             _ => User::default(),
                         }
                     };
-                    FriendCard::show(user, None, true, x, y);
+                    FriendCard::show(UserWithMatchType::from(user), None, true, x, y);
                 });
                 false
             }

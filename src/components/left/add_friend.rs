@@ -2,7 +2,7 @@ use yew::prelude::*;
 
 use crate::api;
 use crate::components::left::user_info::UserInfoCom;
-use crate::model::user::User;
+use crate::model::user::UserWithMatchType;
 use crate::{components::top_bar::TopBar, model::ComponentType};
 
 #[derive(Properties, PartialEq, Debug)]
@@ -13,7 +13,7 @@ pub struct AddFriendProps {
 
 pub struct AddFriend {
     // 维护一个查询结果集
-    pub result: Vec<User>,
+    pub result: Vec<UserWithMatchType>,
     // 是否正在搜索
     pub is_searching: bool,
 }
@@ -27,7 +27,7 @@ pub enum SearchState<T> {
 pub enum AddFriendMsg {
     SearchFriend(AttrValue),
     CleanupSearchResult,
-    SearchFriends(SearchState<Vec<User>>),
+    SearchFriends(SearchState<Vec<UserWithMatchType>>),
     Cancel,
 }
 

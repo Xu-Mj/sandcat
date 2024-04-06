@@ -130,7 +130,7 @@ impl Component for TopBar {
             // 水平布局，从左到右分别为排序选项卡、搜索输入框、设置按钮
             <div class="top-bar">
                 <div class="search">
-                   <label for={id} class="search-icon" {onclick}>
+                   <label /* for={id} */ class="search-icon" {onclick}>
                     <SearchIcon />
                     </label>
                    <input id={id} ref={self.search_node.clone()} class="search-input" type="search" placeholder="搜索" {onchange} {onkeydown} />

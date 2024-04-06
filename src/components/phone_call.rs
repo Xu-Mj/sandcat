@@ -438,7 +438,7 @@ impl Component for PhoneCall {
                     web_rtc::WebRTC::send_msg1(
                         ws,
                         &Msg::SingleCall(SingleCall::Agree(Agree {
-                            sdp: Some(rtc_desc.sdp().into()),
+                            sdp: Some(rtc_desc.sdp()),
                             send_id,
                             friend_id,
                             create_time: 0,

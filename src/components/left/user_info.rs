@@ -4,7 +4,7 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use crate::components::right::friend_card::FriendCard;
-use crate::model::user::User;
+use crate::model::user::UserWithMatchType;
 use crate::pages::AppState;
 
 pub struct UserInfoCom {
@@ -15,7 +15,7 @@ pub struct UserInfoCom {
 
 #[derive(Properties, PartialEq)]
 pub struct UserInfoComProps {
-    pub info: User,
+    pub info: UserWithMatchType,
 }
 
 pub enum UserInfoComMsg {

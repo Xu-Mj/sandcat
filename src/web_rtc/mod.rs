@@ -18,10 +18,7 @@ pub struct WebRTC;
 impl WebRTC {
     pub fn send_msg1(ws: Rc<RefCell<WebSocketManager>>, msg: &Msg) {
         // 发送已收到消息给服务器
-        match ws
-            .borrow()
-            .send_message(&serde_json::to_string(&msg).unwrap())
-        {
+        match ws.borrow().send_message(msg) {
             Ok(_) => { /*log::info!("发送成功:{:?}", &msg)*/ }
             Err(e) => {
                 log::error!("发送失败: {:?}", e)
