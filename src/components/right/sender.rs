@@ -247,6 +247,8 @@ impl Component for Sender {
                     create_time: send_time,
                     is_read: true,
                     is_self: true,
+                    send_time: 0,
+                    is_success: false,
                     file_content: AttrValue::default(),
                 };
                 self.store_message(ctx, msg.clone());
@@ -276,6 +278,8 @@ impl Component for Sender {
                     create_time: time,
                     is_read: true,
                     is_self: true,
+                    send_time: 0,
+                    is_success: false,
                     file_content: AttrValue::default(),
                 };
                 self.store_message(ctx, msg.clone());
@@ -332,6 +336,8 @@ impl Component for Sender {
                     send_id: ctx.props().cur_user_id.clone(),
                     content_type,
                     file_content,
+                    send_time: 0,
+                    is_success: false,
                 };
 
                 self.store_message(ctx, msg.clone());

@@ -293,6 +293,8 @@ impl Component for PhoneCall {
                             create_time,
                             is_read: false,
                             is_self: true,
+                            send_time: 0,
+                            is_success: false,
                             file_content: Default::default(),
                         })
                         .await
@@ -305,6 +307,8 @@ impl Component for PhoneCall {
                         create_time,
                         invite_type,
                         is_self: true,
+                        send_time: 0,
+                        is_success: false,
                     }))
                 });
                 self.finish_call();
@@ -367,6 +371,8 @@ impl Component for PhoneCall {
                             create_time,
                             is_read: true,
                             is_self: true,
+                            send_time: 0,
+                            is_success: false,
                             file_content: Default::default(),
                         })
                         .await
@@ -381,6 +387,8 @@ impl Component for PhoneCall {
                         invite_type,
                         sustain,
                         is_self: true,
+                        send_time: 0,
+                        is_success: false,
                     }))
                 });
                 self.finish_call();
@@ -397,6 +405,8 @@ impl Component for PhoneCall {
                     create_time: chrono::Local::now().timestamp_millis(),
                     agree: true,
                     is_self: true,
+                    send_time: 0,
+                    is_success: false,
                     invite_type: info.invite_type.clone(),
                 });
                 self.call_state.send_msg_event.emit(Msg::SingleCall(msg));
@@ -482,6 +492,8 @@ impl Component for PhoneCall {
                             create_time,
                             is_read: true,
                             is_self: true,
+                            send_time: 0,
+                            is_success: false,
                             file_content: Default::default(),
                         })
                         .await;
@@ -494,6 +506,8 @@ impl Component for PhoneCall {
                         agree: false,
                         invite_type,
                         is_self: true,
+                        send_time: 0,
+                        is_success: false,
                     }))
                 });
                 true
@@ -552,6 +566,8 @@ impl Component for PhoneCall {
                                 is_read: false,
                                 is_self: true,
                                 file_content: Default::default(),
+                                send_time: 0,
+                                is_success: false,
                             })
                             .await
                             .map_err(|err| log::error!("消息入库失败:{:?}", err));
@@ -563,6 +579,8 @@ impl Component for PhoneCall {
                             create_time,
                             invite_type,
                             is_self: true,
+                            send_time: 0,
+                            is_success: false,
                         }))
                     });
                     self.finish_call();

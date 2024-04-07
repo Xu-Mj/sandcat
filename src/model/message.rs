@@ -35,6 +35,9 @@ pub struct Message {
     pub content: AttrValue,
     #[serde(default)]
     pub create_time: i64,
+    #[serde(default)]
+    pub send_time: i64,
+    pub is_success: bool,
     // pub update_time: String,
     #[serde(default)]
     pub is_read: bool,
@@ -61,6 +64,8 @@ impl From<InviteCancelMsg> for Message {
             content_type,
             content: AttrValue::from("已经取消"),
             create_time: value.create_time,
+            send_time: value.send_time,
+            is_success: value.is_success,
             is_read: false,
             is_self: value.is_self,
             file_content: Default::default(),
@@ -88,6 +93,8 @@ impl From<InviteAnswerMsg> for Message {
             content_type,
             content,
             create_time: value.create_time,
+            send_time: value.send_time,
+            is_success: value.is_success,
             is_read: false,
             is_self: value.is_self,
             file_content: Default::default(),
@@ -112,6 +119,8 @@ impl Message {
             content_type,
             content,
             create_time: value.create_time,
+            send_time: value.send_time,
+            is_success: value.is_success,
             is_read: false,
             is_self: value.is_self,
             file_content: Default::default(),
@@ -132,6 +141,8 @@ impl Message {
             content_type,
             content: AttrValue::from("未接听"),
             create_time: msg.create_time,
+            send_time: msg.send_time,
+            is_success: msg.is_success,
             is_read: msg.is_self,
             is_self: msg.is_self,
             file_content: Default::default(),
@@ -240,7 +251,9 @@ pub struct InviteNotAnswerMsg {
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
+    pub send_time: i64,
     pub invite_type: InviteType,
+    pub is_success: bool,
     #[serde(default)]
     pub is_self: bool,
 }
@@ -261,6 +274,8 @@ impl InviteNotAnswerMsg {
             content_type,
             content: AttrValue::from("未接听"),
             create_time: self.create_time,
+            send_time: self.send_time,
+            is_success: self.is_success,
             is_read: self.is_self,
             is_self: self.is_self,
             file_content: Default::default(),
@@ -275,7 +290,9 @@ pub struct InviteCancelMsg {
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
+    pub send_time: i64,
     pub invite_type: InviteType,
+    pub is_success: bool,
     #[serde(default)]
     pub is_self: bool,
 }
@@ -296,8 +313,10 @@ impl InviteCancelMsg {
             content_type,
             content: AttrValue::from("已经取消"),
             create_time: self.create_time,
+            send_time: self.send_time,
             is_read: self.is_self,
             is_self: self.is_self,
+            is_success: self.is_success,
             file_content: Default::default(),
         }
     }
@@ -317,8 +336,10 @@ pub struct InviteAnswerMsg {
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
+    pub send_time: i64,
     pub agree: bool,
     pub invite_type: InviteType,
+    pub is_success: bool,
     // 主要区分发起端，因为接收端永远都是false不需要处理
     #[serde(default)]
     pub is_self: bool,
@@ -344,6 +365,8 @@ impl InviteAnswerMsg {
             content_type,
             content,
             create_time: self.create_time,
+            send_time: self.send_time,
+            is_success: self.is_success,
             is_read: self.is_self,
             is_self: self.is_self,
             file_content: Default::default(),
@@ -376,8 +399,10 @@ pub struct Hangup {
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
+    pub send_time: i64,
     pub invite_type: InviteType,
     pub sustain: i64,
+    pub is_success: bool,
     #[serde(default)]
     pub is_self: bool,
 }
@@ -399,6 +424,8 @@ impl Hangup {
             content_type,
             content,
             create_time: self.create_time,
+            send_time: self.send_time,
+            is_success: self.is_success,
             is_read: self.is_self,
             is_self: self.is_self,
             file_content: Default::default(),
@@ -434,6 +461,7 @@ impl TryFrom<pb::message::Msg> for Message {
     type Error = String;
 
     fn try_from(value: pb::message::Msg) -> Result<Self, Self::Error> {
+        let status: ContentType = value.content_type.into();
         Ok(Self {
             id: 0,
             local_id: value.local_id.into(),
@@ -444,7 +472,9 @@ impl TryFrom<pb::message::Msg> for Message {
             content: String::from_utf8(value.content)
                 .map_err(|e| e.to_string())?
                 .into(),
-            create_time: value.send_time,
+            create_time: value.create_time,
+            send_time: value.send_time,
+            is_success: status == ContentType::Error,
             is_read: false,
             is_self: false,
             file_content: AttrValue::default(),

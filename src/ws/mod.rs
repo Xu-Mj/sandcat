@@ -74,6 +74,8 @@ fn convert(msg: PbMsg) -> Result<Msg, String> {
                 invite_type,
                 agree: msg.call_agree,
                 is_self: false,
+                send_time: msg.send_time,
+                is_success: true,
             })))
         }
         MsgType::SingleCallInviteNotAnswer => {
@@ -87,9 +89,11 @@ fn convert(msg: PbMsg) -> Result<Msg, String> {
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
                 friend_id: msg.receiver_id.into(),
-                create_time: msg.send_time,
+                create_time: msg.create_time,
                 invite_type,
                 is_self: false,
+                send_time: msg.send_time,
+                is_success: true,
             })))
         }
         MsgType::SingleCallInviteCancel => {
@@ -103,9 +107,11 @@ fn convert(msg: PbMsg) -> Result<Msg, String> {
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
                 friend_id: msg.receiver_id.into(),
-                create_time: msg.send_time,
+                create_time: msg.create_time,
                 invite_type,
                 is_self: false,
+                send_time: msg.send_time,
+                is_success: true,
             })))
         }
         MsgType::SingleCallOffer => Ok(Msg::SingleCall(SingleCall::Offer(Offer {
@@ -119,10 +125,12 @@ fn convert(msg: PbMsg) -> Result<Msg, String> {
             server_id: msg.server_id.into(),
             send_id: msg.send_id.into(),
             friend_id: msg.receiver_id.into(),
-            create_time: msg.send_time,
+            create_time: msg.create_time,
+            send_time: msg.send_time,
             invite_type: InviteType::Audio,
             sustain: 0,
             is_self: false,
+            is_success: true,
         }))),
         MsgType::AgreeSingleCall => Ok(Msg::SingleCall(SingleCall::Agree(Agree {
             send_id: msg.send_id.into(),

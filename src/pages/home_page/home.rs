@@ -272,6 +272,8 @@ impl Home {
                 is_self: true,
                 file_content: AttrValue::default(),
                 id: 0,
+                send_time: 0,
+                is_success: false,
             };
             let _ = db::messages()
                 .await
@@ -435,6 +437,8 @@ impl Home {
                         is_self: true,
                         file_content: AttrValue::default(),
                         id: 0,
+                        send_time: 0,
+                        is_success: false,
                     };
                     let _ = db::messages()
                         .await
