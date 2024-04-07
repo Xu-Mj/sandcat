@@ -89,7 +89,7 @@ impl Component for FriendShipList {
                         Some(response_msg.value())
                     };
                     let friendship_req = FriendShipAgree {
-                        friendship_id: item.fs_id.clone(),
+                        fs_id: item.fs_id.clone(),
                         response_msg,
                         remark,
                     };

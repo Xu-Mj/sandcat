@@ -171,7 +171,7 @@ impl Home {
             }),
         }
     }
-    pub fn send_msg(&self, msg: &Msg) {
+    pub fn send_msg(&self, msg: Msg) {
         // 发送已收到消息给服务器
         match self.ws.borrow().send_message(msg) {
             Ok(_) => {
@@ -417,7 +417,7 @@ impl Home {
                     db::friends().await.put_friend(&friend).await;
                     // send received message
                     cloned_ctx.send_message(HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(
-                        friend.id.to_string(),
+                        friend.fs_id.to_string(),
                     )));
                     // send hello message
                     let mut msg = Message {

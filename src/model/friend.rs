@@ -15,6 +15,21 @@ pub enum FriendStatus {
     Failed = 7,
 }
 
+impl From<i32> for FriendStatus {
+    fn from(value: i32) -> Self {
+        match value {
+            1 => FriendStatus::Pending,
+            2 => FriendStatus::Accepted,
+            3 => FriendStatus::Rejected,
+            4 => FriendStatus::Blacked,
+            5 => FriendStatus::Cancelled,
+            6 => FriendStatus::Delete,
+            7 => FriendStatus::Failed,
+            _ => FriendStatus::Default,
+        }
+    }
+}
+
 #[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
 pub struct FriendShipRequest {
     // #[serde(skip_serializing_if = "is_zero")]
@@ -29,7 +44,7 @@ pub struct FriendShipRequest {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct FriendShipAgree {
-    pub friendship_id: AttrValue,
+    pub fs_id: AttrValue,
     pub response_msg: Option<String>,
     pub remark: Option<String>,
 }
@@ -44,23 +59,29 @@ pub enum ReadStatus {
 /// 用来接收服务端返回的好友信息
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
 pub struct Friend {
-    pub id: AttrValue,
+    pub fs_id: AttrValue,
     pub friend_id: AttrValue,
     pub remark: Option<AttrValue>,
     /// 这里的hello是我们发送给对方的消息
     pub hello: Option<AttrValue>,
-    pub status: FriendStatus,
-    pub create_time: chrono::NaiveDateTime,
-    pub update_time: chrono::NaiveDateTime,
-    pub from: Option<AttrValue>,
+    pub region: Option<AttrValue>,
+    pub status: i32,
+    pub create_time: i64,
+    pub accept_time: i64,
+    pub source: AttrValue,
     pub name: AttrValue,
+    pub signature: AttrValue,
     pub account: AttrValue,
     pub avatar: AttrValue,
     pub gender: AttrValue,
     pub age: i32,
+    #[serde(default)]
     pub phone: Option<AttrValue>,
+    #[serde(default)]
     pub email: Option<AttrValue>,
+    #[serde(default)]
     pub address: Option<AttrValue>,
+    #[serde(default)]
     pub birthday: Option<chrono::NaiveDateTime>,
 }
 
@@ -89,6 +110,7 @@ pub struct FriendShipWithUser {
     pub source: AttrValue,
     pub region: Option<AttrValue>,
     pub create_time: i64,
+    pub accept_time: i64,
     #[serde(default)]
     pub read: ReadStatus,
     #[serde(default)]
@@ -130,6 +152,7 @@ impl From<FriendshipWithUser4Response> for FriendShipWithUser {
             create_time: value.create_time,
             is_self: false,
             gender: value.gender,
+            accept_time: 0,
         }
     }
 }
@@ -151,20 +174,19 @@ impl ItemInfo for Friend {
     }
 
     fn time(&self) -> i64 {
-        self.create_time.timestamp_millis()
+        self.create_time
     }
 
     fn remark(&self) -> Option<AttrValue> {
         self.remark.clone()
     }
 
-    fn signature(&self) -> Option<AttrValue> {
-        // self.signature
-        None
+    fn signature(&self) -> AttrValue {
+        self.signature.clone()
     }
 
     fn region(&self) -> Option<AttrValue> {
-        self.address.clone()
+        self.region.clone()
     }
 
     fn owner(&self) -> AttrValue {
@@ -172,6 +194,6 @@ impl ItemInfo for Friend {
     }
 
     fn status(&self) -> FriendStatus {
-        self.status.clone()
+        self.status.into()
     }
 }

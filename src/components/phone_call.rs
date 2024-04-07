@@ -437,7 +437,7 @@ impl Component for PhoneCall {
                     let _ = pc.set_local_description(&desc);
                     web_rtc::WebRTC::send_msg1(
                         ws,
-                        &Msg::SingleCall(SingleCall::Agree(Agree {
+                        Msg::SingleCall(SingleCall::Agree(Agree {
                             sdp: Some(rtc_desc.sdp()),
                             send_id,
                             friend_id,

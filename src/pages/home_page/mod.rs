@@ -168,7 +168,7 @@ impl Component for Home {
                 ctx.link()
                     .send_message(HomeMsg::RecSendMsgStateChange(msg.clone()));
                 // 发送消息
-                self.send_msg(&msg);
+                self.send_msg(msg);
                 false
             }
             HomeMsg::RecSendMsgStateChange(msg) => {
@@ -178,7 +178,7 @@ impl Component for Home {
             }
             HomeMsg::SendBackMsg(msg) => {
                 // 发送已收到消息给服务器
-                self.send_msg(&msg);
+                self.send_msg(msg);
                 false
             }
             HomeMsg::ReceiveFriendShipReq(friendship) => {

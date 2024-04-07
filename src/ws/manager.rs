@@ -7,6 +7,7 @@ use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 use yew::Callback;
 
 use crate::model::message::Msg;
+use crate::pb::message::Msg as PbMsg;
 use crate::ws::convert;
 // 定义WebSocket管理器结构体
 pub struct WebSocketManager {
@@ -133,11 +134,14 @@ impl WebSocketManager {
     }
 
     // 发送消息
-    pub fn send_message(&self, message: &Msg) -> Result<(), JsValue> {
+    pub fn send_message(&self, message: Msg) -> Result<(), JsValue> {
         if let Some(ws) = &self.ws {
             // encode message
-            let msg =
-                bincode::serialize(message).map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+            let msg = bincode::serialize(&PbMsg::from(message))
+                .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+            log::debug!("send message: {:?}", msg);
+            let m: PbMsg = bincode::deserialize(&msg).unwrap();
+            log::debug!("send message: {:?}", m);
             ws.send_with_u8_array(&msg)
         } else {
             Err(JsValue::from_str("websocket is none"))

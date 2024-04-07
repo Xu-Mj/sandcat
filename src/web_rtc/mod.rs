@@ -16,7 +16,7 @@ use crate::ws::WebSocketManager;
 pub struct WebRTC;
 
 impl WebRTC {
-    pub fn send_msg1(ws: Rc<RefCell<WebSocketManager>>, msg: &Msg) {
+    pub fn send_msg1(ws: Rc<RefCell<WebSocketManager>>, msg: Msg) {
         // 发送已收到消息给服务器
         match ws.borrow().send_message(msg) {
             Ok(_) => { /*log::info!("发送成功:{:?}", &msg)*/ }
@@ -63,7 +63,7 @@ impl WebRTC {
                         create_time: chrono::Local::now().timestamp_millis(),
                     }));
                     // log::debug!("on ice candidate send message:candidate:{:?}, ", &msg_clone);
-                    WebRTC::send_msg1(ws_clone.clone(), &msg_clone)
+                    WebRTC::send_msg1(ws_clone.clone(), msg_clone)
                 }
             })
                 as Box<dyn FnMut(web_sys::RtcPeerConnectionIceEvent)>);
@@ -128,7 +128,7 @@ impl WebRTC {
                     .await
                     .unwrap();
                 let sdp = pc.local_description().unwrap().sdp();
-                let msg = &Msg::SingleCall(SingleCall::Offer(Offer {
+                let msg = Msg::SingleCall(SingleCall::Offer(Offer {
                     sdp: sdp.into(),
                     send_id,
                     friend_id,

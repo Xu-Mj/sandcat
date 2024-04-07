@@ -218,7 +218,7 @@ impl Component for Contacts {
                     }
                     ItemType::Friend => {
                         if let Some(item) = self.friends.shift_remove(&state.id) {
-                            friend_id = item.id;
+                            friend_id = item.fs_id;
                         }
                     }
                 }

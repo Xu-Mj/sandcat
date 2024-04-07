@@ -55,7 +55,7 @@ pub trait ItemInfo {
 
     fn remark(&self) -> Option<AttrValue>;
 
-    fn signature(&self) -> Option<AttrValue>;
+    fn signature(&self) -> AttrValue;
 
     fn region(&self) -> Option<AttrValue>;
 

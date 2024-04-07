@@ -33,6 +33,7 @@ pub struct User {
     pub age: i32,
     pub phone: Option<AttrValue>,
     pub email: Option<AttrValue>,
+    pub region: Option<AttrValue>,
     pub address: Option<AttrValue>,
     pub birthday: Option<chrono::NaiveDateTime>,
     pub signature: AttrValue,
@@ -83,6 +84,7 @@ impl From<GroupMember> for User {
             email: None,
             birthday: None,
             signature: AttrValue::default(),
+            region: value.region,
         }
     }
 }
@@ -100,7 +102,8 @@ impl From<Friend> for User {
             email: value.email,
             address: value.address,
             birthday: value.birthday,
-            signature: AttrValue::default(),
+            signature: value.signature,
+            region: value.region,
         }
     }
 }

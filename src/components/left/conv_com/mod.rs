@@ -378,7 +378,7 @@ impl Chats {
             let mut group_name = String::new();
             for (i, node) in nodes.iter().enumerate() {
                 let friend = db::friends().await.get_friend(node).await;
-                if !friend.id.is_empty() {
+                if !friend.fs_id.is_empty() {
                     let mut name = friend.name.clone();
                     if friend.remark.is_some() {
                         name = friend.remark.as_ref().unwrap().clone();

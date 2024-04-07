@@ -175,11 +175,11 @@ impl Repository {
             store
                 .create_index_with_str(FRIENDSHIP_UNREAD_INDEX, "read")
                 .unwrap();
+
+            let mut p = IdbObjectStoreParameters::new();
+            p.key_path(Some(&JsValue::from_str("fs_id")));
             let store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(FRIEND_TABLE_NAME),
-                    &parameters,
-                )
+                .create_object_store_with_optional_parameters(&String::from(FRIEND_TABLE_NAME), &p)
                 .unwrap();
 
             store

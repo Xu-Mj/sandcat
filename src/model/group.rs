@@ -54,7 +54,8 @@ pub struct GroupMember {
     pub avatar: AttrValue,
     pub gender: AttrValue,
     pub region: Option<AttrValue>,
-    pub joined_at: chrono::NaiveDateTime,
+    pub joined_at: i64,
+    pub signature: AttrValue,
 }
 
 impl From<Friend> for GroupMember {
@@ -65,9 +66,10 @@ impl From<Friend> for GroupMember {
             group_id: AttrValue::default(),
             group_name: value.name,
             avatar: value.avatar,
-            region: value.address,
+            region: value.region,
             gender: value.gender,
-            joined_at: chrono::Local::now().naive_local(),
+            joined_at: chrono::Local::now().timestamp_millis(),
+            signature: value.signature,
         }
     }
 }
@@ -82,7 +84,8 @@ impl From<User> for GroupMember {
             avatar: value.avatar,
             region: value.address,
             gender: value.gender,
-            joined_at: chrono::Local::now().naive_local(),
+            joined_at: chrono::Local::now().timestamp_millis(),
+            signature: value.signature,
         }
     }
 }
@@ -105,15 +108,15 @@ impl ItemInfo for GroupMember {
     }
 
     fn time(&self) -> i64 {
-        self.joined_at.timestamp_millis()
+        self.joined_at
     }
 
     fn remark(&self) -> Option<AttrValue> {
         None
     }
 
-    fn signature(&self) -> Option<AttrValue> {
-        None
+    fn signature(&self) -> AttrValue {
+        self.signature.clone()
     }
 
     fn region(&self) -> Option<AttrValue> {
@@ -158,12 +161,8 @@ impl ItemInfo for Group {
         }
     }
 
-    fn signature(&self) -> Option<AttrValue> {
-        if self.description.is_empty() {
-            None
-        } else {
-            Some(self.description.clone())
-        }
+    fn signature(&self) -> AttrValue {
+        self.description.clone()
     }
 
     fn region(&self) -> Option<AttrValue> {
