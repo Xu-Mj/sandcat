@@ -23,7 +23,8 @@ pub struct Message {
     #[serde(skip_serializing_if = "is_zero")]
     #[serde(default)]
     pub id: i32,
-    pub msg_id: AttrValue,
+    pub local_id: AttrValue,
+    pub server_id: AttrValue,
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     // 是MessageType类型，需要做转换
@@ -53,7 +54,8 @@ impl From<InviteCancelMsg> for Message {
         };
         Message {
             id: 0,
-            msg_id: value.msg_id,
+            local_id: value.local_id,
+            server_id: value.server_id,
             send_id: value.send_id,
             friend_id: value.friend_id,
             content_type,
@@ -79,7 +81,8 @@ impl From<InviteAnswerMsg> for Message {
         };
         Message {
             id: 0,
-            msg_id: value.msg_id,
+            local_id: value.local_id,
+            server_id: value.server_id,
             send_id: value.send_id,
             friend_id: value.friend_id,
             content_type,
@@ -102,7 +105,8 @@ impl Message {
         let content = AttrValue::from(utils::format_milliseconds(value.sustain));
         Message {
             id: 0,
-            msg_id: value.msg_id,
+            local_id: value.local_id,
+            server_id: value.server_id,
             send_id: value.send_id,
             friend_id: value.friend_id,
             content_type,
@@ -121,7 +125,8 @@ impl Message {
 
         Self {
             id: 0,
-            msg_id: msg.msg_id,
+            local_id: msg.local_id,
+            server_id: msg.server_id,
             send_id: msg.send_id,
             friend_id: msg.friend_id,
             content_type,
@@ -230,7 +235,8 @@ pub struct InviteMsg {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteNotAnswerMsg {
-    pub msg_id: AttrValue,
+    pub local_id: AttrValue,
+    pub server_id: AttrValue,
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
@@ -248,7 +254,8 @@ impl InviteNotAnswerMsg {
 
         Message {
             id: 0,
-            msg_id: self.msg_id.clone(),
+            local_id: self.local_id.clone(),
+            server_id: self.server_id.clone(),
             send_id: self.send_id.clone(),
             friend_id: self.friend_id.clone(),
             content_type,
@@ -263,7 +270,8 @@ impl InviteNotAnswerMsg {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteCancelMsg {
-    pub msg_id: AttrValue,
+    pub local_id: AttrValue,
+    pub server_id: AttrValue,
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
@@ -281,7 +289,8 @@ impl InviteCancelMsg {
 
         Message {
             id: 0,
-            msg_id: self.msg_id.clone(),
+            local_id: self.local_id.clone(),
+            server_id: self.server_id.clone(),
             send_id: self.send_id.clone(),
             friend_id: self.friend_id.clone(),
             content_type,
@@ -303,7 +312,8 @@ pub enum InviteType {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteAnswerMsg {
-    pub msg_id: AttrValue,
+    pub local_id: AttrValue,
+    pub server_id: AttrValue,
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
@@ -327,7 +337,8 @@ impl InviteAnswerMsg {
         };
         Message {
             id: 0,
-            msg_id: self.msg_id.clone(),
+            local_id: self.local_id.clone(),
+            server_id: self.server_id.clone(),
             send_id: self.send_id.clone(),
             friend_id: self.friend_id.clone(),
             content_type,
@@ -360,7 +371,8 @@ pub struct Agree {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Hangup {
-    pub msg_id: AttrValue,
+    pub local_id: AttrValue,
+    pub server_id: AttrValue,
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
@@ -380,7 +392,8 @@ impl Hangup {
 
         Message {
             id: 0,
-            msg_id: self.msg_id.clone(),
+            local_id: self.local_id.clone(),
+            server_id: self.server_id.clone(),
             send_id: self.send_id.clone(),
             friend_id: self.friend_id.clone(),
             content_type,
@@ -423,7 +436,8 @@ impl TryFrom<pb::message::Msg> for Message {
     fn try_from(value: pb::message::Msg) -> Result<Self, Self::Error> {
         Ok(Self {
             id: 0,
-            msg_id: value.server_id.into(),
+            local_id: value.local_id.into(),
+            server_id: value.server_id.into(),
             send_id: value.send_id.into(),
             friend_id: value.receiver_id.into(),
             content_type: ContentType::from(value.content_type),

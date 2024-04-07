@@ -146,7 +146,7 @@ impl Messages for MessageRepo {
         let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
         let index = store.index(MESSAGE_ID_INDEX).unwrap();
         let (tx, rx) = oneshot::channel::<Option<Message>>();
-        let req = index.get(&JsValue::from(msg.msg_id.as_str())).unwrap();
+        let req = index.get(&JsValue::from(msg.local_id.as_str())).unwrap();
         let onsuccess = Closure::once(move |event: &Event| {
             let value = event
                 .target()

@@ -258,7 +258,8 @@ impl Home {
             db::friendships().await.agree(friendship_id.as_str()).await;
             db::friends().await.put_friend(&friend).await;
             let mut msg = Message {
-                msg_id: nanoid::nanoid!().into(),
+                local_id: nanoid::nanoid!().into(),
+                server_id: AttrValue::default(),
                 send_id,
                 friend_id: friend.friend_id.clone(),
                 content_type: ContentType::Text,
@@ -292,7 +293,7 @@ impl Home {
                 msg.is_read = false;
 
                 let mut msg = msg.clone();
-                let msg_id = msg.msg_id.to_string();
+                let msg_id = msg.local_id.to_string();
                 if self.conv_state.conv.item_id != msg.friend_id {
                     let conv_state = Rc::make_mut(&mut self.conv_state);
                     let _ = current_item::save_conv(&conv_state.conv)
@@ -321,7 +322,7 @@ impl Home {
                     }
                     GroupMsg::Message(msg) => {
                         let msg = msg.clone();
-                        let msg_id = msg.msg_id.to_string();
+                        let msg_id = msg.local_id.to_string();
                         if self.conv_state.conv.item_id != msg.friend_id {
                             let conv_state = Rc::make_mut(&mut self.conv_state);
                             let _ = current_item::save_conv(&conv_state.conv)
@@ -421,7 +422,8 @@ impl Home {
                     )));
                     // send hello message
                     let mut msg = Message {
-                        msg_id: nanoid::nanoid!().into(),
+                        local_id: nanoid::nanoid!().into(),
+                        server_id: AttrValue::default(),
                         send_id,
                         friend_id: friend.friend_id.clone(),
                         content_type: ContentType::Text,

@@ -66,7 +66,8 @@ fn convert(msg: PbMsg) -> Result<Msg, String> {
                 _ => return Err("Invalid content type".to_string()),
             };
             Ok(Msg::SingleCall(SingleCall::InviteAnswer(InviteAnswerMsg {
-                msg_id: msg.server_id.into(),
+                local_id: msg.local_id.into(),
+                server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
                 friend_id: msg.receiver_id.into(),
                 create_time: msg.send_time,
@@ -82,7 +83,8 @@ fn convert(msg: PbMsg) -> Result<Msg, String> {
                 _ => return Err("Invalid content type".to_string()),
             };
             Ok(Msg::SingleCall(SingleCall::NotAnswer(InviteNotAnswerMsg {
-                msg_id: msg.server_id.into(),
+                local_id: msg.local_id.into(),
+                server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
                 friend_id: msg.receiver_id.into(),
                 create_time: msg.send_time,
@@ -97,7 +99,8 @@ fn convert(msg: PbMsg) -> Result<Msg, String> {
                 _ => return Err("Invalid content type".to_string()),
             };
             Ok(Msg::SingleCall(SingleCall::InviteCancel(InviteCancelMsg {
-                msg_id: msg.server_id.into(),
+                local_id: msg.local_id.into(),
+                server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
                 friend_id: msg.receiver_id.into(),
                 create_time: msg.send_time,
@@ -112,7 +115,8 @@ fn convert(msg: PbMsg) -> Result<Msg, String> {
             sdp: msg.sdp.ok_or_else(|| String::from("sdp is empty"))?.into(),
         }))),
         MsgType::Hangup => Ok(Msg::SingleCall(SingleCall::HangUp(Hangup {
-            msg_id: msg.server_id.into(),
+            local_id: msg.local_id.into(),
+            server_id: msg.server_id.into(),
             send_id: msg.send_id.into(),
             friend_id: msg.receiver_id.into(),
             create_time: msg.send_time,
@@ -152,10 +156,10 @@ impl From<Msg> for PbMsg {
         match value {
             Msg::Single(msg) => PbMsg {
                 msg_type: MsgType::SingleMsg as i32,
-                server_id: msg.msg_id.as_str().into(),
+                local_id: msg.local_id.as_str().into(),
                 send_id: msg.send_id.as_str().into(),
                 receiver_id: msg.friend_id.as_str().into(),
-                send_time: msg.create_time,
+                create_time: msg.create_time,
                 content_type: msg.content_type as i32,
                 content: msg.content.as_bytes().to_vec(),
                 ..Default::default()
@@ -165,10 +169,10 @@ impl From<Msg> for PbMsg {
                 match group_msg {
                     GroupMsg::Message(msg) => {
                         pb_msg.msg_type = MsgType::GroupMsg as i32;
-                        pb_msg.local_id = msg.msg_id.as_str().into();
+                        pb_msg.local_id = msg.local_id.as_str().into();
                         pb_msg.send_id = msg.send_id.as_str().into();
                         pb_msg.receiver_id = msg.friend_id.to_string();
-                        pb_msg.send_time = msg.create_time;
+                        pb_msg.create_time = msg.create_time;
                         pb_msg.content_type = msg.content_type as i32;
                         pb_msg.content = msg.content.as_bytes().to_vec();
                         pb_msg.group_id = msg.friend_id.to_string();
@@ -196,10 +200,10 @@ impl From<Msg> for PbMsg {
                 match call {
                     SingleCall::Invite(invite) => {
                         pb_msg.msg_type = MsgType::SingleCallInvite as i32;
-                        pb_msg.server_id = invite.msg_id.as_str().into();
+                        pb_msg.local_id = invite.msg_id.as_str().into();
                         pb_msg.send_id = invite.send_id.as_str().into();
                         pb_msg.receiver_id = invite.friend_id.as_str().into();
-                        pb_msg.send_time = invite.create_time;
+                        pb_msg.create_time = invite.create_time;
                         pb_msg.content_type = match invite.invite_type {
                             InviteType::Video => ContentType::VideoCall as i32,
                             InviteType::Audio => ContentType::AudioCall as i32,
@@ -207,10 +211,10 @@ impl From<Msg> for PbMsg {
                     }
                     SingleCall::InviteAnswer(answer) => {
                         pb_msg.msg_type = MsgType::SingleCallInviteAnswer as i32;
-                        pb_msg.server_id = answer.msg_id.as_str().into();
+                        pb_msg.local_id = answer.local_id.as_str().into();
                         pb_msg.send_id = answer.send_id.as_str().into();
                         pb_msg.receiver_id = answer.friend_id.as_str().into();
-                        pb_msg.send_time = answer.create_time;
+                        pb_msg.create_time = answer.create_time;
                         pb_msg.call_agree = answer.agree;
                         pb_msg.content_type = match answer.invite_type {
                             InviteType::Video => ContentType::VideoCall as i32,
@@ -219,10 +223,10 @@ impl From<Msg> for PbMsg {
                     }
                     SingleCall::NotAnswer(not_answer) => {
                         pb_msg.msg_type = MsgType::SingleCallInviteNotAnswer as i32;
-                        pb_msg.server_id = not_answer.msg_id.as_str().into();
+                        pb_msg.local_id = not_answer.local_id.as_str().into();
                         pb_msg.send_id = not_answer.send_id.as_str().into();
                         pb_msg.receiver_id = not_answer.friend_id.as_str().into();
-                        pb_msg.send_time = not_answer.create_time;
+                        pb_msg.create_time = not_answer.create_time;
                         pb_msg.content_type = match not_answer.invite_type {
                             InviteType::Video => ContentType::VideoCall as i32,
                             InviteType::Audio => ContentType::AudioCall as i32,
@@ -230,10 +234,10 @@ impl From<Msg> for PbMsg {
                     }
                     SingleCall::InviteCancel(cancel) => {
                         pb_msg.msg_type = MsgType::SingleCallInviteCancel as i32;
-                        pb_msg.server_id = cancel.msg_id.as_str().into();
+                        pb_msg.local_id = cancel.local_id.as_str().into();
                         pb_msg.send_id = cancel.send_id.as_str().into();
                         pb_msg.receiver_id = cancel.friend_id.as_str().into();
-                        pb_msg.send_time = cancel.create_time;
+                        pb_msg.create_time = cancel.create_time;
                         pb_msg.content_type = match cancel.invite_type {
                             InviteType::Video => ContentType::VideoCall as i32,
                             InviteType::Audio => ContentType::AudioCall as i32,
@@ -243,27 +247,27 @@ impl From<Msg> for PbMsg {
                         pb_msg.msg_type = MsgType::SingleCallOffer as i32;
                         pb_msg.send_id = offer.send_id.as_str().into();
                         pb_msg.receiver_id = offer.friend_id.as_str().into();
-                        pb_msg.send_time = offer.create_time;
+                        pb_msg.create_time = offer.create_time;
                         pb_msg.sdp = Some(offer.sdp.to_string());
                     }
                     SingleCall::Agree(agree) => {
                         pb_msg.msg_type = MsgType::AgreeSingleCall as i32;
                         pb_msg.send_id = agree.send_id.as_str().into();
                         pb_msg.receiver_id = agree.friend_id.as_str().into();
-                        pb_msg.send_time = agree.create_time;
+                        pb_msg.create_time = agree.create_time;
                         pb_msg.sdp = agree.sdp;
                     }
                     SingleCall::HangUp(hangup) => {
                         pb_msg.msg_type = MsgType::Hangup as i32;
                         pb_msg.send_id = hangup.send_id.as_str().into();
                         pb_msg.receiver_id = hangup.friend_id.as_str().into();
-                        pb_msg.send_time = hangup.create_time;
+                        pb_msg.create_time = hangup.create_time;
                     }
                     SingleCall::NewIceCandidate(candidate) => {
                         pb_msg.msg_type = MsgType::Candidate as i32;
                         pb_msg.send_id = candidate.send_id.as_str().into();
                         pb_msg.receiver_id = candidate.friend_id.as_str().into();
-                        pb_msg.send_time = candidate.create_time;
+                        pb_msg.create_time = candidate.create_time;
                         pb_msg.sdp_mid = candidate.sdp_mid;
                         pb_msg.sdp_m_index = candidate.sdp_m_index.map(|c| c as i32);
                         pb_msg.content = candidate.candidate.as_bytes().to_vec();

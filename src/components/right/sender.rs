@@ -238,7 +238,8 @@ impl Component for Sender {
                 let send_id = ctx.props().cur_user_id.clone();
                 let msg = Message {
                     id: 0,
-                    msg_id: nanoid::nanoid!().into(),
+                    local_id: nanoid::nanoid!().into(),
+                    server_id: AttrValue::default(),
                     send_id,
                     friend_id,
                     content_type: ContentType::Text,
@@ -266,7 +267,8 @@ impl Component for Sender {
                 let send_id = ctx.props().cur_user_id.clone();
                 let msg = Message {
                     id: 0,
-                    msg_id: nanoid::nanoid!().into(),
+                    local_id: nanoid::nanoid!().into(),
+                    server_id: AttrValue::default(),
                     send_id,
                     friend_id,
                     content_type: ContentType::Emoji,
@@ -320,7 +322,8 @@ impl Component for Sender {
 
                 let msg = Message {
                     id: 0,
-                    msg_id: nanoid::nanoid!().into(),
+                    local_id: nanoid::nanoid!().into(),
+                    server_id: AttrValue::default(),
                     content: file_name.clone().into(),
                     is_self: true,
                     is_read: false,
