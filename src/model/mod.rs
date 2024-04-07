@@ -25,6 +25,7 @@ pub enum ContentType {
     Emoji = 6,
     VideoCall = 7,
     AudioCall = 8,
+    Error = 9,
 }
 
 impl From<i32> for ContentType {
@@ -38,6 +39,7 @@ impl From<i32> for ContentType {
             6 => ContentType::Emoji,
             7 => ContentType::VideoCall,
             8 => ContentType::AudioCall,
+            9 => ContentType::Error,
             _ => ContentType::Default,
         }
     }

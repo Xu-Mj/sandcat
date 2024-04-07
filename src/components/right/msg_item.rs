@@ -255,8 +255,9 @@ impl Component for MsgItem {
                     </div>
                 }
             }
-            ContentType::Default => html! {},
+            ContentType::Default => html!(),
             ContentType::Audio => html!(),
+            ContentType::Error => html!(),
         };
 
         html! {

@@ -456,5 +456,6 @@ fn get_msg_type(msg_type: ContentType, content: &AttrValue) -> AttrValue {
         ContentType::VideoCall => AttrValue::from("[视频通话]"),
         ContentType::AudioCall => AttrValue::from("[语音通话]"),
         ContentType::Audio => AttrValue::from("[voice]"),
+        ContentType::Error => AttrValue::from("[ERROR]"),
     }
 }

@@ -710,6 +710,7 @@ pub enum ContentType {
     Emoji = 6,
     VideoCall = 7,
     AudioCall = 8,
+    Error = 9,
 }
 
 impl ContentType {
@@ -728,6 +729,7 @@ impl ContentType {
             ContentType::Audio => "Audio",
             ContentType::VideoCall => "VideoCall",
             ContentType::AudioCall => "AudioCall",
+            ContentType::Error => "Error",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -742,6 +744,7 @@ impl ContentType {
             "Audio" => Some(Self::Audio),
             "VideoCall" => Some(Self::VideoCall),
             "AudioCall" => Some(Self::AudioCall),
+            "Error" => Some(Self::Error),
             _ => None,
         }
     }
