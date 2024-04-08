@@ -6,9 +6,9 @@ use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 use yew::Callback;
 
+use crate::model::message::convert_server_msg;
 use crate::model::message::Msg;
 use crate::pb::message::Msg as PbMsg;
-use crate::ws::convert;
 // 定义WebSocket管理器结构体
 pub struct WebSocketManager {
     url: String,
@@ -65,7 +65,7 @@ impl WebSocketManager {
                 let mut body = vec![0; arr.length() as usize];
                 arr.copy_to(&mut body[..]);
                 match bincode::deserialize(&body) {
-                    Ok(msg) => match convert(msg) {
+                    Ok(msg) => match convert_server_msg(msg) {
                         Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
                         Err(e) => log::error!("convert message error {e}"),
                     },
@@ -80,7 +80,7 @@ impl WebSocketManager {
                 let mut body = vec![0; arr.length() as usize];
                 arr.copy_to(&mut body[..]);
                 match bincode::deserialize(&body) {
-                    Ok(msg) => match convert(msg) {
+                    Ok(msg) => match convert_server_msg(msg) {
                         Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
                         Err(e) => log::error!("convert message error {e}"),
                     },

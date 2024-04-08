@@ -18,11 +18,13 @@ use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::message::{InviteMsg, Msg, SingleCall};
+use crate::model::message::{convert_server_msg, InviteMsg, Msg, SingleCall};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::MuteState;
+use crate::pb::message::Msg as PbMsg;
+
 use crate::ws::WebSocketManager;
 use crate::{
     components::{left::Left, right::Right},
@@ -101,7 +103,7 @@ pub struct HomeProps {
     pub id: AttrValue,
 }
 
-type QueryResult = (User, CurrentItem, CurrentItem, ComponentType);
+type QueryResult = (User, CurrentItem, CurrentItem, ComponentType, Vec<PbMsg>);
 
 impl Component for Home {
     type Message = HomeMsg;
@@ -155,6 +157,11 @@ impl Component for Home {
                         friend_state.friend = u.2;
                         self.user = u.0;
                         shared_state.component_type = u.3;
+                        // handle offline messages
+                        for item in u.4.into_iter() {
+                            let msg = convert_server_msg(item).unwrap();
+                            ctx.link().send_message(HomeMsg::ReceiveMessage(msg));
+                        }
                     }
                     QueryStatus::QueryFail(_) => {
                         gloo::console::log!("query fail")

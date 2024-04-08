@@ -16,7 +16,7 @@ use crate::db::{
     GROUP_ID_AND_USER_ID, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,
     GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
     MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX,
-    USER_TABLE_NAME,
+    SEQ_TABLE_NAME, USER_TABLE_NAME,
 };
 
 use super::DB_NAME;
@@ -129,6 +129,12 @@ impl Repository {
             let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
             parameters.key_path(Some(&JsValue::from_str("id")));
             parameters.auto_increment(true);
+            let _store = db
+                .create_object_store_with_optional_parameters(
+                    &String::from(SEQ_TABLE_NAME),
+                    &parameters,
+                )
+                .unwrap();
             let _store = db
                 .create_object_store_with_optional_parameters(
                     &String::from(GROUP_TABLE_NAME),

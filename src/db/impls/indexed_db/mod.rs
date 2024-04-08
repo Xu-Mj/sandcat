@@ -8,6 +8,7 @@ pub mod group_members;
 pub mod group_msg;
 pub mod message;
 pub mod repository;
+pub mod seq;
 pub mod user;
 
 use std::{
@@ -30,6 +31,7 @@ pub const USER_TABLE_NAME: &str = "users";
 pub const GROUP_TABLE_NAME: &str = "groups";
 pub const GROUP_MSG_TABLE_NAME: &str = "group_messages";
 pub const GROUP_MEMBERS_TABLE_NAME: &str = "group_members";
+pub const SEQ_TABLE_NAME: &str = "seq";
 
 pub const FRIENDSHIP_UNREAD_INDEX: &str = "read";
 pub const FRIENDSHIP_ID_INDEX: &str = "fs_id";

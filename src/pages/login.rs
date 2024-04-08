@@ -7,7 +7,7 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
-use crate::db::{self, TOKEN, WS_ADDR};
+use crate::db::{self, current_item, TOKEN, WS_ADDR};
 use crate::model::user::User;
 use crate::{api, db::DB_NAME};
 
@@ -58,6 +58,7 @@ pub struct Response {
     user: User,
     token: String,
     ws_addr: String,
+    seq: i64,
 }
 
 #[derive(Serialize)]
@@ -141,7 +142,8 @@ impl Component for Login {
                     // } else {
                     //     user_repo.add(&user).await;
                     // }
-
+                    // save seq
+                    current_item::save_last_server_seq(res.seq).unwrap();
                     LoginMsg::Success(id)
                 });
                 self.login_state = LoginState::Logining;

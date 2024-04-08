@@ -11,9 +11,10 @@ use self::{
     group_members::GroupMembers,
     group_msg::GroupMessages,
     groups::GroupInterface,
-    impls::indexed_db::{group_members::GroupMembersRepo, group_msg::GroupMsgRepo},
+    impls::indexed_db::{group_members::GroupMembersRepo, group_msg::GroupMsgRepo, seq::SeqRepo},
     message::MessageRepo,
     messages::Messages,
+    seq::SeqInterface,
     user::UserRepo,
     users::Users,
 };
@@ -26,6 +27,7 @@ pub mod group_msg;
 pub mod groups;
 pub mod impls;
 pub mod messages;
+pub mod seq;
 pub mod users;
 
 pub async fn convs() -> Box<dyn Conversations> {
@@ -58,4 +60,8 @@ pub async fn group_msgs() -> Box<dyn GroupMessages> {
 
 pub async fn users() -> Box<dyn Users> {
     Box::new(UserRepo::new().await)
+}
+
+pub async fn seq() -> Box<dyn SeqInterface> {
+    Box::new(SeqRepo::new().await)
 }

@@ -4,23 +4,20 @@ use gloo::utils::window;
 use wasm_bindgen_futures::spawn_local;
 use yew::{AttrValue, Context, NodeRef};
 
-use crate::db;
-use crate::model::message::GroupMsg;
-use crate::model::{ComponentType, CurrentItem};
-use crate::pages::{AddFriendState, CreateConvState, MuteState};
+use crate::{api, db};
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME, TOKEN, WS_ADDR},
     model::{
         friend::{Friend, FriendShipWithUser},
-        message::{InviteMsg, Message, Msg, SingleCall, DEFAULT_HELLO_MESSAGE},
+        message::{GroupMsg, InviteMsg, Message, Msg, SingleCall, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
         user::User,
-        ContentType, FriendShipStateType,
+        ComponentType, ContentType, CurrentItem, FriendShipStateType,
     },
     pages::{
-        home_page::HomeMsg, AppState, ConvState, FriendListState, FriendShipState,
-        RecSendCallState, RecSendMessageState, RemoveConvState, RemoveFriendState, UnreadState,
-        WaitState,
+        home_page::HomeMsg, AddFriendState, AppState, ConvState, CreateConvState, FriendListState,
+        FriendShipState, MuteState, RecSendCallState, RecSendMessageState, RemoveConvState,
+        RemoveFriendState, UnreadState, WaitState,
     },
     ws::WebSocketManager,
 };
@@ -30,11 +27,27 @@ use super::{Home, QueryResult, WAIT_COUNT};
 async fn query(id: &str) -> Result<QueryResult, QueryError> {
     let user_repo = db::users().await;
     let user = user_repo.get(id).await.unwrap();
+    // get last login seq
+    let seq = current_item::get_last_server_seq();
+    // update seq
+    let seq_repo = db::seq().await;
+    let mut local_seq = seq_repo.get().await.unwrap();
+    let mut messages = Vec::new();
+    if local_seq.sequence < seq {
+        // request offline messages
+        messages = api::messages()
+            .pull_offline_msg(id, local_seq.sequence, seq)
+            .await
+            .unwrap();
+    }
+    local_seq.sequence = seq;
+    seq_repo.put(&local_seq).await.unwrap();
     Ok((
         user,
         current_item::get_conv(),
         current_item::get_friend(),
         current_item::get_com_type(),
+        messages,
     ))
 }
 
@@ -295,7 +308,7 @@ impl Home {
                 msg.is_read = false;
 
                 let mut msg = msg.clone();
-                let msg_id = msg.local_id.to_string();
+                let msg_id = msg.server_id.to_string();
                 if self.conv_state.conv.item_id != msg.friend_id {
                     let conv_state = Rc::make_mut(&mut self.conv_state);
                     let _ = current_item::save_conv(&conv_state.conv)
@@ -324,7 +337,7 @@ impl Home {
                     }
                     GroupMsg::Message(msg) => {
                         let msg = msg.clone();
-                        let msg_id = msg.local_id.to_string();
+                        let msg_id = msg.server_id.to_string();
                         if self.conv_state.conv.item_id != msg.friend_id {
                             let conv_state = Rc::make_mut(&mut self.conv_state);
                             let _ = current_item::save_conv(&conv_state.conv)

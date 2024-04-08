@@ -3,6 +3,7 @@ pub mod friend;
 pub mod group;
 pub mod message;
 pub mod notification;
+pub mod seq;
 pub mod user;
 
 use std::fmt::Display;

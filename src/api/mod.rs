@@ -6,13 +6,15 @@ use crate::db::TOKEN;
 use self::{
     friend::FriendApi,
     group::GroupApi,
-    http::{FriendHttp, GroupHttp, UserHttp},
+    http::{FriendHttp, GroupHttp, MsgHttp, UserHttp},
+    message::MsgApi,
     user::UserApi,
 };
 
 pub mod friend;
 pub mod group;
 pub mod http;
+pub mod message;
 pub mod user;
 
 pub const AUTHORIZE_HEADER: &str = "Authorization";
@@ -43,4 +45,8 @@ pub fn groups() -> Box<dyn GroupApi> {
 
 pub fn friends() -> Box<dyn FriendApi> {
     Box::new(FriendHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+}
+
+pub fn messages() -> Box<dyn MsgApi> {
+    Box::new(MsgHttp::new(token(), AUTHORIZE_HEADER.to_string()))
 }

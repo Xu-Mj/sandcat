@@ -23,7 +23,7 @@ fn app() -> Html {
         <BrowserRouter>
             <Switch<Page> render={move |page|
                 match page {
-                    Page::Home{id} => html!{<Home id={id}/>},
+                    Page::Home{id} => html!{<Home {id}/>},
                     Page::Login => html!{<Login/>},
                     Page::Register => html!{<Register />},
                     Page::Redirect => html!{<Login />}}
