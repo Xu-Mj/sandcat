@@ -52,7 +52,7 @@ pub const CONVERSATION_LAST_MSG_TIME_INDEX: &str = "last_msg_time";
 
 // pub const MESSAGE_USER_ID_INDEX: &str = "user_id";
 pub const MESSAGE_FRIEND_ID_INDEX: &str = "friend_id";
-pub const MESSAGE_ID_INDEX: &str = "msg_id";
+pub const MESSAGE_ID_INDEX: &str = "local_id";
 // pub const MESSAGE_SEND_ID_INDEX: &str = "send_id";
 pub const MESSAGE_TIME_INDEX: &str = "time";
 pub const MESSAGE_CONTENT_INDEX: &str = "content";

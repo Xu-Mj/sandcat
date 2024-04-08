@@ -238,6 +238,7 @@ impl Component for Sender {
                 let send_id = ctx.props().cur_user_id.clone();
                 let msg = Message {
                     id: 0,
+                    seq: 0,
                     local_id: nanoid::nanoid!().into(),
                     server_id: AttrValue::default(),
                     send_id,
@@ -269,6 +270,7 @@ impl Component for Sender {
                 let send_id = ctx.props().cur_user_id.clone();
                 let msg = Message {
                     id: 0,
+                    seq: 0,
                     local_id: nanoid::nanoid!().into(),
                     server_id: AttrValue::default(),
                     send_id,
@@ -326,6 +328,7 @@ impl Component for Sender {
 
                 let msg = Message {
                     id: 0,
+                    seq: 0,
                     local_id: nanoid::nanoid!().into(),
                     server_id: AttrValue::default(),
                     content: file_name.clone().into(),

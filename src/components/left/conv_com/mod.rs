@@ -238,6 +238,11 @@ impl Chats {
             true
         } else {
             if !is_self && self.conv_state.conv.item_id != friend_id {
+                log::debug!(
+                    "unread +1 conv_id: {}, friend_id: {}",
+                    self.conv_state.conv.item_id,
+                    friend_id
+                );
                 self.unread_state.add_msg_count.emit(1);
             }
             // 如果会话列表中不存在那么需要新建

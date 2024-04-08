@@ -24,6 +24,7 @@ pub struct Message {
     #[serde(skip_serializing_if = "is_zero")]
     #[serde(default)]
     pub id: i32,
+    pub seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -58,6 +59,7 @@ impl From<InviteCancelMsg> for Message {
         };
         Message {
             id: 0,
+            seq: value.seq,
             local_id: value.local_id,
             server_id: value.server_id,
             send_id: value.send_id,
@@ -87,6 +89,7 @@ impl From<InviteAnswerMsg> for Message {
         };
         Message {
             id: 0,
+            seq: value.seq,
             local_id: value.local_id,
             server_id: value.server_id,
             send_id: value.send_id,
@@ -113,6 +116,7 @@ impl Message {
         let content = AttrValue::from(utils::format_milliseconds(value.sustain));
         Message {
             id: 0,
+            seq: value.seq,
             local_id: value.local_id,
             server_id: value.server_id,
             send_id: value.send_id,
@@ -135,6 +139,7 @@ impl Message {
 
         Self {
             id: 0,
+            seq: msg.seq,
             local_id: msg.local_id,
             server_id: msg.server_id,
             send_id: msg.send_id,
@@ -247,6 +252,7 @@ pub struct InviteMsg {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteNotAnswerMsg {
+    pub seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -268,6 +274,7 @@ impl InviteNotAnswerMsg {
 
         Message {
             id: 0,
+            seq: self.seq,
             local_id: self.local_id.clone(),
             server_id: self.server_id.clone(),
             send_id: self.send_id.clone(),
@@ -286,6 +293,7 @@ impl InviteNotAnswerMsg {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteCancelMsg {
+    pub seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -307,6 +315,7 @@ impl InviteCancelMsg {
 
         Message {
             id: 0,
+            seq: self.seq,
             local_id: self.local_id.clone(),
             server_id: self.server_id.clone(),
             send_id: self.send_id.clone(),
@@ -332,6 +341,7 @@ pub enum InviteType {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteAnswerMsg {
+    pub seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -359,6 +369,7 @@ impl InviteAnswerMsg {
         };
         Message {
             id: 0,
+            seq: self.seq,
             local_id: self.local_id.clone(),
             server_id: self.server_id.clone(),
             send_id: self.send_id.clone(),
@@ -395,6 +406,7 @@ pub struct Agree {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Hangup {
+    pub seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -418,6 +430,7 @@ impl Hangup {
 
         Message {
             id: 0,
+            seq: self.seq,
             local_id: self.local_id.clone(),
             server_id: self.server_id.clone(),
             send_id: self.send_id.clone(),
@@ -465,6 +478,7 @@ impl TryFrom<pb::message::Msg> for Message {
         let status: ContentType = value.content_type.into();
         Ok(Self {
             id: 0,
+            seq: value.seq,
             local_id: value.local_id.into(),
             server_id: value.server_id.into(),
             send_id: value.send_id.into(),
@@ -535,6 +549,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 _ => return Err("Invalid content type".to_string()),
             };
             Ok(Msg::SingleCall(SingleCall::InviteAnswer(InviteAnswerMsg {
+                seq: msg.seq,
                 local_id: msg.local_id.into(),
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
@@ -554,6 +569,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 _ => return Err("Invalid content type".to_string()),
             };
             Ok(Msg::SingleCall(SingleCall::NotAnswer(InviteNotAnswerMsg {
+                seq: msg.seq,
                 local_id: msg.local_id.into(),
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
@@ -572,6 +588,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 _ => return Err("Invalid content type".to_string()),
             };
             Ok(Msg::SingleCall(SingleCall::InviteCancel(InviteCancelMsg {
+                seq: msg.seq,
                 local_id: msg.local_id.into(),
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
@@ -590,6 +607,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             sdp: msg.sdp.ok_or_else(|| String::from("sdp is empty"))?.into(),
         }))),
         MsgType::Hangup => Ok(Msg::SingleCall(SingleCall::HangUp(Hangup {
+            seq: msg.seq,
             local_id: msg.local_id.into(),
             server_id: msg.server_id.into(),
             send_id: msg.send_id.into(),

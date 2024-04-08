@@ -72,7 +72,7 @@ impl Repository {
             let mut param: IdbIndexParameters = IdbIndexParameters::new();
             param.unique(true);
             store
-                .create_index_with_str_and_optional_parameters(MESSAGE_ID_INDEX, "msg_id", &param)
+                .create_index_with_str_and_optional_parameters(MESSAGE_ID_INDEX, "local_id", &param)
                 .unwrap();
             store
                 .create_index_with_str(MESSAGE_FRIEND_ID_INDEX, "friend_id")
@@ -98,7 +98,7 @@ impl Repository {
             let mut param: IdbIndexParameters = IdbIndexParameters::new();
             param.unique(true);
             store
-                .create_index_with_str_and_optional_parameters(MESSAGE_ID_INDEX, "msg_id", &param)
+                .create_index_with_str_and_optional_parameters(MESSAGE_ID_INDEX, "local_id", &param)
                 .unwrap();
             store
                 .create_index_with_str(MESSAGE_FRIEND_ID_INDEX, "friend_id")

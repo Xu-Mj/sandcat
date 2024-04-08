@@ -20,6 +20,7 @@ use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{convert_server_msg, InviteMsg, Msg, SingleCall};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
+use crate::model::seq::Seq;
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::MuteState;
@@ -35,6 +36,7 @@ pub struct Home {
     // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
     call_msg: SingleCall,
     user: User,
+    seq: Seq,
     ws: Rc<RefCell<WebSocketManager>>,
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
@@ -103,7 +105,14 @@ pub struct HomeProps {
     pub id: AttrValue,
 }
 
-type QueryResult = (User, CurrentItem, CurrentItem, ComponentType, Vec<PbMsg>);
+type QueryResult = (
+    User,
+    CurrentItem,
+    CurrentItem,
+    ComponentType,
+    Vec<PbMsg>,
+    Seq,
+);
 
 impl Component for Home {
     type Message = HomeMsg;
@@ -157,6 +166,7 @@ impl Component for Home {
                         friend_state.friend = u.2;
                         self.user = u.0;
                         shared_state.component_type = u.3;
+                        self.seq = u.5;
                         // handle offline messages
                         for item in u.4.into_iter() {
                             let msg = convert_server_msg(item).unwrap();

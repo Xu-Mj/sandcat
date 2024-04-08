@@ -59,11 +59,11 @@ impl WebSocketManager {
         // ON_OPEN.get_or_init(on_open);
         let ws_manager_clone = ws_manager.clone();
         let on_message = Closure::wrap(Box::new(move |e: MessageEvent| {
-            web_sys::console::log_1(&e.data());
             if let Ok(ab) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
                 let arr = js_sys::Uint8Array::new(&ab);
                 let mut body = vec![0; arr.length() as usize];
                 arr.copy_to(&mut body[..]);
+
                 match bincode::deserialize(&body) {
                     Ok(msg) => match convert_server_msg(msg) {
                         Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
@@ -75,10 +75,10 @@ impl WebSocketManager {
                 // 如果消息是一个Blob，我们需要将它先转换为ArrayBuffer
                 // 然后再按同样的方式处理
                 log::info!("Message received as a Blob, size: {}", blob.size());
-                web_sys::console::log_1(&blob);
                 let arr = js_sys::Uint8Array::new(&blob);
                 let mut body = vec![0; arr.length() as usize];
                 arr.copy_to(&mut body[..]);
+
                 match bincode::deserialize(&body) {
                     Ok(msg) => match convert_server_msg(msg) {
                         Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
@@ -139,9 +139,6 @@ impl WebSocketManager {
             // encode message
             let msg = bincode::serialize(&PbMsg::from(message))
                 .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
-            log::debug!("send message: {:?}", msg);
-            let m: PbMsg = bincode::deserialize(&msg).unwrap();
-            log::debug!("send message: {:?}", m);
             ws.send_with_u8_array(&msg)
         } else {
             Err(JsValue::from_str("websocket is none"))

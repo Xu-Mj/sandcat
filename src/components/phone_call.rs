@@ -284,6 +284,7 @@ impl Component for PhoneCall {
                         .await
                         .add_message(&mut Message {
                             id: 0,
+                            seq: 0,
                             local_id: msg_id.clone(),
                             server_id: AttrValue::default(),
                             send_id: send_id.clone(),
@@ -300,6 +301,7 @@ impl Component for PhoneCall {
                         .await
                         .map_err(|err| log::error!("消息入库失败:{:?}", err));
                     PhoneCallMsg::SendMessage(SingleCall::InviteCancel(InviteCancelMsg {
+                        seq: 0,
                         local_id: msg_id,
                         server_id: AttrValue::default(),
                         send_id,
@@ -362,6 +364,7 @@ impl Component for PhoneCall {
                         .await
                         .add_message(&mut Message {
                             id: 0,
+                            seq: 0,
                             local_id: msg_id.clone(),
                             server_id: AttrValue::default(),
                             send_id: send_id.clone(),
@@ -379,6 +382,7 @@ impl Component for PhoneCall {
                         .map_err(|err| log::error!("消息入库失败:{:?}", err))
                         .unwrap();
                     PhoneCallMsg::SendMessage(SingleCall::HangUp(Hangup {
+                        seq: 0,
                         local_id: msg_id,
                         server_id: AttrValue::default(),
                         send_id,
@@ -398,6 +402,7 @@ impl Component for PhoneCall {
                 // 同意视频通话
                 let info = self.invite_info.as_ref().unwrap();
                 let msg = SingleCall::InviteAnswer(InviteAnswerMsg {
+                    seq: 0,
                     local_id: nanoid!().into(),
                     server_id: AttrValue::default(),
                     send_id: ctx.props().user_id.clone(),
@@ -483,6 +488,7 @@ impl Component for PhoneCall {
                         .await
                         .add_message(&mut Message {
                             id: 0,
+                            seq: 0,
                             local_id: msg_id.clone(),
                             server_id: AttrValue::default(),
                             send_id: send_id.clone(),
@@ -498,6 +504,7 @@ impl Component for PhoneCall {
                         })
                         .await;
                     PhoneCallMsg::SendMessage(SingleCall::InviteAnswer(InviteAnswerMsg {
+                        seq: 0,
                         local_id: msg_id,
                         server_id: AttrValue::default(),
                         send_id,
@@ -556,6 +563,7 @@ impl Component for PhoneCall {
                             .await
                             .add_message(&mut Message {
                                 id: 0,
+                                seq: 0,
                                 local_id: msg_id.clone(),
                                 server_id: AttrValue::default(),
                                 send_id: send_id.clone(),
@@ -572,6 +580,7 @@ impl Component for PhoneCall {
                             .await
                             .map_err(|err| log::error!("消息入库失败:{:?}", err));
                         PhoneCallMsg::SendMessage(SingleCall::NotAnswer(InviteNotAnswerMsg {
+                            seq: 0,
                             local_id: msg_id,
                             server_id: AttrValue::default(),
                             send_id,

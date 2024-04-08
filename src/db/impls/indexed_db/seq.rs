@@ -25,7 +25,7 @@ impl SeqRepo {
     }
 }
 
-const ID: i64 = 1;
+const ID: i32 = 1;
 
 #[async_trait(?Send)]
 impl SeqInterface for SeqRepo {
@@ -35,6 +35,19 @@ impl SeqInterface for SeqRepo {
         store.put(&value)?;
         Ok(())
     }
+
+    async fn set_server_seq(&self, seq: i64) -> Result<(), JsValue> {
+        let mut sequence = self.get().await.unwrap_or_default();
+        if sequence.id == 0 {
+            sequence.id = 1;
+        }
+        sequence.server_seq = seq;
+        let store = self.store(SEQ_TABLE_NAME).await?;
+        let value = serde_wasm_bindgen::to_value(&sequence)?;
+        store.put(&value)?;
+        Ok(())
+    }
+
     async fn get(&self) -> Result<Seq, JsValue> {
         let (tx, rx) = oneshot::channel::<Seq>();
         let store = self.store(SEQ_TABLE_NAME).await?;

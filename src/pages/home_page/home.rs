@@ -4,6 +4,7 @@ use gloo::utils::window;
 use wasm_bindgen_futures::spawn_local;
 use yew::{AttrValue, Context, NodeRef};
 
+use crate::model::seq::Seq;
 use crate::{api, db};
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME, TOKEN, WS_ADDR},
@@ -27,20 +28,18 @@ use super::{Home, QueryResult, WAIT_COUNT};
 async fn query(id: &str) -> Result<QueryResult, QueryError> {
     let user_repo = db::users().await;
     let user = user_repo.get(id).await.unwrap();
-    // get last login seq
-    let seq = current_item::get_last_server_seq();
     // update seq
     let seq_repo = db::seq().await;
-    let mut local_seq = seq_repo.get().await.unwrap();
+    let mut local_seq = seq_repo.get().await.unwrap_or_default();
     let mut messages = Vec::new();
-    if local_seq.sequence < seq {
+    if local_seq.local_seq < local_seq.server_seq {
         // request offline messages
         messages = api::messages()
-            .pull_offline_msg(id, local_seq.sequence, seq)
+            .pull_offline_msg(id, local_seq.local_seq, local_seq.server_seq)
             .await
             .unwrap();
     }
-    local_seq.sequence = seq;
+    local_seq.local_seq = local_seq.server_seq;
     seq_repo.put(&local_seq).await.unwrap();
     Ok((
         user,
@@ -48,6 +47,7 @@ async fn query(id: &str) -> Result<QueryResult, QueryError> {
         current_item::get_friend(),
         current_item::get_com_type(),
         messages,
+        local_seq,
     ))
 }
 
@@ -122,6 +122,7 @@ impl Home {
                 call_event: call_event.clone(),
             }),
             user: User::default(),
+            seq: Seq::default(),
             conv_state: Rc::new(ConvState {
                 conv: CurrentItem::default(),
                 state_change_event: switch_conv_callback,
@@ -271,6 +272,7 @@ impl Home {
             db::friendships().await.agree(friendship_id.as_str()).await;
             db::friends().await.put_friend(&friend).await;
             let mut msg = Message {
+                seq: 0,
                 local_id: nanoid::nanoid!().into(),
                 server_id: AttrValue::default(),
                 send_id,
@@ -309,11 +311,13 @@ impl Home {
 
                 let mut msg = msg.clone();
                 let msg_id = msg.server_id.to_string();
-                if self.conv_state.conv.item_id != msg.friend_id {
-                    let conv_state = Rc::make_mut(&mut self.conv_state);
-                    let _ = current_item::save_conv(&conv_state.conv)
-                        .map_err(|err| log::error!("save conv fail{:?}", err));
-                }
+
+                // if self.conv_state.conv.item_id != msg.friend_id {
+                //     log::debug!("conv state conv item id is not equal to msg friend id");
+                //     let conv_state = Rc::make_mut(&mut self.conv_state);
+                //     let _ = current_item::save_conv(&conv_state.conv)
+                //         .map_err(|err| log::error!("save conv fail{:?}", err));
+                // }
                 ctx.link().send_future(async move {
                     // 数据入库
                     if let Err(err) = db::messages().await.add_message(&mut msg).await {
@@ -338,11 +342,12 @@ impl Home {
                     GroupMsg::Message(msg) => {
                         let msg = msg.clone();
                         let msg_id = msg.server_id.to_string();
-                        if self.conv_state.conv.item_id != msg.friend_id {
-                            let conv_state = Rc::make_mut(&mut self.conv_state);
-                            let _ = current_item::save_conv(&conv_state.conv)
-                                .map_err(|err| log::error!("save conv fail{:?}", err));
-                        }
+
+                        // if self.conv_state.conv.item_id != msg.friend_id {
+                        //     let conv_state = Rc::make_mut(&mut self.conv_state);
+                        //     let _ = current_item::save_conv(&conv_state.conv)
+                        //         .map_err(|err| log::error!("save conv fail{:?}", err));
+                        // }
                         ctx.link().send_future(async move {
                             // 数据入库
                             if let Err(err) = db::group_msgs().await.put(&msg).await {
@@ -437,6 +442,7 @@ impl Home {
                     )));
                     // send hello message
                     let mut msg = Message {
+                        seq: 0,
                         local_id: nanoid::nanoid!().into(),
                         server_id: AttrValue::default(),
                         send_id,
