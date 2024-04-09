@@ -106,6 +106,59 @@ impl From<InviteAnswerMsg> for Message {
     }
 }
 
+impl From<InviteNotAnswerMsg> for Message {
+    fn from(value: InviteNotAnswerMsg) -> Self {
+        let content_type = match value.invite_type {
+            InviteType::Video => ContentType::VideoCall,
+            InviteType::Audio => ContentType::AudioCall,
+        };
+        let content = AttrValue::from("NOT ANSWER");
+        Message {
+            id: 0,
+            seq: value.seq,
+            local_id: value.local_id,
+            server_id: value.server_id,
+            send_id: value.send_id,
+            friend_id: value.friend_id,
+            content_type,
+            content,
+            create_time: value.create_time,
+            send_time: value.send_time,
+            is_success: value.is_success,
+            is_read: false,
+            is_self: value.is_self,
+            file_content: Default::default(),
+        }
+    }
+}
+
+impl From<Hangup> for Message {
+    fn from(value: Hangup) -> Self {
+        let content_type = match value.invite_type {
+            InviteType::Video => ContentType::VideoCall,
+            InviteType::Audio => ContentType::AudioCall,
+        };
+        let content = AttrValue::from(utils::format_milliseconds(value.sustain));
+
+        Message {
+            id: 0,
+            seq: value.seq,
+            local_id: value.local_id,
+            server_id: value.server_id,
+            send_id: value.send_id,
+            friend_id: value.friend_id,
+            content_type,
+            content,
+            create_time: value.create_time,
+            send_time: value.send_time,
+            is_success: value.is_success,
+            is_read: false,
+            is_self: value.is_self,
+            file_content: Default::default(),
+        }
+    }
+}
+
 impl Message {
     pub fn from_hangup(value: Hangup) -> Self {
         let content_type = match value.invite_type {

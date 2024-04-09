@@ -10,21 +10,18 @@ use yew::prelude::*;
 
 use super::{
     AddFriendState, AddFriendStateItem, AppState, ConvState, CreateConvState, FriendListState,
-    FriendShipState, ItemType, RecSendCallState, RecSendMessageState, RemoveConvState,
-    RemoveFriendState, UnreadState, WaitState,
+    FriendShipState, ItemType, OfflineMsgState, RecMessageState, RecSendCallState, RemoveConvState,
+    RemoveFriendState, SendMessageState, UnreadState, WaitState,
 };
-use crate::components::phone_call::PhoneCall;
 use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::message::{convert_server_msg, InviteMsg, Msg, SingleCall};
+use crate::model::message::{InviteMsg, Msg};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
-use crate::model::seq::Seq;
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::MuteState;
-use crate::pb::message::Msg as PbMsg;
 
 use crate::ws::WebSocketManager;
 use crate::{
@@ -34,14 +31,15 @@ use crate::{
 
 pub struct Home {
     // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
-    call_msg: SingleCall,
+    // call_msg: SingleCall,
     user: User,
-    seq: Seq,
     ws: Rc<RefCell<WebSocketManager>>,
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
     state: Rc<AppState>,
-    msg_state: Rc<RecSendMessageState>,
+    send_msg_state: Rc<SendMessageState>,
+    sync_msg_state: Rc<OfflineMsgState>,
+    rec_msg_state: Rc<RecMessageState>,
     call_state: Rc<RecSendCallState>,
     conv_state: Rc<ConvState>,
     mute_state: Rc<MuteState>,
@@ -66,10 +64,13 @@ pub enum HomeMsg {
     SwitchConv(CurrentItem),
     // 需要等待子组件完成必须操作
     WaitStateChanged,
+    OfflineSyncStateChange(()),
     // 查询数据库
     Query(QueryStatus<QueryResult>),
     // 接收/发送消息
     RecSendMsgStateChange(Msg),
+    // 收到消息
+    RecMsgStateChange(Msg),
     // 收到消息
     ReceiveMessage(Msg),
     // 收到好友请求
@@ -105,14 +106,7 @@ pub struct HomeProps {
     pub id: AttrValue,
 }
 
-type QueryResult = (
-    User,
-    CurrentItem,
-    CurrentItem,
-    ComponentType,
-    Vec<PbMsg>,
-    Seq,
-);
+type QueryResult = (User, CurrentItem, CurrentItem, ComponentType);
 
 impl Component for Home {
     type Message = HomeMsg;
@@ -166,12 +160,6 @@ impl Component for Home {
                         friend_state.friend = u.2;
                         self.user = u.0;
                         shared_state.component_type = u.3;
-                        self.seq = u.5;
-                        // handle offline messages
-                        for item in u.4.into_iter() {
-                            let msg = convert_server_msg(item).unwrap();
-                            ctx.link().send_message(HomeMsg::ReceiveMessage(msg));
-                        }
                     }
                     QueryStatus::QueryFail(_) => {
                         gloo::console::log!("query fail")
@@ -185,11 +173,12 @@ impl Component for Home {
                 ctx.link()
                     .send_message(HomeMsg::RecSendMsgStateChange(msg.clone()));
                 // 发送消息
-                self.send_msg(msg);
+                // self.send_msg(msg);
                 false
             }
             HomeMsg::RecSendMsgStateChange(msg) => {
-                let conv_state = Rc::make_mut(&mut self.msg_state);
+                log::debug!("send message from sender");
+                let conv_state = Rc::make_mut(&mut self.send_msg_state);
                 conv_state.msg = msg;
                 true
             }
@@ -229,16 +218,7 @@ impl Component for Home {
                 conv_state.msg = msg;
                 true
             }
-            HomeMsg::WaitStateChanged => {
-                log::debug!("wait state changed: {:?}", self.wait_state);
-                let state = Rc::make_mut(&mut self.wait_state);
-                state.wait_count -= 1;
-                if state.wait_count == 0 {
-                    // 所有需要等待的组件都完成
-                    WebSocketManager::connect(self.ws.clone());
-                }
-                false
-            }
+            HomeMsg::WaitStateChanged => false,
             HomeMsg::CloseNotificationByIndex(index) => {
                 if index < self.notifications.len() {
                     self.notifications.remove(index);
@@ -306,6 +286,16 @@ impl Component for Home {
                 state.item = item;
                 true
             }
+            HomeMsg::OfflineSyncStateChange(()) => {
+                let state = Rc::make_mut(&mut self.sync_msg_state);
+                state.null = Some(());
+                true
+            }
+            HomeMsg::RecMsgStateChange(msg) => {
+                let state = Rc::make_mut(&mut self.rec_msg_state);
+                state.msg = msg;
+                true
+            }
         }
     }
 
@@ -340,13 +330,13 @@ impl Component for Home {
 
         html! {
             <ContextProvider<Rc<AppState>> context={self.state.clone()}>
-            <ContextProvider<Rc<RecSendMessageState>> context={self.msg_state.clone()}>
+            <ContextProvider<Rc<SendMessageState>> context={self.send_msg_state.clone()}>
             <ContextProvider<Rc<FriendShipState>> context={self.friend_ship_state.clone()}>
             <ContextProvider<Rc<FriendListState>> context={self.friend_state.clone()}>
             <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
             <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
-            <ContextProvider<SingleCall> context={self.call_msg.clone()}>
+            // <ContextProvider<SingleCall> context={self.call_msg.clone()}>
             <ContextProvider<Rc<WaitState>> context={self.wait_state.clone()}>
             <ContextProvider<Rc<UnreadState>> context={self.unread_state.clone()}>
             <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
@@ -354,15 +344,19 @@ impl Component for Home {
             <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
             <ContextProvider<Rc<MuteState>> context={self.mute_state.clone()}>
             <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
+            <ContextProvider<Rc<OfflineMsgState>> context={self.sync_msg_state.clone()}>
+            <ContextProvider<Rc<RecMessageState>> context={self.rec_msg_state.clone()}>
                 <div class="home" id="app">
-                    <Left />
+                    <Left user_id={self.user.id.clone()}/>
                     <Right />
                     // 通知组件
-                    <PhoneCall ws={self.ws.clone()} user_id={self.user.id.clone()}/>
+
                     <div class="notify" ref={self.notification_node.clone()}>
                         {notify}
                     </div>
                 </div>
+            </ContextProvider<Rc<RecMessageState>>>
+            </ContextProvider<Rc<OfflineMsgState>>>
             </ContextProvider<Rc<AddFriendState>>>
             </ContextProvider<Rc<MuteState>>>
             </ContextProvider<Rc<CreateConvState>>>
@@ -370,13 +364,13 @@ impl Component for Home {
             </ContextProvider<Rc<RemoveConvState>>>
             </ContextProvider<Rc<UnreadState>>>
             </ContextProvider<Rc<WaitState>>>
-            </ContextProvider<SingleCall>>
+            // </ContextProvider<SingleCall>>
             </ContextProvider<Rc<RecSendCallState>>>
             </ContextProvider<Rc<NotificationState>>>
             </ContextProvider<Rc<ConvState>>>
             </ContextProvider<Rc<FriendListState>>>
             </ContextProvider<Rc<FriendShipState>>>
-            </ContextProvider<Rc<RecSendMessageState>>>
+            </ContextProvider<Rc<SendMessageState>>>
             </ContextProvider<Rc<AppState>>>
         }
     }

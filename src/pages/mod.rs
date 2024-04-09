@@ -30,6 +30,12 @@ pub struct WaitState {
     pub ready: Callback<()>,
 }
 
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct OfflineMsgState {
+    pub null: Option<()>,
+    pub complete: Callback<()>,
+}
+
 #[derive(Default, Clone, PartialEq)]
 pub struct UnreadMsgCountState {
     pub count: usize,
@@ -39,12 +45,20 @@ pub struct UnreadMsgCountState {
 
 /// 收发消息状态，收到消息触发receive_msg_event回调，发送消息通过send_msg_event回调来发送
 /// msg保存当前收到的消息或者正在发送的消息内容
+/// 将收发消息状态切割
 #[derive(Default, Clone, PartialEq)]
-pub struct RecSendMessageState {
+pub struct SendMessageState {
     pub msg: Msg,
-    pub send_back_event: Callback<Msg>,
+    // pub send_back_event: Callback<Msg>,
     pub send_msg_event: Callback<Msg>,
+    // dail a single call
     pub call_event: Callback<InviteMsg>,
+}
+
+#[derive(Default, Clone, PartialEq)]
+pub struct RecMessageState {
+    pub msg: Msg,
+    pub notify: Callback<Msg>,
 }
 
 #[derive(Default, Clone, PartialEq)]

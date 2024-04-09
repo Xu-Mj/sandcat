@@ -47,7 +47,7 @@ pub struct Conversation {
 
 impl From<Hangup> for Conversation {
     fn from(msg: Hangup) -> Self {
-        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
+        let (last_msg, last_msg_type) = get_invite_type(&msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -60,7 +60,7 @@ impl From<Hangup> for Conversation {
 
 impl From<InviteNotAnswerMsg> for Conversation {
     fn from(msg: InviteNotAnswerMsg) -> Self {
-        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
+        let (last_msg, last_msg_type) = get_invite_type(&msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -73,7 +73,7 @@ impl From<InviteNotAnswerMsg> for Conversation {
 
 impl From<InviteCancelMsg> for Conversation {
     fn from(msg: InviteCancelMsg) -> Self {
-        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
+        let (last_msg, last_msg_type) = get_invite_type(&msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -86,7 +86,7 @@ impl From<InviteCancelMsg> for Conversation {
 
 impl From<InviteMsg> for Conversation {
     fn from(msg: InviteMsg) -> Self {
-        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
+        let (last_msg, last_msg_type) = get_invite_type(&msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -99,7 +99,7 @@ impl From<InviteMsg> for Conversation {
 
 impl From<InviteAnswerMsg> for Conversation {
     fn from(msg: InviteAnswerMsg) -> Self {
-        let (last_msg, last_msg_type) = get_invite_type(msg.invite_type);
+        let (last_msg, last_msg_type) = get_invite_type(&msg.invite_type);
         Self {
             friend_id: msg.friend_id,
             last_msg,
@@ -123,7 +123,7 @@ impl From<Group> for Conversation {
     }
 }
 
-fn get_invite_type(t: InviteType) -> (AttrValue, ContentType) {
+pub fn get_invite_type(t: &InviteType) -> (AttrValue, ContentType) {
     match t {
         InviteType::Video => (AttrValue::from("[视频通话]"), ContentType::VideoCall),
         InviteType::Audio => (AttrValue::from("[语音通话]"), ContentType::AudioCall),

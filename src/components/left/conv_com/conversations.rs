@@ -3,25 +3,32 @@ use std::rc::Rc;
 use indexmap::IndexMap;
 use yew::prelude::*;
 
+use super::Chats;
 use crate::components::left::right_click_panel::RightClickPanel;
 use crate::components::left::select_friends::SelectFriendList;
+use crate::components::phone_call::PhoneCall;
 use crate::components::top_bar::TopBar;
-use crate::db;
 use crate::model::conversation::Conversation;
 use crate::model::group::Group;
-use crate::model::message::{GroupMsg, Msg, SingleCall};
-use crate::model::{ComponentType, ContentType, CurrentItem, RightContentType};
+use crate::model::message::{Msg, SingleCall};
+use crate::model::seq::Seq;
+use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::{
-    AddFriendStateItem, ConvState, CreateConvState, MuteState, RecSendMessageState, RemoveConvState,
+    AddFriendStateItem, ConvState, CreateConvState, MuteState, RemoveConvState, SendMessageState,
 };
-
-use super::Chats;
+use crate::pb::message::Msg as PbMsg;
+use crate::ws::WebSocketManager;
 
 pub enum ChatsMsg {
     FilterContact(AttrValue),
     CleanupSearchResult,
-    QueryConvs(IndexMap<AttrValue, Conversation>),
-    ReceiveMessage(Rc<RecSendMessageState>),
+    QueryConvs((IndexMap<AttrValue, Conversation>, Vec<PbMsg>, Seq)),
+    // ReceiveMessage(Rc<RecSendMessageState>),
+    ReceiveMsg(Msg),
+    // send message from sender
+    SendMsg(Rc<SendMessageState>),
+    // send message for self
+    SendMessage(Msg),
     InsertConv(Conversation),
     ConvStateChanged(Rc<ConvState>),
     WaitStateChanged,
@@ -38,6 +45,7 @@ pub enum ChatsMsg {
     MuteStateChanged(Rc<MuteState>),
     SendCreateGroupToContacts(Group),
     DismissGroup(AttrValue, String),
+    RecMsgNotify(Msg),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -76,153 +84,23 @@ impl Component for Chats {
                 self.result.clear();
                 true
             }
-            ChatsMsg::QueryConvs(convs) => {
+            ChatsMsg::QueryConvs((convs, messages, seq)) => {
                 log::debug!("query complete:{:?}", convs);
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
                 self.wait_state.ready.emit(());
+                self.seq = seq;
+                // handle offline messages
+                self.handle_offline_messages(ctx, messages);
                 true
             }
-            ChatsMsg::ReceiveMessage(state) => {
+            /* ChatsMsg::ReceiveMessage(state) => {
                 let msg = state.msg.clone();
-                let conv_type = match msg {
-                    Msg::Group(_) => RightContentType::Group,
-                    Msg::Single(_) | Msg::SingleCall(_) => RightContentType::Friend,
-                    _ => RightContentType::Default,
-                };
-                match msg {
-                    Msg::Single(msg)
-                    | Msg::Group(GroupMsg::Message(msg))
-                    | Msg::OfflineSync(msg) => {
-                        let conv = Conversation {
-                            last_msg: msg.content.clone(),
-                            last_msg_time: msg.create_time,
-                            last_msg_type: msg.content_type,
-                            conv_type,
-                            friend_id: msg.friend_id.clone(),
-                            ..Default::default()
-                        };
-                        self.operate_msg(ctx, msg.friend_id, conv, msg.is_self)
-                    }
-                    Msg::Group(group_msg) => {
-                        match group_msg {
-                            GroupMsg::Invitation(msg) => {
-                                // create group conversation directly
-                                let clone_ctx = ctx.link().clone();
-                                ctx.link().send_future(async move {
-                                    // store conversation
-                                    let conv = Conversation::from(msg.info.clone());
-                                    db::convs().await.put_conv(&conv, true).await.unwrap();
-
-                                    // store group information
-                                    if let Err(err) = db::groups().await.put(&msg.info).await {
-                                        log::error!("store group error : {:?}", err);
-                                    };
-
-                                    // store group members
-                                    if let Err(e) =
-                                        db::group_members().await.put_list(msg.members).await
-                                    {
-                                        log::error!("save group member error: {:?}", e);
-                                    }
-
-                                    // send back received message
-                                    clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(
-                                        msg.info.id.clone(),
-                                    ));
-
-                                    // send add friend state
-                                    clone_ctx.send_message(ChatsMsg::SendCreateGroupToContacts(
-                                        msg.info,
-                                    ));
-                                    ChatsMsg::InsertConv(conv)
-                                });
-                            }
-                            GroupMsg::Dismiss(group_id) => {
-                                let key = AttrValue::from(group_id.clone());
-                                if let Some(conv) = self.list.get_mut(&key) {
-                                    conv.last_msg_time = chrono::Local::now().timestamp_millis();
-                                    conv.last_msg_type = ContentType::Text;
-                                    let mut conv = conv.clone();
-                                    ctx.link().send_future(async move {
-                                        // query group information and owner info
-                                        if let Ok(Some(group)) =
-                                            db::groups().await.get(&group_id).await
-                                        {
-                                            if let Ok(Some(mem)) = db::group_members()
-                                                .await
-                                                .get_by_group_id_and_friend_id(
-                                                    &group_id,
-                                                    group.owner.as_str(),
-                                                )
-                                                .await
-                                            {
-                                                let message = format!(
-                                                    "{} dismissed this group",
-                                                    mem.group_name
-                                                );
-                                                conv.last_msg = message.clone().into();
-
-                                                if let Err(e) =
-                                                    db::convs().await.put_conv(&conv, true).await
-                                                {
-                                                    log::error!("dismiss group error: {:?}", e);
-                                                } else {
-                                                    return ChatsMsg::DismissGroup(key, message);
-                                                }
-                                            }
-                                        }
-                                        ChatsMsg::None
-                                    })
-                                }
-                            }
-                            // don't handle it now
-                            _ => {}
-                        }
-                        false
-                    }
-
-                    Msg::SingleCall(SingleCall::Invite(msg)) => {
-                        let friend_id = msg.friend_id.clone();
-                        let mut conv = Conversation::from(msg);
-                        conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv, false)
-                    }
-                    Msg::SingleCall(SingleCall::InviteCancel(msg)) => {
-                        let friend_id = msg.friend_id.clone();
-                        let is_self = msg.is_self;
-                        let mut conv = Conversation::from(msg);
-                        conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv, is_self)
-                    }
-                    Msg::SingleCall(SingleCall::NotAnswer(msg)) => {
-                        let friend_id = msg.friend_id.clone();
-                        let is_self = msg.is_self;
-                        let mut conv = Conversation::from(msg);
-                        conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv, is_self)
-                    }
-                    Msg::SingleCall(SingleCall::HangUp(msg)) => {
-                        let friend_id = msg.friend_id.clone();
-                        let is_self = msg.is_self;
-                        let mut conv = Conversation::from(msg);
-                        conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv, is_self)
-                    }
-                    Msg::SingleCall(SingleCall::InviteAnswer(msg)) => {
-                        let friend_id = msg.friend_id.clone();
-                        let is_self = msg.is_self;
-                        let mut conv = Conversation::from(msg);
-                        conv.conv_type = conv_type;
-                        self.operate_msg(ctx, friend_id, conv, is_self)
-                    }
-                    _ => false,
-                }
-            }
-            ChatsMsg::InsertConv(flag) => {
-                // self.list.insert(0, flag);
-                self.list.shift_insert(0, flag.friend_id.clone(), flag);
+                self.handle_received_messages(ctx, msg)
+            } */
+            ChatsMsg::InsertConv(conv) => {
+                self.list.shift_insert(0, conv.friend_id.clone(), conv);
                 true
             }
             ChatsMsg::ShowSelectFriendList => {
@@ -241,13 +119,13 @@ impl Component for Chats {
                 // send message to contacts component
                 false
             }
-            ChatsMsg::SendBackGroupInvitation(group_id) => {
-                self.msg_state
-                    .send_back_event
-                    .emit(Msg::Group(GroupMsg::InvitationReceived((
-                        ctx.props().user_id.to_string(),
-                        group_id.to_string(),
-                    ))));
+            ChatsMsg::SendBackGroupInvitation(_group_id) => {
+                // self.msg_state
+                //     .send_back_event
+                //     .emit(Msg::Group(GroupMsg::InvitationReceived((
+                //         ctx.props().user_id.to_string(),
+                //         group_id.to_string(),
+                //     ))));
                 false
             }
             ChatsMsg::ShowContextMenu((x, y), id, is_mute) => {
@@ -315,6 +193,23 @@ impl Component for Chats {
                 }
                 true
             }
+            ChatsMsg::ReceiveMsg(msg) => self.handle_receive_message(ctx, msg),
+            ChatsMsg::SendMsg(state) => {
+                log::debug!("send message from sender in conversation");
+                let msg = state.msg.clone();
+                self.send_msg(msg.clone());
+                self.handle_sent_msg(ctx, msg);
+                false
+            }
+            ChatsMsg::RecMsgNotify(msg) => {
+                self.rec_msg_state.notify.emit(msg);
+                false
+            }
+            ChatsMsg::SendMessage(msg) => {
+                self.send_msg(msg.clone());
+                self.handle_sent_msg(ctx, msg);
+                false
+            }
         }
     }
 
@@ -353,6 +248,8 @@ impl Component for Chats {
             }
         }
         html! {
+        <ContextProvider<SingleCall> context={self.call_msg.clone()}>
+            <PhoneCall ws={self.ws.clone()} user_id={ctx.props().user_id.clone()}/>
             <div class="list-wrapper">
                 {context_menu}
                 {friend_list}
@@ -361,6 +258,14 @@ impl Component for Chats {
                     {content}
                 </div>
             </div>
+        </ContextProvider<SingleCall>>
+
+        }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
+        if first_render {
+            WebSocketManager::connect(self.ws.clone());
         }
     }
 }

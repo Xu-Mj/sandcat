@@ -86,7 +86,7 @@ impl Conversations for ConvRepo {
         if is_clean_unread_count {
             result.unread_count = 0;
         } else {
-            result.unread_count += 1;
+            result.unread_count += conv.unread_count;
         }
         result.conv_type = conv.conv_type.clone();
         result.friend_id = conv.friend_id.clone();

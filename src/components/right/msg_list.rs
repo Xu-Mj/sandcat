@@ -11,10 +11,12 @@ use crate::model::message::Msg;
 use crate::model::message::SingleCall;
 use crate::model::ItemInfo;
 use crate::model::RightContentType;
+use crate::pages::OfflineMsgState;
+use crate::pages::RecMessageState;
 use crate::{
     components::right::{msg_item::MsgItem, sender::Sender},
     model::message::Message,
-    pages::RecSendMessageState,
+    // pages::SendMessageState,
 };
 
 pub struct MessageList {
@@ -28,8 +30,12 @@ pub struct MessageList {
     new_msg_count: u32,
     is_black: bool,
     // 监听消息接收状态，用来更新当前对话框消息列表
-    _msg_state: Rc<RecSendMessageState>,
-    _listener: ContextHandle<Rc<RecSendMessageState>>,
+    // _msg_state: Rc<RecSendMessageState>,
+    // _listener: ContextHandle<Rc<RecSendMessageState>>,
+    _sync_msg_state: Rc<OfflineMsgState>,
+    _sync_msg_listener: ContextHandle<Rc<OfflineMsgState>>,
+    _rec_msg_state: Rc<RecMessageState>,
+    _rec_msg_listener: ContextHandle<Rc<RecMessageState>>,
 }
 
 pub enum MessageListMsg {
@@ -37,7 +43,9 @@ pub enum MessageListMsg {
     NextPage,
     NextPageNone,
     SendFile(Message),
-    ReceiveMsg(Rc<RecSendMessageState>),
+    // ReceiveMsg(Rc<RecSendMessageState>),
+    ReceiveMsg(Rc<RecMessageState>),
+    SyncOfflineMsg(Rc<OfflineMsgState>),
     GoBottom,
     QueryFriend(Option<Box<dyn ItemInfo>>),
 }
@@ -150,6 +158,51 @@ impl MessageList {
             false
         }
     }
+    fn handle_rec_msg(&mut self, msg: Msg, friend_id: AttrValue) -> bool {
+        match msg {
+            Msg::Single(msg) => self.insert_msg(msg, friend_id),
+            Msg::Group(msg) => {
+                match msg {
+                    GroupMsg::Message(msg) => self.insert_msg(msg, friend_id),
+                    // need to handle, as system notify
+                    GroupMsg::MemberExit(_) => false,
+                    GroupMsg::Dismiss(group_id) => {
+                        if group_id == friend_id {
+                            self.is_black = true;
+                            return true;
+                        }
+                        false
+                    }
+                    _ => false,
+                }
+            }
+
+            Msg::SingleCall(m) => match m {
+                SingleCall::InviteCancel(msg) => self.insert_msg(msg.into(), friend_id),
+                SingleCall::InviteAnswer(msg) => {
+                    if !msg.agree {
+                        return self.insert_msg(msg.into(), friend_id);
+                    }
+                    false
+                }
+                SingleCall::HangUp(msg) => self.insert_msg(Message::from_hangup(msg), friend_id),
+                SingleCall::NotAnswer(msg) => {
+                    self.insert_msg(Message::from_not_answer(msg), friend_id)
+                }
+                _ => false,
+            },
+
+            Msg::SendRelationshipReq(_)
+            | Msg::RecRelationship(_)
+            | Msg::ReadNotice(_)
+            | Msg::SingleDeliveredNotice(_)
+            | Msg::OfflineSync(_)
+            | Msg::RelationshipRes(_)
+            | Msg::FriendshipDeliveredNotice(_) => false,
+            // todo query list item , update state
+            Msg::ServerRecResp(_) => false,
+        }
+    }
 }
 
 impl Component for MessageList {
@@ -157,7 +210,15 @@ impl Component for MessageList {
     type Properties = MessageListProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (_msg_state, _listener) = ctx
+        // let (_msg_state, _listener) = ctx
+        //     .link()
+        //     .context(ctx.link().callback(MessageListMsg::ReceiveMsg))
+        //     .expect("need msg context");
+        let (_sync_msg_state, _sync_msg_listener) = ctx
+            .link()
+            .context(ctx.link().callback(MessageListMsg::SyncOfflineMsg))
+            .expect("need msg context");
+        let (_rec_msg_state, _rec_msg_listener) = ctx
             .link()
             .context(ctx.link().callback(MessageListMsg::ReceiveMsg))
             .expect("need msg context");
@@ -168,11 +229,15 @@ impl Component for MessageList {
             page: 1,
             is_all: false,
             scroll_state: ScrollState::Bottom,
-            _msg_state,
-            _listener,
+            // _msg_state,
+            // _listener,
             friend: None,
             new_msg_count: 0,
             is_black: false,
+            _sync_msg_state,
+            _sync_msg_listener,
+            _rec_msg_state,
+            _rec_msg_listener,
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -222,52 +287,9 @@ impl Component for MessageList {
                 true
             }
             MessageListMsg::ReceiveMsg(msg_state) => {
+                log::debug!("rec message in message list....");
                 let msg = msg_state.msg.clone();
-                match msg {
-                    Msg::Single(msg) => self.insert_msg(msg, friend_id),
-                    Msg::Group(msg) => {
-                        match msg {
-                            GroupMsg::Message(msg) => self.insert_msg(msg, friend_id),
-                            // need to handle, as system notify
-                            GroupMsg::MemberExit(_) => false,
-                            GroupMsg::Dismiss(group_id) => {
-                                if group_id == ctx.props().friend_id {
-                                    self.is_black = true;
-                                    return true;
-                                }
-                                false
-                            }
-                            _ => false,
-                        }
-                    }
-
-                    Msg::SingleCall(m) => match m {
-                        SingleCall::InviteCancel(msg) => self.insert_msg(msg.into(), friend_id),
-                        SingleCall::InviteAnswer(msg) => {
-                            if !msg.agree {
-                                return self.insert_msg(msg.into(), friend_id);
-                            }
-                            false
-                        }
-                        SingleCall::HangUp(msg) => {
-                            self.insert_msg(Message::from_hangup(msg), friend_id)
-                        }
-                        SingleCall::NotAnswer(msg) => {
-                            self.insert_msg(Message::from_not_answer(msg), friend_id)
-                        }
-                        _ => false,
-                    },
-
-                    Msg::SendRelationshipReq(_)
-                    | Msg::RecRelationship(_)
-                    | Msg::ReadNotice(_)
-                    | Msg::SingleDeliveredNotice(_)
-                    | Msg::OfflineSync(_)
-                    | Msg::RelationshipRes(_)
-                    | Msg::FriendshipDeliveredNotice(_) => false,
-                    // todo query list item , update state
-                    Msg::ServerRecResp(_) => false,
-                }
+                self.handle_rec_msg(msg, friend_id)
             }
             MessageListMsg::GoBottom => {
                 self.new_msg_count = 0;
@@ -280,6 +302,11 @@ impl Component for MessageList {
                 }
                 self.friend = item;
                 true
+            }
+            MessageListMsg::SyncOfflineMsg(_) => {
+                self.reset();
+                self.query(ctx);
+                false
             }
         }
     }

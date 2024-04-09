@@ -10,14 +10,14 @@ use crate::model::group::GroupMember;
 use crate::model::message::{InviteMsg, InviteType, Message};
 use crate::model::user::{User, UserWithMatchType};
 use crate::model::RightContentType;
-use crate::pages::RecSendMessageState;
+use crate::pages::SendMessageState;
 use crate::{components::right::friend_card::FriendCard, model::ContentType};
 
 pub struct MsgItem {
     avatar: AttrValue,
     show_img_preview: bool,
     show_friend_card: bool,
-    msg_state: Rc<RecSendMessageState>,
+    msg_state: Rc<SendMessageState>,
 }
 
 pub enum MsgItemMsg {

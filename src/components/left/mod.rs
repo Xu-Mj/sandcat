@@ -17,8 +17,10 @@ use crate::components::left::top::Top;
 use crate::model::ComponentType;
 use crate::pages::AppState;
 
-#[derive(Properties, PartialEq)]
-pub struct LeftProps;
+#[derive(Properties, PartialEq, Debug)]
+pub struct LeftProps {
+    pub user_id: AttrValue,
+}
 
 pub enum LeftMsg {
     ContextChanged(Rc<AppState>),
@@ -76,7 +78,7 @@ impl Component for Left {
                 <Top avatar={self.state.login_user.avatar.clone()} name={self.state.login_user.name.clone()} />
                 <div class="left-down">
                     <div class={classes}>
-                    <Chats user_id={self.state.login_user.id.clone()}
+                    <Chats user_id={_ctx.props().user_id.clone()}
                             avatar={self.state.login_user.avatar.clone()} />
                     <Contacts user_id={self.state.login_user.id.clone()}/>
                     </div>

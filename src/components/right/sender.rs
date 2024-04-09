@@ -21,7 +21,7 @@ use crate::{
     icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon},
     model::message::Message,
     model::ContentType,
-    pages::RecSendMessageState,
+    pages::SendMessageState,
 };
 
 use super::emoji::{get_emojis, Emoji};
@@ -40,10 +40,8 @@ pub struct Sender {
     file_input_ref: NodeRef,
     emoji_wrapper_ref: NodeRef,
     show_file_sender: bool,
-    rec_send_msg: Rc<RecSendMessageState>,
-    _conv_listener: ContextHandle<Rc<RecSendMessageState>>,
-    call_state: Rc<RecSendMessageState>,
-    _call_listener: ContextHandle<Rc<RecSendMessageState>>,
+    send_msg: Rc<SendMessageState>,
+    _send_msg_listener: ContextHandle<Rc<SendMessageState>>,
     file_list: Vec<FileListItem>,
 }
 
@@ -105,10 +103,10 @@ impl Sender {
     fn send_msg(&self, ctx: &Context<Self>, msg: Message) {
         match ctx.props().conv_type {
             RightContentType::Friend => {
-                self.rec_send_msg.send_msg_event.emit(Msg::Single(msg));
+                self.send_msg.send_msg_event.emit(Msg::Single(msg));
             }
             RightContentType::Group => {
-                self.rec_send_msg
+                self.send_msg
                     .send_msg_event
                     .emit(Msg::Group(GroupMsg::Message(msg)));
             }
@@ -190,10 +188,6 @@ impl Component for Sender {
             .link()
             .context(ctx.link().callback(|_| SenderMsg::None))
             .expect("needed to get context");
-        let (call_state, _call_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| SenderMsg::None))
-            .expect("needed to get context");
 
         // 加载表情
         Self {
@@ -206,10 +200,8 @@ impl Component for Sender {
             sender_ref: NodeRef::default(),
             emoji_wrapper_ref: NodeRef::default(),
             show_file_sender: false,
-            rec_send_msg: conv_state,
-            _conv_listener,
-            call_state,
-            _call_listener,
+            send_msg: conv_state,
+            _send_msg_listener: _conv_listener,
             file_list: vec![],
         }
     }
@@ -440,7 +432,7 @@ impl Component for Sender {
                 true
             }
             SenderMsg::SendVideoCall => {
-                self.call_state.call_event.emit(InviteMsg {
+                self.send_msg.call_event.emit(InviteMsg {
                     msg_id: nanoid::nanoid!().into(),
                     create_time: chrono::Local::now().timestamp_millis(),
                     friend_id: ctx.props().friend_id.clone(),
@@ -450,7 +442,7 @@ impl Component for Sender {
                 false
             }
             SenderMsg::SendAudioCall => {
-                self.call_state.call_event.emit(InviteMsg {
+                self.send_msg.call_event.emit(InviteMsg {
                     msg_id: nanoid::nanoid!().into(),
                     create_time: chrono::Local::now().timestamp_millis(),
                     friend_id: ctx.props().friend_id.clone(),

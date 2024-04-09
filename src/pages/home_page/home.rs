@@ -4,21 +4,21 @@ use gloo::utils::window;
 use wasm_bindgen_futures::spawn_local;
 use yew::{AttrValue, Context, NodeRef};
 
-use crate::model::seq::Seq;
-use crate::{api, db};
+use crate::db;
+use crate::pages::{OfflineMsgState, RecMessageState};
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME, TOKEN, WS_ADDR},
     model::{
         friend::{Friend, FriendShipWithUser},
-        message::{GroupMsg, InviteMsg, Message, Msg, SingleCall, DEFAULT_HELLO_MESSAGE},
+        message::{GroupMsg, InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
         user::User,
         ComponentType, ContentType, CurrentItem, FriendShipStateType,
     },
     pages::{
         home_page::HomeMsg, AddFriendState, AppState, ConvState, CreateConvState, FriendListState,
-        FriendShipState, MuteState, RecSendCallState, RecSendMessageState, RemoveConvState,
-        RemoveFriendState, UnreadState, WaitState,
+        FriendShipState, MuteState, RecSendCallState, RemoveConvState, RemoveFriendState,
+        SendMessageState, UnreadState, WaitState,
     },
     ws::WebSocketManager,
 };
@@ -28,26 +28,12 @@ use super::{Home, QueryResult, WAIT_COUNT};
 async fn query(id: &str) -> Result<QueryResult, QueryError> {
     let user_repo = db::users().await;
     let user = user_repo.get(id).await.unwrap();
-    // update seq
-    let seq_repo = db::seq().await;
-    let mut local_seq = seq_repo.get().await.unwrap_or_default();
-    let mut messages = Vec::new();
-    if local_seq.local_seq < local_seq.server_seq {
-        // request offline messages
-        messages = api::messages()
-            .pull_offline_msg(id, local_seq.local_seq, local_seq.server_seq)
-            .await
-            .unwrap();
-    }
-    local_seq.local_seq = local_seq.server_seq;
-    seq_repo.put(&local_seq).await.unwrap();
+
     Ok((
         user,
         current_item::get_conv(),
         current_item::get_friend(),
         current_item::get_com_type(),
-        messages,
-        local_seq,
     ))
 }
 
@@ -80,10 +66,12 @@ impl Home {
         let sub_msg_count = ctx.link().callback(HomeMsg::SubUnreadMsgCount);
         let add_msg_count = ctx.link().callback(HomeMsg::AddUnreadMsgCount);
         let ready = ctx.link().callback(|_| HomeMsg::WaitStateChanged);
+        let complete = ctx.link().callback(HomeMsg::OfflineSyncStateChange);
         let rec_msg_event = ctx.link().callback(HomeMsg::RecSendMsgStateChange);
+        let rec_msg_notify_event = ctx.link().callback(HomeMsg::RecMsgStateChange);
         let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
         let send_msg_event = ctx.link().callback(HomeMsg::SendMessage);
-        let send_back_event = ctx.link().callback(HomeMsg::SendBackMsg);
+        // let send_back_event = ctx.link().callback(HomeMsg::SendBackMsg);
         let call_event = ctx.link().callback(HomeMsg::SendCallInvite);
         let rec_friend_req_event = ctx.link().callback(HomeMsg::ReceiveFriendShipReq);
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
@@ -107,6 +95,10 @@ impl Home {
             .get(WS_ADDR)
             .unwrap()
             .unwrap();
+        let user = User {
+            id: id.clone(),
+            ..Default::default()
+        };
         let url = format!("{}/{}/conn/{}/{}", addr, id.clone(), token, id);
         let ws = Rc::new(RefCell::new(WebSocketManager::new(url, rec_listener)));
         Self {
@@ -115,14 +107,13 @@ impl Home {
                 switch_com_event: callback,
                 ..Default::default()
             }),
-            msg_state: Rc::new(RecSendMessageState {
+            send_msg_state: Rc::new(SendMessageState {
                 msg: Msg::Single(Message::default()),
-                send_back_event,
+                // send_back_event,
                 send_msg_event: send_msg_event.clone(),
                 call_event: call_event.clone(),
             }),
-            user: User::default(),
-            seq: Seq::default(),
+            user,
             conv_state: Rc::new(ConvState {
                 conv: CurrentItem::default(),
                 state_change_event: switch_conv_callback,
@@ -162,7 +153,7 @@ impl Home {
                 rec_msg_event,
                 call_event,
             }),
-            call_msg: SingleCall::default(),
+            // call_msg: SingleCall::default(),
             wait_state: Rc::new(WaitState {
                 wait_count: WAIT_COUNT,
                 ready,
@@ -181,6 +172,14 @@ impl Home {
             }),
             add_friend_state: Rc::new(AddFriendState {
                 add,
+                ..Default::default()
+            }),
+            sync_msg_state: Rc::new(OfflineMsgState {
+                null: None,
+                complete,
+            }),
+            rec_msg_state: Rc::new(RecMessageState {
+                notify: rec_msg_notify_event,
                 ..Default::default()
             }),
         }
@@ -311,18 +310,11 @@ impl Home {
 
                 let mut msg = msg.clone();
                 let msg_id = msg.server_id.to_string();
-
-                // if self.conv_state.conv.item_id != msg.friend_id {
-                //     log::debug!("conv state conv item id is not equal to msg friend id");
-                //     let conv_state = Rc::make_mut(&mut self.conv_state);
-                //     let _ = current_item::save_conv(&conv_state.conv)
-                //         .map_err(|err| log::error!("save conv fail{:?}", err));
-                // }
                 ctx.link().send_future(async move {
-                    // 数据入库
+                    // save to db
                     if let Err(err) = db::messages().await.add_message(&mut msg).await {
                         HomeMsg::Notification(Notification::error_from_content(
-                            format!("内部错误:{:?}", err).into(),
+                            format!("Internal Error:{:?}", err).into(),
                         ))
                     } else {
                         HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
@@ -417,10 +409,10 @@ impl Home {
             }
             Msg::ReadNotice(_) | Msg::SingleDeliveredNotice(_) => {}
             Msg::OfflineSync(_) => {}
-            Msg::SingleCall(m) => {
+            Msg::SingleCall(_m) => {
                 // 保存电话信息，通知phone call组件
-                self.call_msg = m;
-                return true;
+                // self.call_msg = m;
+                // return true;
             }
             Msg::FriendshipDeliveredNotice(_) => {}
             Msg::RelationshipRes(friend) => {
