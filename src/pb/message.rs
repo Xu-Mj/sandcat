@@ -21,25 +21,22 @@ pub struct Msg {
     pub send_time: i64,
     #[prost(int64, tag = "7")]
     pub seq: i64,
-    #[prost(string, tag = "8")]
-    // #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub group_id: ::prost::alloc::string::String,
     /// is there necessary to cary the user's avatar and nickname?
-    #[prost(enumeration = "MsgType", tag = "9")]
+    #[prost(enumeration = "MsgType", tag = "8")]
     pub msg_type: i32,
-    #[prost(enumeration = "ContentType", tag = "10")]
+    #[prost(enumeration = "ContentType", tag = "9")]
     pub content_type: i32,
-    #[prost(bytes = "vec", tag = "11")]
+    #[prost(bytes = "vec", tag = "10")]
     pub content: ::prost::alloc::vec::Vec<u8>,
-    #[prost(bool, tag = "12")]
+    #[prost(bool, tag = "11")]
     pub is_read: bool,
-    #[prost(string, optional, tag = "13")]
+    #[prost(string, optional, tag = "12")]
     pub sdp: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(string, optional, tag = "14")]
+    #[prost(string, optional, tag = "13")]
     pub sdp_mid: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "15")]
+    #[prost(int32, optional, tag = "14")]
     pub sdp_m_index: ::core::option::Option<i32>,
-    #[prost(bool, tag = "16")]
+    #[prost(bool, tag = "15")]
     pub call_agree: bool,
 }
 #[derive(serde::Serialize, serde::Deserialize)]

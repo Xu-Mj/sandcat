@@ -198,8 +198,7 @@ impl Component for Chats {
                 log::debug!("send message from sender in conversation");
                 let msg = state.msg.clone();
                 self.send_msg(msg.clone());
-                self.handle_sent_msg(ctx, msg);
-                false
+                self.handle_sent_msg(ctx, msg)
             }
             ChatsMsg::RecMsgNotify(msg) => {
                 self.rec_msg_state.notify.emit(msg);

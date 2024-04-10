@@ -34,7 +34,7 @@ impl GroupApi for GroupHttp {
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
         // log::debug!("send create group reeques by {:?}", user_id);
-        Ok(response.info)
+        Ok(Group::from(response.info.unwrap()))
     }
 
     async fn delete_group(&self, data: GroupDelete) -> Result<(), JsValue> {

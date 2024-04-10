@@ -1,3 +1,4 @@
+use log::debug;
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
@@ -7,7 +8,7 @@ use crate::pb::message::{Msg as PbMsg, MsgType};
 use crate::{pb, utils};
 
 use super::friend::Friend;
-use super::group::{Group, GroupMember};
+use super::group::{GroupFromServer, GroupMemberFromServer};
 
 pub(crate) const DEFAULT_HELLO_MESSAGE: &str = "I've accepted your friend request. Now let's chat!";
 
@@ -211,8 +212,8 @@ impl Message {
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct GroupInvitation {
-    pub info: Group,
-    pub members: Vec<GroupMember>,
+    pub info: Option<GroupFromServer>,
+    pub members: Vec<GroupMemberFromServer>,
 }
 
 pub type MessageID = String;
@@ -551,7 +552,7 @@ impl TryFrom<pb::message::Msg> for Message {
 }
 
 pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
-    // debug!("convert msg: {:?}", msg);
+    debug!("convert msg: {:?}", msg);
     let msg_type = MsgType::try_from(msg.msg_type).unwrap();
     match msg_type {
         MsgType::SingleMsg => Ok(Msg::Single(Message::try_from(msg)?)),
@@ -564,9 +565,9 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         MsgType::GroupInviteNew => todo!(),
         MsgType::GroupMemberExit => Ok(Msg::Group(GroupMsg::MemberExit((
             msg.send_id,
-            msg.group_id,
+            msg.receiver_id,
         )))),
-        MsgType::GroupDismiss => Ok(Msg::Group(GroupMsg::Dismiss(msg.group_id))),
+        MsgType::GroupDismiss => Ok(Msg::Group(GroupMsg::Dismiss(msg.receiver_id))),
         MsgType::GroupDismissOrExitReceived => todo!(),
         MsgType::GroupInvitationReceived => todo!(),
         MsgType::GroupUpdate => todo!(),
@@ -723,7 +724,6 @@ impl From<Msg> for PbMsg {
                         pb_msg.create_time = msg.create_time;
                         pb_msg.content_type = msg.content_type as i32;
                         pb_msg.content = msg.content.as_bytes().to_vec();
-                        pb_msg.group_id = msg.friend_id.to_string();
                     }
                     GroupMsg::Invitation(info) => {
                         pb_msg.msg_type = MsgType::GroupInvitation as i32;
@@ -732,11 +732,11 @@ impl From<Msg> for PbMsg {
                     GroupMsg::MemberExit((send_id, group_id)) => {
                         pb_msg.msg_type = MsgType::GroupMemberExit as i32;
                         pb_msg.send_id = send_id.to_string();
-                        pb_msg.group_id = group_id.to_string();
+                        pb_msg.receiver_id = group_id.to_string();
                     }
                     GroupMsg::Dismiss(group_id) => {
                         pb_msg.msg_type = MsgType::GroupDismiss as i32;
-                        pb_msg.group_id = group_id.to_string();
+                        pb_msg.receiver_id = group_id.to_string();
                     }
                     GroupMsg::DismissOrExitReceived(_) => {}
                     GroupMsg::InvitationReceived(_) => {}

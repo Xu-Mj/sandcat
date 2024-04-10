@@ -71,7 +71,9 @@ impl Component for SelectFriendList {
                                 v.push(node.value());
                             };
                         }
-                        v.push(ctx.props().except.clone().to_string().clone().to_string());
+                        if !ctx.props().except.is_empty() {
+                            v.push(ctx.props().except.clone().to_string().clone().to_string())
+                        };
                         ctx.props().submit_back.emit(v);
                     }
                     Err(_) => {

@@ -6,7 +6,10 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::Event;
 
-use crate::{db::group_members::GroupMembers, model::group::GroupMember};
+use crate::{
+    db::group_members::GroupMembers,
+    model::group::{GroupMember, GroupMemberFromServer},
+};
 
 use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
 
@@ -36,7 +39,7 @@ impl GroupMembers for GroupMembersRepo {
         Ok(())
     }
 
-    async fn put_list(&self, members: Vec<GroupMember>) -> Result<(), JsValue> {
+    async fn put_list(&self, members: Vec<GroupMemberFromServer>) -> Result<(), JsValue> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         for member in members {
             let value = serde_wasm_bindgen::to_value(&member)?;
