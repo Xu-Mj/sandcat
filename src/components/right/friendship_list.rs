@@ -127,6 +127,7 @@ impl Component for FriendShipList {
                             item.status = FriendStatus::Accepted as i32;
                             item.read = ReadStatus::True;
                         }
+                        // todo should update the database at here
                         self.friendship_state
                             .res_change_event
                             .emit((friendship_id, *friend));

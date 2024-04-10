@@ -83,7 +83,8 @@ impl Component for Action {
             ActionMsg::CallStateChanged(_) => false,
             ActionMsg::SendCallInvite(t) => {
                 self.msg_state.call_event.emit(InviteMsg {
-                    msg_id: nanoid!().into(),
+                    local_id: nanoid!().into(),
+                    server_id: AttrValue::default(),
                     send_id: self.state.login_user.id.clone(),
                     friend_id: ctx.props().id.clone(),
                     create_time: chrono::Local::now().timestamp_millis(),

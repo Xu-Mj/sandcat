@@ -10,7 +10,7 @@ use crate::components::phone_call::PhoneCall;
 use crate::components::top_bar::TopBar;
 use crate::model::conversation::Conversation;
 use crate::model::group::Group;
-use crate::model::message::{Msg, SingleCall};
+use crate::model::message::Msg;
 use crate::model::seq::Seq;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::{
@@ -18,6 +18,7 @@ use crate::pages::{
 };
 use crate::pb::message::Msg as PbMsg;
 use crate::ws::WebSocketManager;
+#[derive(Debug)]
 
 pub enum ChatsMsg {
     FilterContact(AttrValue),
@@ -65,6 +66,7 @@ impl Component for Chats {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        log::debug!("Chats update:{:?}", msg);
         match msg {
             ChatsMsg::FilterContact(pattern) => {
                 self.is_searching = true;
@@ -199,7 +201,9 @@ impl Component for Chats {
                 log::debug!("send message from sender in conversation");
                 let msg = state.msg.clone();
                 self.send_msg(msg.clone());
-                self.handle_sent_msg(ctx, msg)
+                self.rec_msg_state.notify.emit(msg.clone());
+                self.handle_sent_msg(ctx, msg);
+                false
             }
             ChatsMsg::RecMsgNotify(msg) => {
                 self.rec_msg_state.notify.emit(msg);
@@ -207,6 +211,7 @@ impl Component for Chats {
             }
             ChatsMsg::SendMessage(msg) => {
                 self.send_msg(msg.clone());
+                self.rec_msg_state.notify.emit(msg.clone());
                 self.handle_sent_msg(ctx, msg);
                 false
             }
@@ -218,6 +223,7 @@ impl Component for Chats {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        log::debug!("Chats::view");
         let content = if self.is_searching {
             if self.result.is_empty() {
                 html! {<div class="no-result">{"没有搜索结果"}</div>}
@@ -251,9 +257,15 @@ impl Component for Chats {
                     is_mute={self.context_menu_pos.3}/>
             }
         }
+
+        // PhoneCall send message callback
+        let send_msg_callback = ctx
+            .link()
+            .callback(|msg| ChatsMsg::SendMessage(Msg::SingleCall(msg)));
         html! {
-        <ContextProvider<SingleCall> context={self.call_msg.clone()}>
-            <PhoneCall ws={self.ws.clone()} user_id={ctx.props().user_id.clone()}/>
+        // <ContextProvider<SingleCall> context={self.call_msg.clone()}>
+        <>
+            <PhoneCall ws={self.ws.clone()} user_id={ctx.props().user_id.clone()} msg={self.call_msg.clone()} send_msg={send_msg_callback}/>
             <div class="list-wrapper">
                 {context_menu}
                 {friend_list}
@@ -262,7 +274,8 @@ impl Component for Chats {
                     {content}
                 </div>
             </div>
-        </ContextProvider<SingleCall>>
+        </>
+        // </ContextProvider<SingleCall>>
 
         }
     }
@@ -271,5 +284,9 @@ impl Component for Chats {
         if first_render {
             WebSocketManager::connect(self.ws.clone());
         }
+    }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        self.ws.borrow_mut().cleanup();
     }
 }

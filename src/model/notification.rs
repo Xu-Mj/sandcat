@@ -20,6 +20,7 @@ impl Notification {
         }
     }
      */
+    #[allow(dead_code)]
     pub fn error_from_content(content: AttrValue) -> Self {
         Self {
             content,

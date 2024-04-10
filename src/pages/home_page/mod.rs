@@ -1,5 +1,4 @@
 pub(crate) mod home;
-use std::cell::RefCell;
 use std::rc::Rc;
 
 use gloo::timers::callback::Interval;
@@ -23,7 +22,6 @@ use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::MuteState;
 
-use crate::ws::WebSocketManager;
 use crate::{
     components::{left::Left, right::Right},
     db::QueryStatus,
@@ -33,7 +31,8 @@ pub struct Home {
     // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
     // call_msg: SingleCall,
     user: User,
-    ws: Rc<RefCell<WebSocketManager>>,
+    /// don't need anymore
+    // ws: Rc<RefCell<WebSocketManager>>,
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
     state: Rc<AppState>,
@@ -54,7 +53,9 @@ pub struct Home {
     wait_state: Rc<WaitState>,
     create_conv: Rc<CreateConvState>,
 }
+
 const WAIT_COUNT: usize = 1;
+
 pub enum HomeMsg {
     // 全局组件切换
     SwitchComponent(ComponentType),
@@ -67,12 +68,12 @@ pub enum HomeMsg {
     OfflineSyncStateChange(()),
     // 查询数据库
     Query(QueryStatus<QueryResult>),
-    // 接收/发送消息
-    RecSendMsgStateChange(Msg),
+    // 发送消息
+    SendMsgStateChange(Msg),
     // 收到消息
     RecMsgStateChange(Msg),
     // 收到消息
-    ReceiveMessage(Msg),
+    // ReceiveMessage(Msg),
     // 收到好友请求
     ReceiveFriendShipReq(FriendShipWithUser),
     // 回复好友请求
@@ -168,30 +169,30 @@ impl Component for Home {
                 }
                 true
             }
-            HomeMsg::ReceiveMessage(message) => self.handle_receive_message(ctx, message),
             HomeMsg::SendMessage(msg) => {
-                ctx.link()
-                    .send_message(HomeMsg::RecSendMsgStateChange(msg.clone()));
-                // 发送消息
-                // self.send_msg(msg);
-                false
+                // change the send message state to send hello
+                let state = Rc::make_mut(&mut self.send_msg_state);
+                state.msg = msg;
+                true
             }
-            HomeMsg::RecSendMsgStateChange(msg) => {
+            HomeMsg::SendMsgStateChange(msg) => {
                 log::debug!("send message from sender");
                 let conv_state = Rc::make_mut(&mut self.send_msg_state);
                 conv_state.msg = msg;
                 true
             }
-            HomeMsg::SendBackMsg(msg) => {
+            // todo don't need anymore
+            HomeMsg::SendBackMsg(_msg) => {
                 // 发送已收到消息给服务器
-                self.send_msg(msg);
+                // self.send_msg(msg);
                 false
             }
+            // don't need anymore, at the conversation component
             HomeMsg::ReceiveFriendShipReq(friendship) => {
                 self.handle_friendship_req(ctx, friendship)
             }
             HomeMsg::FriendShipResponse((friendship_id, friend)) => {
-                self.handle_friendship_res(ctx, friendship_id, friend)
+                self.agree_friendship(ctx, friendship_id, friend)
             }
             HomeMsg::Notification(noti) => {
                 log::debug!("notification:{:?}", &noti);
@@ -385,7 +386,7 @@ impl Component for Home {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        self.ws.borrow_mut().cleanup();
+        // self.ws.borrow_mut().cleanup();
         log::debug!("home destroy==> delete database");
         // 测试阶段，销毁时删除数据库
         spawn_local(async {

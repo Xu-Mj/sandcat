@@ -1,16 +1,14 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
-use gloo::utils::window;
-use wasm_bindgen_futures::spawn_local;
 use yew::{AttrValue, Context, NodeRef};
 
 use crate::db;
 use crate::pages::{OfflineMsgState, RecMessageState};
 use crate::{
-    db::{current_item, QueryError, QueryStatus, DB_NAME, TOKEN, WS_ADDR},
+    db::{current_item, QueryError, QueryStatus, DB_NAME},
     model::{
         friend::{Friend, FriendShipWithUser},
-        message::{GroupMsg, InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE},
+        message::{InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
         user::User,
         ComponentType, ContentType, CurrentItem, FriendShipStateType,
@@ -20,7 +18,6 @@ use crate::{
         FriendShipState, MuteState, RecSendCallState, RemoveConvState, RemoveFriendState,
         SendMessageState, UnreadState, WaitState,
     },
-    ws::WebSocketManager,
 };
 
 use super::{Home, QueryResult, WAIT_COUNT};
@@ -67,9 +64,9 @@ impl Home {
         let add_msg_count = ctx.link().callback(HomeMsg::AddUnreadMsgCount);
         let ready = ctx.link().callback(|_| HomeMsg::WaitStateChanged);
         let complete = ctx.link().callback(HomeMsg::OfflineSyncStateChange);
-        let rec_msg_event = ctx.link().callback(HomeMsg::RecSendMsgStateChange);
+        let rec_msg_event = ctx.link().callback(HomeMsg::SendMsgStateChange);
         let rec_msg_notify_event = ctx.link().callback(HomeMsg::RecMsgStateChange);
-        let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
+        // let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
         let send_msg_event = ctx.link().callback(HomeMsg::SendMessage);
         // let send_back_event = ctx.link().callback(HomeMsg::SendBackMsg);
         let call_event = ctx.link().callback(HomeMsg::SendCallInvite);
@@ -80,27 +77,10 @@ impl Home {
         let create_group_conv = ctx.link().callback(HomeMsg::CreateGroupConv);
         let mute = ctx.link().callback(HomeMsg::MuteStateChange);
         let add = ctx.link().callback(HomeMsg::AddFriendStateChange);
-        // 不能用这么多unwrap()
-        let token = window()
-            .local_storage()
-            .unwrap()
-            .unwrap()
-            .get(TOKEN)
-            .unwrap()
-            .unwrap();
-        let addr = window()
-            .local_storage()
-            .unwrap()
-            .unwrap()
-            .get(WS_ADDR)
-            .unwrap()
-            .unwrap();
         let user = User {
             id: id.clone(),
             ..Default::default()
         };
-        let url = format!("{}/{}/conn/{}/{}", addr, id.clone(), token, id);
-        let ws = Rc::new(RefCell::new(WebSocketManager::new(url, rec_listener)));
         Self {
             state: Rc::new(AppState {
                 component_type: ComponentType::Messages,
@@ -129,7 +109,7 @@ impl Home {
                 sub_contact_count,
                 sub_msg_count,
             }),
-            ws,
+            // ws,
             friend_ship_state: Rc::new(FriendShipState {
                 ship: None,
                 friend: None,
@@ -184,17 +164,17 @@ impl Home {
             }),
         }
     }
-    pub fn send_msg(&self, msg: Msg) {
-        // 发送已收到消息给服务器
-        match self.ws.borrow().send_message(msg) {
-            Ok(_) => {
-                log::info!("发送成功")
-            }
-            Err(e) => {
-                log::error!("发送失败: {:?}", e)
-            }
-        };
-    }
+    // pub fn send_msg(&self, msg: Msg) {
+    //     // 发送已收到消息给服务器
+    //     match self.ws.borrow().send_message(msg) {
+    //         Ok(_) => {
+    //             log::info!("发送成功")
+    //         }
+    //         Err(e) => {
+    //             log::error!("发送失败: {:?}", e)
+    //         }
+    //     };
+    // }
 
     pub fn info(&mut self, value: AttrValue) {
         self.notifications.push(Notification {
@@ -254,7 +234,9 @@ impl Home {
         }));
         true
     }
-    pub fn handle_friendship_res(
+
+    /// agree friend request
+    pub fn agree_friendship(
         &mut self,
         ctx: &Context<Self>,
         friendship_id: AttrValue,
@@ -300,7 +282,7 @@ impl Home {
         true
     }
 
-    pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
+    /* pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
         match message {
             Msg::Single(ref mut msg) => {
                 let friend_id = msg.send_id.clone();
@@ -322,14 +304,14 @@ impl Home {
                 });
 
                 ctx.link()
-                    .send_message(HomeMsg::RecSendMsgStateChange(message));
+                    .send_message(HomeMsg::SendMsgStateChange(message));
             }
             Msg::Group(ref group_msg) => {
                 match group_msg {
                     GroupMsg::Invitation(_) => {
                         // receive create group message
                         ctx.link()
-                            .send_message(HomeMsg::RecSendMsgStateChange(message));
+                            .send_message(HomeMsg::SendMsgStateChange(message));
                     }
                     GroupMsg::Message(msg) => {
                         let msg = msg.clone();
@@ -352,7 +334,7 @@ impl Home {
                         });
 
                         ctx.link()
-                            .send_message(HomeMsg::RecSendMsgStateChange(message));
+                            .send_message(HomeMsg::SendMsgStateChange(message));
                     }
                     GroupMsg::MemberExit((mem_id, group_id)) => {
                         // delete member information from da
@@ -388,7 +370,7 @@ impl Home {
                                 log::error!("remove group fail:{:?}", err);
                             } else {
                                 // send message to other component
-                                ctx.send_message(HomeMsg::RecSendMsgStateChange(message));
+                                ctx.send_message(HomeMsg::SendMsgStateChange(message));
                                 // send message received
                                 ctx.send_message(HomeMsg::SendBackMsg(Msg::Group(
                                     GroupMsg::DismissOrExitReceived((
@@ -462,5 +444,5 @@ impl Home {
             Msg::ServerRecResp(_) => {}
         }
         false
-    }
+    } */
 }

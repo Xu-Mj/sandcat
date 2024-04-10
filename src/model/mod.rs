@@ -6,7 +6,7 @@ pub mod notification;
 pub mod seq;
 pub mod user;
 
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
@@ -45,7 +45,7 @@ impl From<i32> for ContentType {
         }
     }
 }
-pub trait ItemInfo {
+pub trait ItemInfo: Debug {
     fn name(&self) -> AttrValue;
 
     fn id(&self) -> AttrValue;

@@ -6,10 +6,9 @@ mod handle_offline_msg;
 use std::{cell::RefCell, rc::Rc};
 
 use gloo::utils::window;
+use indexmap::IndexMap;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-
-use indexmap::IndexMap;
 
 use crate::{
     api,
@@ -46,7 +45,7 @@ pub struct Chats {
     result: IndexMap<AttrValue, Conversation>,
     /// whether the search is in progress
     is_searching: bool,
-    /// whether the search is complete
+    /// whether the query is complete
     query_complete: bool,
     /// create group friend list panel
     show_friend_list: bool,
@@ -226,13 +225,16 @@ impl Chats {
                 log::error!("delete conversation error: {:?}", e);
             }
         });
+
         if let Some(conv) = self.list.shift_remove(self.context_menu_pos.2.as_str()) {
             if conv.unread_count > 0 {
                 self.unread_state.sub_msg_count.emit(conv.unread_count);
             }
         }
+
         self.show_context_menu = false;
         self.context_menu_pos = (0, 0, AttrValue::default(), false);
+
         // set right content type
         let mut conv = self.conv_state.conv.clone();
         conv.item_id = AttrValue::default();
@@ -249,13 +251,16 @@ impl Chats {
             } else {
                 self.unread_state.sub_msg_count.emit(conv.unread_count);
             }
+
             conv.mute = !conv.mute;
             let conv = conv.clone();
+
             spawn_local(async move {
                 if let Err(e) = db::convs().await.mute(&conv).await {
                     log::error!("mute conversation err: {:?}", e);
                 }
             });
+
             self.show_context_menu = false;
             return true;
         }
@@ -274,6 +279,7 @@ impl Chats {
         let oncontextmenu = ctx
             .link()
             .callback(|((x, y), id, is_mute)| ChatsMsg::ShowContextMenu((x, y), id, is_mute));
+
         list.iter()
             .map(|(_id, item)| Self::get_list_item(item, oncontextmenu.clone()))
             .collect::<Html>()
@@ -309,17 +315,16 @@ impl Chats {
     }
 
     fn deal_with_conv_state_change(&mut self, ctx: &Context<Self>, state: Rc<ConvState>) -> bool {
-        log::debug!("conv state change: {:?}", state.conv.item_id);
         self.conv_state = state;
         let cur_conv_id = self.conv_state.conv.item_id.clone();
         // 设置了一个查询状态，如果在查询没有完成时更新了状态，那么不进行更新列表，这里有待于优化，
         // 因为状态会在
-        if cur_conv_id.is_empty() {
+        if cur_conv_id.is_empty() || !self.query_complete {
             return false;
         }
 
         // if use searching, do not rerender the UI, just update the data
-        let need_rerender = self.query_complete;
+        let need_rerender = !self.is_searching;
         // log::debug!("in update app state changed: {:?} ; id: {}", self.list.clone(), self.app_state.current_conv_id);
         // 判断是否需要更新当前会话
         let dest = self.list.get_mut(&cur_conv_id);

@@ -433,7 +433,8 @@ impl Component for Sender {
             }
             SenderMsg::SendVideoCall => {
                 self.send_msg.call_event.emit(InviteMsg {
-                    msg_id: nanoid::nanoid!().into(),
+                    local_id: nanoid::nanoid!().into(),
+                    server_id: AttrValue::default(),
                     create_time: chrono::Local::now().timestamp_millis(),
                     friend_id: ctx.props().friend_id.clone(),
                     send_id: ctx.props().cur_user_id.clone(),
@@ -443,7 +444,8 @@ impl Component for Sender {
             }
             SenderMsg::SendAudioCall => {
                 self.send_msg.call_event.emit(InviteMsg {
-                    msg_id: nanoid::nanoid!().into(),
+                    local_id: nanoid::nanoid!().into(),
+                    server_id: AttrValue::default(),
                     create_time: chrono::Local::now().timestamp_millis(),
                     friend_id: ctx.props().friend_id.clone(),
                     send_id: ctx.props().cur_user_id.clone(),

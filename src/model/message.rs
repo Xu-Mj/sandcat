@@ -297,7 +297,8 @@ pub struct InviteInfo {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteMsg {
-    pub msg_id: AttrValue,
+    pub local_id: AttrValue,
+    pub server_id: AttrValue,
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
@@ -583,13 +584,10 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             Ok(Msg::RelationshipRes(info))
         }
         MsgType::SingleCallInvite => {
-            let invite_type = match ContentType::from(msg.content_type) {
-                ContentType::VideoCall => InviteType::Video,
-                ContentType::AudioCall => InviteType::Audio,
-                _ => return Err("Invalid content type".to_string()),
-            };
+            let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::Invite(InviteMsg {
-                msg_id: msg.server_id.into(),
+                local_id: msg.local_id.into(),
+                server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
                 friend_id: msg.receiver_id.into(),
                 create_time: msg.send_time,
@@ -597,11 +595,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             })))
         }
         MsgType::SingleCallInviteAnswer => {
-            let invite_type = match ContentType::from(msg.content_type) {
-                ContentType::VideoCall => InviteType::Video,
-                ContentType::AudioCall => InviteType::Audio,
-                _ => return Err("Invalid content type".to_string()),
-            };
+            let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::InviteAnswer(InviteAnswerMsg {
                 seq: msg.seq,
                 local_id: msg.local_id.into(),
@@ -617,11 +611,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             })))
         }
         MsgType::SingleCallInviteNotAnswer => {
-            let invite_type = match ContentType::from(msg.content_type) {
-                ContentType::VideoCall => InviteType::Video,
-                ContentType::AudioCall => InviteType::Audio,
-                _ => return Err("Invalid content type".to_string()),
-            };
+            let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::NotAnswer(InviteNotAnswerMsg {
                 seq: msg.seq,
                 local_id: msg.local_id.into(),
@@ -636,11 +626,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             })))
         }
         MsgType::SingleCallInviteCancel => {
-            let invite_type = match ContentType::from(msg.content_type) {
-                ContentType::VideoCall => InviteType::Video,
-                ContentType::AudioCall => InviteType::Audio,
-                _ => return Err("Invalid content type".to_string()),
-            };
+            let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::InviteCancel(InviteCancelMsg {
                 seq: msg.seq,
                 local_id: msg.local_id.into(),
@@ -700,6 +686,13 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
     }
 }
 
+fn get_invite_type(t: i32) -> Result<InviteType, String> {
+    match ContentType::from(t) {
+        ContentType::VideoCall => Ok(InviteType::Video),
+        ContentType::AudioCall => Ok(InviteType::Audio),
+        _ => Err("Invalid content type".to_string()),
+    }
+}
 impl From<Msg> for PbMsg {
     fn from(value: Msg) -> Self {
         match value {
@@ -748,7 +741,7 @@ impl From<Msg> for PbMsg {
                 match call {
                     SingleCall::Invite(invite) => {
                         pb_msg.msg_type = MsgType::SingleCallInvite as i32;
-                        pb_msg.local_id = invite.msg_id.as_str().into();
+                        pb_msg.local_id = invite.server_id.as_str().into();
                         pb_msg.send_id = invite.send_id.as_str().into();
                         pb_msg.receiver_id = invite.friend_id.as_str().into();
                         pb_msg.create_time = invite.create_time;

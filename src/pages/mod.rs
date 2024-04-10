@@ -46,7 +46,7 @@ pub struct UnreadMsgCountState {
 /// 收发消息状态，收到消息触发receive_msg_event回调，发送消息通过send_msg_event回调来发送
 /// msg保存当前收到的消息或者正在发送的消息内容
 /// 将收发消息状态切割
-#[derive(Default, Clone, PartialEq)]
+#[derive(Default, Clone, PartialEq, Debug)]
 pub struct SendMessageState {
     pub msg: Msg,
     // pub send_back_event: Callback<Msg>,
@@ -55,13 +55,14 @@ pub struct SendMessageState {
     pub call_event: Callback<InviteMsg>,
 }
 
-#[derive(Default, Clone, PartialEq)]
+/// notify other components after received a message
+#[derive(Default, Clone, PartialEq, Debug)]
 pub struct RecMessageState {
     pub msg: Msg,
     pub notify: Callback<Msg>,
 }
 
-#[derive(Default, Clone, PartialEq)]
+#[derive(Default, Clone, PartialEq, Debug)]
 pub struct RecSendCallState {
     pub msg: InviteMsg,
     pub send_msg_event: Callback<Msg>,

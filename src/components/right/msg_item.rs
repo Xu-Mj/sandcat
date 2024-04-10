@@ -136,7 +136,8 @@ impl Component for MsgItem {
             }
             MsgItemMsg::CallVideo => {
                 self.msg_state.call_event.emit(InviteMsg {
-                    msg_id: nanoid!().into(),
+                    local_id: nanoid!().into(),
+                    server_id: AttrValue::default(),
                     send_id: ctx.props().user_id.clone(),
                     friend_id: ctx.props().friend_id.clone(),
                     create_time: chrono::Local::now().timestamp_millis(),
@@ -146,7 +147,8 @@ impl Component for MsgItem {
             }
             MsgItemMsg::CallAudio => {
                 self.msg_state.call_event.emit(InviteMsg {
-                    msg_id: nanoid!().into(),
+                    local_id: nanoid!().into(),
+                    server_id: AttrValue::default(),
                     send_id: ctx.props().user_id.clone(),
                     friend_id: ctx.props().friend_id.clone(),
                     create_time: chrono::Local::now().timestamp_millis(),

@@ -179,7 +179,6 @@ impl Chats {
     }
 
     pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
-        log::debug!("receive message from websocket");
         let conv_type = match message {
             Msg::Group(_) => RightContentType::Group,
             Msg::Single(_) | Msg::SingleCall(_) => RightContentType::Friend,
@@ -210,10 +209,11 @@ impl Chats {
                 let is_send = (self.conv_state.conv.content_type == RightContentType::Friend
                     || self.conv_state.conv.content_type == RightContentType::Group)
                     && self.conv_state.conv.item_id == msg.friend_id;
-                ctx.link().send_future(async move {
+                spawn_local(async move {
+                    // ctx.link().send_future(async move {
                     // save to db
                     db::messages().await.add_message(&mut msg).await.unwrap();
-                    ChatsMsg::None
+                    // ChatsMsg::None
                     // if let Err(err) = db::messages().await.add_message(&mut msg).await {
                     //     HomeMsg::Notification(Notification::error_from_content(
                     //         format!("Internal Error:{:?}", err).into(),
@@ -347,6 +347,8 @@ impl Chats {
             Msg::SingleCall(m) => {
                 // call message is handled by PhoneCall component
                 // 保存电话信息，通知phone call组件
+                log::debug!("receive message from websocket: {:?}", m);
+
                 self.call_msg = m;
                 return true;
             }

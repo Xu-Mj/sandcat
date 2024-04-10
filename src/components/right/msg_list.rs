@@ -13,11 +13,9 @@ use crate::model::ItemInfo;
 use crate::model::RightContentType;
 use crate::pages::OfflineMsgState;
 use crate::pages::RecMessageState;
-use crate::pages::SendMessageState;
 use crate::{
     components::right::{msg_item::MsgItem, sender::Sender},
     model::message::Message,
-    // pages::SendMessageState,
 };
 
 pub struct MessageList {
@@ -30,11 +28,10 @@ pub struct MessageList {
     friend: Option<Box<dyn ItemInfo>>,
     new_msg_count: u32,
     is_black: bool,
-    // 监听消息接收状态，用来更新当前对话框消息列表
-    _send_msg_state: Rc<SendMessageState>,
-    _listener: ContextHandle<Rc<SendMessageState>>,
+
     _sync_msg_state: Rc<OfflineMsgState>,
     _sync_msg_listener: ContextHandle<Rc<OfflineMsgState>>,
+    // 监听消息接收状态，用来更新当前对话框消息列表
     _rec_msg_state: Rc<RecMessageState>,
     _rec_msg_listener: ContextHandle<Rc<RecMessageState>>,
 }
@@ -44,7 +41,6 @@ pub enum MessageListMsg {
     NextPage,
     NextPageNone,
     SendFile(Message),
-    SendMsgStateChanged(Rc<SendMessageState>),
     ReceiveMsg(Rc<RecMessageState>),
     SyncOfflineMsg(Rc<OfflineMsgState>),
     GoBottom,
@@ -211,10 +207,10 @@ impl Component for MessageList {
     type Properties = MessageListProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (_send_msg_state, _listener) = ctx
-            .link()
-            .context(ctx.link().callback(MessageListMsg::SendMsgStateChanged))
-            .expect("need msg context");
+        // let (_send_msg_state, _listener) = ctx
+        //     .link()
+        //     .context(ctx.link().callback(MessageListMsg::SendMsgStateChanged))
+        //     .expect("need msg context");
         let (_sync_msg_state, _sync_msg_listener) = ctx
             .link()
             .context(ctx.link().callback(MessageListMsg::SyncOfflineMsg))
@@ -239,8 +235,8 @@ impl Component for MessageList {
             _sync_msg_listener,
             _rec_msg_state,
             _rec_msg_listener,
-            _send_msg_state,
-            _listener,
+            // _send_msg_state,
+            // _listener,
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -310,10 +306,6 @@ impl Component for MessageList {
                 self.reset();
                 self.query(ctx);
                 false
-            }
-            MessageListMsg::SendMsgStateChanged(state) => {
-                let msg = state.msg.clone();
-                self.handle_rec_msg(msg, friend_id)
             }
         }
     }

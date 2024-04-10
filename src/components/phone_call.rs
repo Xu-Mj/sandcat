@@ -11,7 +11,9 @@ use web_sys::{
     RtcSessionDescriptionInit, RtcSignalingState,
 };
 use yew::platform::spawn_local;
-use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef, Properties};
+use yew::{
+    html, AttrValue, Callback, Component, Context, ContextHandle, Html, NodeRef, Properties,
+};
 
 use crate::icons::{
     AnswerPhoneIcon, HangupInNotifyIcon, MicrophoneIcon, MicrophoneMuteIcon, VideoRecordIcon,
@@ -60,7 +62,7 @@ pub struct PhoneCall {
     /// 邀请计时器，到时间即为未接听
     call_timer: Option<Timeout>,
     /// 用来监听是否有通话消息
-    _listener: ContextHandle<SingleCall>,
+    // _listener: ContextHandle<SingleCall>,
     /// 通话状态， 用来挂断、取消等等。。
     call_state: Rc<RecSendCallState>,
     _call_listener: ContextHandle<Rc<RecSendCallState>>,
@@ -81,6 +83,8 @@ pub struct PhoneCall {
 pub struct PhoneCallProps {
     pub ws: Rc<RefCell<WebSocketManager>>,
     pub user_id: AttrValue,
+    pub send_msg: Callback<SingleCall>,
+    pub msg: SingleCall,
 }
 
 pub enum PhoneCallMsg {
@@ -107,7 +111,7 @@ pub enum PhoneCallMsg {
     SwitchVolume,
     // SwitchCamera,
     SwitchMicrophoneMute,
-    ReceiveCallMsg(SingleCall),
+    // ReceiveCallMsg(SingleCall),
     SendMessage(SingleCall),
     SendInsideMessage(SingleCall),
     CallStateChange(Rc<RecSendCallState>),
@@ -122,10 +126,6 @@ impl Component for PhoneCall {
     type Properties = PhoneCallProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (_, _listener) = ctx
-            .link()
-            .context(ctx.link().callback(PhoneCallMsg::ReceiveCallMsg))
-            .expect("need msg context");
         let (call_state, _call_listener) = ctx
             .link()
             .context(ctx.link().callback(PhoneCallMsg::CallStateChange))
@@ -134,10 +134,6 @@ impl Component for PhoneCall {
             .link()
             .context(ctx.link().callback(|_| PhoneCallMsg::None))
             .expect("need msg context");
-        // let (msg_state, _msg_listener) = ctx
-        //     .link()
-        //     .context(ctx.link().callback(|_| PhoneCallMsg::None))
-        //     .expect("need conv state in item");
         Self {
             show_video: false,
             show_audio: false,
@@ -154,7 +150,7 @@ impl Component for PhoneCall {
             call_timer: None,
             volume_mute: false,
             microphone_mute: false,
-            _listener,
+            // _listener,
             call_state,
             _call_listener,
             notify_state,
@@ -167,9 +163,196 @@ impl Component for PhoneCall {
         }
     }
 
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+        if ctx.props().msg == SingleCall::default() {
+            return false;
+        }
+        let mut message = ctx.props().msg.clone();
+        match message {
+            SingleCall::Invite(msg) => {
+                // 判断是否占线
+                if self.invite_info.is_some() {
+                    // todo回复占线
+                    return false;
+                }
+                self.show_notify = true;
+                self.invited = true;
+                let friend_id = msg.send_id.clone();
+                self.invite_info = Some(InviteInfo {
+                    send_id: msg.send_id,
+                    friend_id: msg.friend_id,
+                    invite_type: msg.invite_type.clone(),
+                    ..Default::default()
+                });
+                log::debug!("invite_info: {:?}", self.invite_info);
+                ctx.link().send_future(async move {
+                    // 查询好友数据
+                    let friend = db::friends().await.get_friend(friend_id.as_str()).await;
+                    log::debug!("收到邀请: {:?}", friend);
+                    PhoneCallMsg::ShowCallNotify(Box::new(friend))
+                });
+            }
+            SingleCall::InviteCancel(ref mut msg) => {
+                log::debug!("对方取消通话");
+                // 判断是否是当前用户
+                if let Some(info) = self.invite_info.as_ref() {
+                    if info.send_id == msg.send_id {
+                        log::debug!("正在关闭通知");
+
+                        self.finish_call();
+                        // 数据入库
+                        let friend_id = msg.send_id.clone();
+                        msg.send_id = msg.friend_id.clone();
+                        msg.friend_id = friend_id;
+                        self.show_notify = false;
+                        self.call_friend_info = None;
+                        self.save_call_msg(ctx, msg.clone_as_message(), message);
+                        log::debug!("已经关闭通知");
+                        return true;
+                    }
+                }
+            }
+            SingleCall::InviteAnswer(ref mut msg) => {
+                log::debug!("single invite answer");
+                if msg.agree {
+                    // 对方同意了通话请求，正在建立连接，为了简化代码邀请方和被邀请方的创建pc方法合并到一起了
+                    if let Err(e) = self.create_pc(ctx, "") {
+                        ctx.link()
+                            .send_message(PhoneCallMsg::Notification(Notification {
+                                type_: Default::default(),
+                                title: AttrValue::from("创建PC错误"),
+                                content: AttrValue::from(e.as_string().unwrap()),
+                            }));
+                        return false;
+                    }
+                } else {
+                    // 拒绝通话请求，数据入库
+                    log::debug!("对方拒绝了请求");
+                    let friend_id = msg.send_id.clone();
+                    msg.send_id = msg.friend_id.clone();
+                    msg.friend_id = friend_id;
+                    match msg.invite_type {
+                        InviteType::Video => {
+                            self.show_video = false;
+                        }
+                        InviteType::Audio => {
+                            self.show_audio = false;
+                        }
+                    }
+                    self.save_call_msg(ctx, msg.clone_as_message(), message);
+                    self.finish_call();
+                    return true;
+                }
+            }
+            SingleCall::Offer(msg) => {
+                // 建立通话连接，收到offer，设置sdp
+                if self.pc.is_some() {
+                    log::warn!("收到邀请，但是占线: {:?}", &msg);
+                    return false;
+                }
+                if let Err(e) = self.create_pc(ctx, &msg.sdp) {
+                    log::error!("创建连接失败:{:?}", e);
+                    return false;
+                }
+                match self.invite_info.as_ref().unwrap().invite_type {
+                    InviteType::Video => {
+                        self.show_video = true;
+                    }
+                    InviteType::Audio => {
+                        self.show_audio = true;
+                    }
+                }
+                ctx.link().send_message(PhoneCallMsg::ResponseCall)
+            }
+            SingleCall::Agree(msg) => {
+                // 同意通话请求并建立连接，设置sdp
+                // 判断是否是我们发出去的邀请回复
+                if let Some(info) = &self.invite_info {
+                    if info.friend_id == msg.send_id && self.pc.is_some() {
+                        // 接通
+                        log::debug!("请求被对方同意");
+                        // todo需要在webrtc状态为Connected下进行回调修改
+                        self.invite_info.as_mut().unwrap().start_time =
+                            chrono::Local::now().timestamp_millis();
+                        self.invite_info.as_mut().unwrap().connected = true;
+                        let mut description = RtcSessionDescriptionInit::new(RtcSdpType::Answer);
+                        description.sdp(&msg.sdp.unwrap());
+                        let future = JsFuture::from(
+                            self.pc
+                                .as_ref()
+                                .unwrap()
+                                .set_remote_description(&description),
+                        );
+                        spawn_local(async {
+                            if let Err(err) = future.await {
+                                log::error!("remote desc set failed: {:?}", err);
+                            }
+                        });
+                        return true;
+                    }
+                }
+            }
+            SingleCall::NewIceCandidate(msg) => {
+                let mut candidate = RtcIceCandidateInit::new(&msg.candidate);
+                if let Some(index) = msg.sdp_m_index {
+                    candidate.sdp_m_line_index(Some(index));
+                }
+                if let Some(mid) = msg.sdp_mid {
+                    candidate.sdp_mid(Some(&mid));
+                }
+                let future = JsFuture::from(
+                    self.pc
+                        .as_ref()
+                        .unwrap()
+                        .add_ice_candidate_with_opt_rtc_ice_candidate_init(Some(&candidate)),
+                );
+                spawn_local(async {
+                    if let Err(err) = future.await {
+                        log::error!("set ice candidate failed: {:?}", err);
+                    }
+                })
+            }
+            SingleCall::NotAnswer(ref mut msg) => {
+                // 判断是否是当前用户
+                // fixme 这里是不是同时需要发送给对方？
+                if let Some(info) = self.invite_info.as_ref() {
+                    if info.send_id == msg.send_id {
+                        // 数据入库
+                        let friend_id = msg.send_id.clone();
+                        msg.send_id = msg.friend_id.clone();
+                        msg.friend_id = friend_id;
+                        self.invite_info = None;
+                        self.show_notify = false;
+                        self.call_friend_info = None;
+                        self.save_call_msg(ctx, msg.clone_as_message(), message);
+                        return true;
+                    }
+                }
+            }
+            SingleCall::HangUp(ref mut msg) => {
+                // 判断是否是当前连接
+                if let Some(info) = self.invite_info.as_ref() {
+                    if info.send_id == msg.friend_id || info.send_id == msg.send_id {
+                        let friend_id = msg.send_id.clone();
+                        msg.send_id = msg.friend_id.clone();
+                        msg.friend_id = friend_id;
+                        let info = self.invite_info.as_ref().unwrap();
+                        let create_time = chrono::Local::now().timestamp_millis();
+                        let sustain = create_time - info.start_time;
+                        msg.sustain = sustain;
+                        self.save_call_msg(ctx, msg.clone_as_message(), message);
+                        self.finish_call();
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             PhoneCallMsg::SendCallInvite(msg) => {
+                log::debug!("send call invite");
                 // 判断是否正在通话中
                 if self.invite_info.is_some() {
                     log::debug!("占线");
@@ -200,14 +383,21 @@ impl Component for PhoneCall {
                     }
                 }
                 let friend_id = msg.friend_id.clone();
-                let send_msg_event = self.call_state.send_msg_event.clone();
+                // let send_msg_event = self.call_state.send_msg_event.clone();
+
+                // send invite message; no necessary to notify other components
+                let ws = ctx.props().ws.clone();
                 ctx.link().send_future(async move {
                     let friend = db::friends().await.get_friend(friend_id.as_str()).await;
 
                     match call_type {
                         InviteType::Video => match utils::get_video_stream().await {
                             Ok(stream) => {
-                                send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
+                                // send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
+                                web_rtc::WebRTC::send_msg1(
+                                    ws,
+                                    Msg::SingleCall(SingleCall::Invite(msg)),
+                                );
                                 PhoneCallMsg::ShowVideoWindow(stream, Box::new(friend))
                             }
                             Err(e) => {
@@ -236,7 +426,15 @@ impl Component for PhoneCall {
                             // 查询好友信息
                             match utils::get_audio_stream().await {
                                 Ok(stream) => {
-                                    send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
+                                    // send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
+                                    if let Err(e) = ws
+                                        .borrow()
+                                        .send_message(Msg::SingleCall(SingleCall::Invite(msg)))
+                                    {
+                                        log::error!("send invite msg error: {:?}", e);
+                                    } else {
+                                        log::debug!("send invite msg success");
+                                    }
                                     PhoneCallMsg::ShowAudioWindow(stream, Box::new(friend))
                                 }
                                 Err(e) => {
@@ -264,10 +462,12 @@ impl Component for PhoneCall {
                         }
                     }
                 });
-                true
+                // true
+                false
             }
             PhoneCallMsg::SendInviteCancel => {
-                let msg_id = AttrValue::from(nanoid!());
+                log::debug!("SendInviteCancele");
+                let local_id = AttrValue::from(nanoid!());
                 let info = self.invite_info.as_ref().unwrap();
                 let friend_id = info.friend_id.clone();
                 let create_time = chrono::Local::now().timestamp_millis();
@@ -283,34 +483,25 @@ impl Component for PhoneCall {
                     let _ = db::messages()
                         .await
                         .add_message(&mut Message {
-                            id: 0,
-                            seq: 0,
-                            local_id: msg_id.clone(),
-                            server_id: AttrValue::default(),
+                            local_id: local_id.clone(),
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
                             content_type,
                             content: AttrValue::from("已经取消"),
                             create_time,
-                            is_read: false,
                             is_self: true,
-                            send_time: 0,
-                            is_success: false,
-                            file_content: Default::default(),
+                            ..Default::default()
                         })
                         .await
                         .map_err(|err| log::error!("消息入库失败:{:?}", err));
                     PhoneCallMsg::SendMessage(SingleCall::InviteCancel(InviteCancelMsg {
-                        seq: 0,
-                        local_id: msg_id,
-                        server_id: AttrValue::default(),
+                        local_id,
                         send_id,
                         friend_id,
                         create_time,
                         invite_type,
                         is_self: true,
-                        send_time: 0,
-                        is_success: false,
+                        ..Default::default()
                     }))
                 });
                 self.finish_call();
@@ -318,6 +509,8 @@ impl Component for PhoneCall {
             }
             PhoneCallMsg::ResponseCall => {
                 self.invited = true;
+                log::debug!("ResponseCall");
+
                 // 读取视频流
                 let invite_type = self.invite_info.as_ref().unwrap().invite_type.clone();
                 ctx.link().send_future(async move {
@@ -343,10 +536,11 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::HangUpCall => {
+                log::debug!("HangUpCall");
                 let info = self.invite_info.as_ref().unwrap();
                 let create_time = chrono::Local::now().timestamp_millis();
                 let sustain = create_time - info.start_time;
-                let msg_id = AttrValue::from(nanoid!());
+                let local_id = AttrValue::from(nanoid!());
                 let friend_id = if self.invited {
                     info.send_id.clone()
                 } else {
@@ -363,10 +557,7 @@ impl Component for PhoneCall {
                     db::messages()
                         .await
                         .add_message(&mut Message {
-                            id: 0,
-                            seq: 0,
-                            local_id: msg_id.clone(),
-                            server_id: AttrValue::default(),
+                            local_id: local_id.clone(),
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
                             content_type,
@@ -374,16 +565,13 @@ impl Component for PhoneCall {
                             create_time,
                             is_read: true,
                             is_self: true,
-                            send_time: 0,
-                            is_success: false,
-                            file_content: Default::default(),
+                            ..Default::default()
                         })
                         .await
                         .map_err(|err| log::error!("消息入库失败:{:?}", err))
                         .unwrap();
                     PhoneCallMsg::SendMessage(SingleCall::HangUp(Hangup {
-                        seq: 0,
-                        local_id: msg_id,
+                        local_id,
                         server_id: AttrValue::default(),
                         send_id,
                         friend_id,
@@ -391,18 +579,17 @@ impl Component for PhoneCall {
                         invite_type,
                         sustain,
                         is_self: true,
-                        send_time: 0,
-                        is_success: false,
+                        ..Default::default()
                     }))
                 });
                 self.finish_call();
                 true
             }
             PhoneCallMsg::AgreeCall => {
+                log::debug!("AgreeCall");
                 // 同意视频通话
                 let info = self.invite_info.as_ref().unwrap();
                 let msg = SingleCall::InviteAnswer(InviteAnswerMsg {
-                    seq: 0,
                     local_id: nanoid!().into(),
                     server_id: AttrValue::default(),
                     send_id: ctx.props().user_id.clone(),
@@ -410,11 +597,11 @@ impl Component for PhoneCall {
                     create_time: chrono::Local::now().timestamp_millis(),
                     agree: true,
                     is_self: true,
-                    send_time: 0,
-                    is_success: false,
                     invite_type: info.invite_type.clone(),
+                    ..Default::default()
                 });
-                self.call_state.send_msg_event.emit(Msg::SingleCall(msg));
+                // self.call_state.send_msg_event.emit(Msg::SingleCall(msg));
+                web_rtc::WebRTC::send_msg1(ctx.props().ws.clone(), Msg::SingleCall(msg));
                 self.show_notify = false;
                 match info.invite_type {
                     InviteType::Video => {
@@ -427,6 +614,7 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::ConnectedCall(stream) => {
+                log::debug!("ConnectedCall");
                 // 设置视频流
                 log::debug!("同意请求，正在连接...");
                 let pc = self.pc.as_ref().unwrap().clone();
@@ -472,8 +660,9 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::DenyCall => {
+                log::debug!("DenyCall");
                 let info = self.invite_info.as_ref().unwrap();
-                let msg_id = AttrValue::from(nanoid!());
+                let local_id = AttrValue::from(nanoid!());
                 let send_id = ctx.props().user_id.clone();
                 let friend_id = info.send_id.clone();
                 let content_type = match info.invite_type {
@@ -487,9 +676,7 @@ impl Component for PhoneCall {
                     let _ = db::messages()
                         .await
                         .add_message(&mut Message {
-                            id: 0,
-                            seq: 0,
-                            local_id: msg_id.clone(),
+                            local_id: local_id.clone(),
                             server_id: AttrValue::default(),
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
@@ -498,23 +685,18 @@ impl Component for PhoneCall {
                             create_time,
                             is_read: true,
                             is_self: true,
-                            send_time: 0,
-                            is_success: false,
-                            file_content: Default::default(),
+                            ..Default::default()
                         })
                         .await;
                     PhoneCallMsg::SendMessage(SingleCall::InviteAnswer(InviteAnswerMsg {
-                        seq: 0,
-                        local_id: msg_id,
+                        local_id,
                         server_id: AttrValue::default(),
                         send_id,
                         friend_id,
                         create_time,
-                        agree: false,
                         invite_type,
                         is_self: true,
-                        send_time: 0,
-                        is_success: false,
+                        ..Default::default()
                     }))
                 });
                 true
@@ -543,12 +725,13 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::CallTimeout => {
+                log::debug!("CallTimeout");
                 if self.show_video || self.show_audio {
                     let info = self.invite_info.as_ref().unwrap();
                     if info.connected {
                         return false;
                     }
-                    let msg_id = AttrValue::from(nanoid!());
+                    let local_id = AttrValue::from(nanoid!());
                     let friend_id = info.friend_id.clone();
                     let create_time = chrono::Local::now().timestamp_millis();
                     let send_id = ctx.props().user_id.clone();
@@ -562,34 +745,25 @@ impl Component for PhoneCall {
                         let _ = db::messages()
                             .await
                             .add_message(&mut Message {
-                                id: 0,
-                                seq: 0,
-                                local_id: msg_id.clone(),
-                                server_id: AttrValue::default(),
+                                local_id: local_id.clone(),
                                 send_id: send_id.clone(),
                                 friend_id: friend_id.clone(),
                                 content_type,
                                 content: AttrValue::from("未接听"),
                                 create_time,
-                                is_read: false,
                                 is_self: true,
-                                file_content: Default::default(),
-                                send_time: 0,
-                                is_success: false,
+                                ..Default::default()
                             })
                             .await
                             .map_err(|err| log::error!("消息入库失败:{:?}", err));
                         PhoneCallMsg::SendMessage(SingleCall::NotAnswer(InviteNotAnswerMsg {
-                            seq: 0,
-                            local_id: msg_id,
-                            server_id: AttrValue::default(),
+                            local_id,
                             send_id,
                             friend_id,
                             create_time,
                             invite_type,
                             is_self: true,
-                            send_time: 0,
-                            is_success: false,
+                            ..Default::default()
                         }))
                     });
                     self.finish_call();
@@ -603,6 +777,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::Notification(item) => {
+                log::debug!("CallTimeout");
                 let type_ = item.type_.clone();
                 self.notify_state.notify.emit(item);
                 if type_ == NotificationType::Error {
@@ -612,6 +787,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::SwitchVolume => {
+                log::debug!("SwitchVolume");
                 self.volume_mute = !self.volume_mute;
                 match self.invite_info.as_ref().unwrap().invite_type {
                     InviteType::Video => {
@@ -626,11 +802,13 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::SwitchMicrophoneMute => {
+                log::debug!("SwitchMicrophoneMute");
                 self.microphone_mute = !self.microphone_mute;
                 self.mute_audio(self.microphone_mute);
                 true
             }
             PhoneCallMsg::ShowAudioWindow(stream, friend) => {
+                log::debug!("ShowAudioWindow");
                 self.stream = Some(stream);
                 self.call_friend_info = Some(friend);
                 let ctx = ctx.link().clone();
@@ -639,200 +817,23 @@ impl Component for PhoneCall {
                 }));
                 true
             }
-            PhoneCallMsg::ReceiveCallMsg(mut message) => {
-                match message {
-                    SingleCall::Invite(msg) => {
-                        // 判断是否占线
-                        if self.invite_info.is_some() {
-                            // todo回复占线
-                            return false;
-                        }
-                        self.show_notify = true;
-                        self.invited = true;
-                        let friend_id = msg.send_id.clone();
-                        self.invite_info = Some(InviteInfo {
-                            send_id: msg.send_id,
-                            friend_id: msg.friend_id,
-                            invite_type: msg.invite_type.clone(),
-                            ..Default::default()
-                        });
-                        ctx.link().send_future(async move {
-                            // 查询好友数据
-                            let friend = db::friends().await.get_friend(friend_id.as_str()).await;
-                            PhoneCallMsg::ShowCallNotify(Box::new(friend))
-                        });
-                    }
-                    SingleCall::InviteCancel(ref mut msg) => {
-                        log::debug!("对方取消通话");
-                        // 判断是否是当前用户
-                        if let Some(info) = self.invite_info.as_ref() {
-                            if info.send_id == msg.send_id {
-                                log::debug!("正在关闭通知");
 
-                                self.finish_call();
-                                // 数据入库
-                                let friend_id = msg.send_id.clone();
-                                msg.send_id = msg.friend_id.clone();
-                                msg.friend_id = friend_id;
-                                self.show_notify = false;
-                                self.call_friend_info = None;
-                                self.save_call_msg(ctx, msg.clone_as_message(), message);
-                                log::debug!("已经关闭通知");
-                                return true;
-                            }
-                        }
-                    }
-                    SingleCall::InviteAnswer(ref mut msg) => {
-                        log::debug!("single invite answer");
-                        if msg.agree {
-                            // 对方同意了通话请求，正在建立连接，为了简化代码邀请方和被邀请方的创建pc方法合并到一起了
-                            if let Err(e) = self.create_pc(ctx, "") {
-                                ctx.link()
-                                    .send_message(PhoneCallMsg::Notification(Notification {
-                                        type_: Default::default(),
-                                        title: AttrValue::from("创建PC错误"),
-                                        content: AttrValue::from(e.as_string().unwrap()),
-                                    }));
-                                return false;
-                            }
-                        } else {
-                            // 拒绝通话请求，数据入库
-                            log::debug!("对方拒绝了请求");
-                            let friend_id = msg.send_id.clone();
-                            msg.send_id = msg.friend_id.clone();
-                            msg.friend_id = friend_id;
-                            match msg.invite_type {
-                                InviteType::Video => {
-                                    self.show_video = false;
-                                }
-                                InviteType::Audio => {
-                                    self.show_audio = false;
-                                }
-                            }
-                            self.save_call_msg(ctx, msg.clone_as_message(), message);
-                            self.finish_call();
-                            return true;
-                        }
-                    }
-                    SingleCall::Offer(msg) => {
-                        // 建立通话连接，收到offer，设置sdp
-                        if self.pc.is_some() {
-                            log::warn!("收到邀请，但是占线: {:?}", &msg);
-                            return false;
-                        }
-                        if let Err(e) = self.create_pc(ctx, &msg.sdp) {
-                            log::error!("创建连接失败:{:?}", e);
-                            return false;
-                        }
-                        match self.invite_info.as_ref().unwrap().invite_type {
-                            InviteType::Video => {
-                                self.show_video = true;
-                            }
-                            InviteType::Audio => {
-                                self.show_audio = true;
-                            }
-                        }
-                        ctx.link().send_message(PhoneCallMsg::ResponseCall)
-                    }
-                    SingleCall::Agree(msg) => {
-                        // 同意通话请求并建立连接，设置sdp
-                        // 判断是否是我们发出去的邀请回复
-                        if let Some(info) = &self.invite_info {
-                            if info.friend_id == msg.send_id && self.pc.is_some() {
-                                // 接通
-                                log::debug!("请求被对方同意");
-                                // todo需要在webrtc状态为Connected下进行回调修改
-                                self.invite_info.as_mut().unwrap().start_time =
-                                    chrono::Local::now().timestamp_millis();
-                                self.invite_info.as_mut().unwrap().connected = true;
-                                let mut description =
-                                    RtcSessionDescriptionInit::new(RtcSdpType::Answer);
-                                description.sdp(&msg.sdp.unwrap());
-                                let future = JsFuture::from(
-                                    self.pc
-                                        .as_ref()
-                                        .unwrap()
-                                        .set_remote_description(&description),
-                                );
-                                spawn_local(async {
-                                    if let Err(err) = future.await {
-                                        log::error!("remote desc set failed: {:?}", err);
-                                    }
-                                });
-                                return true;
-                            }
-                        }
-                    }
-                    SingleCall::NewIceCandidate(msg) => {
-                        let mut candidate = RtcIceCandidateInit::new(&msg.candidate);
-                        if let Some(index) = msg.sdp_m_index {
-                            candidate.sdp_m_line_index(Some(index));
-                        }
-                        if let Some(mid) = msg.sdp_mid {
-                            candidate.sdp_mid(Some(&mid));
-                        }
-                        let future = JsFuture::from(
-                            self.pc
-                                .as_ref()
-                                .unwrap()
-                                .add_ice_candidate_with_opt_rtc_ice_candidate_init(Some(
-                                    &candidate,
-                                )),
-                        );
-                        spawn_local(async {
-                            if let Err(err) = future.await {
-                                log::error!("set ice candidate failed: {:?}", err);
-                            }
-                        })
-                    }
-                    SingleCall::NotAnswer(ref mut msg) => {
-                        // 判断是否是当前用户
-                        // fixme 这里是不是同时需要发送给对方？
-                        if let Some(info) = self.invite_info.as_ref() {
-                            if info.send_id == msg.send_id {
-                                // 数据入库
-                                let friend_id = msg.send_id.clone();
-                                msg.send_id = msg.friend_id.clone();
-                                msg.friend_id = friend_id;
-                                self.invite_info = None;
-                                self.show_notify = false;
-                                self.call_friend_info = None;
-                                self.save_call_msg(ctx, msg.clone_as_message(), message);
-                                return true;
-                            }
-                        }
-                    }
-                    SingleCall::HangUp(ref mut msg) => {
-                        // 判断是否是当前连接
-                        if let Some(info) = self.invite_info.as_ref() {
-                            if info.send_id == msg.friend_id || info.send_id == msg.send_id {
-                                let friend_id = msg.send_id.clone();
-                                msg.send_id = msg.friend_id.clone();
-                                msg.friend_id = friend_id;
-                                let info = self.invite_info.as_ref().unwrap();
-                                let create_time = chrono::Local::now().timestamp_millis();
-                                let sustain = create_time - info.start_time;
-                                msg.sustain = sustain;
-                                self.save_call_msg(ctx, msg.clone_as_message(), message);
-                                self.finish_call();
-                                return true;
-                            }
-                        }
-                    }
-                }
-                false
-            }
             PhoneCallMsg::ShowCallNotify(item) => {
+                log::debug!("show call notify: {:?}", item.id());
                 self.call_friend_info = Some(item);
+                self.show_notify = true;
+                self.invited = true;
                 true
             }
             PhoneCallMsg::SendMessage(msg) => {
-                self.call_state.send_msg_event.emit(Msg::SingleCall(msg));
+                // self.call_state.send_msg_event.emit(Msg::SingleCall(msg));
+                ctx.props().send_msg.emit(msg);
                 false
             }
             PhoneCallMsg::CallStateChange(state) => {
+                log::debug!("CallStateChange");
                 // 判断是否是空的状态
-                if state.msg.msg_id.is_empty() {
+                if state.msg.local_id.is_empty() {
                     return false;
                 }
                 ctx.link()
@@ -880,14 +881,15 @@ impl Component for PhoneCall {
                 self.is_dragging = false;
                 false
             }
-            PhoneCallMsg::SendInsideMessage(msg) => {
-                self.call_state.rec_msg_event.emit(Msg::SingleCall(msg));
+            PhoneCallMsg::SendInsideMessage(_msg) => {
+                // self.call_state.rec_msg_event.emit(Msg::SingleCall(msg));
                 false
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        log::debug!("phone call view: {:?}", self.call_friend_info);
         let mut video_or_audio_notify = html!();
         if self.show_notify {
             let info = self.call_friend_info.as_ref().unwrap();
@@ -1106,6 +1108,7 @@ impl PhoneCall {
             }
         }
     }
+
     fn finish_call(&mut self) {
         if let Some(pc) = self.pc.as_ref() {
             log::debug!("hang up video clear pc");
