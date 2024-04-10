@@ -62,6 +62,7 @@ impl Chats {
     // tod handle the friend request and send the group create message to contact
     pub fn handle_offline_messages(&mut self, ctx: &Context<Self>, messages: Vec<PbMsg>) {
         let mut map: HashMap<AttrValue, Conversation> = HashMap::with_capacity(messages.len());
+
         for item in messages.into_iter() {
             // let friend_id = item.send_id.clone();
             let msg = convert_server_msg(item).unwrap();
@@ -83,6 +84,7 @@ impl Chats {
                         });
                     }
                     GroupMsg::MemberExit((mem_id, group_id)) => {
+                        // todo send a exit message to the group
                         spawn_local(async move {
                             db::group_members()
                                 .await
@@ -91,8 +93,7 @@ impl Chats {
                                 .unwrap();
                         });
                     }
-                    GroupMsg::DismissOrExitReceived(_) => todo!(),
-                    GroupMsg::InvitationReceived(_) => todo!(),
+                    GroupMsg::DismissOrExitReceived(_) | GroupMsg::InvitationReceived(_) => {}
                 },
                 Msg::SingleCall(call_msg) => match call_msg {
                     SingleCall::InviteCancel(msg) => {
@@ -143,9 +144,11 @@ impl Chats {
             && map.contains_key(&self.conv_state.conv.item_id);
 
         // sort
-        let mut list: Vec<(_, Conversation)> = map.into_iter().collect();
-        list.sort_by(|a, b| b.1.last_msg_time.cmp(&a.1.last_msg_time));
-        for (_, v) in list {
+        let mut list: Vec<Conversation> = map.into_values().collect();
+        list.sort_by(|a, b| b.last_msg_time.cmp(&a.last_msg_time));
+
+        // save the offline message to the conversation list
+        for v in list {
             self.operate_msg(ctx, v, false);
         }
 

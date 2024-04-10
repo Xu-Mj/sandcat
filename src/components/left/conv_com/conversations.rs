@@ -30,6 +30,7 @@ pub enum ChatsMsg {
     // send message for self
     SendMessage(Msg),
     InsertConv(Conversation),
+    InsertConvWithoutUpdate(Conversation),
     ConvStateChanged(Rc<ConvState>),
     WaitStateChanged,
     ShowSelectFriendList,
@@ -181,7 +182,7 @@ impl Component for Chats {
                 false
             }
             ChatsMsg::SendCreateGroupToContacts(group) => {
-                self._add_friend_state
+                self.add_friend_state
                     .add
                     .emit(AddFriendStateItem::from(group));
                 false
@@ -207,6 +208,10 @@ impl Component for Chats {
             ChatsMsg::SendMessage(msg) => {
                 self.send_msg(msg.clone());
                 self.handle_sent_msg(ctx, msg);
+                false
+            }
+            ChatsMsg::InsertConvWithoutUpdate(conv) => {
+                self.list.shift_insert(0, conv.friend_id.clone(), conv);
                 false
             }
         }

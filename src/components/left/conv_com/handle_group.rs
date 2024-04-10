@@ -41,7 +41,7 @@ impl Chats {
     }
 
     pub fn create_group(&mut self, ctx: &Context<Self>, nodes: Vec<String>) {
-        log::debug!("get group mems: {:?} ; ", nodes);
+        // log::debug!("get group mems: {:?} ; ", nodes);
         let user_id = ctx.props().user_id.clone();
         let self_avatar = ctx.props().avatar.clone();
 

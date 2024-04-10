@@ -32,38 +32,61 @@ use crate::{
 use self::conversations::ChatsMsg;
 
 pub struct Chats {
+    /// used to notify the PhoneCall component to make a call
+    /// when it changed, the PhoneCall component will be re-rendered
     call_msg: SingleCall,
+    /// websocket manager, all messages from the server will be handled by this manager
     ws: Rc<RefCell<WebSocketManager>>,
+    /// received messages sequence,
+    /// used to determine whether the message is the latest message
     seq: Seq,
+    /// the list of conversations
     list: IndexMap<AttrValue, Conversation>,
+    /// search result list
     result: IndexMap<AttrValue, Conversation>,
+    /// whether the search is in progress
     is_searching: bool,
+    /// whether the search is complete
     query_complete: bool,
+    /// create group friend list panel
     show_friend_list: bool,
+    /// right click menu
     show_context_menu: bool,
     /// hold right click item position and id
     context_menu_pos: (i32, i32, AttrValue, bool),
 
     /// receive the message state from sender
-    _msg_state: Rc<SendMessageState>,
-    _msg_listener: ContextHandle<Rc<SendMessageState>>,
+    /// sender send message through Home Component
+    _send_msg_state: Rc<SendMessageState>,
+    _send_msg_listener: ContextHandle<Rc<SendMessageState>>,
     /// listen the conversation change
+    /// used to change the right panel content
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
+    /// listen the conversation remove,
+    /// used to receive that contact list to delete the friends to remove the conversation
     _remove_conv_state: Rc<RemoveConvState>,
     _remove_conv_listener: ContextHandle<Rc<RemoveConvState>>,
+    /// change the global unread count
     unread_state: Rc<UnreadState>,
     _unread_listener: ContextHandle<Rc<UnreadState>>,
+    /// when this component is ready, send the event to notify the parent component
     wait_state: Rc<WaitState>,
     _wait_listener: ContextHandle<Rc<WaitState>>,
+    /// listen to the create conv event, like:
     _create_conv: Rc<CreateConvState>,
     _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
+    /// mute conversation,
+    /// used to receive the mute event from right panel
     _mute_state: Rc<MuteState>,
     _mute_state_listener: ContextHandle<Rc<MuteState>>,
-    _add_friend_state: Rc<AddFriendState>,
+    /// send the create friend/group event to contact list
+    add_friend_state: Rc<AddFriendState>,
     _add_friend_state_listener: ContextHandle<Rc<AddFriendState>>,
+    /// send the event to other components after sync offline message completed
     sync_msg_state: Rc<OfflineMsgState>,
     _sync_msg_state_listener: ContextHandle<Rc<OfflineMsgState>>,
+    /// send the event to other components after receive a message
     rec_msg_state: Rc<RecMessageState>,
     _rec_msg_state_listener: ContextHandle<Rc<RecMessageState>>,
 }
@@ -92,7 +115,7 @@ impl Chats {
             ChatsMsg::QueryConvs((convs, messages, local_seq))
         });
         // register state
-        let (msg_state, _msg_listener) = ctx
+        let (_send_msg_state, _send_msg_listener) = ctx
             .link()
             .context(ctx.link().callback(ChatsMsg::SendMsg))
             .expect("need conv state in item");
@@ -104,7 +127,7 @@ impl Chats {
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
-        let (remove_conv_state, _remove_conv_listener) = ctx
+        let (_remove_conv_state, _remove_conv_listener) = ctx
             .link()
             .context(ctx.link().callback(ChatsMsg::RemoveConvStateChanged))
             .expect("need state in item");
@@ -112,7 +135,7 @@ impl Chats {
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::WaitStateChanged))
             .expect("need state in item");
-        let (create_conv, _create_conv_listener) = ctx
+        let (_create_conv, _create_conv_listener) = ctx
             .link()
             .context(ctx.link().callback(ChatsMsg::CreateConvStateChanged))
             .expect("need state in item");
@@ -162,19 +185,19 @@ impl Chats {
             context_menu_pos: (0, 0, AttrValue::default(), false),
             conv_state,
             _conv_listener,
-            _remove_conv_state: remove_conv_state,
+            _remove_conv_state,
             _remove_conv_listener,
             unread_state,
             _unread_listener,
-            _msg_state: msg_state,
-            _msg_listener,
+            _send_msg_state,
+            _send_msg_listener,
             wait_state,
             _wait_listener,
-            _create_conv: create_conv,
+            _create_conv,
             _create_conv_listener,
             _mute_state,
             _mute_state_listener,
-            _add_friend_state,
+            add_friend_state: _add_friend_state,
             _add_friend_state_listener,
             sync_msg_state,
             _sync_msg_state_listener,
@@ -291,9 +314,12 @@ impl Chats {
         let cur_conv_id = self.conv_state.conv.item_id.clone();
         // 设置了一个查询状态，如果在查询没有完成时更新了状态，那么不进行更新列表，这里有待于优化，
         // 因为状态会在
-        if cur_conv_id.is_empty() || !self.query_complete {
+        if cur_conv_id.is_empty() {
             return false;
         }
+
+        // if use searching, do not rerender the UI, just update the data
+        let need_rerender = self.query_complete;
         // log::debug!("in update app state changed: {:?} ; id: {}", self.list.clone(), self.app_state.current_conv_id);
         // 判断是否需要更新当前会话
         let dest = self.list.get_mut(&cur_conv_id);
@@ -305,12 +331,13 @@ impl Chats {
             spawn_local(async move {
                 db::convs().await.put_conv(&conv, true).await.unwrap();
             });
-            true
+            need_rerender
         } else {
-            // 不存在，那么创建
+            // not exists, create a new conversation
             let friend_id = cur_conv_id.clone();
             let conv_type = self.conv_state.conv.content_type.clone();
             log::debug!("conv type in messages: {:?}", conv_type.clone());
+
             ctx.link().send_future(async move {
                 // query information by conv_type
                 let conv = match conv_type {
@@ -379,7 +406,11 @@ impl Chats {
 
                 db::convs().await.put_conv(&conv, true).await.unwrap();
                 log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
-                ChatsMsg::InsertConv(conv)
+                if need_rerender {
+                    ChatsMsg::InsertConv(conv)
+                } else {
+                    ChatsMsg::InsertConvWithoutUpdate(conv)
+                }
             });
             false
         }
