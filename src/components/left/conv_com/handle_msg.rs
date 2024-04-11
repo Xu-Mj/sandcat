@@ -235,6 +235,7 @@ impl Chats {
             }
         }
     }
+
     pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
         let conv_type = match message {
             Msg::Group(_) => RightContentType::Group,
