@@ -6,16 +6,18 @@ use crate::db::TOKEN;
 use self::{
     friend::FriendApi,
     group::GroupApi,
-    http::{FriendHttp, GroupHttp, MsgHttp, UserHttp},
+    http::{FriendHttp, GroupHttp, MsgHttp, SeqHttp, UserHttp},
     message::MsgApi,
+    seq::SeqApi,
     user::UserApi,
 };
 
-pub mod friend;
-pub mod group;
-pub mod http;
-pub mod message;
-pub mod user;
+mod friend;
+mod group;
+mod http;
+mod message;
+mod seq;
+mod user;
 
 pub const AUTHORIZE_HEADER: &str = "Authorization";
 pub static TOKEN_VALUE: OnceLock<String> = OnceLock::new();
@@ -49,4 +51,8 @@ pub fn friends() -> Box<dyn FriendApi> {
 
 pub fn messages() -> Box<dyn MsgApi> {
     Box::new(MsgHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+}
+
+pub fn seq() -> Box<dyn SeqApi> {
+    Box::new(SeqHttp::new(token(), AUTHORIZE_HEADER.to_string()))
 }

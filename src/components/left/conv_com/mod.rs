@@ -98,18 +98,21 @@ impl Chats {
         ctx.link().send_future(async move {
             let convs = db::convs().await.get_convs2().await.unwrap_or_default();
             // pull offline messages
+            // get the seq
+            // todo handle the error
+            let server_seq = api::seq().get_seq(&user_id).await.unwrap();
             let seq_repo = db::seq().await;
             let mut local_seq = seq_repo.get().await.unwrap_or_default();
             let mut messages = Vec::new();
             log::debug!("seq: {:?}", local_seq);
-            if local_seq.local_seq < local_seq.server_seq {
+            if local_seq.local_seq < server_seq.seq {
                 // request offline messages
                 messages = api::messages()
-                    .pull_offline_msg(user_id.as_str(), local_seq.local_seq, local_seq.server_seq)
+                    .pull_offline_msg(user_id.as_str(), local_seq.local_seq, server_seq.seq)
                     .await
                     .unwrap();
             }
-            local_seq.local_seq = local_seq.server_seq;
+            local_seq.local_seq = server_seq.seq;
             seq_repo.put(&local_seq).await.unwrap();
             ChatsMsg::QueryConvs((convs, messages, local_seq))
         });

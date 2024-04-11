@@ -49,6 +49,12 @@ impl WebSocketManager {
 
     // 初始化WebSocket连接
     pub fn connect(ws_manager: Rc<RefCell<Self>>) {
+        // todo judge the ws is connected
+        if ws_manager.borrow().ws.is_some()
+            && ws_manager.borrow().ws.as_ref().unwrap().ready_state() == WebSocket::OPEN
+        {
+            return;
+        }
         let ws = WebSocket::new(ws_manager.borrow().url.as_str()).unwrap();
         ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
         let cloned_ws = ws_manager.clone();

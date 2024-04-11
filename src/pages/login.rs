@@ -58,7 +58,6 @@ pub struct Response {
     user: User,
     token: String,
     ws_addr: String,
-    seq: i64,
 }
 
 #[derive(Serialize)]
@@ -142,8 +141,6 @@ impl Component for Login {
                     // } else {
                     //     user_repo.add(&user).await;
                     // }
-                    // save seq
-                    db::seq().await.set_server_seq(res.seq).await.unwrap();
                     LoginMsg::Success(id)
                 });
                 self.login_state = LoginState::Logining;

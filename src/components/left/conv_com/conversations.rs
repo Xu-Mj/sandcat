@@ -96,6 +96,7 @@ impl Component for Chats {
                 self.seq = seq;
                 // handle offline messages
                 self.handle_offline_messages(ctx, messages);
+                WebSocketManager::connect(self.ws.clone());
                 true
             }
             /* ChatsMsg::ReceiveMessage(state) => {
@@ -280,11 +281,11 @@ impl Component for Chats {
         }
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
-        if first_render {
-            WebSocketManager::connect(self.ws.clone());
-        }
-    }
+    // fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
+    //     if first_render {
+    //         WebSocketManager::connect(self.ws.clone());
+    //     }
+    // }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
         self.ws.borrow_mut().cleanup();

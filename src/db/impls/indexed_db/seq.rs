@@ -72,6 +72,12 @@ impl SeqInterface for SeqRepo {
             web_sys::console::log_1(&event.into());
         });
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        Ok(rx.await.unwrap())
+
+        let mut seq = rx.await.unwrap();
+        // we should set the id to 1 if it is the first time to read the data
+        if seq.id == 0 {
+            seq.id = 1;
+        }
+        Ok(seq)
     }
 }
