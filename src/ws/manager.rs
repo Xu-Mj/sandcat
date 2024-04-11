@@ -10,6 +10,7 @@ use crate::model::message::convert_server_msg;
 use crate::model::message::Msg;
 use crate::pb::message::Msg as PbMsg;
 // 定义WebSocket管理器结构体
+#[derive(Debug)]
 pub struct WebSocketManager {
     url: String,
     ws: Option<WebSocket>,

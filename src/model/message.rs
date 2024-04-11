@@ -199,7 +199,7 @@ impl Message {
             send_id: msg.send_id,
             friend_id: msg.friend_id,
             content_type,
-            content: AttrValue::from("未接听"),
+            content: AttrValue::from("Not Answer"),
             create_time: msg.create_time,
             send_time: msg.send_time,
             is_success: msg.is_success,
@@ -335,7 +335,7 @@ impl InviteNotAnswerMsg {
             send_id: self.send_id.clone(),
             friend_id: self.friend_id.clone(),
             content_type,
-            content: AttrValue::from("未接听"),
+            content: AttrValue::from("Not Answer"),
             create_time: self.create_time,
             send_time: self.send_time,
             is_success: self.is_success,
@@ -594,7 +594,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 invite_type,
             })))
         }
-        MsgType::SingleCallInviteAnswer => {
+        MsgType::RejectSingleCall => {
             let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::InviteAnswer(InviteAnswerMsg {
                 seq: msg.seq,
@@ -604,7 +604,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 friend_id: msg.receiver_id.into(),
                 create_time: msg.send_time,
                 invite_type,
-                agree: msg.call_agree,
+                agree: false,
                 is_self: false,
                 send_time: msg.send_time,
                 is_success: true,
@@ -655,11 +655,31 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             create_time: msg.create_time,
             send_time: msg.send_time,
             invite_type: InviteType::Audio,
-            sustain: 0,
+            sustain: i64::from_be_bytes(
+                msg.content
+                    .try_into()
+                    .map_err(|_| String::from("sustain convert error"))?,
+            ),
             is_self: false,
             is_success: true,
         }))),
-        MsgType::AgreeSingleCall => Ok(Msg::SingleCall(SingleCall::Agree(Agree {
+        MsgType::AgreeSingleCall => {
+            let invite_type = get_invite_type(msg.content_type)?;
+            Ok(Msg::SingleCall(SingleCall::InviteAnswer(InviteAnswerMsg {
+                seq: msg.seq,
+                local_id: msg.local_id.into(),
+                server_id: msg.server_id.into(),
+                send_id: msg.send_id.into(),
+                friend_id: msg.receiver_id.into(),
+                create_time: msg.send_time,
+                invite_type,
+                agree: true,
+                is_self: false,
+                send_time: msg.send_time,
+                is_success: true,
+            })))
+        }
+        MsgType::ConnectSingleCall => Ok(Msg::SingleCall(SingleCall::Agree(Agree {
             send_id: msg.send_id.into(),
             friend_id: msg.receiver_id.into(),
             create_time: msg.send_time,
@@ -751,12 +771,14 @@ impl From<Msg> for PbMsg {
                         };
                     }
                     SingleCall::InviteAnswer(answer) => {
-                        pb_msg.msg_type = MsgType::SingleCallInviteAnswer as i32;
+                        pb_msg.msg_type = MsgType::RejectSingleCall as i32;
+                        if answer.agree {
+                            pb_msg.msg_type = MsgType::AgreeSingleCall as i32;
+                        }
                         pb_msg.local_id = answer.local_id.as_str().into();
                         pb_msg.send_id = answer.send_id.as_str().into();
                         pb_msg.receiver_id = answer.friend_id.as_str().into();
                         pb_msg.create_time = answer.create_time;
-                        pb_msg.call_agree = answer.agree;
                         pb_msg.content_type = match answer.invite_type {
                             InviteType::Video => ContentType::VideoCall as i32,
                             InviteType::Audio => ContentType::AudioCall as i32,
@@ -792,7 +814,7 @@ impl From<Msg> for PbMsg {
                         pb_msg.sdp = Some(offer.sdp.to_string());
                     }
                     SingleCall::Agree(agree) => {
-                        pb_msg.msg_type = MsgType::AgreeSingleCall as i32;
+                        pb_msg.msg_type = MsgType::ConnectSingleCall as i32;
                         pb_msg.send_id = agree.send_id.as_str().into();
                         pb_msg.receiver_id = agree.friend_id.as_str().into();
                         pb_msg.create_time = agree.create_time;
@@ -803,6 +825,8 @@ impl From<Msg> for PbMsg {
                         pb_msg.send_id = hangup.send_id.as_str().into();
                         pb_msg.receiver_id = hangup.friend_id.as_str().into();
                         pb_msg.create_time = hangup.create_time;
+                        pb_msg.content = hangup.sustain.to_be_bytes().to_vec();
+                        pb_msg.local_id = hangup.local_id.as_str().into();
                     }
                     SingleCall::NewIceCandidate(candidate) => {
                         pb_msg.msg_type = MsgType::Candidate as i32;

@@ -54,34 +54,47 @@ impl Chats {
                 }
                 false
             }
-            Msg::SingleCall(SingleCall::Invite(msg)) => {
+            Msg::SingleCall(msg) => self.handle_single_call_conv(ctx, msg, conv_type),
+            _ => false,
+        }
+    }
+
+    /// handle the message of single call for the conversation list
+    pub fn handle_single_call_conv(
+        &mut self,
+        ctx: &Context<Self>,
+        msg: SingleCall,
+        conv_type: RightContentType,
+    ) -> bool {
+        match msg {
+            SingleCall::Invite(msg) => {
                 let mut conv = Conversation::from(msg);
                 conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, false)
             }
-            Msg::SingleCall(SingleCall::InviteCancel(msg)) => {
+            SingleCall::InviteCancel(msg) => {
                 let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
                 conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, is_self)
             }
-            Msg::SingleCall(SingleCall::NotAnswer(msg)) => {
+            SingleCall::NotAnswer(msg) => {
                 let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
                 conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, is_self)
             }
-            Msg::SingleCall(SingleCall::HangUp(msg)) => {
+            SingleCall::HangUp(msg) => {
                 let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
                 conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, is_self)
             }
-            Msg::SingleCall(SingleCall::InviteAnswer(msg)) => {
+            SingleCall::InviteAnswer(msg) => {
                 let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
                 conv.unread_count = 1;
@@ -178,6 +191,50 @@ impl Chats {
         }
     }
 
+    pub fn handle_receive_single_call(
+        &mut self,
+        ctx: &Context<Self>,
+        mut message: Msg,
+        conv_type: RightContentType,
+    ) {
+        if let Msg::SingleCall(ref mut msg) = message {
+            match msg {
+                SingleCall::InviteCancel(m) => {
+                    let friend_id = m.send_id.clone();
+                    m.send_id = m.friend_id.clone();
+                    m.friend_id = friend_id;
+                    m.is_self = false;
+                    self.handle_single_call_conv(ctx, msg.clone(), conv_type);
+                    self.rec_msg_state.notify.emit(message);
+                }
+                SingleCall::NotAnswer(m) => {
+                    let friend_id = m.send_id.clone();
+                    m.send_id = m.friend_id.clone();
+                    m.friend_id = friend_id;
+                    m.is_self = false;
+                    self.handle_single_call_conv(ctx, msg.clone(), conv_type);
+                    self.rec_msg_state.notify.emit(message);
+                }
+                SingleCall::InviteAnswer(m) => {
+                    let friend_id = m.send_id.clone();
+                    m.send_id = m.friend_id.clone();
+                    m.friend_id = friend_id;
+                    m.is_self = false;
+                    self.handle_single_call_conv(ctx, msg.clone(), conv_type);
+                    self.rec_msg_state.notify.emit(message);
+                }
+                SingleCall::HangUp(m) => {
+                    let friend_id = m.send_id.clone();
+                    m.send_id = m.friend_id.clone();
+                    m.friend_id = friend_id;
+                    m.is_self = false;
+                    self.handle_single_call_conv(ctx, msg.clone(), conv_type);
+                    self.rec_msg_state.notify.emit(message);
+                }
+                _ => {}
+            }
+        }
+    }
     pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
         let conv_type = match message {
             Msg::Group(_) => RightContentType::Group,
@@ -344,12 +401,12 @@ impl Chats {
             }
             Msg::ReadNotice(_) | Msg::SingleDeliveredNotice(_) => {}
             Msg::OfflineSync(_) => {}
-            Msg::SingleCall(m) => {
+            Msg::SingleCall(ref m) => {
                 // call message is handled by PhoneCall component
                 // 保存电话信息，通知phone call组件
                 log::debug!("receive message from websocket: {:?}", m);
-
-                self.call_msg = m;
+                self.call_msg = m.clone();
+                self.handle_receive_single_call(ctx, message, conv_type);
                 return true;
             }
             Msg::FriendshipDeliveredNotice(_) => {}
@@ -397,8 +454,9 @@ impl Chats {
                     ChatsMsg::SendMessage(Msg::Single(msg))
                 });
             }
-            Msg::ServerRecResp(msg) => {
-                log::debug!("receive server response: {:?}", msg);
+            Msg::ServerRecResp(_msg) => {
+                // need to use the local to mark the message as send-success
+                // log::debug!("receive server response: {:?}", msg);
             }
         }
         false

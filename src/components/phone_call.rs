@@ -2,6 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use gloo::timers::callback::Timeout;
+use log::debug;
 use nanoid::nanoid;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
@@ -79,7 +80,7 @@ pub struct PhoneCall {
     is_dragging: bool,
 }
 
-#[derive(Properties, Clone, PartialEq)]
+#[derive(Properties, Clone, PartialEq, Debug)]
 pub struct PhoneCallProps {
     pub ws: Rc<RefCell<WebSocketManager>>,
     pub user_id: AttrValue,
@@ -164,9 +165,14 @@ impl Component for PhoneCall {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if ctx.props().msg == SingleCall::default() {
+        if ctx.props() == _old_props {
             return false;
         }
+
+        if ctx.props().msg == SingleCall::default() || ctx.props().msg == _old_props.msg {
+            return false;
+        }
+
         let mut message = ctx.props().msg.clone();
         match message {
             SingleCall::Invite(msg) => {
@@ -314,7 +320,6 @@ impl Component for PhoneCall {
             }
             SingleCall::NotAnswer(ref mut msg) => {
                 // 判断是否是当前用户
-                // fixme 这里是不是同时需要发送给对方？
                 if let Some(info) = self.invite_info.as_ref() {
                     if info.send_id == msg.send_id {
                         // 数据入库
@@ -383,7 +388,6 @@ impl Component for PhoneCall {
                     }
                 }
                 let friend_id = msg.friend_id.clone();
-                // let send_msg_event = self.call_state.send_msg_event.clone();
 
                 // send invite message; no necessary to notify other components
                 let ws = ctx.props().ws.clone();
@@ -393,11 +397,13 @@ impl Component for PhoneCall {
                     match call_type {
                         InviteType::Video => match utils::get_video_stream().await {
                             Ok(stream) => {
-                                // send_msg_event.emit(Msg::SingleCall(SingleCall::Invite(msg)));
-                                web_rtc::WebRTC::send_msg1(
-                                    ws,
-                                    Msg::SingleCall(SingleCall::Invite(msg)),
-                                );
+                                if let Err(e) = ws
+                                    .borrow()
+                                    .send_message(Msg::SingleCall(SingleCall::Invite(msg)))
+                                {
+                                    log::error!("send message error: {:?}", e);
+                                    return PhoneCallMsg::None;
+                                }
                                 PhoneCallMsg::ShowVideoWindow(stream, Box::new(friend))
                             }
                             Err(e) => {
@@ -600,8 +606,12 @@ impl Component for PhoneCall {
                     invite_type: info.invite_type.clone(),
                     ..Default::default()
                 });
-                // self.call_state.send_msg_event.emit(Msg::SingleCall(msg));
-                web_rtc::WebRTC::send_msg1(ctx.props().ws.clone(), Msg::SingleCall(msg));
+                if let Err(e) = ctx.props().ws.borrow().send_message(Msg::SingleCall(msg)) {
+                    // todo notify user we failed to send message
+                    log::error!("send message error: {:?}", e);
+                    return false;
+                }
+                // web_rtc::WebRTC::send_msg1(ctx.props().ws.clone(), Msg::SingleCall(msg));
                 self.show_notify = false;
                 match info.invite_type {
                     InviteType::Video => {
@@ -643,15 +653,18 @@ impl Component for PhoneCall {
                     let mut desc = RtcSessionDescriptionInit::new(RtcSdpType::Answer);
                     desc.sdp(&rtc_desc.sdp());
                     let _ = pc.set_local_description(&desc);
-                    web_rtc::WebRTC::send_msg1(
-                        ws,
-                        Msg::SingleCall(SingleCall::Agree(Agree {
-                            sdp: Some(rtc_desc.sdp()),
-                            send_id,
-                            friend_id,
-                            create_time: 0,
-                        })),
-                    );
+                    debug!("set_local_description: {:?}", rtc_desc.sdp());
+                    if let Err(e) =
+                        ws.borrow()
+                            .send_message(Msg::SingleCall(SingleCall::Agree(Agree {
+                                sdp: Some(rtc_desc.sdp()),
+                                send_id,
+                                friend_id,
+                                create_time: 0,
+                            })))
+                    {
+                        log::error!("send message error: {:?}", e);
+                    }
                 });
                 self.invite_info.as_mut().unwrap().connected = true;
                 self.invite_info.as_mut().unwrap().start_time =
@@ -672,6 +685,9 @@ impl Component for PhoneCall {
                 let create_time = chrono::Local::now().timestamp_millis();
                 let invite_type = info.invite_type.clone();
                 self.show_notify = false;
+                // self.finish_call();
+                self.invite_info = None;
+                self.invited = false;
                 ctx.link().send_future(async move {
                     let _ = db::messages()
                         .await
@@ -681,7 +697,7 @@ impl Component for PhoneCall {
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
                             content_type,
-                            content: AttrValue::from("已拒绝"),
+                            content: AttrValue::from("Rejected"),
                             create_time,
                             is_read: true,
                             is_self: true,
@@ -749,7 +765,7 @@ impl Component for PhoneCall {
                                 send_id: send_id.clone(),
                                 friend_id: friend_id.clone(),
                                 content_type,
-                                content: AttrValue::from("未接听"),
+                                content: AttrValue::from("Not Answer"),
                                 create_time,
                                 is_self: true,
                                 ..Default::default()

@@ -203,7 +203,7 @@ impl Component for Chats {
                 self.send_msg(msg.clone());
                 self.rec_msg_state.notify.emit(msg.clone());
                 self.handle_sent_msg(ctx, msg);
-                false
+                true
             }
             ChatsMsg::RecMsgNotify(msg) => {
                 self.rec_msg_state.notify.emit(msg);
@@ -213,7 +213,7 @@ impl Component for Chats {
                 self.send_msg(msg.clone());
                 self.rec_msg_state.notify.emit(msg.clone());
                 self.handle_sent_msg(ctx, msg);
-                false
+                true
             }
             ChatsMsg::InsertConvWithoutUpdate(conv) => {
                 self.list.shift_insert(0, conv.friend_id.clone(), conv);

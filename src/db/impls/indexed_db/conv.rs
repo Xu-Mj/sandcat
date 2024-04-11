@@ -7,6 +7,7 @@ use crate::{
 
 use futures_channel::oneshot;
 use indexmap::IndexMap;
+use log::debug;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
@@ -62,6 +63,7 @@ impl Conversations for ConvRepo {
                 .unwrap();
             let mut result = Conversation::default();
             if !value.is_undefined() && !value.is_null() {
+                debug!("Conversation found: {:?}", value);
                 result = serde_wasm_bindgen::from_value(value).unwrap();
             }
             tx.send(result).unwrap();
