@@ -554,10 +554,26 @@ impl Component for Sender {
         } else {
             html! {}
         };
+
         let onkeydown = ctx.link().callback(SenderMsg::OnEnterKeyDown);
         let onpaste = ctx.link().callback(SenderMsg::OnPaste);
         let video_click = ctx.link().callback(|_| SenderMsg::SendVideoCall);
         let audio_click = ctx.link().callback(|_| SenderMsg::SendAudioCall);
+
+        let mut phone_call = html!();
+        if ctx.props().conv_type == RightContentType::Friend {
+            phone_call = html! {
+                <>
+                    <span onclick={audio_click}>
+                        <PhoneIcon />
+                    </span>
+                    <span onclick={video_click} >
+                        <VideoIcon />
+                    </span>
+                </>
+            }
+        }
+
         html! {
             <>
             {emojis}
@@ -573,19 +589,13 @@ impl Component for Sender {
                         <span >
                             <input type="file" hidden={true} ref={self.file_input_ref.clone()}
                                 onchange={ctx.link().callback(SenderMsg::FileInputChanged)}/>
-                                <span onclick={ctx.link().callback(|_| SenderMsg::SendFileIconClicked)}>
-
-                            <FileIcon />
-                                </span>
+                            <span onclick={ctx.link().callback(|_| SenderMsg::SendFileIconClicked)}>
+                                <FileIcon />
+                            </span>
                         </span>
                     </div>
                     <div class="send-bar-right" >
-                        <span onclick={audio_click}>
-                            <PhoneIcon />
-                        </span>
-                        <span onclick={video_click} >
-                            <VideoIcon />
-                        </span>
+                        {phone_call}
                     </div>
                 </div>
                 <div class="msg-input-wrapper">
