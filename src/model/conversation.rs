@@ -53,6 +53,7 @@ impl From<Hangup> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            unread_count: 1,
             ..Default::default()
         }
     }
@@ -66,6 +67,7 @@ impl From<InviteNotAnswerMsg> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            unread_count: 1,
             ..Default::default()
         }
     }
@@ -79,6 +81,7 @@ impl From<InviteCancelMsg> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            unread_count: 1,
             ..Default::default()
         }
     }
@@ -92,6 +95,7 @@ impl From<InviteMsg> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            unread_count: 1,
             ..Default::default()
         }
     }
@@ -105,6 +109,7 @@ impl From<InviteAnswerMsg> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            unread_count: 1,
             ..Default::default()
         }
     }

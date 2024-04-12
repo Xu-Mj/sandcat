@@ -36,6 +36,8 @@ pub struct Msg {
     pub sdp_mid: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(int32, optional, tag = "14")]
     pub sdp_m_index: ::core::option::Option<i32>,
+    #[prost(string, tag = "15")]
+    pub group_id: ::prost::alloc::string::String,
 }
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(clippy::derive_partial_eq_without_eq)]

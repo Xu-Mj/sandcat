@@ -321,31 +321,31 @@ pub struct InviteNotAnswerMsg {
     pub is_self: bool,
 }
 
-impl InviteNotAnswerMsg {
-    pub fn clone_as_message(&self) -> Message {
-        let content_type = match self.invite_type {
-            InviteType::Video => ContentType::VideoCall,
-            InviteType::Audio => ContentType::AudioCall,
-        };
+// impl InviteNotAnswerMsg {
+//     pub fn clone_as_message(&self) -> Message {
+//         let content_type = match self.invite_type {
+//             InviteType::Video => ContentType::VideoCall,
+//             InviteType::Audio => ContentType::AudioCall,
+//         };
 
-        Message {
-            id: 0,
-            seq: self.seq,
-            local_id: self.local_id.clone(),
-            server_id: self.server_id.clone(),
-            send_id: self.send_id.clone(),
-            friend_id: self.friend_id.clone(),
-            content_type,
-            content: AttrValue::from("Not Answer"),
-            create_time: self.create_time,
-            send_time: self.send_time,
-            is_success: self.is_success,
-            is_read: self.is_self,
-            is_self: self.is_self,
-            file_content: Default::default(),
-        }
-    }
-}
+//         Message {
+//             id: 0,
+//             seq: self.seq,
+//             local_id: self.local_id.clone(),
+//             server_id: self.server_id.clone(),
+//             send_id: self.send_id.clone(),
+//             friend_id: self.friend_id.clone(),
+//             content_type,
+//             content: AttrValue::from("Not Answer"),
+//             create_time: self.create_time,
+//             send_time: self.send_time,
+//             is_success: self.is_success,
+//             is_read: self.is_self,
+//             is_self: self.is_self,
+//             file_content: Default::default(),
+//         }
+//     }
+// }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteCancelMsg {
@@ -362,31 +362,31 @@ pub struct InviteCancelMsg {
     pub is_self: bool,
 }
 
-impl InviteCancelMsg {
-    pub fn clone_as_message(&self) -> Message {
-        let content_type = match self.invite_type {
-            InviteType::Video => ContentType::VideoCall,
-            InviteType::Audio => ContentType::AudioCall,
-        };
+// impl InviteCancelMsg {
+//     pub fn clone_as_message(&self) -> Message {
+//         let content_type = match self.invite_type {
+//             InviteType::Video => ContentType::VideoCall,
+//             InviteType::Audio => ContentType::AudioCall,
+//         };
 
-        Message {
-            id: 0,
-            seq: self.seq,
-            local_id: self.local_id.clone(),
-            server_id: self.server_id.clone(),
-            send_id: self.send_id.clone(),
-            friend_id: self.friend_id.clone(),
-            content_type,
-            content: AttrValue::from("已经取消"),
-            create_time: self.create_time,
-            send_time: self.send_time,
-            is_read: self.is_self,
-            is_self: self.is_self,
-            is_success: self.is_success,
-            file_content: Default::default(),
-        }
-    }
-}
+//         Message {
+//             id: 0,
+//             seq: self.seq,
+//             local_id: self.local_id.clone(),
+//             server_id: self.server_id.clone(),
+//             send_id: self.send_id.clone(),
+//             friend_id: self.friend_id.clone(),
+//             content_type,
+//             content: AttrValue::from("已经取消"),
+//             create_time: self.create_time,
+//             send_time: self.send_time,
+//             is_read: self.is_self,
+//             is_self: self.is_self,
+//             is_success: self.is_success,
+//             file_content: Default::default(),
+//         }
+//     }
+// }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub enum InviteType {
@@ -412,35 +412,35 @@ pub struct InviteAnswerMsg {
     pub is_self: bool,
 }
 
-impl InviteAnswerMsg {
-    pub fn clone_as_message(&self) -> Message {
-        let content_type = match self.invite_type {
-            InviteType::Video => ContentType::VideoCall,
-            InviteType::Audio => ContentType::AudioCall,
-        };
-        let content = if self.agree {
-            AttrValue::from("一接通")
-        } else {
-            AttrValue::from("已经拒绝")
-        };
-        Message {
-            id: 0,
-            seq: self.seq,
-            local_id: self.local_id.clone(),
-            server_id: self.server_id.clone(),
-            send_id: self.send_id.clone(),
-            friend_id: self.friend_id.clone(),
-            content_type,
-            content,
-            create_time: self.create_time,
-            send_time: self.send_time,
-            is_success: self.is_success,
-            is_read: self.is_self,
-            is_self: self.is_self,
-            file_content: Default::default(),
-        }
-    }
-}
+// impl InviteAnswerMsg {
+//     pub fn clone_as_message(&self) -> Message {
+//         let content_type = match self.invite_type {
+//             InviteType::Video => ContentType::VideoCall,
+//             InviteType::Audio => ContentType::AudioCall,
+//         };
+//         let content = if self.agree {
+//             AttrValue::from("一接通")
+//         } else {
+//             AttrValue::from("已经拒绝")
+//         };
+//         Message {
+//             id: 0,
+//             seq: self.seq,
+//             local_id: self.local_id.clone(),
+//             server_id: self.server_id.clone(),
+//             send_id: self.send_id.clone(),
+//             friend_id: self.friend_id.clone(),
+//             content_type,
+//             content,
+//             create_time: self.create_time,
+//             send_time: self.send_time,
+//             is_success: self.is_success,
+//             is_read: self.is_self,
+//             is_self: self.is_self,
+//             file_content: Default::default(),
+//         }
+//     }
+// }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Candidate {
@@ -476,32 +476,32 @@ pub struct Hangup {
     pub is_self: bool,
 }
 
-impl Hangup {
-    pub fn clone_as_message(&self) -> Message {
-        let content_type = match self.invite_type {
-            InviteType::Video => ContentType::VideoCall,
-            InviteType::Audio => ContentType::AudioCall,
-        };
-        let content = AttrValue::from(utils::format_milliseconds(self.sustain));
+// impl Hangup {
+//     pub fn clone_as_message(&self) -> Message {
+//         let content_type = match self.invite_type {
+//             InviteType::Video => ContentType::VideoCall,
+//             InviteType::Audio => ContentType::AudioCall,
+//         };
+//         let content = AttrValue::from(utils::format_milliseconds(self.sustain));
 
-        Message {
-            id: 0,
-            seq: self.seq,
-            local_id: self.local_id.clone(),
-            server_id: self.server_id.clone(),
-            send_id: self.send_id.clone(),
-            friend_id: self.friend_id.clone(),
-            content_type,
-            content,
-            create_time: self.create_time,
-            send_time: self.send_time,
-            is_success: self.is_success,
-            is_read: self.is_self,
-            is_self: self.is_self,
-            file_content: Default::default(),
-        }
-    }
-}
+//         Message {
+//             id: 0,
+//             seq: self.seq,
+//             local_id: self.local_id.clone(),
+//             server_id: self.server_id.clone(),
+//             send_id: self.send_id.clone(),
+//             friend_id: self.friend_id.clone(),
+//             content_type,
+//             content,
+//             create_time: self.create_time,
+//             send_time: self.send_time,
+//             is_success: self.is_success,
+//             is_read: self.is_self,
+//             is_self: self.is_self,
+//             file_content: Default::default(),
+//         }
+//     }
+// }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Relation {
@@ -562,15 +562,15 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         MsgType::GroupInvitation => {
             // decode content
             let info = bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
-            Ok(Msg::Group(GroupMsg::Invitation(info)))
+            Ok(Msg::Group(GroupMsg::Invitation((info, msg.seq))))
         }
         MsgType::GroupInviteNew => todo!(),
         MsgType::GroupMemberExit => Ok(Msg::Group(GroupMsg::MemberExit((
             msg.send_id,
-            msg.receiver_id,
+            msg.group_id,
             msg.seq,
         )))),
-        MsgType::GroupDismiss => Ok(Msg::Group(GroupMsg::Dismiss((msg.receiver_id, msg.seq)))),
+        MsgType::GroupDismiss => Ok(Msg::Group(GroupMsg::Dismiss((msg.group_id, msg.seq)))),
         MsgType::GroupDismissOrExitReceived => todo!(),
         MsgType::GroupInvitationReceived => todo!(),
         MsgType::GroupUpdate => todo!(),
@@ -736,6 +736,7 @@ impl From<Msg> for PbMsg {
                         pb_msg.local_id = msg.local_id.as_str().into();
                         pb_msg.send_id = msg.send_id.as_str().into();
                         pb_msg.receiver_id = msg.friend_id.to_string();
+                        pb_msg.group_id = msg.friend_id.to_string();
                         pb_msg.create_time = msg.create_time;
                         pb_msg.content_type = msg.content_type as i32;
                         pb_msg.content = msg.content.as_bytes().to_vec();
@@ -748,10 +749,12 @@ impl From<Msg> for PbMsg {
                         pb_msg.msg_type = MsgType::GroupMemberExit as i32;
                         pb_msg.send_id = send_id.to_string();
                         pb_msg.receiver_id = group_id.to_string();
+                        pb_msg.group_id = group_id.to_string();
                     }
                     GroupMsg::Dismiss((group_id, _)) => {
                         pb_msg.msg_type = MsgType::GroupDismiss as i32;
                         pb_msg.receiver_id = group_id.to_string();
+                        pb_msg.group_id = group_id.to_string();
                     }
                     GroupMsg::DismissOrExitReceived(_) => {}
                     GroupMsg::InvitationReceived(_) => {}

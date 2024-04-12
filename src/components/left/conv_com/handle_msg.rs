@@ -70,35 +70,30 @@ impl Chats {
         match msg {
             SingleCall::Invite(msg) => {
                 let mut conv = Conversation::from(msg);
-                conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, false)
             }
             SingleCall::InviteCancel(msg) => {
                 let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
-                conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, is_self)
             }
             SingleCall::NotAnswer(msg) => {
                 let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
-                conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, is_self)
             }
             SingleCall::HangUp(msg) => {
                 let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
-                conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, is_self)
             }
             SingleCall::InviteAnswer(msg) => {
                 let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
-                conv.unread_count = 1;
                 conv.conv_type = conv_type;
                 self.operate_msg(ctx, conv, is_self)
             }
@@ -205,6 +200,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
+                    self.handle_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_state.notify.emit(message);
                 }
@@ -213,6 +209,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
+                    self.handle_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_state.notify.emit(message);
                 }
@@ -221,6 +218,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
+                    self.handle_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_state.notify.emit(message);
                 }
@@ -229,6 +227,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
+                    self.handle_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_state.notify.emit(message);
                 }
