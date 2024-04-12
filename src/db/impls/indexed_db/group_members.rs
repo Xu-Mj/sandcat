@@ -180,6 +180,7 @@ impl GroupMembers for GroupMembersRepo {
             }
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        onsuccess.forget();
         let on_add_error = Closure::once(move |event: &Event| {
             web_sys::console::log_1(&String::from("读取数据失败").into());
             web_sys::console::log_1(&event.into());

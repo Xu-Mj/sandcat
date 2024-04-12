@@ -93,57 +93,72 @@ impl Component for PostCard {
             }
             PostCardMsg::Delete => {
                 // delete data from local database
-                if let Some(info) = self.info.as_ref() {
-                    match info.get_type() {
-                        RightContentType::Friend => {}
-                        RightContentType::Group => {
-                            let is_dismiss = self.is_group_owner;
-                            if self.is_group_owner {
-                                // dismiss group
-                            }
-                            // delete data from local database
-                            let id = info.id();
-                            let user_id = ctx.props().user_id.clone().to_string();
-                            spawn_local(async move {
-                                // send leave group request
-                                match api::groups()
-                                    .delete_group(GroupDelete {
-                                        group_id: id.to_string(),
-                                        user_id,
-                                        is_dismiss,
-                                    })
-                                    .await
-                                {
-                                    Ok(_) => {
-                                        log::debug!("send delete group request success");
-                                        if let Err(e) = db::groups().await.delete(id.as_str()).await
-                                        {
-                                            log::error!("delete group failed: {:?}", e);
-                                        }
-                                        // delete conversation
-                                        if let Err(e) = db::convs().await.delete(id.as_str()).await
-                                        {
-                                            log::error!("delete conversation failed: {:?}", e);
-                                        }
+                if self.info.is_none() {
+                    return false;
+                }
+                let info = self.info.as_ref().unwrap();
+                match info.get_type() {
+                    RightContentType::Friend => {}
+                    RightContentType::Group => {
+                        let is_dismiss = self.is_group_owner;
+
+                        // delete data from local database
+                        let id = info.id();
+                        let user_id = ctx.props().user_id.clone().to_string();
+
+                        spawn_local(async move {
+                            if !is_dismiss {
+                                log::debug!("group is dismissed already, only delete local data");
+                                // check the group is dismissed already
+                                let group = db::groups().await.get(&id).await.unwrap().unwrap();
+                                if group.deleted {
+                                    if let Err(e) = db::groups().await.delete(id.as_str()).await {
+                                        log::error!("delete group failed: {:?}", e);
                                     }
-                                    Err(e) => {
-                                        log::error!("send delete group request error: {:?}", e);
+                                    // delete conversation
+                                    if let Err(e) = db::convs().await.delete(id.as_str()).await {
+                                        log::error!("delete conversation failed: {:?}", e);
+                                    }
+                                    return;
+                                }
+                            }
+                            // send leave group request
+                            match api::groups()
+                                .delete_group(GroupDelete {
+                                    group_id: id.to_string(),
+                                    user_id,
+                                    is_dismiss,
+                                })
+                                .await
+                            {
+                                Ok(_) => {
+                                    log::debug!("send delete group request success");
+                                    if let Err(e) = db::groups().await.delete(id.as_str()).await {
+                                        log::error!("delete group failed: {:?}", e);
+                                    }
+                                    // delete conversation
+                                    if let Err(e) = db::convs().await.delete(id.as_str()).await {
+                                        log::error!("delete conversation failed: {:?}", e);
                                     }
                                 }
-                            });
+                                Err(e) => {
+                                    log::error!("send delete group request error: {:?}", e);
+                                }
+                            }
+                        });
 
-                            // todo move below to single patch, handle the http request error
-                            // send state message to remove conversation from conversation lis
-                            self.remove_conv_state.remove_event.emit(info.id());
+                        // todo move below to single patch, handle the http request error
+                        // send state message to remove conversation from conversation lis
+                        self.remove_conv_state.remove_event.emit(info.id());
 
-                            // send state message to remove friend from friend list
-                            self.remove_friend_state
-                                .remove_event
-                                .emit((info.id(), ItemType::Group));
-                        }
-                        _ => {}
+                        // send state message to remove friend from friend list
+                        self.remove_friend_state
+                            .remove_event
+                            .emit((info.id(), ItemType::Group));
                     }
+                    _ => {}
                 }
+
                 true
             }
             PostCardMsg::None => false,

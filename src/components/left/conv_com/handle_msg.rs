@@ -44,10 +44,10 @@ impl Chats {
             }
             Msg::Group(group_msg) => {
                 match group_msg {
-                    GroupMsg::Invitation(msg) => {
+                    GroupMsg::Invitation((msg, _)) => {
                         self.handle_group_invitation(ctx, msg);
                     }
-                    GroupMsg::Dismiss(group_id) => {
+                    GroupMsg::Dismiss((group_id, _)) => {
                         self.handle_group_dismiss(ctx, group_id);
                     }
                     // don't handle it now
@@ -237,7 +237,7 @@ impl Chats {
         }
     }
 
-    pub fn handle_less_msg(&mut self, ctx: &Context<Self>, end: i64) {
+    pub fn handle_lack_msg(&mut self, ctx: &Context<Self>, end: i64) {
         if self.seq.local_seq > end - 1 {
             return;
         }
@@ -300,7 +300,7 @@ impl Chats {
                     || self.conv_state.conv.content_type == RightContentType::Group)
                     && self.conv_state.conv.item_id == msg.friend_id;
 
-                self.handle_less_msg(ctx, msg.seq);
+                self.handle_lack_msg(ctx, msg.seq);
                 spawn_local(async move {
                     // ctx.link().send_future(async move {
                     // save to db
@@ -323,8 +323,9 @@ impl Chats {
             }
             Msg::Group(ref group_msg) => {
                 match group_msg {
-                    GroupMsg::Invitation(msg) => {
+                    GroupMsg::Invitation((msg, seq)) => {
                         // receive create group message
+                        self.handle_lack_msg(ctx, *seq);
                         self.handle_group_invitation(ctx, msg.clone());
                     }
                     GroupMsg::Message(msg) => {
@@ -341,18 +342,12 @@ impl Chats {
                         };
                         let is_self = msg.is_self;
 
-                        // if self.conv_state.conv.item_id != msg.friend_id {
-                        //     let conv_state = Rc::make_mut(&mut self.conv_state);
-                        //     let _ = current_item::save_conv(&conv_state.conv)
-                        //         .map_err(|err| log::error!("save conv fail{:?}", err));
-                        // }
-
                         let is_send = (self.conv_state.conv.content_type
                             == RightContentType::Friend
                             || self.conv_state.conv.content_type == RightContentType::Group)
                             && self.conv_state.conv.item_id == msg.friend_id;
 
-                        self.handle_less_msg(ctx, msg.seq);
+                        self.handle_lack_msg(ctx, msg.seq);
                         ctx.link().send_future(async move {
                             // 数据入库
                             db::group_msgs().await.put(&msg).await.unwrap();
@@ -372,17 +367,20 @@ impl Chats {
 
                         return self.operate_msg(ctx, conv, is_self);
                     }
-                    GroupMsg::MemberExit((mem_id, group_id)) => {
+                    GroupMsg::MemberExit((mem_id, group_id, seq)) => {
+                        self.handle_lack_msg(ctx, *seq);
                         // todo modify conversation list
                         // delete member information from da
-                        // let user_id = ctx.props().user_id.clone();
                         let mem_id = mem_id.clone();
                         let group_id = group_id.clone();
                         // let ctx = ctx.link().clone();
                         spawn_local(async move {
+                            log::debug!(
+                                "received group member exits message {group_id} --> {mem_id}, delete member from group"
+                            );
                             db::group_members()
                                 .await
-                                .delete(&mem_id, &group_id)
+                                .delete(&group_id, &mem_id)
                                 .await
                                 .unwrap();
                             // if let Err(err) =
@@ -400,7 +398,8 @@ impl Chats {
                             // }
                         });
                     }
-                    GroupMsg::Dismiss(group_id) => {
+                    GroupMsg::Dismiss((group_id, seq)) => {
+                        self.handle_lack_msg(ctx, *seq);
                         // delete group from db
                         // let user_id = ctx.props().user_id.clone();
                         // we can consume the group_msg here because it is behind in the reference

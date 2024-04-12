@@ -163,7 +163,7 @@ impl MessageList {
                     GroupMsg::Message(msg) => self.insert_msg(msg, friend_id),
                     // need to handle, as system notify
                     GroupMsg::MemberExit(_) => false,
-                    GroupMsg::Dismiss(group_id) => {
+                    GroupMsg::Dismiss((group_id, _)) => {
                         if group_id == friend_id {
                             self.is_black = true;
                             return true;

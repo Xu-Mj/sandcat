@@ -72,10 +72,10 @@ impl Chats {
                     self.handle_offline_msg_map(&mut map, msg.content.clone(), msg, conv_type);
                 }
                 Msg::Group(group_msg) => match group_msg {
-                    GroupMsg::Invitation(msg) => {
+                    GroupMsg::Invitation((msg, _)) => {
                         self.handle_group_invitation(ctx, msg);
                     }
-                    GroupMsg::Dismiss(group_id) => {
+                    GroupMsg::Dismiss((group_id, _)) => {
                         self.handle_group_dismiss(ctx, group_id);
                     }
                     GroupMsg::Message(msg) => {
@@ -83,7 +83,7 @@ impl Chats {
                             db::group_msgs().await.put(&msg).await.unwrap();
                         });
                     }
-                    GroupMsg::MemberExit((mem_id, group_id)) => {
+                    GroupMsg::MemberExit((mem_id, group_id, _)) => {
                         // todo send a exit message to the group
                         spawn_local(async move {
                             db::group_members()

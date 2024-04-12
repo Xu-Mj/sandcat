@@ -250,12 +250,13 @@ impl Default for Msg {
     }
 }
 
+pub type Sequence = i64;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum GroupMsg {
     Message(Message),
-    Invitation(GroupInvitation),
-    MemberExit((UserID, GroupID)),
-    Dismiss(GroupID),
+    Invitation((GroupInvitation, Sequence)),
+    MemberExit((UserID, GroupID, Sequence)),
+    Dismiss((GroupID, Sequence)),
     DismissOrExitReceived((UserID, GroupID)),
     InvitationReceived((UserID, GroupID)),
 }
@@ -567,8 +568,9 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         MsgType::GroupMemberExit => Ok(Msg::Group(GroupMsg::MemberExit((
             msg.send_id,
             msg.receiver_id,
+            msg.seq,
         )))),
-        MsgType::GroupDismiss => Ok(Msg::Group(GroupMsg::Dismiss(msg.receiver_id))),
+        MsgType::GroupDismiss => Ok(Msg::Group(GroupMsg::Dismiss((msg.receiver_id, msg.seq)))),
         MsgType::GroupDismissOrExitReceived => todo!(),
         MsgType::GroupInvitationReceived => todo!(),
         MsgType::GroupUpdate => todo!(),
@@ -742,12 +744,12 @@ impl From<Msg> for PbMsg {
                         pb_msg.msg_type = MsgType::GroupInvitation as i32;
                         pb_msg.content = bincode::serialize(&info).unwrap();
                     }
-                    GroupMsg::MemberExit((send_id, group_id)) => {
+                    GroupMsg::MemberExit((send_id, group_id, _)) => {
                         pb_msg.msg_type = MsgType::GroupMemberExit as i32;
                         pb_msg.send_id = send_id.to_string();
                         pb_msg.receiver_id = group_id.to_string();
                     }
-                    GroupMsg::Dismiss(group_id) => {
+                    GroupMsg::Dismiss((group_id, _)) => {
                         pb_msg.msg_type = MsgType::GroupDismiss as i32;
                         pb_msg.receiver_id = group_id.to_string();
                     }
