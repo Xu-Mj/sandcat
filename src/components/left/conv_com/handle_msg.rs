@@ -2,6 +2,7 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::{
+    api,
     components::left::conv_com::conversations::ChatsMsg,
     db,
     model::{
@@ -236,12 +237,43 @@ impl Chats {
         }
     }
 
+    pub fn handle_less_msg(&mut self, ctx: &Context<Self>, end: i64) {
+        if self.seq.local_seq > end - 1 {
+            return;
+        }
+        let mut need_repull = false;
+        if self.seq.local_seq < end - 1 {
+            // repull the lack messages
+            need_repull = true;
+        }
+
+        let start = self.seq.local_seq;
+        let seq = self.seq.clone();
+        let user_id = ctx.props().user_id.clone();
+
+        self.seq.local_seq = end;
+
+        ctx.link().send_future(async move {
+            db::seq().await.put(&seq).await.unwrap();
+            if need_repull {
+                let messages = api::messages()
+                    .pull_offline_msg(user_id.as_str(), start, end)
+                    .await
+                    .unwrap();
+                ChatsMsg::HandleLackMessages(messages)
+            } else {
+                ChatsMsg::None
+            }
+        });
+    }
+
     pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
         let conv_type = match message {
             Msg::Group(_) => RightContentType::Group,
             Msg::Single(_) | Msg::SingleCall(_) => RightContentType::Friend,
             _ => RightContentType::Default,
         };
+
         match message {
             Msg::Single(ref mut msg) => {
                 let friend_id = msg.send_id.clone();
@@ -267,6 +299,8 @@ impl Chats {
                 let is_send = (self.conv_state.conv.content_type == RightContentType::Friend
                     || self.conv_state.conv.content_type == RightContentType::Group)
                     && self.conv_state.conv.item_id == msg.friend_id;
+
+                self.handle_less_msg(ctx, msg.seq);
                 spawn_local(async move {
                     // ctx.link().send_future(async move {
                     // save to db
@@ -295,7 +329,7 @@ impl Chats {
                     }
                     GroupMsg::Message(msg) => {
                         let msg = msg.clone();
-                        let _msg_id = msg.server_id.to_string();
+                        // let _msg_id = msg.server_id.to_string();
                         let conv = Conversation {
                             last_msg: msg.content.clone(),
                             last_msg_time: msg.create_time,
@@ -306,15 +340,19 @@ impl Chats {
                             ..Default::default()
                         };
                         let is_self = msg.is_self;
+
                         // if self.conv_state.conv.item_id != msg.friend_id {
                         //     let conv_state = Rc::make_mut(&mut self.conv_state);
                         //     let _ = current_item::save_conv(&conv_state.conv)
                         //         .map_err(|err| log::error!("save conv fail{:?}", err));
                         // }
+
                         let is_send = (self.conv_state.conv.content_type
                             == RightContentType::Friend
                             || self.conv_state.conv.content_type == RightContentType::Group)
                             && self.conv_state.conv.item_id == msg.friend_id;
+
+                        self.handle_less_msg(ctx, msg.seq);
                         ctx.link().send_future(async move {
                             // 数据入库
                             db::group_msgs().await.put(&msg).await.unwrap();
@@ -331,6 +369,7 @@ impl Chats {
                         if is_send {
                             ctx.link().send_message(ChatsMsg::RecMsgNotify(message));
                         }
+
                         return self.operate_msg(ctx, conv, is_self);
                     }
                     GroupMsg::MemberExit((mem_id, group_id)) => {
@@ -411,6 +450,7 @@ impl Chats {
                 return true;
             }
             Msg::FriendshipDeliveredNotice(_) => {}
+            // todo need handle the message sequence
             Msg::RelationshipRes(friend) => {
                 // 收到好友同意消息
                 // self.info(AttrValue::from("好友同意"));

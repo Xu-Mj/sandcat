@@ -48,6 +48,8 @@ pub enum ChatsMsg {
     SendCreateGroupToContacts(Group),
     DismissGroup(AttrValue, String),
     RecMsgNotify(Msg),
+    /// handle the lack messages
+    HandleLackMessages(Vec<PbMsg>),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -219,6 +221,10 @@ impl Component for Chats {
             ChatsMsg::InsertConvWithoutUpdate(conv) => {
                 self.list.shift_insert(0, conv.friend_id.clone(), conv);
                 false
+            }
+            ChatsMsg::HandleLackMessages(messages) => {
+                self.handle_offline_messages(ctx, messages);
+                true
             }
         }
     }
