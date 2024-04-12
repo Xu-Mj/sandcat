@@ -42,7 +42,7 @@ pub enum MessageListMsg {
     NextPageNone,
     SendFile(Message),
     ReceiveMsg(Rc<RecMessageState>),
-    SyncOfflineMsg(Rc<OfflineMsgState>),
+    SyncOfflineMsg,
     GoBottom,
     QueryFriend(Option<Box<dyn ItemInfo>>),
 }
@@ -213,7 +213,7 @@ impl Component for MessageList {
         //     .expect("need msg context");
         let (_sync_msg_state, _sync_msg_listener) = ctx
             .link()
-            .context(ctx.link().callback(MessageListMsg::SyncOfflineMsg))
+            .context(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg))
             .expect("need msg context");
         let (_rec_msg_state, _rec_msg_listener) = ctx
             .link()
@@ -302,7 +302,8 @@ impl Component for MessageList {
                 self.friend = item;
                 true
             }
-            MessageListMsg::SyncOfflineMsg(_) => {
+            MessageListMsg::SyncOfflineMsg => {
+                log::debug!("sync offline msg in message list....");
                 self.reset();
                 self.query(ctx);
                 false

@@ -139,9 +139,6 @@ impl Chats {
                 _ => {}
             }
         }
-        let is_send = (self.conv_state.conv.content_type == RightContentType::Friend
-            || self.conv_state.conv.content_type == RightContentType::Group)
-            && map.contains_key(&self.conv_state.conv.item_id);
 
         // sort
         let mut list: Vec<Conversation> = map.into_values().collect();
@@ -153,8 +150,6 @@ impl Chats {
         }
 
         // send sync offline message complete message to msg_list component
-        if is_send {
-            self.sync_msg_state.complete.emit(());
-        }
+        self.sync_msg_state.complete.emit(());
     }
 }

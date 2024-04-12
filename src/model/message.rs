@@ -531,6 +531,12 @@ impl TryFrom<pb::message::Msg> for Message {
     type Error = String;
 
     fn try_from(value: pb::message::Msg) -> Result<Self, Self::Error> {
+        let msg_type = MsgType::try_from(value.msg_type).map_err(|e| e.to_string())?;
+        let friend_id = if msg_type == MsgType::GroupMsg {
+            value.group_id.into()
+        } else {
+            value.receiver_id.into()
+        };
         let status: ContentType = value.content_type.into();
         Ok(Self {
             id: 0,
@@ -538,7 +544,7 @@ impl TryFrom<pb::message::Msg> for Message {
             local_id: value.local_id.into(),
             server_id: value.server_id.into(),
             send_id: value.send_id.into(),
-            friend_id: value.receiver_id.into(),
+            friend_id,
             content_type: ContentType::from(value.content_type),
             content: String::from_utf8(value.content)
                 .map_err(|e| e.to_string())?
