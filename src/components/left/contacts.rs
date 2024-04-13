@@ -164,7 +164,7 @@ impl Component for Contacts {
                     FriendShipStateType::Req => {
                         self.friendships_unread_count += 1;
                     }
-                    FriendShipStateType::Res => {
+                    FriendShipStateType::RecResp | FriendShipStateType::Res => {
                         let friend = friendship.friend.as_ref().unwrap().clone();
                         self.friends.insert(friend.friend_id.clone(), friend);
                     }

@@ -162,7 +162,11 @@ pub struct FriendShipState {
     pub ship: Option<FriendShipWithUser>,
     pub friend: Option<Friend>,
     pub state_type: FriendShipStateType,
+    /// received the friend application request
     pub req_change_event: Callback<FriendShipWithUser>,
+    /// received the friend application response
+    pub rec_resp: Callback<Friend>,
+    /// response the friend application request
     pub res_change_event: Callback<(AttrValue, Friend)>,
 }
 

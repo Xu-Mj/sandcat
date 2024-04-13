@@ -154,15 +154,13 @@ impl Component for FriendShipList {
                     &state.state_type
                 );
 
-                match state.state_type {
-                    FriendShipStateType::Req => {
-                        self.friendship_state = state;
-                        self.list
-                            .insert(0, self.friendship_state.ship.as_ref().unwrap().clone());
-                        true
-                    }
-                    FriendShipStateType::Res => false,
+                if state.state_type == FriendShipStateType::Req {
+                    self.friendship_state = state;
+                    self.list
+                        .insert(0, self.friendship_state.ship.as_ref().unwrap().clone());
+                    return true;
                 }
+                false
             }
             FriendShipListMsg::ShowDetail(item) => {
                 self.detail = Some(*item);

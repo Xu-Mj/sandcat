@@ -142,6 +142,7 @@ pub enum FriendShipStateType {
     #[default]
     Req,
     Res,
+    RecResp,
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]

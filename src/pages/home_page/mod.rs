@@ -19,7 +19,7 @@ use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{InviteMsg, Msg};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
-use crate::model::{ComponentType, CurrentItem, RightContentType};
+use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType};
 use crate::pages::MuteState;
 
 use crate::{
@@ -78,13 +78,15 @@ pub enum HomeMsg {
     ReceiveFriendShipReq(FriendShipWithUser),
     // 回复好友请求
     FriendShipResponse((AttrValue, Friend)),
+    // received friend application response
+    RecFsResp(Friend),
     // 显示顶部消息通知
     // 发送视频电话请求
     SendCallInvite(InviteMsg),
     // 发送消息
     SendMessage(Msg),
     // 发送消息收到
-    SendBackMsg(Msg),
+    // SendBackMsg(Msg),
     Notification(Notification),
     CleanNotification,
     CloseNotificationByIndex(usize),
@@ -182,14 +184,18 @@ impl Component for Home {
                 true
             }
             // todo don't need anymore
-            HomeMsg::SendBackMsg(_msg) => {
-                // 发送已收到消息给服务器
-                // self.send_msg(msg);
-                false
-            }
+            // HomeMsg::SendBackMsg(_msg) => {
+            // 发送已收到消息给服务器
+            // self.send_msg(msg);
+            // false
+            // }
             // don't need anymore, at the conversation component
             HomeMsg::ReceiveFriendShipReq(friendship) => {
-                self.handle_friendship_req(ctx, friendship)
+                // self.handle_friendship_req(ctx, friendship)
+                let state = Rc::make_mut(&mut self.friend_ship_state);
+                state.ship = Some(friendship.clone());
+                state.state_type = FriendShipStateType::Req;
+                true
             }
             HomeMsg::FriendShipResponse((friendship_id, friend)) => {
                 self.agree_friendship(ctx, friendship_id, friend)
@@ -295,6 +301,12 @@ impl Component for Home {
             HomeMsg::RecMsgStateChange(msg) => {
                 let state = Rc::make_mut(&mut self.rec_msg_state);
                 state.msg = msg;
+                true
+            }
+            HomeMsg::RecFsResp(friend) => {
+                let state = Rc::make_mut(&mut self.friend_ship_state);
+                state.friend = Some(friend);
+                state.state_type = FriendShipStateType::RecResp;
                 true
             }
         }

@@ -283,7 +283,7 @@ impl Chats {
 
                 let conv = Conversation {
                     last_msg: msg.content.clone(),
-                    last_msg_time: msg.create_time,
+                    last_msg_time: msg.send_time,
                     last_msg_type: msg.content_type,
                     conv_type,
                     friend_id: msg.friend_id.clone(),
@@ -332,7 +332,7 @@ impl Chats {
                         // let _msg_id = msg.server_id.to_string();
                         let conv = Conversation {
                             last_msg: msg.content.clone(),
-                            last_msg_time: msg.create_time,
+                            last_msg_time: msg.send_time,
                             last_msg_type: msg.content_type,
                             conv_type,
                             friend_id: msg.friend_id.clone(),
@@ -433,9 +433,20 @@ impl Chats {
                 }
             }
             Msg::SendRelationshipReq(_msg) => {}
-            Msg::RecRelationship(friendship) => {
+            Msg::RecRelationship((friendship, seq)) => {
                 // 收到好友请求
-                self.handle_friendship_req(ctx, friendship);
+                log::debug!("ReceiveFriendShipReq:{:?}", &friendship);
+
+                let req = self.fs_state.req_change_event.clone();
+                // save friendship
+                spawn_local(async move {
+                    db::friendships().await.put_friendship(&friendship).await;
+                    // notify
+                    req.emit(friendship);
+                });
+
+                // handle sequence
+                self.handle_lack_msg(ctx, seq);
             }
             Msg::ReadNotice(_) | Msg::SingleDeliveredNotice(_) => {}
             Msg::OfflineSync(_) => {}
@@ -449,13 +460,15 @@ impl Chats {
             }
             Msg::FriendshipDeliveredNotice(_) => {}
             // todo need handle the message sequence
-            Msg::RelationshipRes(friend) => {
+            Msg::RelationshipRes((friend, seq)) => {
+                self.handle_lack_msg(ctx, seq);
                 // 收到好友同意消息
                 // self.info(AttrValue::from("好友同意"));
                 let send_id = ctx.props().user_id.clone();
                 // 需要通知联系人列表更新
                 // 数据入库
                 // let cloned_ctx = ctx.link().clone();
+                let resp = self.fs_state.rec_resp.clone();
                 ctx.link().send_future(async move {
                     db::friendships()
                         .await
@@ -468,28 +481,29 @@ impl Chats {
                     // )));
                     // send hello message
                     let mut msg = Message {
-                        seq: 0,
                         local_id: nanoid::nanoid!().into(),
-                        server_id: AttrValue::default(),
                         send_id,
                         friend_id: friend.friend_id.clone(),
                         content_type: ContentType::Text,
                         content: friend
                             .hello
+                            .clone()
                             .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
                         create_time: chrono::Local::now().timestamp_millis(),
                         is_read: true,
                         is_self: true,
-                        file_content: AttrValue::default(),
-                        id: 0,
-                        send_time: 0,
-                        is_success: false,
+                        ..Default::default()
                     };
-                    let _ = db::messages()
+                    db::messages()
                         .await
                         .add_message(&mut msg)
                         .await
-                        .map_err(|err| log::error!("save message fail:{:?}", err));
+                        .map_err(|err| log::error!("save message fail:{:?}", err))
+                        .unwrap();
+
+                    // send message to contact component to update the friend list
+                    resp.emit(friend);
+
                     ChatsMsg::SendMessage(Msg::Single(msg))
                 });
             }

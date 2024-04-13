@@ -16,14 +16,13 @@ use crate::{
     db::{self, TOKEN, WS_ADDR},
     model::{
         conversation::Conversation,
-        friend::FriendShipWithUser,
         message::{Msg, SingleCall},
         seq::Seq,
         CommonProps, ComponentType, ContentType, RightContentType,
     },
     pages::{
-        AddFriendState, ConvState, CreateConvState, MuteState, OfflineMsgState, RecMessageState,
-        RemoveConvState, SendMessageState, UnreadState, WaitState,
+        AddFriendState, ConvState, CreateConvState, FriendShipState, MuteState, OfflineMsgState,
+        RecMessageState, RemoveConvState, SendMessageState, UnreadState, WaitState,
     },
     ws::WebSocketManager,
 };
@@ -88,6 +87,9 @@ pub struct Chats {
     /// send the event to other components after receive a message
     rec_msg_state: Rc<RecMessageState>,
     _rec_msg_state_listener: ContextHandle<Rc<RecMessageState>>,
+    /// friendship state, notify the contact component after receive a friend application
+    fs_state: Rc<FriendShipState>,
+    _fs_state_listener: ContextHandle<Rc<FriendShipState>>,
 }
 
 impl Chats {
@@ -157,6 +159,10 @@ impl Chats {
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
+        let (fs_state, _fs_state_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| ChatsMsg::None))
+            .expect("need state in item");
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let token = window()
             .local_storage()
@@ -205,6 +211,8 @@ impl Chats {
             _sync_msg_state_listener,
             rec_msg_state,
             _rec_msg_state_listener,
+            fs_state,
+            _fs_state_listener,
         }
     }
 
@@ -422,32 +430,6 @@ impl Chats {
             });
             false
         }
-    }
-
-    fn handle_friendship_req(
-        &mut self,
-        _ctx: &Context<Self>,
-        friendship: FriendShipWithUser,
-    ) -> bool {
-        log::debug!("ReceiveFriendShipReq:{:?}", &friendship);
-        // let id = friendship.fs_id.clone().to_string();
-        // let state = Rc::make_mut(&mut self.friend_ship_state);
-        // state.ship = Some(friendship.clone());
-        // state.state_type = FriendShipStateType::Req;
-        // // 入库
-        // ctx.link().send_future(async move {
-        //     db::friendships().await.put_friendship(&friendship).await;
-        //     // 发送收到通知
-        //     HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(id))
-        // });
-        // // 显示通知
-        // // self.info(AttrValue::from("收到好友请求"));
-        // ctx.link().send_message(HomeMsg::Notification(Notification {
-        //     type_: NotificationType::Info,
-        //     title: AttrValue::default(),
-        //     content: AttrValue::from("收到好友请求"),
-        // }));
-        true
     }
 }
 

@@ -3,11 +3,10 @@ use std::rc::Rc;
 use yew::{AttrValue, Context, NodeRef};
 
 use crate::db;
-use crate::pages::{OfflineMsgState, RecMessageState};
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME},
     model::{
-        friend::{Friend, FriendShipWithUser},
+        friend::Friend,
         message::{InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
         user::User,
@@ -15,8 +14,8 @@ use crate::{
     },
     pages::{
         home_page::HomeMsg, AddFriendState, AppState, ConvState, CreateConvState, FriendListState,
-        FriendShipState, MuteState, RecSendCallState, RemoveConvState, RemoveFriendState,
-        SendMessageState, UnreadState, WaitState,
+        FriendShipState, MuteState, OfflineMsgState, RecMessageState, RecSendCallState,
+        RemoveConvState, RemoveFriendState, SendMessageState, UnreadState, WaitState,
     },
 };
 
@@ -72,6 +71,7 @@ impl Home {
         let call_event = ctx.link().callback(HomeMsg::SendCallInvite);
         let rec_friend_req_event = ctx.link().callback(HomeMsg::ReceiveFriendShipReq);
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
+        let rec_resp = ctx.link().callback(HomeMsg::RecFsResp);
         let error_event = ctx.link().callback(HomeMsg::Notification);
         let create_friend_conv = ctx.link().callback(HomeMsg::CreateFriendConv);
         let create_group_conv = ctx.link().callback(HomeMsg::CreateGroupConv);
@@ -116,6 +116,7 @@ impl Home {
                 state_type: FriendShipStateType::Req,
                 req_change_event: rec_friend_req_event,
                 res_change_event: rec_friend_res_event,
+                rec_resp,
             }),
             friend_state: Rc::new(FriendListState {
                 friend: Default::default(),
@@ -209,33 +210,7 @@ impl Home {
         }
     }
 
-    pub fn handle_friendship_req(
-        &mut self,
-        ctx: &Context<Self>,
-        friendship: FriendShipWithUser,
-    ) -> bool {
-        log::debug!("ReceiveFriendShipReq:{:?}", &friendship);
-        let id = friendship.fs_id.clone().to_string();
-        let state = Rc::make_mut(&mut self.friend_ship_state);
-        state.ship = Some(friendship.clone());
-        state.state_type = FriendShipStateType::Req;
-        // 入库
-        ctx.link().send_future(async move {
-            db::friendships().await.put_friendship(&friendship).await;
-            // 发送收到通知
-            HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(id))
-        });
-        // 显示通知
-        // self.info(AttrValue::from("收到好友请求"));
-        ctx.link().send_message(HomeMsg::Notification(Notification {
-            type_: NotificationType::Info,
-            title: AttrValue::default(),
-            content: AttrValue::from("收到好友请求"),
-        }));
-        true
-    }
-
-    /// agree friend request
+    /// agree friend request from frienship list component
     pub fn agree_friendship(
         &mut self,
         ctx: &Context<Self>,

@@ -226,8 +226,8 @@ pub enum Msg {
     Group(GroupMsg),
     // GroupInvitation(GroupInvitation),
     SendRelationshipReq(FriendShipRequest),
-    RecRelationship(FriendShipWithUser),
-    RelationshipRes(Friend),
+    RecRelationship((FriendShipWithUser, Sequence)),
+    RelationshipRes((Friend, Sequence)),
     ReadNotice(ReadNotice),
     SingleDeliveredNotice(MessageID),
     FriendshipDeliveredNotice(MessageID),
@@ -584,12 +584,15 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             // decode content
             let info: FriendshipWithUser4Response =
                 bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
-            Ok(Msg::RecRelationship(FriendShipWithUser::from(info)))
+            Ok(Msg::RecRelationship((
+                FriendShipWithUser::from(info),
+                msg.seq,
+            )))
         }
         MsgType::FriendApplyResp => {
             // decode content
             let info = bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
-            Ok(Msg::RelationshipRes(info))
+            Ok(Msg::RelationshipRes((info, msg.seq)))
         }
         MsgType::SingleCallInvite => {
             let invite_type = get_invite_type(msg.content_type)?;
@@ -610,7 +613,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
                 friend_id: msg.receiver_id.into(),
-                create_time: msg.send_time,
+                create_time: msg.create_time,
                 invite_type,
                 agree: false,
                 is_self: false,
@@ -679,7 +682,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
                 friend_id: msg.receiver_id.into(),
-                create_time: msg.send_time,
+                create_time: msg.create_time,
                 invite_type,
                 agree: true,
                 is_self: false,
