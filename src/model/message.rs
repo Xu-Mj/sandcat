@@ -714,6 +714,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         })),
         MsgType::Notification => todo!(),
         MsgType::Service => todo!(),
+        MsgType::FriendshipReceived => todo!(),
     }
 }
 

@@ -7,13 +7,16 @@ use crate::{
     db,
     model::{
         conversation::Conversation,
-        message::{convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall},
-        RightContentType,
+        message::{
+            convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall,
+            DEFAULT_HELLO_MESSAGE,
+        },
+        ContentType, RightContentType,
     },
     pb::message::Msg as PbMsg,
 };
 
-use super::Chats;
+use super::{conversations::ChatsMsg, Chats};
 
 impl Chats {
     fn handle_offline_msg_map(
@@ -136,6 +139,45 @@ impl Chats {
                     }
                     _ => {}
                 },
+                // handle the friendship related
+                Msg::RecRelationship((fs, _)) => {
+                    // receive the friend request, ignore the sequence
+                    spawn_local(async move {
+                        db::friendships().await.put_friendship(&fs).await;
+                    });
+                }
+                Msg::RelationshipRes((friend, _)) => {
+                    let send_id = ctx.props().user_id.clone();
+                    ctx.link().send_future(async move {
+                        db::friendships()
+                            .await
+                            .agree_by_friend_id(friend.friend_id.as_str())
+                            .await;
+                        db::friends().await.put_friend(&friend).await;
+                        // send hello message
+                        let mut msg = Message {
+                            local_id: nanoid::nanoid!().into(),
+                            send_id,
+                            friend_id: friend.friend_id.clone(),
+                            content_type: ContentType::Text,
+                            content: friend
+                                .hello
+                                .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
+                            create_time: chrono::Local::now().timestamp_millis(),
+                            is_read: true,
+                            is_self: true,
+                            ..Default::default()
+                        };
+                        db::messages()
+                            .await
+                            .add_message(&mut msg)
+                            .await
+                            .map_err(|err| log::error!("save message fail:{:?}", err))
+                            .unwrap();
+
+                        ChatsMsg::SendMessage(Msg::Single(msg))
+                    });
+                }
                 _ => {}
             }
         }
