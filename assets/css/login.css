@@ -7,14 +7,15 @@
     user-select: none;
     /* Standard syntax */
     width: 100%;
-    min-height: calc(100vh - 70px);
+    height: 25rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     position: relative;
-    /* padding: 50px; */
-    /* background-image: url("../assets/imgs/53.jpg"); */
+    background-color: white;
+    padding: 2rem;
+    border-radius: .5rem;
 
     .error {
         position: absolute;

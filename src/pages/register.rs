@@ -399,6 +399,10 @@ impl Component for Register {
                         </span>
                         <input type="submit" class="register-button" onclick={onsubmit} value={"注册"}/>
                     </div>
+                    <div class="login-register">
+                        {"已经拥有账号？"}
+                        <a href="/">{"去登录"}</a>
+                    </div>
                 </div>
             </div>
         }

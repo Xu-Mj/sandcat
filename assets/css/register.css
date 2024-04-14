@@ -6,12 +6,15 @@
     user-select: none;
     /* Standard syntax */
     width: 100%;
-    min-height: calc(100vh - 70px);
+    height: 33rem;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     position: relative;
+    background-color: white;
+    padding: 2rem;
+    border-radius: .5rem;
 
     .register-info {
         position: absolute;
