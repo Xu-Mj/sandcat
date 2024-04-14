@@ -1,3 +1,5 @@
+use fluent::FluentBundle;
+use fluent::FluentResource;
 use gloo::utils::document;
 use indexmap::IndexMap;
 use wasm_bindgen::JsCast;
@@ -6,13 +8,18 @@ use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 use crate::db;
+use crate::i18n::en_us;
+use crate::i18n::zh_cn;
+use crate::i18n::LanguageType;
 use crate::model::friend::Friend;
+use crate::tr;
+use crate::utils;
 
-#[derive(Debug, Default)]
 pub struct SelectFriendList {
     data: IndexMap<AttrValue, Friend>,
     querying: bool,
     err: JsValue,
+    i18n: FluentBundle<FluentResource>,
 }
 
 pub enum AddConvMsg {
@@ -36,6 +43,7 @@ pub struct AddConvProps {
     pub except: AttrValue,
     pub close_back: Callback<()>,
     pub submit_back: Callback<Vec<String>>,
+    pub lang: LanguageType,
 }
 
 impl Component for SelectFriendList {
@@ -53,8 +61,16 @@ impl Component for SelectFriendList {
                 Err(err) => AddConvMsg::QueryFriends(QueryStatus::Fail(err)),
             }
         });
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::SELECT_FRIENDS,
+            LanguageType::EnUS => en_us::SELECT_FRIENDS,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
-            ..Default::default()
+            i18n,
+            data: IndexMap::new(),
+            querying: false,
+            err: JsValue::NULL,
         }
     }
 
@@ -108,11 +124,11 @@ impl Component for SelectFriendList {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let mut content = html!();
         if self.querying {
-            content = html!(<div>{"正在查询..."}</div>)
+            content = html!(<div>{tr!(self.i18n, "querying")}</div>)
         } else if !self.data.is_empty() {
             content = html! {
                 <fieldset>
-                    <legend>{"SELECT FRIENDS"}</legend>
+                    <legend>{tr!(self.i18n, "select_friends")}</legend>
                     {
                         self.data.iter().map(|(index,item)| {
                             let mut name = item.name.clone();
@@ -145,8 +161,8 @@ impl Component for SelectFriendList {
             <div class="add-conv box-shadow">
                 {content}
                 <div class="add-conv-actions">
-                    <div onclick={submit} >{"submit"}</div>
-                    <div onclick={close} >{"cancel"}</div>
+                    <div onclick={submit} >{tr!(self.i18n, "submit")}</div>
+                    <div onclick={close} >{tr!(self.i18n, "cancel")}</div>
                 </div>
             </div>
         }

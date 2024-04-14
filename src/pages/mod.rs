@@ -5,6 +5,7 @@ pub mod register;
 use yew::{AttrValue, Callback};
 use yew_router::Routable;
 
+use crate::i18n::LanguageType;
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::group::Group;
 use crate::model::message::{InviteMsg, Msg};
@@ -34,6 +35,12 @@ pub struct WaitState {
 pub struct OfflineMsgState {
     pub null: Option<()>,
     pub complete: Callback<()>,
+}
+
+#[derive(Debug, Default, Clone, PartialEq)]
+pub struct I18nState {
+    pub lang: LanguageType,
+    pub switch_lang: Callback<LanguageType>,
 }
 
 #[derive(Default, Clone, PartialEq)]
@@ -77,14 +84,12 @@ pub struct ConvState {
     pub state_change_event: Callback<CurrentItem>,
 }
 
-/// 记录当前会话状态
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct MuteState {
     pub conv_id: AttrValue,
     pub mute: Callback<AttrValue>,
 }
 
-/// 记录当前会话状态
 #[derive(Default, Debug, Clone, PartialEq)]
 pub struct RemoveConvState {
     pub id: AttrValue,

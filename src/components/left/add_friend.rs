@@ -1,14 +1,17 @@
+use fluent::{FluentBundle, FluentResource};
 use yew::prelude::*;
 
-use crate::api;
 use crate::components::left::user_info::UserInfoCom;
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::user::UserWithMatchType;
+use crate::{api, tr, utils};
 use crate::{components::top_bar::TopBar, model::ComponentType};
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct AddFriendProps {
     pub plus_click: Callback<()>,
     pub user_id: AttrValue,
+    pub lang: LanguageType,
 }
 
 pub struct AddFriend {
@@ -16,6 +19,7 @@ pub struct AddFriend {
     pub result: Vec<UserWithMatchType>,
     // 是否正在搜索
     pub is_searching: bool,
+    i18n: FluentBundle<FluentResource>,
 }
 
 pub enum SearchState<T> {
@@ -36,10 +40,16 @@ impl Component for AddFriend {
 
     type Properties = AddFriendProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::ADD_FRIEND,
+            LanguageType::EnUS => en_us::ADD_FRIEND,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             result: vec![],
             is_searching: false,
+            i18n,
         }
     }
 
@@ -89,7 +99,7 @@ impl Component for AddFriend {
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
         let content = if self.result.is_empty() {
-            html! {<div class="no-result">{"没有搜索结果"}</div>}
+            html! {<div class="no-result">{tr!(self.i18n, "no_result")}</div>}
         } else {
             self.result
                 .iter()
@@ -108,7 +118,12 @@ impl Component for AddFriend {
 
         html! {
             <>
-                <TopBar components_type={ComponentType::Setting} {search_callback} {clean_callback} {plus_click} />
+                <TopBar
+                    components_type={ComponentType::Setting}
+                    {search_callback}
+                    {clean_callback}
+                    {plus_click}
+                    lang={ctx.props().lang} />
                 <div class="contacts-list">
                     {content}
                 </div>

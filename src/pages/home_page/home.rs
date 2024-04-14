@@ -3,6 +3,7 @@ use std::rc::Rc;
 use yew::{AttrValue, Context, NodeRef};
 
 use crate::db;
+use crate::pages::I18nState;
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME},
     model::{
@@ -77,6 +78,8 @@ impl Home {
         let create_group_conv = ctx.link().callback(HomeMsg::CreateGroupConv);
         let mute = ctx.link().callback(HomeMsg::MuteStateChange);
         let add = ctx.link().callback(HomeMsg::AddFriendStateChange);
+        let switch_lang = ctx.link().callback(HomeMsg::SwitchLang);
+
         let user = User {
             id: id.clone(),
             ..Default::default()
@@ -161,6 +164,10 @@ impl Home {
             }),
             rec_msg_state: Rc::new(RecMessageState {
                 notify: rec_msg_notify_event,
+                ..Default::default()
+            }),
+            lang_state: Rc::new(I18nState {
+                switch_lang,
                 ..Default::default()
             }),
         }

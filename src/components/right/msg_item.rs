@@ -262,6 +262,8 @@ impl Component for MsgItem {
             ContentType::Error => html!(),
         };
 
+        let _avatar_click = ctx.link().callback(MsgItemMsg::ShowFriendCard);
+
         html! {
             <>
                 {
@@ -273,7 +275,7 @@ impl Component for MsgItem {
                 }
             <div class={classes} id={id.to_string()} >
                 <div class="msg-item-avatar">
-                    <img class="avatar" src={self.avatar.clone()} onclick={ctx.link().callback(MsgItemMsg::ShowFriendCard)} />
+                    <img class="avatar" src={self.avatar.clone()} /* onclick={_avatar_click} */ />
                 </div>
                 <div class="content-wrapper">
                     {content}

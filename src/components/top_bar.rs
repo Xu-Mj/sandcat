@@ -1,11 +1,14 @@
 use std::rc::Rc;
 
+use fluent::{FluentBundle, FluentResource};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{PeoplePlusIcon, PlusIcon, SearchIcon};
 use crate::model::ComponentType;
 use crate::pages::AppState;
+use crate::{tr, utils};
 
 /// 左侧组件顶部选项栏
 /// 包含搜索和设置按钮以及一个排序按钮
@@ -20,11 +23,13 @@ pub struct TopBarProps {
     pub search_callback: Callback<AttrValue>,
     pub clean_callback: Callback<AttrValue>,
     pub plus_click: Callback<()>,
+    pub lang: LanguageType,
 }
 
 pub struct TopBar {
     search_node: NodeRef,
     search_value: AttrValue,
+    i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
     _listener: ContextHandle<Rc<AppState>>,
 }
@@ -47,7 +52,13 @@ impl Component for TopBar {
             .link()
             .context(ctx.link().callback(TopBarMsg::StateChanged))
             .expect("expect state");
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::SEARCH_DOCK,
+            LanguageType::EnUS => en_us::SEARCH_DOCK,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
+            i18n,
             search_node: NodeRef::default(),
             search_value: "".into(),
             state,
@@ -121,7 +132,7 @@ impl Component for TopBar {
                 html!(<PlusIcon />)
             }
             ComponentType::Setting => {
-                html!({ "取消" })
+                html!({ tr!(self.i18n, "cancel") })
             }
         };
         let click_plus = ctx.link().callback(|_| TopBarMsg::PlusButtonClicked);
@@ -133,7 +144,7 @@ impl Component for TopBar {
                    <label /* for={id} */ class="search-icon" {onclick}>
                     <SearchIcon />
                     </label>
-                   <input id={id} ref={self.search_node.clone()} class="search-input" type="search" placeholder="搜索" {onchange} {onkeydown} />
+                   <input id={id} ref={self.search_node.clone()} class="search-input" type="search" placeholder={tr!(self.i18n, "search")} {onchange} {onkeydown} />
                 </div>
                 <div class="setting-button" onclick={click_plus}>
                     {icon}

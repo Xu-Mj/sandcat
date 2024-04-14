@@ -1,8 +1,13 @@
+use fluent::{FluentBundle, FluentResource};
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yew::{Component, Properties};
+
+use crate::i18n::{en_us, zh_cn, LanguageType};
+use crate::{tr, utils};
 pub struct RightClickPanel {
     node: NodeRef,
+    pub i18n: FluentBundle<FluentResource>,
 }
 
 #[derive(Debug, Clone, Properties, PartialEq)]
@@ -13,6 +18,7 @@ pub struct RightClickPanelProps {
     pub delete: Callback<()>,
     pub mute: Callback<()>,
     pub is_mute: bool,
+    pub lang: LanguageType,
 }
 
 pub enum RightClickPanelMsg {}
@@ -22,9 +28,15 @@ impl Component for RightClickPanel {
 
     type Properties = RightClickPanelProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::RIGHT_CLICK_PANEL,
+            LanguageType::EnUS => en_us::RIGHT_CLICK_PANEL,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             node: NodeRef::default(),
+            i18n,
         }
     }
 
@@ -36,9 +48,9 @@ impl Component for RightClickPanel {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let style = format!("left: {}px; top: {}px;", ctx.props().x, ctx.props().y);
         let mute_str = if ctx.props().is_mute {
-            "取消免打扰"
+            tr!(self.i18n, "mute")
         } else {
-            "消息免打扰"
+            tr!(self.i18n, "un_mute")
         };
         html! {
             <div ref={self.node.clone()}
@@ -47,7 +59,7 @@ impl Component for RightClickPanel {
                 onblur={ctx.props().close.reform(|_|())}
                 >
                 <div class="right-click-panel-item hover" onclick={ctx.props().delete.reform(|_|())}>
-                    {"删除会话"}
+                    {tr!(self.i18n, "delete")}
                 </div>
                 <div class="right-click-panel-item hover" onclick={ctx.props().mute.reform(|_|())}>
                     {mute_str}

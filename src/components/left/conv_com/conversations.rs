@@ -14,7 +14,8 @@ use crate::model::message::Msg;
 use crate::model::seq::Seq;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::{
-    AddFriendStateItem, ConvState, CreateConvState, MuteState, RemoveConvState, SendMessageState,
+    AddFriendStateItem, ConvState, CreateConvState, I18nState, MuteState, RemoveConvState,
+    SendMessageState,
 };
 use crate::pb::message::Msg as PbMsg;
 use crate::ws::WebSocketManager;
@@ -50,6 +51,7 @@ pub enum ChatsMsg {
     RecMsgNotify(Msg),
     /// handle the lack messages
     HandleLackMessages(Vec<PbMsg>),
+    SwitchLanguage(Rc<I18nState>),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -226,6 +228,10 @@ impl Component for Chats {
                 self.handle_offline_messages(ctx, messages);
                 true
             }
+            ChatsMsg::SwitchLanguage(state) => {
+                self.lang_state = state;
+                true
+            }
         }
     }
 
@@ -249,7 +255,11 @@ impl Component for Chats {
         let mut friend_list = html!();
         if self.show_friend_list {
             friend_list = html! {
-                <SelectFriendList except={AttrValue::default()} close_back={plus_click.clone()} {submit_back}/>
+                <SelectFriendList
+                    except={AttrValue::default()}
+                    close_back={plus_click.clone()}
+                    {submit_back}
+                    lang={self.lang_state.lang}/>
             };
         }
         let mut context_menu = html!();
@@ -261,7 +271,8 @@ impl Component for Chats {
                     close={ctx.link().callback( |_|ChatsMsg::CloseContextMenu)}
                     mute={ctx.link().callback(|_| ChatsMsg::Mute)}
                     delete={ctx.link().callback(|_|ChatsMsg::DeleteItem)}
-                    is_mute={self.context_menu_pos.3}/>
+                    is_mute={self.context_menu_pos.3}
+                    lang={self.lang_state.lang}/>
             }
         }
 
@@ -276,7 +287,12 @@ impl Component for Chats {
             <div class="list-wrapper">
                 {context_menu}
                 {friend_list}
-                <TopBar components_type={ComponentType::Messages} {search_callback} {clean_callback} {plus_click}/>
+                <TopBar
+                    components_type={ComponentType::Messages}
+                    {search_callback}
+                    {clean_callback}
+                    {plus_click}
+                    lang={self.lang_state.lang}/>
                 <div class="contacts-list">
                     {content}
                 </div>

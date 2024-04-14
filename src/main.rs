@@ -3,6 +3,7 @@ mod components;
 mod config;
 mod db;
 mod error;
+mod i18n;
 mod icons;
 mod model;
 mod pages;

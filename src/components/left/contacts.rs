@@ -1,20 +1,24 @@
+use fluent::{FluentBundle, FluentResource};
 use indexmap::IndexMap;
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::components::left::add_friend::AddFriend;
-use crate::db;
 use crate::db::group::GroupRepo;
 use crate::db::groups::GroupInterface;
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use crate::pages::{AddFriendState, FriendListState, FriendShipState, ItemType, RemoveFriendState};
+use crate::pages::{
+    AddFriendState, FriendListState, FriendShipState, I18nState, ItemType, RemoveFriendState,
+};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     model::friend::Friend,
     model::{CommonProps, ComponentType},
 };
+use crate::{db, tr, utils};
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct ContactsProps {
@@ -32,6 +36,7 @@ pub struct Contacts {
     is_searching: bool,
     is_add_friend: bool,
     show_context_menu: bool,
+    i18n: FluentBundle<FluentResource>,
     _friendship_state: Rc<FriendShipState>,
     _listener: ContextHandle<Rc<FriendShipState>>,
     friend_state: Rc<FriendListState>,
@@ -40,6 +45,8 @@ pub struct Contacts {
     _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
     _add_friend_state: Rc<AddFriendState>,
     _add_friend_listener: ContextHandle<Rc<AddFriendState>>,
+    lang_state: Rc<I18nState>,
+    _lang_state_listener: ContextHandle<Rc<I18nState>>,
 }
 
 pub enum QueryState<T> {
@@ -61,6 +68,7 @@ pub enum ContactsMsg {
     ShowContextMenu((i32, i32), AttrValue, bool),
     RemoveFriend(Rc<RemoveFriendState>),
     AddFriend(Rc<AddFriendState>),
+    SwitchLanguage(Rc<I18nState>),
 }
 
 impl Component for Contacts {
@@ -104,6 +112,15 @@ impl Component for Contacts {
             .link()
             .context(ctx.link().callback(ContactsMsg::AddFriend))
             .expect("postcard friend_state needed");
+        let (lang_state, _lang_state_listener) = ctx
+            .link()
+            .context(ctx.link().callback(ContactsMsg::SwitchLanguage))
+            .expect("need state in item");
+        let res = match lang_state.lang {
+            LanguageType::ZhCN => zh_cn::CONTACTS,
+            LanguageType::EnUS => en_us::CONTACTS,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             friends: IndexMap::new(),
             result: IndexMap::new(),
@@ -112,6 +129,7 @@ impl Component for Contacts {
             is_searching: false,
             is_add_friend: false,
             show_context_menu: false,
+            i18n,
             _friendship_state,
             _listener,
             friend_state,
@@ -120,6 +138,8 @@ impl Component for Contacts {
             _remove_friend_listener,
             _add_friend_state,
             _add_friend_listener,
+            lang_state,
+            _lang_state_listener,
         }
     }
 
@@ -250,6 +270,10 @@ impl Component for Contacts {
                 }
                 false
             }
+            ContactsMsg::SwitchLanguage(state) => {
+                self.lang_state = state;
+                true
+            }
         }
     }
 
@@ -290,15 +314,23 @@ impl Component for Contacts {
                 {
                     if self.is_add_friend {
                         html!{
-                            <AddFriend user_id={ctx.props().user_id.clone()} {plus_click}/>
+                            <AddFriend
+                                user_id={ctx.props().user_id.clone()}
+                                {plus_click}
+                                lang={self.lang_state.lang}/>
                         }
                     } else {
                         html!{
                             <>
-                                <TopBar components_type={ComponentType::Contacts} {search_callback} {clean_callback} {plus_click} />
+                                <TopBar
+                                    components_type={ComponentType::Contacts}
+                                    {search_callback}
+                                    {clean_callback}
+                                    {plus_click}
+                                    lang={self.lang_state.lang} />
                                 <div class="contacts-list">
                                     <div class="new-friends" onclick={friendship_click}>
-                                        {"新的朋友: "}
+                                        {tr!(self.i18n, "new_friends")}
                                         if self.friendships_unread_count > 0{
                                             {self.friendships_unread_count}
                                         }

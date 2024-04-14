@@ -9,11 +9,12 @@ use yew::prelude::*;
 
 use super::{
     AddFriendState, AddFriendStateItem, AppState, ConvState, CreateConvState, FriendListState,
-    FriendShipState, ItemType, OfflineMsgState, RecMessageState, RecSendCallState, RemoveConvState,
-    RemoveFriendState, SendMessageState, UnreadState, WaitState,
+    FriendShipState, I18nState, ItemType, OfflineMsgState, RecMessageState, RecSendCallState,
+    RemoveConvState, RemoveFriendState, SendMessageState, UnreadState, WaitState,
 };
 use crate::db::current_item;
 use crate::db::repository::Repository;
+use crate::i18n::LanguageType;
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{InviteMsg, Msg};
@@ -52,6 +53,7 @@ pub struct Home {
     notification: Rc<NotificationState>,
     wait_state: Rc<WaitState>,
     create_conv: Rc<CreateConvState>,
+    lang_state: Rc<I18nState>,
 }
 
 const WAIT_COUNT: usize = 1;
@@ -102,6 +104,7 @@ pub enum HomeMsg {
     // mute state changed
     MuteStateChange(AttrValue),
     AddFriendStateChange(AddFriendStateItem),
+    SwitchLang(LanguageType),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -309,6 +312,11 @@ impl Component for Home {
                 state.state_type = FriendShipStateType::RecResp;
                 true
             }
+            HomeMsg::SwitchLang(lang) => {
+                let state = Rc::make_mut(&mut self.lang_state);
+                state.lang = lang;
+                true
+            }
         }
     }
 
@@ -359,6 +367,7 @@ impl Component for Home {
             <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
             <ContextProvider<Rc<OfflineMsgState>> context={self.sync_msg_state.clone()}>
             <ContextProvider<Rc<RecMessageState>> context={self.rec_msg_state.clone()}>
+            <ContextProvider<Rc<I18nState>> context={self.lang_state.clone()}>
                 <div class="home" id="app">
                     <Left user_id={self.user.id.clone()}/>
                     <Right />
@@ -368,6 +377,7 @@ impl Component for Home {
                         {notify}
                     </div>
                 </div>
+            </ContextProvider<Rc<I18nState>>>
             </ContextProvider<Rc<RecMessageState>>>
             </ContextProvider<Rc<OfflineMsgState>>>
             </ContextProvider<Rc<AddFriendState>>>

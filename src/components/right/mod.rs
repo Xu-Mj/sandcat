@@ -10,25 +10,28 @@ pub mod set_window;
 
 use std::rc::Rc;
 
+use fluent::{FluentBundle, FluentResource};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use crate::components::left::select_friends::SelectFriendList;
 use crate::components::right::friendship_list::FriendShipList;
 use crate::components::right::set_window::SetWindow;
-use crate::db;
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
-use crate::pages::{ConvState, CreateConvState, FriendListState};
+use crate::pages::{ConvState, CreateConvState, FriendListState, I18nState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     pages::AppState,
 };
+use crate::{db, tr, utils};
 
 pub struct Right {
     show_setting: bool,
     show_friend_list: bool,
+    i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
     _ctx_listener: ContextHandle<Rc<AppState>>,
     conv_state: Rc<ConvState>,
@@ -38,6 +41,8 @@ pub struct Right {
     _friend_list_listener: ContextHandle<Rc<FriendListState>>,
     create_conv: Rc<CreateConvState>,
     _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
+    lang_state: Rc<I18nState>,
+    _lang_state_listener: ContextHandle<Rc<I18nState>>,
 }
 
 pub enum RightMsg {
@@ -49,6 +54,7 @@ pub enum RightMsg {
     ShowSelectFriendList,
     CreateGroup(Vec<String>),
     None,
+    SwitchLang(Rc<I18nState>),
 }
 
 impl Right {
@@ -111,10 +117,20 @@ impl Component for Right {
             .link()
             .context(ctx.link().callback(|_| RightMsg::None))
             .expect("expect state");
+        let (lang_state, _lang_state_listener) = ctx
+            .link()
+            .context(ctx.link().callback(RightMsg::SwitchLang))
+            .expect("expect state");
         let cur_conv_info = None;
+        let res = match lang_state.lang {
+            LanguageType::ZhCN => zh_cn::RIGHT_PANEL,
+            LanguageType::EnUS => en_us::RIGHT_PANEL,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             show_setting: false,
             show_friend_list: false,
+            i18n,
             state,
             _ctx_listener,
             conv_state,
@@ -124,6 +140,8 @@ impl Component for Right {
             _friend_list_listener,
             create_conv,
             _create_conv_listener,
+            lang_state,
+            _lang_state_listener,
         }
     }
 
@@ -174,6 +192,10 @@ impl Component for Right {
                 true
             }
             RightMsg::None => false,
+            RightMsg::SwitchLang(state) => {
+                self.lang_state = state;
+                true
+            }
         }
     }
 
@@ -195,8 +217,11 @@ impl Component for Right {
                         plus_click={close.clone()} />);
             }
             if self.show_friend_list {
-                friend_list =
-                    html!(<SelectFriendList except={info.id()} close_back={close} {submit_back} />);
+                friend_list = html!(<SelectFriendList
+                            except={info.id()}
+                            close_back={close}
+                            {submit_back}
+                            lang={self.lang_state.lang} />);
             }
             top_bar_info = html! {
                 <div class="right-top-bar-friend">
@@ -214,7 +239,7 @@ impl Component for Right {
                 // 处理没有选中会话的情况
                 if self.conv_state.conv.item_id.is_empty() {
                     html! {
-                        <h2 class="choose-conv">{"与挚友开始聊天吧！"}</h2>
+                        <h2 class="choose-conv">{tr!(self.i18n, "hello")}</h2>
                     }
                 } else {
                     html! {

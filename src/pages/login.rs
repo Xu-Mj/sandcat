@@ -1,5 +1,6 @@
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
+use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
@@ -8,8 +9,10 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
 use crate::db::{self, TOKEN, WS_ADDR};
+use crate::i18n::en_us::LOGIN;
 use crate::model::user::User;
 use crate::{api, db::DB_NAME};
+use crate::{tr, utils};
 
 use super::Page;
 
@@ -18,6 +21,7 @@ pub struct Login {
     pwd_ref: NodeRef,
     login_state: LoginState,
     show_error: bool,
+    i18n: FluentBundle<FluentResource>,
 }
 
 pub enum LoginMsg {
@@ -87,20 +91,25 @@ impl Component for Login {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
+        // load the i18n bundle
+
+        let i18n = utils::create_bundle(LOGIN);
         Self {
             account_ref: NodeRef::default(),
             pwd_ref: NodeRef::default(),
             login_state: LoginState::Nothing,
             show_error: false,
+            i18n,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             LoginMsg::Login => {
-                // 使用ref获取用户名和密码
+                // use ref to get the account and password
                 let account = self.account_ref.cast::<HtmlInputElement>().unwrap().value();
                 let pwd = self.pwd_ref.cast::<HtmlInputElement>().unwrap().value();
+
                 ctx.link().send_future(async move {
                     let res = login_simulate(account, pwd).await;
                     if res.is_err() {
@@ -147,7 +156,6 @@ impl Component for Login {
                 true
             }
             LoginMsg::Success(id) => {
-                // 路由跳转
                 ctx.link().navigator().unwrap().push(&Page::Home { id });
                 true
             }
@@ -170,25 +178,30 @@ impl Component for Login {
                     {"用户名或密码错误"}
                 </div>)
         }
+
+        // i18n
+        let login_title = tr!(self.i18n, "login_text");
+        let email = tr!(self.i18n, "email");
+
         html! {
             <div class="login-container">
                 {info}
                 <form class="login-wrapper" onsubmit={ctx.link().callback(LoginMsg::OnEnterKeyDown)}>
                     <div class="sign">
-                        {"登录"}
+                        {login_title.clone()}
                     </div>
 
                     <div class="email">
-                        <input type="text" ref={self.account_ref.clone()} required={true} autocomplete="current-password"  placeholder="e-mail"/>
+                        <input type="text" ref={self.account_ref.clone()} required={true} autocomplete="current-password"  placeholder={email}/>
                     </div>
                     <div class="pwd">
-                        <input type="password" ref={self.pwd_ref.clone()} required={true} autocomplete="current-password"   placeholder="密码"/>
+                        <input type="password" ref={self.pwd_ref.clone()} required={true} autocomplete="current-password"   placeholder={tr!(self.i18n, "password")}/>
                     </div>
-                        <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={"登录"}/>
+                        <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title}/>
                 </form>
                 <div class="login-register">
-                    {"还没有账号？"}
-                    <a href="/register">{"去注册"}</a>
+                    {tr!(self.i18n, "to_register_prefix")}
+                    <a href="/register">{tr!(self.i18n, "to_register")}</a>
                 </div>
             </div>
         }

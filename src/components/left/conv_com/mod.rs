@@ -5,6 +5,7 @@ mod handle_offline_msg;
 
 use std::{cell::RefCell, rc::Rc};
 
+use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
 use indexmap::IndexMap;
 use wasm_bindgen_futures::spawn_local;
@@ -14,6 +15,10 @@ use crate::{
     api,
     components::left::list_item::ListItem,
     db::{self, TOKEN, WS_ADDR},
+    i18n::{
+        en_us::{self, CONVERSATION},
+        zh_cn, LanguageType,
+    },
     model::{
         conversation::Conversation,
         message::{Msg, SingleCall},
@@ -21,9 +26,11 @@ use crate::{
         CommonProps, ComponentType, ContentType, RightContentType,
     },
     pages::{
-        AddFriendState, ConvState, CreateConvState, FriendShipState, MuteState, OfflineMsgState,
-        RecMessageState, RemoveConvState, SendMessageState, UnreadState, WaitState,
+        AddFriendState, ConvState, CreateConvState, FriendShipState, I18nState, MuteState,
+        OfflineMsgState, RecMessageState, RemoveConvState, SendMessageState, UnreadState,
+        WaitState,
     },
+    tr, utils,
     ws::WebSocketManager,
 };
 
@@ -50,6 +57,7 @@ pub struct Chats {
     show_friend_list: bool,
     /// right click menu
     show_context_menu: bool,
+    i18n: FluentBundle<FluentResource>,
     /// hold right click item position and id
     context_menu_pos: (i32, i32, AttrValue, bool),
 
@@ -90,6 +98,8 @@ pub struct Chats {
     /// friendship state, notify the contact component after receive a friend application
     fs_state: Rc<FriendShipState>,
     _fs_state_listener: ContextHandle<Rc<FriendShipState>>,
+    lang_state: Rc<I18nState>,
+    _lang_state_listener: ContextHandle<Rc<I18nState>>,
 }
 
 impl Chats {
@@ -163,6 +173,10 @@ impl Chats {
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
+        let (lang_state, _lang_state_listener) = ctx
+            .link()
+            .context(ctx.link().callback(ChatsMsg::SwitchLanguage))
+            .expect("need state in item");
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let token = window()
             .local_storage()
@@ -180,6 +194,11 @@ impl Chats {
             .unwrap();
         let url = format!("{}/{}/conn/{}/{}", addr, id.clone(), token, id);
         let ws = Rc::new(RefCell::new(WebSocketManager::new(url, rec_msg_listener)));
+        let res = match lang_state.lang {
+            LanguageType::ZhCN => zh_cn::CONVERSATION,
+            LanguageType::EnUS => en_us::CONVERSATION,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             call_msg: SingleCall::default(),
             ws,
@@ -213,6 +232,9 @@ impl Chats {
             _rec_msg_state_listener,
             fs_state,
             _fs_state_listener,
+            i18n,
+            lang_state,
+            _lang_state_listener,
         }
     }
 
@@ -279,28 +301,29 @@ impl Chats {
     }
 
     fn render_result(&self, ctx: &Context<Self>) -> Html {
-        Self::render(&self.result, ctx)
+        self.render(&self.result, ctx)
     }
 
     fn render_list(&self, ctx: &Context<Self>) -> Html {
-        Self::render(&self.list, ctx)
+        self.render(&self.list, ctx)
     }
 
-    fn render(list: &IndexMap<AttrValue, Conversation>, ctx: &Context<Self>) -> Html {
+    fn render(&self, list: &IndexMap<AttrValue, Conversation>, ctx: &Context<Self>) -> Html {
         let oncontextmenu = ctx
             .link()
             .callback(|((x, y), id, is_mute)| ChatsMsg::ShowContextMenu((x, y), id, is_mute));
 
         list.iter()
-            .map(|(_id, item)| Self::get_list_item(item, oncontextmenu.clone()))
+            .map(|(_id, item)| self.get_list_item(item, oncontextmenu.clone()))
             .collect::<Html>()
     }
 
     fn get_list_item(
+        &self,
         item: &Conversation,
         oncontextmenu: Callback<((i32, i32), AttrValue, bool)>,
     ) -> Html {
-        let remark = get_msg_type(item.last_msg_type, &item.last_msg);
+        let remark = get_msg_type(&self.i18n, item.last_msg_type, &item.last_msg);
         html!(
             <ListItem
                 component_type={ComponentType::Messages}
@@ -355,6 +378,8 @@ impl Chats {
             log::debug!("conv type in messages: {:?}", conv_type.clone());
 
             ctx.link().send_future(async move {
+                // i18n
+                let bundle = utils::create_bundle(CONVERSATION);
                 // query information by conv_type
                 let conv = match conv_type {
                     RightContentType::Friend => {
@@ -366,7 +391,7 @@ impl Chats {
                             .await
                             .unwrap_or_default();
                         let content = if result.id != 0 {
-                            get_msg_type(result.content_type, &result.content)
+                            get_msg_type(&bundle, result.content_type, &result.content)
                         } else {
                             AttrValue::default()
                         };
@@ -397,7 +422,7 @@ impl Chats {
                             .await
                             .unwrap_or_default();
                         let content = if result.id != 0 {
-                            get_msg_type(result.content_type, &result.content)
+                            get_msg_type(&bundle, result.content_type, &result.content)
                         } else {
                             AttrValue::default()
                         };
@@ -433,17 +458,21 @@ impl Chats {
     }
 }
 
-fn get_msg_type(msg_type: ContentType, content: &AttrValue) -> AttrValue {
+fn get_msg_type(
+    bundle: &FluentBundle<FluentResource>,
+    msg_type: ContentType,
+    content: &AttrValue,
+) -> AttrValue {
     match msg_type {
         ContentType::Text => content.clone(),
-        ContentType::Image => AttrValue::from("[图片]"),
-        ContentType::Video => AttrValue::from("[视频]"),
-        ContentType::File => AttrValue::from("[文件]"),
-        ContentType::Emoji => AttrValue::from("[表情]"),
+        ContentType::Image => AttrValue::from(tr!(bundle, "image")),
+        ContentType::Video => AttrValue::from(tr!(bundle, "video")),
+        ContentType::File => AttrValue::from(tr!(bundle, "file")),
+        ContentType::Emoji => AttrValue::from(tr!(bundle, "emoji")),
         ContentType::Default => AttrValue::from(""),
-        ContentType::VideoCall => AttrValue::from("[视频通话]"),
-        ContentType::AudioCall => AttrValue::from("[语音通话]"),
-        ContentType::Audio => AttrValue::from("[voice]"),
-        ContentType::Error => AttrValue::from("[ERROR]"),
+        ContentType::VideoCall => AttrValue::from(tr!(bundle, "video call")),
+        ContentType::AudioCall => AttrValue::from(tr!(bundle, "audio call")),
+        ContentType::Audio => AttrValue::from(tr!(bundle, "audio")),
+        ContentType::Error => AttrValue::from(tr!(bundle, "error")),
     }
 }

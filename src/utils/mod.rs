@@ -1,4 +1,6 @@
+use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
+use unic_langid::langid;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{MediaStream, MediaStreamConstraints, MediaStreamTrack};
@@ -66,4 +68,43 @@ pub async fn get_audio_stream() -> Result<MediaStream, JsValue> {
     let audio_stream = JsCast::dyn_into::<MediaStream>(audio_value)?;
 
     Ok(audio_stream)
+}
+
+#[macro_export]
+macro_rules! tr {
+    ($model:expr, $key:expr $(, $arg:expr)*) => {{
+        let message = $model.get_message($key).expect("Message doesn't exist.");
+        let pattern = message.value().expect("Message has no value.");
+
+        let mut errors = Vec::new();
+        $model
+            .format_pattern(pattern, None, &mut errors)
+            .to_string()
+    }};
+    ($model:expr, $key:expr, $($arg_name:expr => $arg_value:expr),* $(,)?) => {{
+        let message = $model.get_message($key).expect("Message doesn't exist.");
+        let pattern = message.value().expect("Message has no value.");
+
+        let mut args = fluent_bundle::FluentArgs::new();
+        $(
+            args.set($arg_name, $arg_value);
+        )*
+
+        let mut errors = Vec::new();
+        $model
+            .format_pattern(pattern, Some(&args), &mut errors)
+            .to_string()
+    }};
+}
+
+pub fn create_bundle(content: impl Into<String>) -> FluentBundle<FluentResource> {
+    let lang_id = langid!("en-US");
+    let mut bundle = FluentBundle::new(vec![lang_id]);
+    let resource =
+        FluentResource::try_new(content.into()).expect("Failed to create FluentResource.");
+    bundle
+        .add_resource(resource)
+        .expect("Failed to add FTL resources to the bundle.");
+
+    bundle
 }
