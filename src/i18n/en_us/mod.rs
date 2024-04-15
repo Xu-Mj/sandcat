@@ -17,6 +17,7 @@ pub const CONVERSATION: &str = r#"
 search = Search
 # content type
 image = [Image]
+emoji = [Emoji]
 video = [Video]
 audio = [Audio]
 file = [File]
@@ -43,6 +44,7 @@ un_mute = Un-mute
 "#;
 
 pub const SELECT_FRIENDS: &str = r#"
+querying = Querying
 select_friends = Select Friends
 submit = Submit
 cancel = Cancel
@@ -130,7 +132,7 @@ quit = QuitGroup
 
 pub const SET_WINDOW: &str = r#"
 add = Add
-delete = Delete
+delete = CleanChatHistory
 mute = Mute
 group_desc = GroupDesc
 group_name = GroupName

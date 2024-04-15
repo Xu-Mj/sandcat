@@ -21,6 +21,7 @@ pub const CONVERSATION: &str = r#"
 search = 搜索
 # content type
 image = [图片]
+emoji = [表情]
 video = [视频]
 audio = [语音]
 file = [文件]
@@ -123,7 +124,7 @@ quit = 退出群聊
 
 pub const SET_WINDOW: &str = r#"
 add = 添加
-delete = 删除
+delete = 清空聊天记录
 mute = 消息免打扰
 group_desc = 群描述
 group_name = 群名称

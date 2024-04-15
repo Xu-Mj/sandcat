@@ -14,9 +14,9 @@ use fluent::{FluentBundle, FluentResource};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
-use crate::components::left::select_friends::SelectFriendList;
 use crate::components::right::friendship_list::FriendShipList;
 use crate::components::right::set_window::SetWindow;
+use crate::components::select_friends::SelectFriendList;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CloseIcon, MaxIcon};
 use crate::model::RightContentType;

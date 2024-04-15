@@ -5,8 +5,8 @@ use yew::prelude::*;
 
 use super::Chats;
 use crate::components::left::right_click_panel::RightClickPanel;
-use crate::components::left::select_friends::SelectFriendList;
 use crate::components::phone_call::PhoneCall;
+use crate::components::select_friends::SelectFriendList;
 use crate::components::top_bar::TopBar;
 use crate::model::conversation::Conversation;
 use crate::model::group::Group;
