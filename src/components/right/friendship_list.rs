@@ -1,12 +1,14 @@
 use std::rc::Rc;
 
+use fluent::{FluentBundle, FluentResource};
 use web_sys::{HtmlInputElement, MouseEvent};
-use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef};
+use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef, Properties};
 
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus};
 use crate::model::FriendShipStateType;
 use crate::pages::FriendShipState;
-use crate::{api, db};
+use crate::{api, db, tr, utils};
 
 pub struct FriendShipList {
     list: Vec<FriendShipWithUser>,
@@ -16,6 +18,7 @@ pub struct FriendShipList {
     detail: Option<FriendShipWithUser>,
     apply_msg_node: NodeRef,
     response_msg_node: NodeRef,
+    i18n: FluentBundle<FluentResource>,
 }
 
 pub enum FriendShipListMsg {
@@ -33,9 +36,14 @@ pub enum RequestStatus {
     // Pending,
 }
 
+#[derive(Properties, PartialEq, Clone)]
+pub struct FriendShipListProps {
+    pub lang: LanguageType,
+}
+
 impl Component for FriendShipList {
     type Message = FriendShipListMsg;
-    type Properties = ();
+    type Properties = FriendShipListProps;
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async {
@@ -48,8 +56,14 @@ impl Component for FriendShipList {
                     .callback(FriendShipListMsg::FriendShipStateChanged),
             )
             .expect("need friend ship state");
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::FRIENDSHIP,
+            LanguageType::EnUS => en_us::FRIENDSHIP,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             list: vec![],
+            i18n,
             friendship_state,
             _listener,
             show_detail: false,
@@ -184,10 +198,10 @@ impl Component for FriendShipList {
                     FriendShipListMsg::ShowDetail(Box::new(cloned_item.clone()))
                 });
 
-                let mut action = html!(<span>{"已请求"}</span>);
+                let mut action = html!(<span>{tr!(self.i18n, "requested")}</span>);
                 if !item.is_self {
                     action = html! {
-                        <button {onclick}>{"前往验证"}</button>
+                        <button {onclick}>{tr!(self.i18n, "go_verify")}</button>
                     };
                 }
                 html! {
@@ -199,7 +213,7 @@ impl Component for FriendShipList {
                         //     <div class="name-time">
                                 <span>{item.name.clone()}</span>
                                 // <span class="time">{time_str}</span>
-                                <div class="remark">{"备注:\t"}{item.apply_msg.clone()}</div>
+                                <div class="remark">{tr!(self.i18n, "remark")}{item.apply_msg.clone()}</div>
                             </div>
                         </div>
                         <div class="friendship-action">
@@ -222,15 +236,15 @@ impl Component for FriendShipList {
                 <div class="friendship-detail box-shadow" >
                     // 标题
                     <div class="title">
-                        {"验证好友请求"}
+                        {tr!(self.i18n, "title")}
                     </div>
                     // 备注
                     <div class="remark">
-                        {"备注:\t"}
+                        {tr!(self.i18n, "remark")}
                         <input type="text" ref={self.apply_msg_node.clone()} value={remark} />
                     </div>
                     <div class="response_msg">
-                        {"验证信息:\t"}
+                        {tr!(self.i18n, "response_msg")}
                         <input type="text" ref={self.response_msg_node.clone()} />
                     </div>
                     // 通过验证

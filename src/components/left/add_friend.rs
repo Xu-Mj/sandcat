@@ -105,7 +105,7 @@ impl Component for AddFriend {
                 .iter()
                 .map(|item| {
                     html! {
-                        <UserInfoCom info={item.clone()} key={item.id.clone().as_str()} />
+                        <UserInfoCom info={item.clone()} key={item.id.clone().as_str()} lang={ctx.props().lang} />
                     }
                 })
                 .collect::<Html>()

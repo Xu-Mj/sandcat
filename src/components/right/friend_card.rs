@@ -1,3 +1,4 @@
+use fluent::{FluentBundle, FluentResource};
 use gloo::utils::{document, window};
 use wasm_bindgen::JsCast;
 use web_sys::{Element, HtmlDivElement, HtmlInputElement};
@@ -5,10 +6,12 @@ use yew::prelude::*;
 
 use crate::{
     api, db,
+    i18n::{en_us, zh_cn, LanguageType},
     model::{
         friend::{FriendShipRequest, ReadStatus},
         user::{User, UserWithMatchType},
     },
+    tr, utils,
 };
 
 #[derive(Default)]
@@ -17,6 +20,7 @@ pub struct FriendCard {
     node_ref: NodeRef,
     show_apply: bool,
     is_apply: bool,
+    i18n: FluentBundle<FluentResource>,
     apply_node: NodeRef,
     remark_node: NodeRef,
 }
@@ -40,6 +44,7 @@ pub struct FriendCardProps {
     container: Element,
     friend_info: UserWithMatchType,
     user_info: Option<User>,
+    lang: LanguageType,
     is_friend: bool,
     x: i32,
     y: i32,
@@ -71,6 +76,7 @@ impl FriendCard {
     pub fn show(
         friend_info: UserWithMatchType,
         user_info: Option<User>,
+        lang: LanguageType,
         is_friend: bool,
         x: i32,
         y: i32,
@@ -81,6 +87,7 @@ impl FriendCard {
             container: container.clone(),
             friend_info,
             user_info,
+            lang,
             is_friend,
             x,
             y,
@@ -96,7 +103,13 @@ impl Component for FriendCard {
 
     fn create(ctx: &Context<Self>) -> Self {
         let friend = ctx.props().friend_info.clone();
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::FRIEND_CARD,
+            LanguageType::EnUS => en_us::FRIEND_CARD,
+        };
+        let i18n = utils::create_bundle(res);
         let self_ = Self {
+            i18n,
             friend,
             ..Default::default()
         };
@@ -175,20 +188,24 @@ impl Component for FriendCard {
             html!()
         } else if self.show_apply {
             let onclick = ctx.link().callback(|_| FriendCardMsg::Apply);
-            let apply_msg = if self.is_apply { "已申请" } else { "申请" };
+            let apply_msg = if self.is_apply {
+                tr!(self.i18n, "applied")
+            } else {
+                tr!(self.i18n, "apply")
+            };
             html! {
                 <div class="apply-detail">
                     <div class="apply-msg">
-                        <label>{"申请消息"}</label>
+                        <label>{tr!(self.i18n, "apply_msg")}</label>
                         <input class="apply-input" ref={self.apply_node.clone()} type="text"/>
                     </div>
                     <div class="apply-remark">
-                        <label>{"备注"}</label>
+                        <label>{tr!(self.i18n, "remark")}</label>
                         <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
                     </div>
                     <div class="apply-friend" >
                         <button {onclick} disabled={self.is_apply}>{apply_msg}</button>
-                        <button /* onclick={cancel} */>{"取消"}</button>
+                        <button /* onclick={cancel} */>{tr!(self.i18n, "cancel")}</button>
                     </div>
                 </div>
             }
@@ -197,8 +214,8 @@ impl Component for FriendCard {
             let cancel = ctx.link().callback(|_| FriendCardMsg::Destroy);
             html! {
                 <div class="apply-friend" >
-                    <button {onclick}>{"申请好友"}</button>
-                    <button onclick={cancel}>{"取消"}</button>
+                    <button {onclick}>{tr!(self.i18n, "apply")}</button>
+                    <button onclick={cancel}>{tr!(self.i18n, "cancel")}</button>
                 </div>
             }
         };
@@ -213,9 +230,9 @@ impl Component for FriendCard {
                     <img src={&self.friend.avatar} class="friend-card-avatar"/>
                     <div class="friend-card-info">
                         // <span><b>{&self.friend.remark}</b></span>
-                        <span>{"昵称："}{&self.friend.name}</span>
-                        <span>{"账号："}{&self.friend.account}</span>
-                        <span>{"地区："}{&self.friend.region.clone().unwrap_or_default()} </span>
+                        <span>{tr!(self.i18n, "nickname")}{&self.friend.name}</span>
+                        <span>{tr!(self.i18n, "account")}{&self.friend.account}</span>
+                        <span>{tr!(self.i18n, "region")}{&self.friend.region.clone().unwrap_or_default()} </span>
                     </div>
                 </div>
                 // <div class="user-card-body">

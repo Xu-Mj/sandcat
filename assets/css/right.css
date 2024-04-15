@@ -536,13 +536,14 @@
                 }
 
                 .empty-msg-tip {
-                    width: 7rem;
-                    height: 1.5rem;
-                    border-radius: .5rem;
+                    /* width: 8rem; */
+                    padding: .2rem .5rem;
+                    border-radius: .2rem;
                     position: absolute;
                     right: 1rem;
                     bottom: 3rem;
                     font-size: .8rem;
+                    background-color: aliceblue;
                 }
 
                 .send-btn {

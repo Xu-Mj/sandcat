@@ -5,6 +5,7 @@ use web_sys::HtmlElement;
 use yew::prelude::*;
 
 use crate::db;
+use crate::i18n::LanguageType;
 use crate::model::friend::FriendStatus;
 use crate::model::message::GroupMsg;
 use crate::model::message::Msg;
@@ -60,6 +61,7 @@ pub struct MessageListProps {
     pub conv_type: RightContentType,
     pub cur_user_avatar: AttrValue,
     pub cur_user_id: AttrValue,
+    pub lang: LanguageType,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -373,6 +375,7 @@ impl Component for MessageList {
                     conv_type={ctx.props().conv_type.clone()}
                     disable = {self.is_black}
                     {on_file_send}
+                    lang={ctx.props().lang}
                 />
             </>
         }

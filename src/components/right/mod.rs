@@ -247,7 +247,8 @@ impl Component for Right {
                         friend_id={&self.conv_state.conv.item_id.clone()}
                         cur_user_avatar={self.state.login_user.avatar.clone()}
                         conv_type={self.conv_state.conv.content_type.clone()}
-                        cur_user_id={self.state.login_user.id.clone()}/>
+                        cur_user_id={self.state.login_user.id.clone()}
+                        lang={self.lang_state.lang}/>
                     }
                 }
             }
@@ -260,7 +261,8 @@ impl Component for Right {
                         html! {
                             <PostCard user_id={&self.state.login_user.id.clone()}
                             id={&self.friend_list_state.friend.item_id.clone()}
-                            conv_type={self.friend_list_state.friend.content_type.clone()}/>
+                            conv_type={self.friend_list_state.friend.content_type.clone()}
+                            lang={self.lang_state.lang}/>
                         }
                     }
                     RightContentType::FriendShipList => {
@@ -269,7 +271,7 @@ impl Component for Right {
                             // self.friendships.iter().map(|item|
                             //
                             // )
-                            <FriendShipList/>
+                            <FriendShipList lang={self.lang_state.lang}/>
                         }
                     }
                     _ => {

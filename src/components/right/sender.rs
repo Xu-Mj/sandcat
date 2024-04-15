@@ -1,6 +1,7 @@
 use std::cmp::Ordering;
 use std::rc::Rc;
 
+use fluent::{FluentBundle, FluentResource};
 use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
@@ -12,7 +13,7 @@ use web_sys::{
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
-use crate::db;
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CloseIcon, ImageIcon};
 use crate::model::message::{GroupMsg, InviteMsg, InviteType, Msg};
 use crate::model::RightContentType;
@@ -23,6 +24,7 @@ use crate::{
     model::ContentType,
     pages::SendMessageState,
 };
+use crate::{db, tr, utils};
 
 use super::emoji::{get_emojis, Emoji};
 
@@ -40,6 +42,7 @@ pub struct Sender {
     file_input_ref: NodeRef,
     emoji_wrapper_ref: NodeRef,
     show_file_sender: bool,
+    i18n: FluentBundle<FluentResource>,
     send_msg: Rc<SendMessageState>,
     _send_msg_listener: ContextHandle<Rc<SendMessageState>>,
     file_list: Vec<FileListItem>,
@@ -80,6 +83,7 @@ pub struct SenderProps {
     pub conv_type: RightContentType,
     pub cur_user_id: AttrValue,
     pub disable: bool,
+    pub lang: LanguageType,
     pub on_file_send: Callback<Message>,
 }
 
@@ -189,6 +193,11 @@ impl Component for Sender {
             .context(ctx.link().callback(|_| SenderMsg::None))
             .expect("needed to get context");
 
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::SENDER,
+            LanguageType::EnUS => en_us::SENDER,
+        };
+        let i18n = utils::create_bundle(res);
         // 加载表情
         Self {
             is_empty_warn_needed: false,
@@ -200,6 +209,7 @@ impl Component for Sender {
             sender_ref: NodeRef::default(),
             emoji_wrapper_ref: NodeRef::default(),
             show_file_sender: false,
+            i18n,
             send_msg: conv_state,
             _send_msg_listener: _conv_listener,
             file_list: vec![],
@@ -461,9 +471,9 @@ impl Component for Sender {
         let mut disable = html!();
         if ctx.props().disable {
             let message = match ctx.props().conv_type {
-                RightContentType::Friend => "对方开启了好友验证，请先通过验证",
-                RightContentType::Group => "群聊已经解散",
-                _ => "暂时无法发送消息",
+                RightContentType::Friend => tr!(self.i18n, "verify_needed"),
+                RightContentType::Group => tr!(self.i18n, "group_dismissed"),
+                _ => tr!(self.i18n, "disabled"),
             };
             disable = html! {
                 <div class="sender-disabled">
@@ -475,8 +485,8 @@ impl Component for Sender {
         let mut warn = html!();
         if self.is_empty_warn_needed {
             warn = html! {
-                <span class="empty-msg-tip">
-                    {"发送内容不能为空"}
+                <span class="empty-msg-tip box-shadow">
+                    {tr!(self.i18n, "no_empty_warn")}
                 </span>
             }
         }
@@ -543,10 +553,10 @@ impl Component for Sender {
                     </div>
                     <div class="file-sender-footer">
                         <button onclick={send} >
-                            {"确定"}
+                            {tr!(self.i18n, "submit")}
                         </button>
                         <button {onclick} >
-                            {"取消"}
+                            {tr!(self.i18n, "cancel")}
                         </button>
                     </div>
                 </div>
@@ -604,7 +614,7 @@ impl Component for Sender {
                     {warn}
                     <button class="send-btn"
                         onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
-                        {"发送"}
+                        {tr!(self.i18n, "send")}
                     </button>
                 </div>
                 {disable}

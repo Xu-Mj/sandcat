@@ -47,6 +47,54 @@ submit = Submit
 cancel = Cancel
 "#;
 
+pub const FRIEND_CARD: &str = r#"
+# user info
+apply = Apply
+applied = Applied
+apply_msg = Apply Message
+remark = Remark
+cancel = Cancel
+nickname = Nickname:
+account = Account:
+region = Region:
+"#;
+
+pub const FRIENDSHIP: &str = r#"
+# friendship
+requested = Requested
+go_verify = Go Verify
+remark = Remark:
+title = Friendship Verification
+message = Message:
+accept = Accept
+cancel = Cancel
+"#;
+
+pub const POSTCARD: &str = r#"
+account = Account:
+remark = Remark:
+region = Region:
+signature = Signature:
+"#;
+
+pub const ACTION: &str = r#"
+# action
+send_message = Message
+voice_call = VoiceCall
+video_call = VideoCall
+"#;
+
+pub const SENDER: &str = r#"
+# sender
+send = SEND
+file = File
+submit = Submit
+cancel = Cancel
+no_empty_warn = CAN NOT SEND AN EMPTY MESSAGE
+disabled = CAN NOT SEND FOR NOW
+group_dismissed = THE GROUP HAS BEEN DISMISSED
+verify_needed = FRIEND ENABLED THE FRIEND VERIFICATION, PLEASE PASS IT FIRST
+"#;
 // pub const REGISTER: &str = r#"
 // register_text = Register
 // email = e-mail

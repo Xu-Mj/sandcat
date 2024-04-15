@@ -5,6 +5,7 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use crate::db;
+use crate::i18n::LanguageType;
 use crate::icons::{MsgPhoneIcon, VideoRecordIcon};
 use crate::model::group::GroupMember;
 use crate::model::message::{InviteMsg, InviteType, Message};
@@ -130,7 +131,14 @@ impl Component for MsgItem {
                             _ => User::default(),
                         }
                     };
-                    FriendCard::show(UserWithMatchType::from(user), None, true, x, y);
+                    FriendCard::show(
+                        UserWithMatchType::from(user),
+                        None,
+                        LanguageType::EnUS,
+                        true,
+                        x,
+                        y,
+                    );
                 });
                 false
             }

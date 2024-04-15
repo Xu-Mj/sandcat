@@ -1,16 +1,20 @@
 use std::rc::Rc;
 
+use fluent::{FluentBundle, FluentResource};
 use nanoid::nanoid;
 use yew::prelude::*;
 
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{MessagesIcon, PhoneIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
 use crate::model::{ComponentType, CurrentItem};
 use crate::pages::{ConvState, RecSendCallState};
 use crate::{model::RightContentType, pages::AppState};
+use crate::{tr, utils};
 
 // 联系人卡面上的动作组件：发消息、点电话、打视频
 pub struct Action {
+    i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
     _listener: ContextHandle<Rc<AppState>>,
     conv_state: Rc<ConvState>,
@@ -31,6 +35,7 @@ pub enum ActionMsg {
 pub struct ActionProps {
     pub id: AttrValue,
     pub conv_type: RightContentType,
+    pub lang: LanguageType,
 }
 
 impl Component for Action {
@@ -50,7 +55,13 @@ impl Component for Action {
             .link()
             .context(ctx.link().callback(ActionMsg::CallStateChanged))
             .expect("action state needed");
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::ACTION,
+            LanguageType::EnUS => en_us::ACTION,
+        };
+        let i18n = utils::create_bundle(res);
         Action {
+            i18n,
             state,
             _listener,
             conv_state,
@@ -102,17 +113,17 @@ impl Component for Action {
             <div class="action">
                 <div {onclick}>
                     <MessagesIcon/>
-                    <span>{"发消息"}</span>
+                    <span>{tr!(self.i18n, "send_message")}</span>
                 </div>
                 // don't support call for group
                 if ctx.props().conv_type == RightContentType::Friend {
                     <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Audio))}>
                        <PhoneIcon/>
-                        <span>{"语音聊天"}</span>
+                        <span>{tr!(self.i18n, "voice_call")}</span>
                     </div>
                     <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Video))}>
                         <VideoIcon/>
-                        <span>{"视频通话"}</span>
+                        <span>{tr!(self.i18n, "video_call")}</span>
                     </div>
                 }
             </div>

@@ -1,20 +1,23 @@
 use std::rc::Rc;
 
+use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use crate::components::action::Action;
 use crate::components::right::set_drawer::SetDrawer;
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::GroupDelete;
 use crate::model::{ItemInfo, RightContentType};
 use crate::pages::{ItemType, RemoveConvState, RemoveFriendState};
-use crate::{api, db};
+use crate::{api, db, tr, utils};
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct PostCardProps {
     pub id: AttrValue,
     pub user_id: AttrValue,
     pub conv_type: RightContentType,
+    pub lang: LanguageType,
 }
 
 pub enum PostCardMsg {
@@ -35,6 +38,7 @@ pub struct PostCard {
     is_group_owner: bool,
     // user_info: User,
     show_set_drawer: bool,
+    i18n: FluentBundle<FluentResource>,
     remove_conv_state: Rc<RemoveConvState>,
     _remove_conv_listener: ContextHandle<Rc<RemoveConvState>>,
     remove_friend_state: Rc<RemoveFriendState>,
@@ -55,10 +59,16 @@ impl Component for PostCard {
             .link()
             .context(ctx.link().callback(|_| PostCardMsg::None))
             .expect("postcard friend_state needed");
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::POSTCARD,
+            LanguageType::EnUS => en_us::POSTCARD,
+        };
+        let i18n = utils::create_bundle(res);
         let self_ = PostCard {
             info: None,
             show_set_drawer: false,
             is_group_owner: false,
+            i18n,
             remove_conv_state,
             _remove_conv_listener,
             remove_friend_state,
@@ -198,23 +208,23 @@ impl Component for PostCard {
                                 {self.info.as_ref().unwrap().name()}
                             </span>
                             <span class="num">
-                                {"编号: "}{""}
+                                {tr!(self.i18n, "account")}{self.info.as_ref().unwrap().id()}
                             </span>
                             <span class="region">
-                                {"地区: "}{self.info.as_ref().unwrap().region()}
+                                {tr!(self.i18n, "region")}{self.info.as_ref().unwrap().region()}
                             </span>
                         </div>
                     </div>
 
                 </div>
                 <div class="postcard-remark">
-                    {"备注: "}{self.info.as_ref().unwrap().remark()}
+                    {tr!(self.i18n, "remark")}{self.info.as_ref().unwrap().remark()}
                 </div>
                 <div class="sign">
-                    {"签名: "}{self.info.as_ref().unwrap().signature()}
+                    {tr!(self.i18n, "signature")}{self.info.as_ref().unwrap().signature()}
                 </div>
 
-                <Action id={id.clone()} conv_type={ctx.props().conv_type.clone()} />
+                <Action id={id.clone()} conv_type={ctx.props().conv_type.clone()} lang={ctx.props().lang} />
             </div>
             }
         </div>

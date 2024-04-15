@@ -4,6 +4,7 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use crate::components::right::friend_card::FriendCard;
+use crate::i18n::LanguageType;
 use crate::model::user::UserWithMatchType;
 use crate::pages::AppState;
 
@@ -15,6 +16,7 @@ pub struct UserInfoCom {
 
 #[derive(Properties, PartialEq)]
 pub struct UserInfoComProps {
+    pub lang: LanguageType,
     pub info: UserWithMatchType,
 }
 
@@ -51,6 +53,7 @@ impl Component for UserInfoCom {
                     FriendCard::show(
                         ctx.props().info.clone(),
                         Some(self.app_state.login_user.clone()),
+                        ctx.props().lang,
                         false,
                         x as i32,
                         rect.y() as i32,

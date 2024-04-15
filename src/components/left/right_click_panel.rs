@@ -48,9 +48,9 @@ impl Component for RightClickPanel {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let style = format!("left: {}px; top: {}px;", ctx.props().x, ctx.props().y);
         let mute_str = if ctx.props().is_mute {
-            tr!(self.i18n, "mute")
-        } else {
             tr!(self.i18n, "un_mute")
+        } else {
+            tr!(self.i18n, "mute")
         };
         html! {
             <div ref={self.node.clone()}
