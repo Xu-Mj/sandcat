@@ -1,3 +1,4 @@
+use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::{Interval, Timeout};
 use regex::Regex;
 use wasm_bindgen::JsValue;
@@ -5,14 +6,14 @@ use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::RouterScopeExt;
+use zxcvbn::zxcvbn;
 
-use crate::api;
+use crate::db::current_item;
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::user::UserRegister;
 use crate::pages::Page;
+use crate::{api, tr, utils};
 
-extern crate zxcvbn;
-
-use zxcvbn::zxcvbn;
 #[derive(Default)]
 pub struct Register {
     name_node: NodeRef,
@@ -36,6 +37,7 @@ pub struct Register {
     avatars: Vec<AttrValue>,
     avatar: AttrValue,
     pwd: AttrValue,
+    i18n: FluentBundle<FluentResource>,
 }
 
 pub enum RegisterMsg {
@@ -76,7 +78,16 @@ impl Component for Register {
             // "./images/avatars/avatar6.png".into(),
         ];
         let avatar = avatars[0].clone();
+
+        // load the i18n bundle
+        let lang = current_item::get_language();
+        let res = match lang {
+            LanguageType::ZhCN => zh_cn::REGISTER,
+            LanguageType::EnUS => en_us::REGISTER,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
+            i18n,
             avatars,
             avatar,
             ..Default::default()
@@ -258,25 +269,25 @@ impl Component for Register {
             ""
         };
         let code_button = if self.is_code_send {
-            format!("{}s 后发送", self.time)
+            format!("{}s {}", self.time, tr!(self.i18n, "re_send_code"))
         } else {
-            "发送验证码".to_string()
+            tr!(self.i18n, "send_code")
         };
         let req_status = match self.req_status {
             RequestStatus::Default => html!(),
             RequestStatus::Pendding => html! {
                 <div class="register-info box-shadow">
-                    {"正在注册"}
+                    {tr!(self.i18n, "registering")}
                 </div>
             },
             RequestStatus::Success => html!(
                 <div class="register-success box-shadow">
-                    {"注册成功，正在跳转登录页面"}
+                    {tr!(self.i18n, "register_success")}
                 </div>
             ),
             RequestStatus::Failed => html! {
                 <div class="register-error box-shadow">
-                    {"注册失败，请联系管理员"}
+                    {tr!(self.i18n, "register_failed")}
                 </div>
             },
         };
@@ -311,7 +322,7 @@ impl Component for Register {
                     >
                     <div >
                         <span>
-                            {"头像"}
+                            {tr!(self.i18n, "avatar")}
                         </span>
                         <div class="register-avatar-wrapper">
                             {avatars}
@@ -319,7 +330,7 @@ impl Component for Register {
                     </div>
                     <div class="nickname">
                         <label for="nickname">
-                            {"昵称"}
+                            {tr!(self.i18n, "nickname")}
                         </label>
                         <input
                             ref={self.name_node.clone()}
@@ -327,20 +338,20 @@ impl Component for Register {
                             id="nickname"
                             placeholder="nickname"
                             required={true}
-                            autocomplete="current-password"
+                            autocomplete="nickname"
                             />
                     </div>
                     <div class="pwd">
                         <label for="pwd">
-                            {"密码"}
+                            {tr!(self.i18n, "password")}
                         </label>
                         <input
                             ref={self.pwd_node.clone()}
                             type="password"
                             id="pwd"
                             required={true}
-                            autocomplete="current-password"
-                            placeholder="密码"
+                            autocomplete="password"
+                            placeholder={tr!(self.i18n, "pwd_hint")}
                             value={self.pwd.clone()}
                             oninput={ctx.link().callback(RegisterMsg::OnPwdInput)}
                             />
@@ -348,28 +359,28 @@ impl Component for Register {
                     </div>
                     <div class="re-pwd">
                         <label for="re-pwd">
-                            {"重复"}
+                            {tr!(self.i18n, "confirm_pwd")}
                         </label>
                         <input
                             type="password"
                             id="re-pwd"
                             required={true}
                             autocomplete="current-password"
-                            placeholder="密码"
+                            placeholder={tr!(self.i18n, "confirm_pwd_hint")}
                             oninput={ctx.link().callback(RegisterMsg::OnRePwdInput)}
                             />
                         {pwd_is_same}
                     </div>
                     <div class="email">
                         <label for="account">
-                            {"邮件"}
+                            {tr!(self.i18n, "email")}
                         </label>
                         <input ref={self.email_node.clone()}
                             class={email_class}
                             type="text"
                             id="email"
                             name="email"
-                            placeholder="e-mail"
+                            placeholder={tr!(self.i18n, "email_hint")}
                             required={true}
                             autocomplete="current-password"
                             onchange={ctx.link().callback(|_|RegisterMsg::OnEmailChange)} />
@@ -383,7 +394,7 @@ impl Component for Register {
                     </div>
                     <div class="code">
                         <label for="code">
-                            {"验证码"}
+                            {tr!(self.i18n, "code")}
                         </label>
                         <input
                             ref={self.code_node.clone()}
@@ -391,17 +402,17 @@ impl Component for Register {
                             id="code"
                             required={true}
                             autocomplete="current-password"
-                            placeholder="验证码"/>
+                            placeholder={tr!(self.i18n, "code")}/>
                     </div>
 
                     <div>
                         <span>
                         </span>
-                        <input type="submit" class="register-button" onclick={onsubmit} value={"注册"}/>
+                        <input type="submit" class="register-button" onclick={onsubmit} value={tr!(self.i18n, "submit")}/>
                     </div>
                     <div class="login-register">
-                        {"已经拥有账号？"}
-                        <a href="/">{"去登录"}</a>
+                        {tr!(self.i18n, "to_login_prefix")}
+                        <a href="/">{tr!(self.i18n, "to_login")}</a>
                     </div>
                 </div>
             </div>

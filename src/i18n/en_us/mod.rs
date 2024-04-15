@@ -87,7 +87,7 @@ video_call = VideoCall
 
 pub const SENDER: &str = r#"
 # sender
-send = SEND
+send = Send
 file = File
 submit = Submit
 cancel = Cancel
@@ -96,14 +96,26 @@ disabled = CAN NOT SEND FOR NOW
 group_dismissed = THE GROUP HAS BEEN DISMISSED
 verify_needed = FRIEND ENABLED THE FRIEND VERIFICATION, PLEASE PASS IT FIRST
 "#;
-// pub const REGISTER: &str = r#"
-// register_text = Register
-// email = e-mail
-// password = password
-// confirm_password = confirm password
-// to_login_prefix = already have an account?
-// to_login = LOGIN NOW
-// "#;
+
+pub const REGISTER: &str = r#"
+submit = register
+avatar = avatar
+nickname = nickname
+email_hint = enter your e-mail
+email = e-mail
+pwd_hint = enter your password
+password = password
+confirm_pwd = confirm
+confirm_pwd_hint = input password again
+code = code
+send_code = send code
+re_send_code = re-send
+registering = registering...
+register_failed = register failed
+register_success = register success! redirecting...
+to_login_prefix = already have an account?
+to_login = LOGIN NOW
+"#;
 
 pub const RIGHT_PANEL: &str = r#"
 querying = Querying...

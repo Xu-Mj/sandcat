@@ -89,14 +89,24 @@ disabled = 暂时无法发送消息
 group_dismissed = 群聊已经解散
 verify_needed = 对方开启了好友验证，请先通过验证
 "#;
-// pub const REGISTER: &str = r#"
-// register_text = 注册
-// email = 邮箱
-// password = 密码
-// confirm_password = 确认密码
-// to_login_prefix = 已经有账号了?
-// to_login = 去登陆
-// "#;
+
+pub const REGISTER: &str = r#"
+submit = 注册
+email = 邮箱
+email_hint = 请输入邮箱地址
+pwd_hint = 请输入密码
+password = 密码
+confirm_pwd = 确认密码
+confirm_pwd_hint = 请再次输入密码
+code = 验证码
+send_code = 发送验证码
+re_send_code = 重发
+registering = 正在注册...
+register_failed = 注册失败，请稍后重试
+register_success = 注册成功! 正在跳转登录页面...
+to_login_prefix = 已经有账号了?
+to_login = 去登陆
+"#;
 
 pub const RIGHT_PANEL: &str = r#"
 hello = 与挚友开始聊天吧！
