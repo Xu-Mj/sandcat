@@ -214,7 +214,8 @@ impl Component for Right {
                         id={info.id()}
                         conv_type={info.get_type()}
                         close={ctx.link().callback(|_| RightMsg::ShowSetting)}
-                        plus_click={close.clone()} />);
+                        plus_click={close.clone()}
+                        lang={self.lang_state.lang} />);
             }
             if self.show_friend_list {
                 friend_list = html!(<SelectFriendList

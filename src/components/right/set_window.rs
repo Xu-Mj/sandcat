@@ -1,11 +1,14 @@
+use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use crate::{
     db::{self, conv::ConvRepo, conversations::Conversations},
+    i18n::{en_us, zh_cn, LanguageType},
     icons::PlusRectIcon,
     model::{conversation::Conversation, ItemInfo, RightContentType},
+    tr, utils,
 };
 #[derive(Default)]
 pub struct SetWindow {
@@ -13,6 +16,7 @@ pub struct SetWindow {
     info: Option<Box<dyn ItemInfo>>,
     conv: Conversation,
     node: NodeRef,
+    i18n: FluentBundle<FluentResource>,
 }
 
 pub enum SetWindowMsg {
@@ -30,6 +34,7 @@ pub struct SetWindowProps {
     pub id: AttrValue,
     pub close: Callback<()>,
     pub plus_click: Callback<()>,
+    pub lang: LanguageType,
 }
 
 /// query friend/group information by props id
@@ -78,7 +83,13 @@ impl Component for SetWindow {
             let conv = ConvRepo::new().await.get_by_frined_id(id.as_str()).await;
             SetWindowMsg::QueryInfo(info, list, conv)
         });
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::SET_WINDOW,
+            LanguageType::EnUS => en_us::SET_WINDOW,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
+            i18n,
             ..Default::default()
         }
     }
@@ -103,6 +114,7 @@ impl Component for SetWindow {
                 spawn_local(async move {
                     ConvRepo::new().await.mute(&conv).await.unwrap();
                 });
+                // todo send mute message to conversation component
                 true
             }
         }
@@ -124,7 +136,7 @@ impl Component for SetWindow {
         let add_friend = html! {
             <div class="avatar-name pointer" onclick={add_click}>
                 <PlusRectIcon/>
-                <span>{"添加"}</span>
+                <span>{tr!(self.i18n, "add")}</span>
             </div>
         };
         let mute_click = ctx.link().callback(|_| SetWindowMsg::MuteClicked);
@@ -143,19 +155,19 @@ impl Component for SetWindow {
                     <div class="info">
                         <div class="group-name">
                             <div>
-                                {"群聊名称"}
+                                {tr!(self.i18n, "group_name")}
                             </div>
                             <input type="text" value={v.name()} />
                         </div>
                         <div class="group-announcement">
                             <div>
-                                {"群公告"}
+                                {tr!(self.i18n, "group_announcement")}
                             </div>
                             <input type="text" value={v.remark()} />
                         </div>
                         <div class="group-desc">
                             <div>
-                                {"群描述"}
+                                {tr!(self.i18n, "group_desc")}
                             </div>
                             <input type="text" value={v.signature()} />
                         </div>
@@ -165,7 +177,7 @@ impl Component for SetWindow {
         }
         let setting = html! {
             <div class="setting-item">
-            {"消息免打扰"}
+            {tr!(self.i18n, "mute")}
             <span class={switch} onclick={mute_click}>
                 <span class={slider}></span>
             </span>
@@ -183,7 +195,7 @@ impl Component for SetWindow {
                     {setting}
                 </div>
                 <div class="bottom" >
-                    {"删除"}
+                    {tr!(self.i18n, "delete")}
                 </div>
             </div>
         }

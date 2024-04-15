@@ -1,10 +1,14 @@
+use fluent::{FluentBundle, FluentResource};
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yew::{Component, Properties};
 
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::RightContentType;
+use crate::{tr, utils};
 pub struct SetDrawer {
     node: NodeRef,
+    i18n: FluentBundle<FluentResource>,
 }
 
 #[derive(Debug, Clone, Properties, PartialEq)]
@@ -13,6 +17,7 @@ pub struct SetDrawerProps {
     pub is_owner: bool,
     pub close: Callback<()>,
     pub delete: Callback<()>,
+    pub lang: LanguageType,
 }
 
 pub enum SetDrawerMsg {}
@@ -22,8 +27,14 @@ impl Component for SetDrawer {
 
     type Properties = SetDrawerProps;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::SET_DRAWER,
+            LanguageType::EnUS => en_us::SET_DRAWER,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
+            i18n,
             node: NodeRef::default(),
         }
     }
@@ -35,15 +46,15 @@ impl Component for SetDrawer {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let btn_msg = match ctx.props().conv_type {
-            RightContentType::Friend => "删除好友",
+            RightContentType::Friend => tr!(self.i18n, "del_friend"),
             RightContentType::Group => {
                 if ctx.props().is_owner {
-                    "解散群聊"
+                    tr!(self.i18n, "dismiss")
                 } else {
-                    "退出群聊"
+                    tr!(self.i18n, "quit")
                 }
             }
-            _ => "未知操作",
+            _ => String::new(),
         };
         html! {
             <div ref={self.node.clone()}

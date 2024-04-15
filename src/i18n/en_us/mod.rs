@@ -121,3 +121,18 @@ pub const RIGHT_PANEL: &str = r#"
 querying = Querying...
 hello = Let's Chat
 "#;
+
+pub const SET_DRAWER: &str = r#"
+del_friend = DeleteFriend
+dismiss = DismissGroup
+quit = QuitGroup
+"#;
+
+pub const SET_WINDOW: &str = r#"
+add = Add
+delete = Delete
+mute = Mute
+group_desc = GroupDesc
+group_name = GroupName
+group_announcement = GroupAnno
+"#;

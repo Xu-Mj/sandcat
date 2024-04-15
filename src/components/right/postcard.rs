@@ -186,7 +186,8 @@ impl Component for PostCard {
                     conv_type={ctx.props().conv_type.clone()}
                     is_owner={self.is_group_owner}
                     {close}
-                    {delete}/>
+                    {delete}
+                    lang={ctx.props().lang}/>
             }
         }
         html! {

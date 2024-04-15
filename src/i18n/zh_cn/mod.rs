@@ -114,3 +114,18 @@ to_login = 去登陆
 pub const RIGHT_PANEL: &str = r#"
 hello = 与挚友开始聊天吧！
 "#;
+
+pub const SET_DRAWER: &str = r#"
+del_friend = 删除好友
+dismiss = 解散群聊
+quit = 退出群聊
+"#;
+
+pub const SET_WINDOW: &str = r#"
+add = 添加
+delete = 删除
+mute = 消息免打扰
+group_desc = 群描述
+group_name = 群名称
+group_announcement = 群公告
+"#;
