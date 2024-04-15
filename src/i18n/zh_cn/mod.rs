@@ -9,7 +9,8 @@ to_register = 去注册
 "#;
 
 pub const SEARCH_DOCK: &str = r#"
-search = Search
+search = 搜索
+cancel = 取消
 "#;
 
 pub const ADD_FRIEND: &str = r#"
@@ -91,6 +92,8 @@ verify_needed = 对方开启了好友验证，请先通过验证
 "#;
 
 pub const REGISTER: &str = r#"
+avatar = 头像
+nickname = 昵称
 submit = 注册
 email = 邮箱
 email_hint = 请输入邮箱地址

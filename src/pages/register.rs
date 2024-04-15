@@ -410,11 +410,11 @@ impl Component for Register {
                         </span>
                         <input type="submit" class="register-button" onclick={onsubmit} value={tr!(self.i18n, "submit")}/>
                     </div>
+                </div>
                     <div class="login-register">
                         {tr!(self.i18n, "to_login_prefix")}
                         <a href="/">{tr!(self.i18n, "to_login")}</a>
                     </div>
-                </div>
             </div>
         }
     }
