@@ -1,11 +1,12 @@
 // login component
-// pub const LOGIN: &str = r#"
-// login_text = 登录
-// email = 邮箱地址
-// password = 密码
-// to_register_prefix = 还没有账号?
-// to_register = 去注册
-// "#;
+pub const LOGIN: &str = r#"
+login_text = 登录
+submit = 登录
+email = 邮箱地址
+password = 密码
+to_register_prefix = 还没有账号?
+to_register = 去注册
+"#;
 
 pub const SEARCH_DOCK: &str = r#"
 search = Search

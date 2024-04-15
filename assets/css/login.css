@@ -37,21 +37,35 @@
         background-color: var(--color-background);
         border-radius: 5px;
 
-        input {
-            width: 100%;
-            height: 100%;
-            padding: 1em;
-            background-color: #f0f0ee;
-            outline: none;
-            border: none;
-            font: inherit;
-        }
-
         .email,
         .pwd {
             height: 50px;
             width: 90%;
-            margin-top: 20px;
+            margin-top: 1rem;
+
+            input {
+                width: 100%;
+                height: 100%;
+                padding: 1em;
+                background-color: #f0f0ee;
+                outline: none;
+                border: none;
+                font: inherit;
+            }
+        }
+
+        .language {
+            margin-top: 1rem;
+            font-size: small;
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+
+            label{
+                display: flex;
+                align-items: center;
+                gap: .2rem;
+            }
         }
 
         .submit {
@@ -65,6 +79,8 @@
             color: #ffffff;
             background-color: #f77c2c;
             cursor: pointer;
+            outline: none;
+            border: none;
             font-size: 1rem;
         }
 

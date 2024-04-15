@@ -7,7 +7,6 @@ use yew::prelude::*;
 use crate::db;
 use crate::i18n::LanguageType;
 use crate::icons::{MsgPhoneIcon, VideoRecordIcon};
-use crate::model::group::GroupMember;
 use crate::model::message::{InviteMsg, InviteType, Message};
 use crate::model::user::{User, UserWithMatchType};
 use crate::model::RightContentType;
@@ -22,12 +21,12 @@ pub struct MsgItem {
 }
 
 pub enum MsgItemMsg {
-    PreviewImg(AttrValue),
+    PreviewImg,
     ShowFriendCard(MouseEvent),
     CallVideo,
     None,
     CallAudio,
-    QueryGroupMember(GroupMember),
+    QueryGroupMember(AttrValue),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -54,7 +53,7 @@ impl Component for MsgItem {
                     .get_by_group_id_and_friend_id(group_id.as_str(), friend_id.as_str())
                     .await
                     .unwrap();
-                MsgItemMsg::QueryGroupMember(member.unwrap())
+                MsgItemMsg::QueryGroupMember(member.unwrap().avatar)
             });
         }
         let (msg_state, _listener) = ctx
@@ -71,17 +70,8 @@ impl Component for MsgItem {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            MsgItemMsg::PreviewImg(_src) => {
-                self.show_img_preview = true;
-                // let win = window().open().unwrap().unwrap();
-                // let img = win
-                //     .document()
-                //     .unwrap()
-                //     .create_element("img")
-                //     .unwrap()
-                //     .dyn_into::<HtmlImageElement>()
-                //     .unwrap();
-                // img.set_src(&src);
+            MsgItemMsg::PreviewImg => {
+                self.show_img_preview = !self.show_img_preview;
                 true
             }
             MsgItemMsg::ShowFriendCard(event) => {
@@ -168,8 +158,8 @@ impl Component for MsgItem {
                 // 不需要监听值得变化，这里只是占位符的作用
                 false
             }
-            MsgItemMsg::QueryGroupMember(m) => {
-                self.avatar = m.avatar;
+            MsgItemMsg::QueryGroupMember(avatar) => {
+                self.avatar = avatar;
                 true
             }
         }
@@ -188,7 +178,6 @@ impl Component for MsgItem {
             msg_content_classes.push("background-other");
         }
 
-        let img_preview = html! {};
         let content = match msg_type {
             ContentType::Text => {
                 html! {
@@ -207,10 +196,20 @@ impl Component for MsgItem {
                 let src = img_url.clone();
                 let onclick = ctx
                     .link()
-                    .callback(move |_: MouseEvent| MsgItemMsg::PreviewImg(src.clone()));
+                    .callback(move |_: MouseEvent| MsgItemMsg::PreviewImg);
+                let img_preview = if self.show_img_preview {
+                    html! {
+                        <div class="img-preview pointer" onclick={onclick.clone()}>
+                            <img src={src} />
+                        </div>
+                    }
+                } else {
+                    html!()
+                };
                 html! {
                 <>
-                    <div class="msg-item-content">
+                    {img_preview}
+                    <div class="msg-item-content pointer">
                         <div class="img-mask">
                         </div>
                         <img class="msg-item-img" src={img_url} {onclick}/>
@@ -274,13 +273,6 @@ impl Component for MsgItem {
 
         html! {
             <>
-                {
-                    if self.show_img_preview {
-                       html!{img_preview}
-                    }else {
-                        html!{}
-                    }
-                }
             <div class={classes} id={id.to_string()} >
                 <div class="msg-item-avatar">
                     <img class="avatar" src={self.avatar.clone()} /* onclick={_avatar_click} */ />

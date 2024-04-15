@@ -3,13 +3,13 @@ use base64::Engine;
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsValue;
+use wasm_bindgen::{JsCast, JsValue};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 
-use crate::db::{self, TOKEN, WS_ADDR};
-use crate::i18n::en_us::LOGIN;
+use crate::db::{self, current_item, TOKEN, WS_ADDR};
+use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::user::User;
 use crate::{api, db::DB_NAME};
 use crate::{tr, utils};
@@ -22,6 +22,7 @@ pub struct Login {
     login_state: LoginState,
     show_error: bool,
     i18n: FluentBundle<FluentResource>,
+    lang: LanguageType,
 }
 
 pub enum LoginMsg {
@@ -29,6 +30,7 @@ pub enum LoginMsg {
     Success(AttrValue),
     Failed,
     OnEnterKeyDown(SubmitEvent),
+    SwitchLanguage(Event),
 }
 
 pub enum LoginState {
@@ -92,14 +94,20 @@ impl Component for Login {
 
     fn create(_ctx: &Context<Self>) -> Self {
         // load the i18n bundle
+        let lang = current_item::get_language();
+        let res = match lang {
+            LanguageType::ZhCN => zh_cn::LOGIN,
+            LanguageType::EnUS => en_us::LOGIN,
+        };
+        let i18n = utils::create_bundle(res);
 
-        let i18n = utils::create_bundle(LOGIN);
         Self {
             account_ref: NodeRef::default(),
             pwd_ref: NodeRef::default(),
             login_state: LoginState::Nothing,
             show_error: false,
             i18n,
+            lang: current_item::get_language(),
         }
     }
 
@@ -167,6 +175,25 @@ impl Component for Login {
                 event.prevent_default();
                 false
             }
+            LoginMsg::SwitchLanguage(event) => {
+                log::debug!("switch language: {:?}", event);
+                let input = event
+                    .target()
+                    .unwrap()
+                    .dyn_into::<HtmlInputElement>()
+                    .unwrap();
+                let value = input.value();
+                if value == "zh_cn" {
+                    self.i18n = utils::create_bundle(zh_cn::LOGIN);
+                    current_item::save_language(LanguageType::ZhCN).unwrap();
+                    self.lang = LanguageType::ZhCN;
+                } else if value == "en_us" {
+                    self.i18n = utils::create_bundle(en_us::LOGIN);
+                    current_item::save_language(LanguageType::EnUS).unwrap();
+                    self.lang = LanguageType::EnUS;
+                }
+                true
+            }
         }
     }
 
@@ -182,7 +209,7 @@ impl Component for Login {
         // i18n
         let login_title = tr!(self.i18n, "login_text");
         let email = tr!(self.i18n, "email");
-
+        let onchange = ctx.link().callback(LoginMsg::SwitchLanguage);
         html! {
             <div class="login-container">
                 {info}
@@ -197,7 +224,15 @@ impl Component for Login {
                     <div class="pwd">
                         <input type="password" ref={self.pwd_ref.clone()} required={true} autocomplete="current-password"   placeholder={tr!(self.i18n, "password")}/>
                     </div>
-                        <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title}/>
+                    <div class="language">
+                        <label for="en_us">
+                            <input type="radio" name="language" id="en_us" value="en_us" onchange={onchange.clone()} checked={self.lang==LanguageType::EnUS}/>{"\tENG"}
+                        </label>
+                        <label for="zh_cn">
+                            <input type="radio" name="language" id="zh_cn" value="zh_cn" {onchange} checked={self.lang==LanguageType::ZhCN}/>{"\t中文"}
+                        </label>
+                    </div>
+                    <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title}/>
                 </form>
                 <div class="login-register">
                     {tr!(self.i18n, "to_register_prefix")}

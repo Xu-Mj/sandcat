@@ -168,7 +168,7 @@ impl Home {
             }),
             lang_state: Rc::new(I18nState {
                 switch_lang,
-                ..Default::default()
+                lang: current_item::get_language(),
             }),
         }
     }

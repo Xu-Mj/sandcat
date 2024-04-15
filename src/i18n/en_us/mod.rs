@@ -1,6 +1,7 @@
 // login component
 pub const LOGIN: &str = r#"
-login_text = Login
+login_text = SignIn
+submit = login
 email = e-mail
 password = password
 to_register_prefix = don't have an account?

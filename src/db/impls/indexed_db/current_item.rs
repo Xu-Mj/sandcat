@@ -2,12 +2,16 @@
 use gloo::utils::window;
 use wasm_bindgen::JsValue;
 
-use crate::model::{ComponentType, CurrentItem, UnreadItem};
+use crate::{
+    i18n::LanguageType,
+    model::{ComponentType, CurrentItem, UnreadItem},
+};
 
 pub const CONV_LOCAL_STORAGE_KEY: &str = "__CURRENT_CONV__";
 pub const FRIEND_LOCAL_STORAGE_KEY: &str = "__CURRENT_FRIEND__";
 pub const COMPONENT_TYPE_LOCAL_STORAGE_KEY: &str = "__CURRENT_COMPONENT__";
 pub const UNREAD_COUNT_LOCAL_STORAGE_KEY: &str = "__UNREAD_COUNT__";
+pub const LANGUAGE_LOCAL_STORAGE_KEY: &str = "__LANGUAGE__";
 
 pub fn save_conv(conv: &CurrentItem) -> Result<(), JsValue> {
     let value = serde_json::to_string(conv).unwrap();
@@ -87,4 +91,23 @@ pub fn save_unread_count(value: UnreadItem) -> Result<(), JsValue> {
         .unwrap()
         .unwrap()
         .set(UNREAD_COUNT_LOCAL_STORAGE_KEY, &value)
+}
+
+pub fn get_language() -> LanguageType {
+    let value = window()
+        .local_storage()
+        .unwrap()
+        .unwrap()
+        .get(LANGUAGE_LOCAL_STORAGE_KEY)
+        .unwrap()
+        .unwrap_or_default();
+    LanguageType::from(value)
+}
+
+pub fn save_language(value: LanguageType) -> Result<(), JsValue> {
+    window()
+        .local_storage()
+        .unwrap()
+        .unwrap()
+        .set(LANGUAGE_LOCAL_STORAGE_KEY, &value.to_string())
 }
