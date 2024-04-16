@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use indexmap::IndexMap;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 use yew::prelude::*;
@@ -14,13 +15,15 @@ use crate::model::ItemInfo;
 use crate::model::RightContentType;
 use crate::pages::OfflineMsgState;
 use crate::pages::RecMessageState;
+use crate::pages::SendResultState;
 use crate::{
     components::right::{msg_item::MsgItem, sender::Sender},
     model::message::Message,
 };
 
 pub struct MessageList {
-    list: Vec<Message>,
+    // list: Vec<Message>,
+    list2: IndexMap<AttrValue, Message>,
     node_ref: NodeRef,
     page: u32,
     page_size: u32,
@@ -35,14 +38,17 @@ pub struct MessageList {
     // 监听消息接收状态，用来更新当前对话框消息列表
     _rec_msg_state: Rc<RecMessageState>,
     _rec_msg_listener: ContextHandle<Rc<RecMessageState>>,
+    _send_result_state: Rc<SendResultState>,
+    _send_result_listener: ContextHandle<Rc<SendResultState>>,
 }
 
 pub enum MessageListMsg {
-    QueryMsgList(Vec<Message>),
+    QueryMsgList(IndexMap<AttrValue, Message>),
     NextPage,
     NextPageNone,
     SendFile(Message),
     ReceiveMsg(Rc<RecMessageState>),
+    SendResultCallback(Rc<SendResultState>),
     SyncOfflineMsg,
     GoBottom,
     QueryFriend(Option<Box<dyn ItemInfo>>),
@@ -132,10 +138,12 @@ impl MessageList {
             });
         }
     }
+
     fn reset(&mut self) {
-        self.list = vec![];
+        self.list2 = IndexMap::new();
         self.page = 1;
         self.page_size = 20;
+        self.new_msg_count = 0;
         self.is_all = false;
         self.scroll_state = ScrollState::None;
     }
@@ -143,7 +151,7 @@ impl MessageList {
     fn insert_msg(&mut self, msg: Message, friend_id: AttrValue) -> bool {
         if msg.friend_id == friend_id {
             let is_self = msg.is_self;
-            self.list.insert(0, msg);
+            self.list2.shift_insert(0, msg.local_id.clone(), msg);
             if is_self || self.scroll_state == ScrollState::Bottom {
                 self.new_msg_count = 0;
                 self.scroll_state = ScrollState::Bottom;
@@ -158,6 +166,7 @@ impl MessageList {
         }
     }
     fn handle_rec_msg(&mut self, msg: Msg, friend_id: AttrValue) -> bool {
+        log::debug!("handle_rec_msg: {:?}", msg);
         match msg {
             Msg::Single(msg) => self.insert_msg(msg, friend_id),
             Msg::Group(msg) => {
@@ -209,10 +218,6 @@ impl Component for MessageList {
     type Properties = MessageListProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        // let (_send_msg_state, _listener) = ctx
-        //     .link()
-        //     .context(ctx.link().callback(MessageListMsg::SendMsgStateChanged))
-        //     .expect("need msg context");
         let (_sync_msg_state, _sync_msg_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg))
@@ -221,15 +226,17 @@ impl Component for MessageList {
             .link()
             .context(ctx.link().callback(MessageListMsg::ReceiveMsg))
             .expect("need msg context");
+        let (_send_result_state, _send_result_listener) = ctx
+            .link()
+            .context(ctx.link().callback(MessageListMsg::SendResultCallback))
+            .expect("need msg context");
         let self_ = Self {
-            list: vec![],
+            // list: vec![],
             node_ref: NodeRef::default(),
             page_size: 20,
             page: 1,
             is_all: false,
             scroll_state: ScrollState::Bottom,
-            // _msg_state,
-            // _listener,
             friend: None,
             new_msg_count: 0,
             is_black: false,
@@ -237,8 +244,9 @@ impl Component for MessageList {
             _sync_msg_listener,
             _rec_msg_state,
             _rec_msg_listener,
-            // _send_msg_state,
-            // _listener,
+            _send_result_state,
+            _send_result_listener,
+            list2: IndexMap::new(),
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -265,13 +273,13 @@ impl Component for MessageList {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let friend_id = ctx.props().friend_id.clone();
         match msg {
-            MessageListMsg::QueryMsgList(mut list) => {
+            MessageListMsg::QueryMsgList(list) => {
                 log::debug!("message list update: {}", list.len());
                 // 判断是否是最后一页，优化查询次数
                 if list.len() < self.page_size as usize {
                     self.is_all = true;
                 }
-                self.list.append(&mut list);
+                self.list2.extend(list);
                 true
             }
             MessageListMsg::NextPage => {
@@ -283,7 +291,7 @@ impl Component for MessageList {
             }
             MessageListMsg::NextPageNone => false,
             MessageListMsg::SendFile(msg) => {
-                self.list.insert(0, msg);
+                self.list2.insert(msg.local_id.clone(), msg);
                 self.scroll_state = ScrollState::Bottom;
                 true
             }
@@ -309,6 +317,17 @@ impl Component for MessageList {
                 self.reset();
                 self.query(ctx);
                 false
+            }
+            MessageListMsg::SendResultCallback(state) => {
+                let msg = state.msg.clone();
+                /*  let mut result = self.list.iter_mut().filter(|v| *v.local_id == msg.local_id);
+                result.next().map(|v| {
+                    v.send_status = msg.send_status;
+                }); */
+                if let Some(v) = self.list2.get_mut(&msg.local_id) {
+                    v.send_status = msg.send_status;
+                }
+                true
             }
         }
     }
@@ -339,34 +358,37 @@ impl Component for MessageList {
         } else {
             html!()
         };
+
+        let mut list = html!();
+        if let Some(friend) = self.friend.as_ref() {
+            let conv_type = props.conv_type.clone();
+            list = self
+                .list2
+                .iter()
+                .map(|(_, msg)| {
+                    let mut avatar = friend.avatar().clone();
+                    if msg.is_self {
+                        avatar = props.cur_user_avatar.clone();
+                    }
+                    html! {
+                        <MsgItem
+                            user_id={props.cur_user_id.clone()}
+                            friend_id={props.friend_id.clone()}
+                            msg={msg.clone()}
+                            avatar={avatar}
+                            conv_type={conv_type.clone()}
+                            key={msg.id}
+                        />
+                    }
+                })
+                .collect::<Html>()
+        }
         html! {
             <>
                 <div class="resize">
                     {new_msg_count}
                     <div ref={self.node_ref.clone()} class="msg-list"  {onscroll}>
-                        {
-                            if let Some(friend) = self.friend.as_ref() {
-                                let conv_type = props.conv_type.clone();
-                                self.list.iter().map(|msg| {
-                                    let mut avatar = friend.avatar().clone();
-                                    if msg.is_self {
-                                        avatar = props.cur_user_avatar.clone();
-                                    }
-                                    html! {
-                                        <MsgItem
-                                            user_id={props.cur_user_id.clone()}
-                                            friend_id={props.friend_id.clone()}
-                                            msg={msg.clone()}
-                                            avatar={avatar}
-                                            conv_type={conv_type.clone()}
-                                            key={msg.id}
-                                        />
-                                    }
-                                }).collect::<Html>()
-                        }else {
-                            html!()
-                        }
-                        }
+                        {list}
                     </div>
                 </div>
                 <Sender

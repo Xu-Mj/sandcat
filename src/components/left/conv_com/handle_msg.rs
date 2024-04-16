@@ -7,7 +7,7 @@ use crate::{
     db,
     model::{
         conversation::Conversation,
-        message::{GroupMsg, Message, Msg, SingleCall, DEFAULT_HELLO_MESSAGE},
+        message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
         ContentType, RightContentType,
     },
 };
@@ -31,7 +31,7 @@ impl Chats {
                     last_msg_type: msg.content_type,
                     conv_type,
                     friend_id: msg.friend_id.clone(),
-                    unread_count: 1,
+                    unread_count: 0,
                     ..Default::default()
                 };
                 let is_self = msg.is_self;
@@ -507,9 +507,27 @@ impl Chats {
                     ChatsMsg::SendMessage(Msg::Single(msg))
                 });
             }
-            Msg::ServerRecResp(_msg) => {
+            Msg::ServerRecResp(msg) => {
                 // need to use the local to mark the message as send-success
                 // log::debug!("receive server response: {:?}", msg);
+                let send_result = self.send_result.notify.clone();
+                // update database
+                spawn_local(async move {
+                    match msg.resp_msg_type {
+                        RespMsgType::Single => {
+                            if let Err(err) = db::messages().await.update_msg_status(&msg).await {
+                                log::error!("update message fail:{:?}", err);
+                            }
+                        }
+                        RespMsgType::Group => {
+                            if let Err(err) = db::group_msgs().await.update_msg_status(&msg).await {
+                                log::error!("update message fail:{:?}", err);
+                            }
+                        }
+                    }
+
+                    send_result.emit(msg);
+                });
             }
         }
         false

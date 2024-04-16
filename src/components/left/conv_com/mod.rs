@@ -27,8 +27,8 @@ use crate::{
     },
     pages::{
         AddFriendState, ConvState, CreateConvState, FriendShipState, I18nState, MuteState,
-        OfflineMsgState, RecMessageState, RemoveConvState, SendMessageState, UnreadState,
-        WaitState,
+        OfflineMsgState, RecMessageState, RemoveConvState, SendMessageState, SendResultState,
+        UnreadState, WaitState,
     },
     tr, utils,
     ws::WebSocketManager,
@@ -88,16 +88,17 @@ pub struct Chats {
     _mute_state_listener: ContextHandle<Rc<MuteState>>,
     /// send the create friend/group event to contact list
     add_friend_state: Rc<AddFriendState>,
-    _add_friend_state_listener: ContextHandle<Rc<AddFriendState>>,
+    // _add_friend_state_listener: ContextHandle<Rc<AddFriendState>>,
     /// send the event to other components after sync offline message completed
     sync_msg_state: Rc<OfflineMsgState>,
-    _sync_msg_state_listener: ContextHandle<Rc<OfflineMsgState>>,
+    // _sync_msg_state_listener: ContextHandle<Rc<OfflineMsgState>>,
     /// send the event to other components after receive a message
     rec_msg_state: Rc<RecMessageState>,
-    _rec_msg_state_listener: ContextHandle<Rc<RecMessageState>>,
+    // _rec_msg_state_listener: ContextHandle<Rc<RecMessageState>>,
     /// friendship state, notify the contact component after receive a friend application
     fs_state: Rc<FriendShipState>,
-    _fs_state_listener: ContextHandle<Rc<FriendShipState>>,
+    send_result: Rc<SendResultState>,
+    // _fs_state_listener: ContextHandle<Rc<FriendShipState>>,
     lang_state: Rc<I18nState>,
     _lang_state_listener: ContextHandle<Rc<I18nState>>,
 }
@@ -112,7 +113,7 @@ impl Chats {
             // pull offline messages
             // get the seq
             // todo handle the error
-            let server_seq = api::seq().get_seq(&user_id).await.unwrap();
+            let server_seq = api::seq().get_seq(&user_id).await.unwrap_or_default();
             let seq_repo = db::seq().await;
             let mut local_seq = seq_repo.get().await.unwrap_or_default();
             let mut messages = Vec::new();
@@ -123,9 +124,9 @@ impl Chats {
                     .pull_offline_msg(user_id.as_str(), local_seq.local_seq, server_seq.seq)
                     .await
                     .unwrap();
+                local_seq.local_seq = server_seq.seq;
+                seq_repo.put(&local_seq).await.unwrap();
             }
-            local_seq.local_seq = server_seq.seq;
-            seq_repo.put(&local_seq).await.unwrap();
             ChatsMsg::QueryConvs((convs, messages, local_seq))
         });
         // register state
@@ -157,7 +158,7 @@ impl Chats {
             .link()
             .context(ctx.link().callback(ChatsMsg::MuteStateChanged))
             .expect("need state in item");
-        let (_add_friend_state, _add_friend_state_listener) = ctx
+        let (add_friend_state, _add_friend_state_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
@@ -170,6 +171,10 @@ impl Chats {
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
         let (fs_state, _fs_state_listener) = ctx
+            .link()
+            .context(ctx.link().callback(|_| ChatsMsg::None))
+            .expect("need state in item");
+        let (send_result, _send_result_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
@@ -224,17 +229,18 @@ impl Chats {
             _create_conv_listener,
             _mute_state,
             _mute_state_listener,
-            add_friend_state: _add_friend_state,
-            _add_friend_state_listener,
+            add_friend_state,
+            // _add_friend_state_listener,
             sync_msg_state,
-            _sync_msg_state_listener,
+            // _sync_msg_state_listener,
             rec_msg_state,
-            _rec_msg_state_listener,
+            // _rec_msg_state_listener,
             fs_state,
-            _fs_state_listener,
+            // _fs_state_listener,
             i18n,
             lang_state,
             _lang_state_listener,
+            send_result,
         }
     }
 

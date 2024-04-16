@@ -1,13 +1,16 @@
 use std::rc::Rc;
 
+use gloo::timers::callback::Timeout;
 use nanoid::nanoid;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 
 use crate::db;
 use crate::i18n::LanguageType;
-use crate::icons::{MsgPhoneIcon, VideoRecordIcon};
-use crate::model::message::{InviteMsg, InviteType, Message};
+use crate::icons::{CycleIcon, MsgPhoneIcon, VideoRecordIcon};
+use crate::model::message::{
+    GroupMsg, InviteMsg, InviteType, Message, Msg, SendStatus, ServerResponse,
+};
 use crate::model::user::{User, UserWithMatchType};
 use crate::model::RightContentType;
 use crate::pages::SendMessageState;
@@ -19,6 +22,10 @@ pub struct MsgItem {
     show_friend_card: bool,
     msg_state: Rc<SendMessageState>,
     // receive a resp
+    // timeout for sending message
+    timeout: Option<Timeout>,
+    show_send_fail: bool,
+    show_sending: bool,
 }
 
 pub enum MsgItemMsg {
@@ -27,6 +34,8 @@ pub enum MsgItemMsg {
     CallVideo,
     None,
     CallAudio,
+    SendTimeout,
+    ReSendMessage,
     QueryGroupMember(AttrValue),
 }
 
@@ -61,12 +70,32 @@ impl Component for MsgItem {
             .link()
             .context(ctx.link().callback(|_| MsgItemMsg::None))
             .expect("need msg context");
+        let avatar = ctx.props().avatar.clone();
+        let mut timeout = None;
+        if ctx.props().msg.is_self && ctx.props().msg.send_status == SendStatus::Sending {
+            let ctx = ctx.link().clone();
+            timeout = Some(Timeout::new(3000, move || {
+                ctx.send_message(MsgItemMsg::SendTimeout);
+            }));
+        }
         Self {
+            timeout,
             show_img_preview: false,
             show_friend_card: false,
             msg_state,
-            avatar: ctx.props().avatar.clone(),
+            avatar,
+            show_send_fail: ctx.props().msg.send_status == SendStatus::Failed,
+            show_sending: false,
         }
+    }
+
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+        if ctx.props().msg.send_status != SendStatus::Sending {
+            self.show_send_fail = false;
+            self.timeout = None;
+            self.show_sending = false;
+        }
+        true
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -155,12 +184,62 @@ impl Component for MsgItem {
                 });
                 false
             }
-            MsgItemMsg::None => {
-                // 不需要监听值得变化，这里只是占位符的作用
-                false
-            }
+            MsgItemMsg::None => false,
             MsgItemMsg::QueryGroupMember(avatar) => {
                 self.avatar = avatar;
+                true
+            }
+            MsgItemMsg::SendTimeout => {
+                if ctx.props().msg.send_status == SendStatus::Success {
+                    self.timeout = None;
+                    self.show_send_fail = false;
+                    self.show_sending = false;
+                    return true;
+                }
+                let msg_id = ctx.props().msg.local_id.clone();
+
+                let conv_type = ctx.props().conv_type.clone();
+                spawn_local(async move {
+                    let msg = ServerResponse {
+                        local_id: msg_id,
+                        send_status: SendStatus::Failed,
+                        err_msg: Some(AttrValue::from("TimeOut")),
+                        ..Default::default()
+                    };
+                    match conv_type {
+                        RightContentType::Friend => {
+                            db::messages().await.update_msg_status(&msg).await.unwrap();
+                        }
+                        RightContentType::Group => {
+                            db::group_msgs()
+                                .await
+                                .update_msg_status(&msg)
+                                .await
+                                .unwrap();
+                        }
+                        _ => {}
+                    }
+                });
+                self.timeout = None;
+                self.show_send_fail = true;
+                self.show_sending = false;
+                true
+            }
+            MsgItemMsg::ReSendMessage => {
+                let mut msg = ctx.props().msg.clone();
+                msg.send_status = SendStatus::Sending;
+                let msg = match ctx.props().conv_type {
+                    RightContentType::Friend => Msg::Single(msg),
+                    RightContentType::Group => Msg::Group(GroupMsg::Message(msg)),
+                    _ => return false,
+                };
+                self.msg_state.send_msg_event.emit(msg);
+                let ctx = ctx.link().clone();
+                self.timeout = Some(Timeout::new(3000, move || {
+                    ctx.send_message(MsgItemMsg::SendTimeout);
+                }));
+                self.show_send_fail = false;
+                self.show_sending = true;
                 true
             }
         }
@@ -272,6 +351,25 @@ impl Component for MsgItem {
 
         let _avatar_click = ctx.link().callback(MsgItemMsg::ShowFriendCard);
 
+        // send status
+        let mut send_status = html!();
+        if self.show_send_fail {
+            let onclick = ctx.link().callback(|_| MsgItemMsg::ReSendMessage);
+            send_status = html! {
+                <div class="msg-send-failed" {onclick}>
+                    <span class="pointer">
+                        {"!"}
+                    </span>
+                </div>
+            };
+        } else if self.show_sending {
+            send_status = html! {
+                <div class="msg-sending">
+                    <CycleIcon/>
+                </div>
+            };
+        }
+
         html! {
             <>
             <div class={classes} id={id.to_string()} >
@@ -281,6 +379,7 @@ impl Component for MsgItem {
                 <div class="content-wrapper">
                     {content}
                 </div>
+                {send_status}
             </div>
             </>
         }

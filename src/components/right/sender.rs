@@ -15,7 +15,7 @@ use yew::prelude::*;
 
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CloseIcon, ImageIcon};
-use crate::model::message::{GroupMsg, InviteMsg, InviteType, Msg};
+use crate::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
 use crate::model::RightContentType;
 use crate::{
     components::right::emoji::EmojiSpan,
@@ -251,7 +251,7 @@ impl Component for Sender {
                     is_read: true,
                     is_self: true,
                     send_time: 0,
-                    is_success: false,
+                    send_status: SendStatus::Sending,
                     file_content: AttrValue::default(),
                 };
                 self.store_message(ctx, msg.clone());
@@ -283,7 +283,7 @@ impl Component for Sender {
                     is_read: true,
                     is_self: true,
                     send_time: 0,
-                    is_success: false,
+                    send_status: SendStatus::Sending,
                     file_content: AttrValue::default(),
                 };
                 self.store_message(ctx, msg.clone());
@@ -342,7 +342,7 @@ impl Component for Sender {
                     content_type,
                     file_content,
                     send_time: 0,
-                    is_success: false,
+                    send_status: SendStatus::Sending,
                 };
 
                 self.store_message(ctx, msg.clone());
@@ -412,7 +412,7 @@ impl Component for Sender {
                                 });
                             }
                         } else {
-                            // 其他文件
+                            // other type file
                             let file = item.get_as_file().unwrap();
                             if let Some(file) = file {
                                 self.file_list.push(FileListItem {
@@ -481,7 +481,7 @@ impl Component for Sender {
                 </div>
             }
         }
-        // 绘制警告tip
+        // spawn warn tip
         let mut warn = html!();
         if self.is_empty_warn_needed {
             warn = html! {

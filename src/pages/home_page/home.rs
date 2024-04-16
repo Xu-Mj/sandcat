@@ -3,7 +3,8 @@ use std::rc::Rc;
 use yew::{AttrValue, Context, NodeRef};
 
 use crate::db;
-use crate::pages::I18nState;
+use crate::model::message::SendStatus;
+use crate::pages::{I18nState, SendResultState};
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME},
     model::{
@@ -79,6 +80,7 @@ impl Home {
         let mute = ctx.link().callback(HomeMsg::MuteStateChange);
         let add = ctx.link().callback(HomeMsg::AddFriendStateChange);
         let switch_lang = ctx.link().callback(HomeMsg::SwitchLang);
+        let send_result = ctx.link().callback(HomeMsg::SendResultState);
 
         let user = User {
             id: id.clone(),
@@ -170,6 +172,10 @@ impl Home {
                 switch_lang,
                 lang: current_item::get_language(),
             }),
+            send_result: Rc::new(SendResultState {
+                notify: send_result,
+                ..Default::default()
+            }),
         }
     }
     // pub fn send_msg(&self, msg: Msg) {
@@ -251,7 +257,7 @@ impl Home {
                 file_content: AttrValue::default(),
                 id: 0,
                 send_time: 0,
-                is_success: false,
+                send_status: SendStatus::Sending,
             };
             let _ = db::messages()
                 .await

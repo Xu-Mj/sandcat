@@ -10,14 +10,14 @@ use yew::prelude::*;
 use super::{
     AddFriendState, AddFriendStateItem, AppState, ConvState, CreateConvState, FriendListState,
     FriendShipState, I18nState, ItemType, OfflineMsgState, RecMessageState, RecSendCallState,
-    RemoveConvState, RemoveFriendState, SendMessageState, UnreadState, WaitState,
+    RemoveConvState, RemoveFriendState, SendMessageState, SendResultState, UnreadState, WaitState,
 };
 use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::i18n::LanguageType;
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::message::{InviteMsg, Msg};
+use crate::model::message::{InviteMsg, Msg, ServerResponse};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType};
@@ -54,6 +54,7 @@ pub struct Home {
     wait_state: Rc<WaitState>,
     create_conv: Rc<CreateConvState>,
     lang_state: Rc<I18nState>,
+    send_result: Rc<SendResultState>,
 }
 
 const WAIT_COUNT: usize = 1;
@@ -105,6 +106,7 @@ pub enum HomeMsg {
     MuteStateChange(AttrValue),
     AddFriendStateChange(AddFriendStateItem),
     SwitchLang(LanguageType),
+    SendResultState(ServerResponse),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -317,6 +319,11 @@ impl Component for Home {
                 state.lang = lang;
                 true
             }
+            HomeMsg::SendResultState(resp) => {
+                let state = Rc::make_mut(&mut self.send_result);
+                state.msg = resp;
+                true
+            }
         }
     }
 
@@ -368,6 +375,7 @@ impl Component for Home {
             <ContextProvider<Rc<OfflineMsgState>> context={self.sync_msg_state.clone()}>
             <ContextProvider<Rc<RecMessageState>> context={self.rec_msg_state.clone()}>
             <ContextProvider<Rc<I18nState>> context={self.lang_state.clone()}>
+            <ContextProvider<Rc<SendResultState>> context={self.send_result.clone()}>
                 <div class="home" id="app">
                     <Left user_id={self.user.id.clone()}/>
                     <Right />
@@ -377,6 +385,7 @@ impl Component for Home {
                         {notify}
                     </div>
                 </div>
+            </ContextProvider<Rc<SendResultState>>>
             </ContextProvider<Rc<I18nState>>>
             </ContextProvider<Rc<RecMessageState>>>
             </ContextProvider<Rc<OfflineMsgState>>>

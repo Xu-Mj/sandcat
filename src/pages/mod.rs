@@ -8,7 +8,7 @@ use yew_router::Routable;
 use crate::i18n::LanguageType;
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::group::Group;
-use crate::model::message::{InviteMsg, Msg};
+use crate::model::message::{InviteMsg, Msg, ServerResponse};
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType, UnreadItem};
 
@@ -88,6 +88,12 @@ pub struct ConvState {
 pub struct MuteState {
     pub conv_id: AttrValue,
     pub mute: Callback<AttrValue>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+pub struct SendResultState {
+    pub msg: ServerResponse,
+    pub notify: Callback<ServerResponse>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]

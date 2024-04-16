@@ -167,7 +167,6 @@ impl Friendships for FriendShipRepo {
     }
 
     async fn clean_unread_count(&self) -> Result<(), JsValue> {
-        // 声明一个channel，接收查询结果
         let store = self
             .store(&String::from(FRIENDSHIP_TABLE_NAME))
             .await

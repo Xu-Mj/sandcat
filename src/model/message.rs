@@ -40,7 +40,7 @@ pub struct Message {
     pub create_time: i64,
     #[serde(default)]
     pub send_time: i64,
-    pub is_success: bool,
+    pub send_status: SendStatus,
     // pub update_time: String,
     #[serde(default)]
     pub is_read: bool,
@@ -50,6 +50,14 @@ pub struct Message {
     // pub is_delete: bool,
     #[serde(skip)]
     pub file_content: AttrValue,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone, Default, PartialEq)]
+pub enum SendStatus {
+    #[default]
+    Sending,
+    Success,
+    Failed,
 }
 
 impl From<InviteCancelMsg> for Message {
@@ -69,7 +77,7 @@ impl From<InviteCancelMsg> for Message {
             content: AttrValue::from("已经取消"),
             create_time: value.create_time,
             send_time: value.send_time,
-            is_success: value.is_success,
+            send_status: value.send_status,
             is_read: false,
             is_self: value.is_self,
             file_content: Default::default(),
@@ -99,7 +107,7 @@ impl From<InviteAnswerMsg> for Message {
             content,
             create_time: value.create_time,
             send_time: value.send_time,
-            is_success: value.is_success,
+            send_status: value.send_status,
             is_read: false,
             is_self: value.is_self,
             file_content: Default::default(),
@@ -125,7 +133,7 @@ impl From<InviteNotAnswerMsg> for Message {
             content,
             create_time: value.create_time,
             send_time: value.send_time,
-            is_success: value.is_success,
+            send_status: value.send_status,
             is_read: false,
             is_self: value.is_self,
             file_content: Default::default(),
@@ -152,7 +160,7 @@ impl From<Hangup> for Message {
             content,
             create_time: value.create_time,
             send_time: value.send_time,
-            is_success: value.is_success,
+            send_status: value.send_status,
             is_read: false,
             is_self: value.is_self,
             file_content: Default::default(),
@@ -179,7 +187,7 @@ impl Message {
             content,
             create_time: value.create_time,
             send_time: value.send_time,
-            is_success: value.is_success,
+            send_status: value.send_status,
             is_read: false,
             is_self: value.is_self,
             file_content: Default::default(),
@@ -202,7 +210,7 @@ impl Message {
             content: AttrValue::from("Not Answer"),
             create_time: msg.create_time,
             send_time: msg.send_time,
-            is_success: msg.is_success,
+            send_status: msg.send_status,
             is_read: msg.is_self,
             is_self: msg.is_self,
             file_content: Default::default(),
@@ -236,12 +244,20 @@ pub enum Msg {
     ServerRecResp(ServerResponse), // GroupInvitationReceived((UserID, GroupID)),
 }
 
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
+pub enum RespMsgType {
+    #[default]
+    Single,
+    Group,
+}
 /// server received message and return the result(success/failed)
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct ServerResponse {
-    pub msg_id: AttrValue,
-    pub success: bool,
+    pub local_id: AttrValue,
+    pub server_id: AttrValue,
+    pub send_status: SendStatus,
     pub err_msg: Option<AttrValue>,
+    pub resp_msg_type: RespMsgType,
 }
 
 impl Default for Msg {
@@ -316,36 +332,10 @@ pub struct InviteNotAnswerMsg {
     pub create_time: i64,
     pub send_time: i64,
     pub invite_type: InviteType,
-    pub is_success: bool,
+    pub send_status: SendStatus,
     #[serde(default)]
     pub is_self: bool,
 }
-
-// impl InviteNotAnswerMsg {
-//     pub fn clone_as_message(&self) -> Message {
-//         let content_type = match self.invite_type {
-//             InviteType::Video => ContentType::VideoCall,
-//             InviteType::Audio => ContentType::AudioCall,
-//         };
-
-//         Message {
-//             id: 0,
-//             seq: self.seq,
-//             local_id: self.local_id.clone(),
-//             server_id: self.server_id.clone(),
-//             send_id: self.send_id.clone(),
-//             friend_id: self.friend_id.clone(),
-//             content_type,
-//             content: AttrValue::from("Not Answer"),
-//             create_time: self.create_time,
-//             send_time: self.send_time,
-//             is_success: self.is_success,
-//             is_read: self.is_self,
-//             is_self: self.is_self,
-//             file_content: Default::default(),
-//         }
-//     }
-// }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteCancelMsg {
@@ -357,36 +347,10 @@ pub struct InviteCancelMsg {
     pub create_time: i64,
     pub send_time: i64,
     pub invite_type: InviteType,
-    pub is_success: bool,
+    pub send_status: SendStatus,
     #[serde(default)]
     pub is_self: bool,
 }
-
-// impl InviteCancelMsg {
-//     pub fn clone_as_message(&self) -> Message {
-//         let content_type = match self.invite_type {
-//             InviteType::Video => ContentType::VideoCall,
-//             InviteType::Audio => ContentType::AudioCall,
-//         };
-
-//         Message {
-//             id: 0,
-//             seq: self.seq,
-//             local_id: self.local_id.clone(),
-//             server_id: self.server_id.clone(),
-//             send_id: self.send_id.clone(),
-//             friend_id: self.friend_id.clone(),
-//             content_type,
-//             content: AttrValue::from("已经取消"),
-//             create_time: self.create_time,
-//             send_time: self.send_time,
-//             is_read: self.is_self,
-//             is_self: self.is_self,
-//             is_success: self.is_success,
-//             file_content: Default::default(),
-//         }
-//     }
-// }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub enum InviteType {
@@ -406,41 +370,11 @@ pub struct InviteAnswerMsg {
     pub send_time: i64,
     pub agree: bool,
     pub invite_type: InviteType,
-    pub is_success: bool,
+    pub send_status: SendStatus,
     // 主要区分发起端，因为接收端永远都是false不需要处理
     #[serde(default)]
     pub is_self: bool,
 }
-
-// impl InviteAnswerMsg {
-//     pub fn clone_as_message(&self) -> Message {
-//         let content_type = match self.invite_type {
-//             InviteType::Video => ContentType::VideoCall,
-//             InviteType::Audio => ContentType::AudioCall,
-//         };
-//         let content = if self.agree {
-//             AttrValue::from("一接通")
-//         } else {
-//             AttrValue::from("已经拒绝")
-//         };
-//         Message {
-//             id: 0,
-//             seq: self.seq,
-//             local_id: self.local_id.clone(),
-//             server_id: self.server_id.clone(),
-//             send_id: self.send_id.clone(),
-//             friend_id: self.friend_id.clone(),
-//             content_type,
-//             content,
-//             create_time: self.create_time,
-//             send_time: self.send_time,
-//             is_success: self.is_success,
-//             is_read: self.is_self,
-//             is_self: self.is_self,
-//             file_content: Default::default(),
-//         }
-//     }
-// }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Candidate {
@@ -471,37 +405,10 @@ pub struct Hangup {
     pub send_time: i64,
     pub invite_type: InviteType,
     pub sustain: i64,
-    pub is_success: bool,
+    pub send_status: SendStatus,
     #[serde(default)]
     pub is_self: bool,
 }
-
-// impl Hangup {
-//     pub fn clone_as_message(&self) -> Message {
-//         let content_type = match self.invite_type {
-//             InviteType::Video => ContentType::VideoCall,
-//             InviteType::Audio => ContentType::AudioCall,
-//         };
-//         let content = AttrValue::from(utils::format_milliseconds(self.sustain));
-
-//         Message {
-//             id: 0,
-//             seq: self.seq,
-//             local_id: self.local_id.clone(),
-//             server_id: self.server_id.clone(),
-//             send_id: self.send_id.clone(),
-//             friend_id: self.friend_id.clone(),
-//             content_type,
-//             content,
-//             create_time: self.create_time,
-//             send_time: self.send_time,
-//             is_success: self.is_success,
-//             is_read: self.is_self,
-//             is_self: self.is_self,
-//             file_content: Default::default(),
-//         }
-//     }
-// }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Relation {
@@ -538,6 +445,11 @@ impl TryFrom<pb::message::Msg> for Message {
             value.receiver_id.into()
         };
         let status: ContentType = value.content_type.into();
+        let send_status = if status == ContentType::Error {
+            SendStatus::Failed
+        } else {
+            SendStatus::Success
+        };
         Ok(Self {
             id: 0,
             seq: value.seq,
@@ -551,7 +463,7 @@ impl TryFrom<pb::message::Msg> for Message {
                 .into(),
             create_time: value.create_time,
             send_time: value.send_time,
-            is_success: status == ContentType::Error,
+            send_status,
             is_read: false,
             is_self: false,
             file_content: AttrValue::default(),
@@ -618,7 +530,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 agree: false,
                 is_self: false,
                 send_time: msg.send_time,
-                is_success: true,
+                send_status: SendStatus::Success,
             })))
         }
         MsgType::SingleCallInviteNotAnswer => {
@@ -633,7 +545,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 invite_type,
                 is_self: false,
                 send_time: msg.send_time,
-                is_success: true,
+                send_status: SendStatus::Success,
             })))
         }
         MsgType::SingleCallInviteCancel => {
@@ -648,7 +560,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 invite_type,
                 is_self: false,
                 send_time: msg.send_time,
-                is_success: true,
+                send_status: SendStatus::Success,
             })))
         }
         MsgType::SingleCallOffer => Ok(Msg::SingleCall(SingleCall::Offer(Offer {
@@ -672,7 +584,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                     .map_err(|_| String::from("sustain convert error"))?,
             ),
             is_self: false,
-            is_success: true,
+            send_status: SendStatus::Success,
         }))),
         MsgType::AgreeSingleCall => {
             let invite_type = get_invite_type(msg.content_type)?;
@@ -687,7 +599,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 agree: true,
                 is_self: false,
                 send_time: msg.send_time,
-                is_success: true,
+                send_status: SendStatus::Success,
             })))
         }
         MsgType::ConnectSingleCall => Ok(Msg::SingleCall(SingleCall::Agree(Agree {
@@ -707,11 +619,24 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             create_time: msg.send_time,
         }))),
         MsgType::Read => todo!(),
-        MsgType::MsgRecResp => Ok(Msg::ServerRecResp(ServerResponse {
-            msg_id: msg.local_id.into(),
-            success: msg.content.is_empty(),
-            err_msg: None,
-        })),
+        MsgType::MsgRecResp => {
+            let msg_type = if msg.group_id.is_empty() {
+                RespMsgType::Single
+            } else {
+                RespMsgType::Group
+            };
+            Ok(Msg::ServerRecResp(ServerResponse {
+                local_id: msg.local_id.into(),
+                send_status: if msg.content_type == ContentType::Error as i32 {
+                    SendStatus::Failed
+                } else {
+                    SendStatus::Success
+                },
+                err_msg: None,
+                server_id: msg.server_id.into(),
+                resp_msg_type: msg_type,
+            }))
+        }
         MsgType::Notification => todo!(),
         MsgType::Service => todo!(),
         MsgType::FriendshipReceived => todo!(),
