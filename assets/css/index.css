@@ -386,6 +386,65 @@ html {
     }
 }
 
+.info-panel {
+    width: 20rem;
+    height: 31rem;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    padding: 1rem;
+    background-color: white;
+    z-index: 3;
+    transform: translate(-50%, -50%);
+    overflow-y: auto;
+    border-radius: .3rem;
+
+    .info-panel-item-avatar {
+        width: 100%;
+        height: 4rem;
+        text-align: center;
+        margin-bottom: .5rem;
+    }
+
+    img {
+        width: 4rem;
+        height: 4rem;
+        border-radius: .2rem;
+    }
+
+    .info-panel-item {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 3fr;
+        height: 3rem;
+        line-height: 3rem;
+        align-items: center;
+
+        input {
+            width: 100%;
+            padding: .5rem;
+            outline: none;
+        }
+    }
+
+    .info-panel-btn {
+        width: 100%;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3rem;
+
+        button {
+            width: 5rem;
+            height: 2rem;
+            border: none;
+            cursor: pointer;
+        }
+    }
+
+}
+
 /* 滚动条 */
 ::-webkit-scrollbar {
     width: 6px;

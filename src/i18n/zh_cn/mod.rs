@@ -13,6 +13,21 @@ search = 搜索
 cancel = 取消
 "#;
 
+pub const USER_INFO: &str = r#"
+name = 昵称
+account = 账号
+email = 邮箱
+phone = 手机号
+address = 地址
+birthday = 生日
+gender = 性别
+signature = 个性签名
+avatar = 头像
+region = 地区
+submit = 保存
+cancel = 取消
+"#;
+
 pub const ADD_FRIEND: &str = r#"
 no_result = 没有搜索结果
 "#;

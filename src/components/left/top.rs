@@ -4,8 +4,9 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use crate::{
+    components::self_info::SelfInfo,
     icons::{ContactsIcon, MessagesIcon},
-    model::ComponentType,
+    model::{user::User, ComponentType},
     pages::{AppState, ConvState, UnreadState},
 };
 
@@ -34,6 +35,7 @@ pub enum TopMsg {
     UnreadStateChanged(Rc<UnreadState>),
     EmptyCallback,
     ShowInfoPanel,
+    SubmitInfo(Box<User>),
 }
 
 impl Component for Top {
@@ -85,6 +87,11 @@ impl Component for Top {
                 self.show_info = !self.show_info;
                 true
             }
+            TopMsg::SubmitInfo(user) => {
+                self.show_info = !self.show_info;
+                self.state.update_user.emit(*user);
+                true
+            }
         }
     }
 
@@ -129,16 +136,9 @@ impl Component for Top {
 
         let mut info_panel = html!();
         if self.show_info {
-            info_panel = html! {
-                <div class="info-panel">
-                    <div class="info-panel-title">
-                        {""}
-                    </div>
-                    <div class="info-panel-content">
-                        {""}
-                    </div>
-                </div>
-            }
+            let close = ctx.link().callback(|_| TopMsg::ShowInfoPanel);
+            let submit = ctx.link().callback(TopMsg::SubmitInfo);
+            info_panel = html!(<SelfInfo user={self.state.login_user.clone()} {close} {submit} />)
         }
         let onclick = ctx.link().callback(|_| TopMsg::ShowInfoPanel);
         html! {

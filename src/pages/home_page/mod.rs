@@ -29,11 +29,6 @@ use crate::{
 };
 
 pub struct Home {
-    // 音视频电话相关的message，通过这个状态给phone call 组件发送消息
-    // call_msg: SingleCall,
-    user: User,
-    /// don't need anymore
-    // ws: Rc<RefCell<WebSocketManager>>,
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
     state: Rc<AppState>,
@@ -61,6 +56,7 @@ const WAIT_COUNT: usize = 1;
 
 pub enum HomeMsg {
     // 全局组件切换
+    UpdateUser(User),
     SwitchComponent(ComponentType),
     // 联系人列表选中元素改变
     SwitchFriend(CurrentItem),
@@ -161,12 +157,11 @@ impl Component for Home {
                 let shared_state = Rc::make_mut(&mut self.state);
                 match status {
                     QueryStatus::QuerySuccess(u) => {
-                        shared_state.login_user = u.0.clone();
+                        shared_state.login_user = u.0;
                         let conv_state = Rc::make_mut(&mut self.conv_state);
                         conv_state.conv = u.1;
                         let friend_state = Rc::make_mut(&mut self.friend_state);
                         friend_state.friend = u.2;
-                        self.user = u.0;
                         shared_state.component_type = u.3;
                     }
                     QueryStatus::QueryFail(_) => {
@@ -324,6 +319,11 @@ impl Component for Home {
                 state.msg = resp;
                 true
             }
+            HomeMsg::UpdateUser(user) => {
+                let state = Rc::make_mut(&mut self.state);
+                state.login_user = user;
+                true
+            }
         }
     }
 
@@ -377,7 +377,7 @@ impl Component for Home {
             <ContextProvider<Rc<I18nState>> context={self.lang_state.clone()}>
             <ContextProvider<Rc<SendResultState>> context={self.send_result.clone()}>
                 <div class="home" id="app">
-                    <Left user_id={self.user.id.clone()}/>
+                    <Left user_id={self.state.login_user.id.clone()}/>
                     <Right />
                     // 通知组件
 

@@ -13,6 +13,21 @@ search = Search
 cancel = Cancel
 "#;
 
+pub const USER_INFO: &str = r#"
+name = Nicname
+account = Account
+email = Email
+phone = Phone
+address = Address
+birthday = Birthday
+gender = Gender
+signature = Signature
+avatar = Avatar
+region = Region
+submit = Submit
+cancel = Cancel
+"#;
+
 pub const CONVERSATION: &str = r#"
 search = Search
 # content type

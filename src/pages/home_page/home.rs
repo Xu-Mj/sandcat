@@ -11,7 +11,6 @@ use crate::{
         friend::Friend,
         message::{InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
-        user::User,
         ComponentType, ContentType, CurrentItem, FriendShipStateType,
     },
     pages::{
@@ -54,6 +53,7 @@ impl Home {
         // 使用ctx发送一个正在查询的状态
         ctx.link()
             .send_message(HomeMsg::Query(QueryStatus::Querying));
+        let update_user = ctx.link().callback(HomeMsg::UpdateUser);
         let callback = ctx.link().callback(HomeMsg::SwitchComponent);
         let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
         let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
@@ -81,15 +81,11 @@ impl Home {
         let add = ctx.link().callback(HomeMsg::AddFriendStateChange);
         let switch_lang = ctx.link().callback(HomeMsg::SwitchLang);
         let send_result = ctx.link().callback(HomeMsg::SendResultState);
-
-        let user = User {
-            id: id.clone(),
-            ..Default::default()
-        };
         Self {
             state: Rc::new(AppState {
                 component_type: ComponentType::Messages,
                 switch_com_event: callback,
+                update_user,
                 ..Default::default()
             }),
             send_msg_state: Rc::new(SendMessageState {
@@ -98,7 +94,6 @@ impl Home {
                 send_msg_event: send_msg_event.clone(),
                 call_event: call_event.clone(),
             }),
-            user,
             conv_state: Rc::new(ConvState {
                 conv: CurrentItem::default(),
                 state_change_event: switch_conv_callback,

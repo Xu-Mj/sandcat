@@ -21,6 +21,7 @@ use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContent
 pub struct AppState {
     pub component_type: ComponentType,
     pub switch_com_event: Callback<ComponentType>,
+    pub update_user: Callback<User>,
     pub unread_count: i32,
     pub login_user: User,
 }

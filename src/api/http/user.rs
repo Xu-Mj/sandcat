@@ -1,9 +1,8 @@
 use crate::api::user::UserApi;
-use crate::model::user::{UserRegister, UserWithMatchType};
+use crate::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
 use gloo_net::http::Request;
 use serde::Serialize;
 use wasm_bindgen::JsValue;
-use yew::AttrValue;
 pub struct UserHttp<'a> {
     token: Box<dyn Fn() -> String + 'a>,
     auth_header: String,
@@ -59,7 +58,7 @@ impl<'a> UserApi for UserHttp<'a> {
     }
 
     /// 用户注册
-    async fn register(&self, register: UserRegister) -> Result<AttrValue, JsValue> {
+    async fn register(&self, register: UserRegister) -> Result<(), JsValue> {
         let resp = Request::post("/api/user")
             .json(&register)
             .map_err(|err| JsValue::from(err.to_string()))?
@@ -69,7 +68,24 @@ impl<'a> UserApi for UserHttp<'a> {
         if resp.status() != 200 {
             return Err(JsValue::from("注册失败"));
         }
-        Ok(AttrValue::from("value"))
+        Ok(())
+    }
+
+    async fn update(&self, user: UserUpdate) -> Result<User, JsValue> {
+        let resp = Request::put("/api/user")
+            .json(&user)
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?;
+        if resp.status() != 200 {
+            return Err(JsValue::from("upload failed"));
+        }
+        let user: User = resp
+            .json()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?;
+        Ok(user)
     }
 }
 

@@ -1,12 +1,15 @@
 use wasm_bindgen::JsValue;
-use yew::AttrValue;
 
-use crate::model::user::{UserRegister, UserWithMatchType};
+use crate::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
 
 #[async_trait::async_trait(?Send)]
 pub trait UserApi {
     async fn send_mail(&self, email: String) -> Result<(), JsValue>;
-    async fn register(&self, register: UserRegister) -> Result<AttrValue, JsValue>;
+
+    async fn register(&self, register: UserRegister) -> Result<(), JsValue>;
+
+    async fn update(&self, user: UserUpdate) -> Result<User, JsValue>;
+
     async fn search_friend(
         &self,
         pattern: String,

@@ -53,6 +53,16 @@ pub struct UserWithMatchType {
     pub signature: AttrValue,
 }
 
+#[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
+pub struct UserUpdate {
+    pub name: String,
+    pub gender: String,
+    pub phone: Option<String>,
+    pub email: Option<String>,
+    pub address: Option<String>,
+    pub signature: Option<String>,
+}
+
 impl From<User> for UserWithMatchType {
     fn from(value: User) -> Self {
         Self {
