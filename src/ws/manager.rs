@@ -9,7 +9,7 @@ use yew::Callback;
 use crate::model::message::convert_server_msg;
 use crate::model::message::Msg;
 use crate::pb::message::Msg as PbMsg;
-// 定义WebSocket管理器结构体
+
 #[derive(Debug)]
 pub struct WebSocketManager {
     url: String,
@@ -18,7 +18,7 @@ pub struct WebSocketManager {
     max_reconnect_attempts: u32,
     reconnect_interval: i32,
     receive_callback: Callback<Msg>,
-    // 为了防止内存泄露
+    // in case of memory leaks
     on_open: Option<Closure<dyn FnMut()>>,
     on_close: Option<Closure<dyn FnMut(CloseEvent)>>,
     on_error: Option<Closure<dyn FnMut(ErrorEvent)>>,
@@ -31,7 +31,6 @@ impl PartialEq for WebSocketManager {
     }
 }
 impl WebSocketManager {
-    // 创建新的WebSocket管理器实例
     pub fn new(url: String, receive_callback: Callback<Msg>) -> Self {
         Self {
             url,
@@ -49,21 +48,25 @@ impl WebSocketManager {
 
     // 初始化WebSocket连接
     pub fn connect(ws_manager: Rc<RefCell<Self>>) {
-        // todo judge the ws is connected
+        // sentence the ws is connected
         if ws_manager.borrow().ws.is_some()
             && ws_manager.borrow().ws.as_ref().unwrap().ready_state() == WebSocket::OPEN
         {
             return;
         }
+
         let ws = WebSocket::new(ws_manager.borrow().url.as_str()).unwrap();
+
+        // set default binary type
         ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
         let cloned_ws = ws_manager.clone();
+
         let on_open = Closure::wrap(Box::new(move || {
             log::info!("WebSocket connection opened");
-            // 链接成功要把重连次数归零
+            // set the count of reconnect to 0
             cloned_ws.borrow_mut().reconnect_attempts = 0;
         }) as Box<dyn FnMut()>);
-        // ON_OPEN.get_or_init(on_open);
+
         let ws_manager_clone = ws_manager.clone();
         let on_message = Closure::wrap(Box::new(move |e: MessageEvent| {
             if let Ok(ab) = e.data().dyn_into::<js_sys::ArrayBuffer>() {
@@ -76,11 +79,10 @@ impl WebSocketManager {
                         Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
                         Err(e) => log::error!("convert message error {e}"),
                     },
-                    Err(err) => log::error!("反序列化消息失败: {:?}", err),
+                    Err(err) => log::error!("deserialize error: {:?}", err),
                 }
             } else if let Ok(blob) = e.data().dyn_into::<web_sys::Blob>() {
-                // 如果消息是一个Blob，我们需要将它先转换为ArrayBuffer
-                // 然后再按同样的方式处理
+                // if message type is we need to convert it to ArrayBuffer
                 log::info!("Message received as a Blob, size: {}", blob.size());
                 let arr = js_sys::Uint8Array::new(&blob);
                 let mut body = vec![0; arr.length() as usize];
@@ -91,36 +93,21 @@ impl WebSocketManager {
                         Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
                         Err(e) => log::error!("convert message error {e}"),
                     },
-                    Err(err) => log::error!("反序列化消息失败: {:?}", err),
+                    Err(err) => log::error!("deserialize error: {:?}", err),
                 }
-                // 要做的操作...
             } else {
                 log::error!("Unexpected message format!")
             }
-
-            /*
-            if let Ok(txt) = e.data().dyn_into::<js_sys::JsString>() {
-                if let Some(msg) = txt.as_string() {
-                    log::info!("Message received: {}", msg.clone());
-                    let result = serde_json::from_str(&msg);
-                    match result {
-                        Ok(msg) => match convert(msg) {
-                            Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
-                            Err(e) => log::error!("convert message error {e}"),
-                        },
-                        Err(err) => log::error!("反序列化消息失败: {:?}", err),
-                    }
-                }
-            } */
         }) as Box<dyn FnMut(MessageEvent)>);
 
         let on_error = Closure::wrap(Box::new(move |e: ErrorEvent| {
             log::error!("WebSocket error: {:?}", e);
         }) as Box<dyn FnMut(ErrorEvent)>);
+
         let ws_manager_clone = ws_manager.clone();
         let on_close = Closure::wrap(Box::new(move |e: CloseEvent| {
             log::warn!("WebSocket closed: {:?}", e);
-            // 重连逻辑
+            // reconnect
             ws_manager_clone
                 .borrow_mut()
                 .reconnect(ws_manager_clone.clone());
@@ -140,7 +127,6 @@ impl WebSocketManager {
         manager.on_error = Some(on_error);
     }
 
-    // 发送消息
     pub fn send_message(&self, message: Msg) -> Result<(), JsValue> {
         if let Some(ws) = &self.ws {
             log::debug!("send message: {:?}", &PbMsg::from(message.clone()));
@@ -153,7 +139,6 @@ impl WebSocketManager {
         }
     }
 
-    // 重连逻辑
     fn reconnect(&mut self, ws_manager: Rc<RefCell<Self>>) {
         log::debug!("第{}次重连", self.reconnect_attempts);
         if self.reconnect_attempts < self.max_reconnect_attempts {
@@ -176,13 +161,14 @@ impl WebSocketManager {
             log::error!("Reached maximum reconnect attempts");
         }
     }
-    // 清理WebSocket连接和事件监听器
+
+    // clean WebSocket connection and events
     pub fn cleanup(&mut self) {
         if let Some(ws) = self.ws.take() {
             log::debug!("WebSocket connection closing...");
             let _ = ws
                 .close()
-                .map_err(|err| log::error!("关闭WebSocket连接出错: {:?}", err));
+                .map_err(|err| log::error!("close WebSocket error: {:?}", err));
             ws.set_onopen(None);
             ws.set_onmessage(None);
             ws.set_onerror(None);
