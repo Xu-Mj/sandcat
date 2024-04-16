@@ -1,0 +1,40 @@
+{
+  "productName": "SandCat",
+  "version": "0.1.0",
+  "identifier": "com.tauri.dev",
+  "build": {
+    "frontendDist": "../dist/",
+    "devUrl": "http://127.0.0.1:8080/",
+    "beforeDevCommand": "trunk serve",
+    "beforeBuildCommand": "trunk build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "SandCat",
+        "width": 1280,
+        "height": 720,
+        "resizable": false,
+        "fullscreen": false,
+        "center": true,
+        "focus": true,
+        "closable": true,
+        "titleBarStyle": "Transparent"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use crate::{
@@ -10,6 +11,8 @@ use crate::{
 
 /// 增加双击切换置顶未读消息
 pub struct Top {
+    node: NodeRef,
+    show_info: bool,
     state: Rc<AppState>,
     _handler: ContextHandle<Rc<AppState>>,
     // 修改为单独的未读消息增加减少的状态
@@ -30,6 +33,7 @@ pub enum TopMsg {
     ConvStateChanged(Rc<ConvState>),
     UnreadStateChanged(Rc<UnreadState>),
     EmptyCallback,
+    ShowInfoPanel,
 }
 
 impl Component for Top {
@@ -51,6 +55,8 @@ impl Component for Top {
             .context::<Rc<UnreadState>>(ctx.link().callback(TopMsg::UnreadStateChanged))
             .expect("need state");
         Self {
+            node: NodeRef::default(),
+            show_info: false,
             state,
             _handler,
             conv_state,
@@ -73,6 +79,10 @@ impl Component for Top {
             }
             TopMsg::UnreadStateChanged(state) => {
                 self.unread_state = state;
+                true
+            }
+            TopMsg::ShowInfoPanel => {
+                self.show_info = !self.show_info;
                 true
             }
         }
@@ -116,9 +126,25 @@ impl Component for Top {
                 </span>
             };
         }
+
+        let mut info_panel = html!();
+        if self.show_info {
+            info_panel = html! {
+                <div class="info-panel">
+                    <div class="info-panel-title">
+                        {""}
+                    </div>
+                    <div class="info-panel-content">
+                        {""}
+                    </div>
+                </div>
+            }
+        }
+        let onclick = ctx.link().callback(|_| TopMsg::ShowInfoPanel);
         html! {
-            <div class="top">
-                <div class="top-left">
+            <div class="top" ref={self.node.clone()}>
+                {info_panel}
+                <div class="top-left pointer" {onclick}>
                     <img class="avatar" title={ctx.props().name.clone()} src={ctx.props().avatar.clone()} />
                 </div>
                 <div class="top-right">
@@ -136,5 +162,10 @@ impl Component for Top {
 
             </div>
         }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        let node: HtmlDivElement = self.node.cast().unwrap();
+        node.set_attribute("data-tauri-drag-region", "").unwrap();
     }
 }
