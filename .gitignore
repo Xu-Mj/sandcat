@@ -4,3 +4,5 @@
 /assets/emoji
 trunk.exe
 .vscode
+./tauri-src/target/
+./tauri-src/gen/schemas
