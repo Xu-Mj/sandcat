@@ -18,6 +18,7 @@ pub struct MsgItem {
     show_img_preview: bool,
     show_friend_card: bool,
     msg_state: Rc<SendMessageState>,
+    // receive a resp
 }
 
 pub enum MsgItemMsg {
