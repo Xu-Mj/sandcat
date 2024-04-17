@@ -402,13 +402,36 @@ html {
     .info-panel-item-avatar {
         width: 100%;
         height: 4rem;
-        text-align: center;
         margin-bottom: .5rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        label {
+            position: relative;
+            width: 4rem;
+            height: 4rem;
+            display: flex;
+
+        }
+
+        span {
+            position: absolute;
+            width: 100%;
+            height: 50%;
+            color: white;
+            background-color: rgba(0, 0, 0, 0.4);
+            bottom: 0;
+            left: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
     }
 
     img {
-        width: 4rem;
-        height: 4rem;
+        width: 100%;
+        height: 100%;
         border-radius: .2rem;
     }
 
@@ -422,8 +445,23 @@ html {
 
         input {
             width: 100%;
-            padding: .5rem;
+            padding: .2rem;
             outline: none;
+            font-size: large;
+        }
+
+        .info-panel-item-gender {
+            width: 100%;
+            display: flex;
+            justify-content: space-evenly;
+            align-items: center;
+
+            label {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: .1rem;
+            }
         }
     }
 

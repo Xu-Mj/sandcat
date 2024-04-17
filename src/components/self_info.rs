@@ -1,7 +1,9 @@
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
+use web_sys::Event;
 use web_sys::HtmlInputElement;
 use yew::{html, Callback, Component, ContextHandle, NodeRef, Properties};
 
@@ -20,6 +22,7 @@ pub struct SelfInfo {
     email_node: NodeRef,
     addr_node: NodeRef,
     signature_node: NodeRef,
+    avatar: String,
     gender: String,
     _i18n_state: Rc<I18nState>,
     _i18n_handler: ContextHandle<Rc<I18nState>>,
@@ -28,6 +31,7 @@ pub struct SelfInfo {
 pub enum SelfInfoMsg {
     Submit,
     I18nStateChanged(Rc<I18nState>),
+    GenderChange(Event),
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -60,7 +64,8 @@ impl Component for SelfInfo {
             addr_node: NodeRef::default(),
             name_node: NodeRef::default(),
             signature_node: NodeRef::default(),
-            gender: String::new(),
+            gender: ctx.props().user.gender.to_string(),
+            avatar: ctx.props().user.avatar.to_string(),
             _i18n_state: i18n_state,
             _i18n_handler,
         }
@@ -78,13 +83,16 @@ impl Component for SelfInfo {
                     .cast::<HtmlInputElement>()
                     .unwrap()
                     .value();
+                log::debug!("update user info: name: {:?}; email: {:?}; address: {:?}; signature: {:?}; phone: {:?};",name, email, address, signature, phone );
                 let user = UserUpdate {
+                    id: ctx.props().user.id.to_string(),
                     name,
+                    avatar: self.avatar.clone(),
                     gender: self.gender.clone(),
-                    email: email.is_empty().then_some(email),
-                    phone: phone.is_empty().then_some(phone),
-                    address: address.is_empty().then_some(address),
-                    signature: signature.is_empty().then_some(signature),
+                    email: (!email.is_empty()).then_some(email),
+                    phone: (!phone.is_empty()).then_some(phone),
+                    address: (!address.is_empty()).then_some(address),
+                    signature: (!signature.is_empty()).then_some(signature),
                 };
                 let close = ctx.props().close.clone();
                 let submit = ctx.props().submit.clone();
@@ -111,16 +119,34 @@ impl Component for SelfInfo {
                 self.i18n = i18n;
                 true
             }
+            SelfInfoMsg::GenderChange(e) => {
+                let gender = e
+                    .target()
+                    .unwrap()
+                    .dyn_into::<HtmlInputElement>()
+                    .unwrap()
+                    .value();
+                self.gender = gender;
+                true
+            }
         }
     }
     fn view(&self, ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
         let on_submit = ctx.link().callback(|_| SelfInfoMsg::Submit);
         let on_cancel = ctx.props().close.reform(|_| ());
+        let onchange = ctx.link().callback(SelfInfoMsg::GenderChange);
         let user = ctx.props().user.clone();
+        log::debug!("user: {:?}", user);
         html! {
             <div class="info-panel box-shadow">
                 <div class="info-panel-item-avatar">
-                    <img src={user.avatar} class="info-panel-avatar" />
+                    <input type="file" id="avatar" name="avatar" hidden={true} accept="image/*"/>
+                    <label for="avatar">
+                        <span>
+                            {tr!(self.i18n, "set_avatar")}
+                        </span>
+                        <img src={user.avatar} alt="avatar" class="info-panel-avatar" />
+                    </label>
                 </div>
                 <div class="info-panel-item">
                     <label for="nickname">
@@ -141,10 +167,42 @@ impl Component for SelfInfo {
                     <span>{user.account}</span>
                 </div>
                 <div class="info-panel-item">
-                    <label for="gender">
+                    <label>
                         {tr!(self.i18n, "gender")}
                     </label>
+                    <div class="info-panel-item-gender">
+                        <label for="male">
+                            <input
+                                type="radio"
+                                name="gender"
+                                id="male"
+                                value="male"
+                                checked={self.gender == "male"}
+                                onchange={onchange.clone()}/>
+                            {tr!(self.i18n, "male")}
+                        </label>
+                        <label for="female">
+                            <input
+                                type="radio"
+                                id="female"
+                                name="gender"
+                                value="female"
+                                checked={self.gender == "female"}
+                                onchange={onchange.clone()}/>
+                            {tr!(self.i18n, "female")}
+                        </label>
+                        <label for="secret">
+                            <input
+                                type="radio"
+                                id="secret"
+                                name="gender"
+                                value="secret"
+                                checked={self.gender == "secret" || self.gender.is_empty() }
+                                {onchange}/>
+                            {tr!(self.i18n, "secret")}
+                        </label>
 
+                    </div>
                 </div>
                 <div class="info-panel-item">
                     <label for="phone">
@@ -155,6 +213,7 @@ impl Component for SelfInfo {
                         id="phone"
                         name="phone"
                         placeholder={tr!(self.i18n, "phone")}
+                        value={user.phone}
                             />
                 </div>
                 <div class="info-panel-item">
@@ -167,6 +226,7 @@ impl Component for SelfInfo {
                         name="email"
                         placeholder={tr!(self.i18n, "email")}
                         required={true}
+                        value={user.email}
                         autocomplete="current-password"
                         /* onchange={ctx.link().callback(|_|RegisterMsg::OnEmailChange)} */ />
                 </div>

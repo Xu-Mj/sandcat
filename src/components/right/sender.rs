@@ -5,10 +5,9 @@ use fluent::{FluentBundle, FluentResource};
 use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use wasm_bindgen_futures::JsFuture;
 use web_sys::{
     ClipboardEvent, DataTransferItem, DataTransferItemList, File, FileReader, HtmlElement,
-    HtmlInputElement, HtmlTextAreaElement, Response,
+    HtmlInputElement, HtmlTextAreaElement,
 };
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -17,6 +16,7 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CloseIcon, ImageIcon};
 use crate::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
 use crate::model::RightContentType;
+use crate::{api, db, tr, utils};
 use crate::{
     components::right::emoji::EmojiSpan,
     icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon},
@@ -24,7 +24,6 @@ use crate::{
     model::ContentType,
     pages::SendMessageState,
 };
-use crate::{db, tr, utils};
 
 use super::emoji::{get_emojis, Emoji};
 
@@ -121,7 +120,8 @@ impl Sender {
         let mut content_type = ContentType::File;
 
         ctx.link().send_future(async move {
-            let file_name = upload_file(file.clone())
+            let file_name = api::file()
+                .upload_file(file.clone())
                 .await
                 .map_err(|err| log::error!("上传文件错误: {:?}", err))
                 .unwrap();
@@ -156,30 +156,6 @@ impl Sender {
             SenderMsg::FileOnload(file_name, content_type, file_content)
         });
     }
-}
-
-async fn upload_file(file: File) -> Result<String, JsValue> {
-    use web_sys::FormData;
-
-    let form = FormData::new().unwrap();
-    form.append_with_blob("file", &file).unwrap();
-
-    // 创建请求体
-    let mut opts = web_sys::RequestInit::new();
-    opts.method("POST");
-    opts.body(Some(&form));
-
-    // 创建请求
-    let url = "/api/file/upload";
-    let request = web_sys::Request::new_with_str_and_init(url, &opts).unwrap();
-
-    // 发送网络请求
-    let window = web_sys::window().unwrap();
-    let request_promise = window.fetch_with_request(&request);
-    let res: Response = JsFuture::from(request_promise).await?.dyn_into()?;
-    let text = JsFuture::from(res.text().unwrap()).await.unwrap();
-
-    Ok(text.as_string().unwrap())
 }
 
 impl Component for Sender {

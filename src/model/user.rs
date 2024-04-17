@@ -55,7 +55,9 @@ pub struct UserWithMatchType {
 
 #[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
 pub struct UserUpdate {
+    pub id: String,
     pub name: String,
+    pub avatar: String,
     pub gender: String,
     pub phone: Option<String>,
     pub email: Option<String>,

@@ -377,7 +377,7 @@ impl Component for Home {
             <ContextProvider<Rc<I18nState>> context={self.lang_state.clone()}>
             <ContextProvider<Rc<SendResultState>> context={self.send_result.clone()}>
                 <div class="home" id="app">
-                    <Left user_id={self.state.login_user.id.clone()}/>
+                    <Left user_id={ctx.props().id.clone()}/>
                     <Right />
                     // 通知组件
 

@@ -4,14 +4,16 @@ use std::sync::OnceLock;
 use crate::db::TOKEN;
 
 use self::{
+    file::FileApi,
     friend::FriendApi,
     group::GroupApi,
-    http::{FriendHttp, GroupHttp, MsgHttp, SeqHttp, UserHttp},
+    http::{FileHttp, FriendHttp, GroupHttp, MsgHttp, SeqHttp, UserHttp},
     message::MsgApi,
     seq::SeqApi,
     user::UserApi,
 };
 
+mod file;
 mod friend;
 mod group;
 mod http;
@@ -55,4 +57,8 @@ pub fn messages() -> Box<dyn MsgApi> {
 
 pub fn seq() -> Box<dyn SeqApi> {
     Box::new(SeqHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+}
+
+pub fn file() -> Box<dyn FileApi> {
+    Box::new(FileHttp::new(token(), AUTHORIZE_HEADER.to_string()))
 }

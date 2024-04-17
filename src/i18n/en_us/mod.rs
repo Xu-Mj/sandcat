@@ -14,16 +14,20 @@ cancel = Cancel
 "#;
 
 pub const USER_INFO: &str = r#"
-name = Nicname
-account = Account
-email = Email
-phone = Phone
-address = Address
-birthday = Birthday
-gender = Gender
-signature = Signature
-avatar = Avatar
-region = Region
+name = nicname
+account = account
+email = email
+phone = phone
+address = address
+birthday = birthday
+gender = gender
+male = male
+female = female
+secret = secret
+signature = signature
+avatar = avatar
+set_avatar = SET
+region = region
 submit = Submit
 cancel = Cancel
 "#;
