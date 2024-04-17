@@ -227,6 +227,7 @@ pub struct GroupInvitation {
 pub type MessageID = String;
 pub type GroupID = String;
 pub type UserID = String;
+pub type FriendID = String;
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Msg {
@@ -235,6 +236,7 @@ pub enum Msg {
     // GroupInvitation(GroupInvitation),
     SendRelationshipReq(FriendShipRequest),
     RecRelationship((FriendShipWithUser, Sequence)),
+    RecRelationshipDel((FriendID, Sequence)),
     RelationshipRes((Friend, Sequence)),
     ReadNotice(ReadNotice),
     SingleDeliveredNotice(MessageID),
@@ -640,6 +642,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         MsgType::Notification => todo!(),
         MsgType::Service => todo!(),
         MsgType::FriendshipReceived => todo!(),
+        MsgType::FriendDelete => Ok(Msg::RecRelationshipDel((msg.send_id, msg.seq))),
     }
 }
 
@@ -802,6 +805,7 @@ impl From<Msg> for PbMsg {
             Msg::FriendshipDeliveredNotice(_) => PbMsg::default(),
             Msg::OfflineSync(_) => PbMsg::default(),
             Msg::ServerRecResp(_) => PbMsg::default(),
+            Msg::RecRelationshipDel(_) => PbMsg::default(),
         }
     }
 }

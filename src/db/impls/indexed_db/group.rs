@@ -180,9 +180,7 @@ impl GroupInterface for GroupRepo {
                 let value = cursor.value().unwrap();
                 // 反序列化
                 let group: Message = serde_wasm_bindgen::from_value(value).unwrap();
-                store
-                    .delete(&JsValue::from(group.friend_id.as_str()))
-                    .unwrap();
+                store.delete(&JsValue::from(group.id)).unwrap();
                 let _ = cursor.continue_();
             }
         }) as Box<dyn FnMut(&Event)>);

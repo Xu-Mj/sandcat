@@ -78,7 +78,7 @@ impl FriendApi for FriendHttp {
     }
 
     async fn delete_friend(&self, user_id: String, friend_id: String) -> Result<(), JsValue> {
-        Request::get("/api/friend/")
+        Request::delete("/api/friend")
             .header(&self.auth_header, &self.token)
             .json(&DeleteFriend { user_id, friend_id })
             .map_err(|err| JsValue::from(err.to_string()))?

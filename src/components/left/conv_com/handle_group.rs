@@ -59,7 +59,7 @@ impl Chats {
             avatar.push(self_avatar.to_string());
             let mut group_name = String::new();
             for (i, node) in nodes.iter().enumerate() {
-                let friend = db::friends().await.get_friend(node).await;
+                let friend = db::friends().await.get(node).await;
                 if !friend.fs_id.is_empty() {
                     let mut name = friend.name.clone();
                     if friend.remark.is_some() {

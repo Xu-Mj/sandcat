@@ -58,7 +58,7 @@ impl Component for Top {
             .expect("need state");
         Self {
             node: NodeRef::default(),
-            show_info: true,
+            show_info: false,
             state,
             _handler,
             conv_state,

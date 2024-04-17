@@ -11,12 +11,12 @@ use yew::prelude::*;
 use crate::db::{
     CONVERSATION_FRIEND_ID_INDEX, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME,
     FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_ADDRESS_INDEX,
-    FRIEND_FRIEND_ID_INDEX, FRIEND_GENDER_INDEX, FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX,
-    FRIEND_REMARK_INDEX, FRIEND_TABLE_NAME, FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX,
-    GROUP_ID_AND_USER_ID, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,
-    GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX,
-    MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME,
-    MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX, SEQ_TABLE_NAME, USER_TABLE_NAME,
+    FRIEND_GENDER_INDEX, FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX, FRIEND_REMARK_INDEX,
+    FRIEND_TABLE_NAME, FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX, GROUP_ID_AND_USER_ID,
+    GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME, GROUP_TABLE_NAME,
+    MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX,
+    MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX,
+    MESSAGE_TYPE_INDEX, SEQ_TABLE_NAME, USER_TABLE_NAME,
 };
 
 use super::DB_NAME;
@@ -190,14 +190,14 @@ impl Repository {
                 .unwrap();
 
             let mut p = IdbObjectStoreParameters::new();
-            p.key_path(Some(&JsValue::from_str("fs_id")));
+            p.key_path(Some(&JsValue::from_str("friend_id")));
             let store = db
                 .create_object_store_with_optional_parameters(&String::from(FRIEND_TABLE_NAME), &p)
                 .unwrap();
 
-            store
-                .create_index_with_str(FRIEND_FRIEND_ID_INDEX, "friend_id")
-                .unwrap();
+            // store
+            //     .create_index_with_str(FRIEND_FRIEND_ID_INDEX, "friend_id")
+            //     .unwrap();
             store
                 .create_index_with_str(FRIEND_NAME_INDEX, "name")
                 .unwrap();

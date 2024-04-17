@@ -60,7 +60,7 @@ impl Component for TopBar {
         Self {
             i18n,
             search_node: NodeRef::default(),
-            search_value: "".into(),
+            search_value: AttrValue::default(),
             state,
             _listener,
         }

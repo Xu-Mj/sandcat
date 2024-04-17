@@ -10,9 +10,11 @@ pub trait Friends {
 
     async fn put_friend_list(&self, friends: &[Friend]);
 
-    async fn get(&self, id: &str) -> Friend;
+    // async fn get(&self, id: &str) -> Friend;/
 
-    async fn get_friend(&self, friend_id: &str) -> Friend;
+    async fn get(&self, friend_id: &str) -> Friend;
 
     async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue>;
+
+    async fn delete_friend(&self, id: &str) -> Result<(), JsValue>;
 }

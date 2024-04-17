@@ -63,7 +63,7 @@ impl Component for SetWindow {
             let mut info: Option<Box<dyn ItemInfo>> = None;
             match conv_type {
                 RightContentType::Friend => {
-                    let friend = friend_db.get_friend(id.as_str()).await;
+                    let friend = friend_db.get(id.as_str()).await;
                     info = Some(Box::new(friend.clone()));
                     list.push(Box::new(friend));
                 }

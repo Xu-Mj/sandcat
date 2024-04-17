@@ -188,7 +188,7 @@ impl Component for PhoneCall {
                 log::debug!("invite_info: {:?}", self.invite_info);
                 ctx.link().send_future(async move {
                     // 查询好友数据
-                    let friend = db::friends().await.get_friend(friend_id.as_str()).await;
+                    let friend = db::friends().await.get(friend_id.as_str()).await;
                     log::debug!("收到邀请: {:?}", friend);
                     PhoneCallMsg::ShowCallNotify(Box::new(friend))
                 });
@@ -390,7 +390,7 @@ impl Component for PhoneCall {
                 // send invite message; no necessary to notify other components
                 let ws = ctx.props().ws.clone();
                 ctx.link().send_future(async move {
-                    let friend = db::friends().await.get_friend(friend_id.as_str()).await;
+                    let friend = db::friends().await.get(friend_id.as_str()).await;
 
                     match call_type {
                         InviteType::Video => match utils::get_video_stream().await {

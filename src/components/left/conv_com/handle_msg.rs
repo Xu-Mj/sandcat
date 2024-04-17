@@ -7,6 +7,7 @@ use crate::{
     db,
     model::{
         conversation::Conversation,
+        friend::FriendStatus,
         message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
         ContentType, RightContentType,
     },
@@ -166,12 +167,14 @@ impl Chats {
             });
             true
         } else {
-            if !is_self && self.conv_state.conv.item_id != friend_id {
-                self.unread_state.add_msg_count.emit(unread_count);
-            }
+            let add_msg_count = self.unread_state.add_msg_count.clone();
+            let current_id = self.conv_state.conv.item_id.clone();
             // 如果会话列表中不存在那么需要新建
             ctx.link().send_future(async move {
-                let friend = db::friends().await.get_friend(friend_id.as_str()).await;
+                let friend = db::friends().await.get(friend_id.as_str()).await;
+                if friend.friend_id.is_empty() {
+                    return ChatsMsg::None;
+                }
                 conv.avatar = friend.avatar;
                 if let Some(name) = friend.remark {
                     conv.name = name;
@@ -179,8 +182,13 @@ impl Chats {
                     conv.name = friend.name;
                 }
                 db::convs().await.put_conv(&conv, false).await.unwrap();
+
+                // add global unread
+                if !is_self && current_id != friend_id {
+                    add_msg_count.emit(unread_count);
+                }
                 conv.unread_count = unread_count;
-                log::debug!("创建会话: {:?}", &conv);
+                log::debug!("create conversation: {:?}", &conv);
                 ChatsMsg::InsertConv(conv)
             });
             false
@@ -528,6 +536,17 @@ impl Chats {
 
                     send_result.emit(msg);
                 });
+            }
+            Msg::RecRelationshipDel((friend_id, seq)) => {
+                // update database
+                spawn_local(async move {
+                    let mut friend = db::friends().await.get(&friend_id).await;
+                    if !friend.friend_id.is_empty() {
+                        friend.status = FriendStatus::Delete as i32;
+                        db::friends().await.put_friend(&friend).await;
+                    }
+                });
+                self.handle_lack_msg(ctx, seq);
             }
         }
         false

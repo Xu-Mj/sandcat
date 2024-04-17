@@ -796,6 +796,7 @@ impl FriendshipStatus {
 pub enum MsgType {
     SingleMsg = 0,
     GroupMsg = 1,
+    /// / group operation
     GroupInvitation = 2,
     GroupInviteNew = 3,
     GroupMemberExit = 4,
@@ -803,8 +804,10 @@ pub enum MsgType {
     GroupDismissOrExitReceived = 6,
     GroupInvitationReceived = 7,
     GroupUpdate = 8,
+    /// / friend operation
     FriendApplyReq = 9,
     FriendApplyResp = 10,
+    /// / single call operation
     SingleCallInvite = 11,
     RejectSingleCall = 12,
     AgreeSingleCall = 13,
@@ -819,6 +822,8 @@ pub enum MsgType {
     Notification = 22,
     Service = 23,
     FriendshipReceived = 24,
+    /// / friend delete
+    FriendDelete = 25,
 }
 impl MsgType {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -852,6 +857,7 @@ impl MsgType {
             MsgType::Notification => "MsgTypeNotification",
             MsgType::Service => "MsgTypeService",
             MsgType::FriendshipReceived => "MsgTypeFriendshipReceived",
+            MsgType::FriendDelete => "MsgTypeFriendDelete",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -882,6 +888,7 @@ impl MsgType {
             "MsgTypeNotification" => Some(Self::Notification),
             "MsgTypeService" => Some(Self::Service),
             "MsgTypeFriendshipReceived" => Some(Self::FriendshipReceived),
+            "MsgTypeFriendDelete" => Some(Self::FriendDelete),
             _ => None,
         }
     }

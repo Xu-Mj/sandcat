@@ -39,7 +39,7 @@ pub struct FriendShipRequest {
     pub friend_id: AttrValue,
     pub apply_msg: Option<AttrValue>,
     pub source: Option<AttrValue>,
-    pub remark: Option<AttrValue>,
+    pub req_remark: Option<AttrValue>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -101,6 +101,7 @@ pub struct FriendShipWithUser {
     pub fs_id: AttrValue,
     pub user_id: AttrValue,
     pub name: AttrValue,
+    pub remark: Option<AttrValue>,
     pub account: AttrValue,
     pub avatar: AttrValue,
     pub gender: AttrValue,
@@ -110,6 +111,7 @@ pub struct FriendShipWithUser {
     pub source: AttrValue,
     pub region: Option<AttrValue>,
     pub create_time: i64,
+    #[serde(default)]
     pub accept_time: i64,
     #[serde(default)]
     pub read: ReadStatus,
@@ -133,6 +135,7 @@ pub struct FriendshipWithUser4Response {
     pub source: AttrValue,
     pub create_time: i64,
     pub account: AttrValue,
+    pub remark: Option<AttrValue>,
 }
 
 impl From<FriendshipWithUser4Response> for FriendShipWithUser {
@@ -153,6 +156,7 @@ impl From<FriendshipWithUser4Response> for FriendShipWithUser {
             is_self: false,
             gender: value.gender,
             accept_time: 0,
+            remark: value.remark,
         }
     }
 }

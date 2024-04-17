@@ -144,9 +144,9 @@ hello = Let's Chat
 "#;
 
 pub const SET_DRAWER: &str = r#"
-del_friend = DeleteFriend
-dismiss = DismissGroup
-quit = QuitGroup
+del_friend = Delete
+dismiss = Dismiss
+quit = Quit
 "#;
 
 pub const SET_WINDOW: &str = r#"

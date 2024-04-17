@@ -131,8 +131,7 @@ impl Component for MsgItem {
                     } else {
                         match conv_type {
                             RightContentType::Friend => {
-                                let friend =
-                                    db::friends().await.get_friend(friend_id.as_str()).await;
+                                let friend = db::friends().await.get(friend_id.as_str()).await;
                                 User::from(friend)
                             }
                             // query group member

@@ -213,6 +213,7 @@ impl Component for FriendShipList {
                         //     <div class="name-time">
                                 <span>{item.name.clone()}</span>
                                 // <span class="time">{time_str}</span>
+                                // fixme 如果是被请求方，那么显示apply_msg，如果是请求方，那么显示备注
                                 <div class="remark">{tr!(self.i18n, "remark")}{item.apply_msg.clone()}</div>
                             </div>
                         </div>

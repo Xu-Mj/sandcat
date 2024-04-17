@@ -74,7 +74,7 @@ impl Right {
                     RightContentType::Default => {}
                     RightContentType::Friend => {
                         ctx.link().send_future(async move {
-                            let friend = db::friends().await.get_friend(id.as_str()).await;
+                            let friend = db::friends().await.get(id.as_str()).await;
                             RightMsg::ContentChange(Some(Box::new(friend)))
                         });
                     }

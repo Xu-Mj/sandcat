@@ -134,18 +134,15 @@ impl Component for FriendCard {
                     Some(AttrValue::from(apply_node.value()))
                 };
                 let remark: HtmlInputElement = self.remark_node.cast().unwrap();
-                let remark = if remark.value().is_empty() {
-                    None
-                } else {
-                    Some(AttrValue::from(remark.value()))
-                };
+                let req_remark =
+                    (!remark.value().is_empty()).then_some(AttrValue::from(remark.value()));
                 // 发送好友申请
                 let new_friend = FriendShipRequest {
                     user_id,
                     friend_id,
                     apply_msg,
                     source,
-                    remark,
+                    req_remark,
                 };
 
                 log::debug!("发送好友申请:{:?}", &new_friend);

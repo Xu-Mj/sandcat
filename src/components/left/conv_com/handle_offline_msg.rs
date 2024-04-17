@@ -153,6 +153,11 @@ impl Chats {
                             .await
                             .agree_by_friend_id(friend.friend_id.as_str())
                             .await;
+                        // select friend if exist
+                        let f = db::friends().await.get(&friend.friend_id).await;
+                        if !f.friend_id.is_empty() {
+                            return ChatsMsg::None;
+                        }
                         db::friends().await.put_friend(&friend).await;
                         // send hello message
                         let mut msg = Message {

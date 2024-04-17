@@ -107,15 +107,43 @@ impl Component for PostCard {
                     return false;
                 }
                 let info = self.info.as_ref().unwrap();
+                let user_id = ctx.props().user_id.clone().to_string();
+                let id = info.id();
+                let remove_conv = self.remove_conv_state.remove_event.clone();
+                let remove_friend = self.remove_friend_state.remove_event.clone();
+
                 match info.get_type() {
-                    RightContentType::Friend => {}
+                    RightContentType::Friend => {
+                        spawn_local(async move {
+                            // send delete friend request
+                            match api::friends().delete_friend(user_id, id.to_string()).await {
+                                Ok(_) => {
+                                    // delete data from local storage
+                                    if let Err(err) = db::friends().await.delete_friend(&id).await {
+                                        log::error!("delete friend failed: {:?}", err);
+                                    } else {
+                                        // delete conversation
+                                        if let Err(e) = db::convs().await.delete(id.as_str()).await
+                                        {
+                                            log::error!("delete conversation failed: {:?}", e);
+                                        } else {
+                                            // send state message to remove conversation from conversation lis
+                                            remove_conv.emit(id.clone());
+                                            // send state message to remove friend from friend list
+                                            remove_friend.emit((id, ItemType::Friend));
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    log::error!("delete friend failed: {:?}", e);
+                                }
+                            }
+                        });
+                    }
                     RightContentType::Group => {
                         let is_dismiss = self.is_group_owner;
 
                         // delete data from local database
-                        let id = info.id();
-                        let user_id = ctx.props().user_id.clone().to_string();
-
                         spawn_local(async move {
                             if !is_dismiss {
                                 log::debug!("group is dismissed already, only delete local data");
@@ -129,6 +157,10 @@ impl Component for PostCard {
                                     if let Err(e) = db::convs().await.delete(id.as_str()).await {
                                         log::error!("delete conversation failed: {:?}", e);
                                     }
+                                    // send state message to remove conversation from conversation lis
+                                    remove_conv.emit(id.clone());
+                                    // send state message to remove friend from friend list
+                                    remove_friend.emit((id, ItemType::Group));
                                     return;
                                 }
                             }
@@ -143,28 +175,23 @@ impl Component for PostCard {
                             {
                                 Ok(_) => {
                                     log::debug!("send delete group request success");
-                                    if let Err(e) = db::groups().await.delete(id.as_str()).await {
+                                    if let Err(e) = db::groups().await.delete(&id).await {
                                         log::error!("delete group failed: {:?}", e);
                                     }
                                     // delete conversation
-                                    if let Err(e) = db::convs().await.delete(id.as_str()).await {
+                                    if let Err(e) = db::convs().await.delete(&id).await {
                                         log::error!("delete conversation failed: {:?}", e);
                                     }
+                                    // send state message to remove conversation from conversation lis
+                                    remove_conv.emit(id.clone());
+                                    // send state message to remove friend from friend list
+                                    remove_friend.emit((id, ItemType::Group));
                                 }
                                 Err(e) => {
                                     log::error!("send delete group request error: {:?}", e);
                                 }
                             }
                         });
-
-                        // todo move below to single patch, handle the http request error
-                        // send state message to remove conversation from conversation lis
-                        self.remove_conv_state.remove_event.emit(info.id());
-
-                        // send state message to remove friend from friend list
-                        self.remove_friend_state
-                            .remove_event
-                            .emit((info.id(), ItemType::Group));
                     }
                     _ => {}
                 }
@@ -273,7 +300,7 @@ impl PostCard {
             match ctx.props().conv_type {
                 RightContentType::Friend => {
                     ctx.link().send_future(async move {
-                        let user_info = db::friends().await.get_friend(id.as_str()).await;
+                        let user_info = db::friends().await.get(id.as_str()).await;
                         log::debug!("user info :{:?}", user_info);
                         PostCardMsg::QueryInformation(QueryState::Success(Some(Box::new(
                             user_info,

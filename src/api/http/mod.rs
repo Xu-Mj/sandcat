@@ -21,7 +21,7 @@ pub trait RespStatus: Sized {
 
 impl RespStatus for Response {
     fn success(self) -> Result<Self, JsValue> {
-        if !(200..=299).contains(&self.status()) {
+        if (200..=299).contains(&self.status()) {
             Ok(self)
         } else {
             Err(JsValue::from_str(&format!(

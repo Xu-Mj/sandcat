@@ -125,7 +125,7 @@ impl MessageList {
                 let mut friend: Option<Box<dyn ItemInfo>> = None;
                 match conv_type {
                     RightContentType::Friend => {
-                        friend = Some(Box::new(db::friends().await.get_friend(id.as_str()).await));
+                        friend = Some(Box::new(db::friends().await.get(id.as_str()).await));
                     }
                     RightContentType::Group => {
                         friend = Some(Box::new(
@@ -165,7 +165,7 @@ impl MessageList {
             false
         }
     }
-    fn handle_rec_msg(&mut self, msg: Msg, friend_id: AttrValue) -> bool {
+    fn handle_rec_msg(&mut self, ctx: &Context<Self>, msg: Msg, friend_id: AttrValue) -> bool {
         log::debug!("handle_rec_msg: {:?}", msg);
         match msg {
             Msg::Single(msg) => self.insert_msg(msg, friend_id),
@@ -209,6 +209,14 @@ impl MessageList {
             | Msg::FriendshipDeliveredNotice(_) => false,
             // todo query list item , update state
             Msg::ServerRecResp(_) => false,
+            Msg::RecRelationshipDel((friend_id, _)) => {
+                // judge if friend_id is current user
+                if friend_id == ctx.props().friend_id {
+                    self.is_black = true;
+                    return true;
+                }
+                false
+            }
         }
     }
 }
@@ -298,7 +306,7 @@ impl Component for MessageList {
             MessageListMsg::ReceiveMsg(msg_state) => {
                 log::debug!("rec message in message list....");
                 let msg = msg_state.msg.clone();
-                self.handle_rec_msg(msg, friend_id)
+                self.handle_rec_msg(ctx, msg, friend_id)
             }
             MessageListMsg::GoBottom => {
                 self.new_msg_count = 0;
