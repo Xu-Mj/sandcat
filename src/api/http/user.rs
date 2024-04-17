@@ -3,6 +3,8 @@ use crate::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
 use gloo_net::http::Request;
 use serde::Serialize;
 use wasm_bindgen::JsValue;
+
+use super::RespStatus;
 pub struct UserHttp<'a> {
     token: Box<dyn Fn() -> String + 'a>,
     auth_header: String,
@@ -39,6 +41,7 @@ impl<'a> UserApi for UserHttp<'a> {
                 .send()
                 .await
                 .map_err(|err| JsValue::from(err.to_string()))?
+                .success()?
                 .json()
                 .await
                 .map_err(|err| JsValue::from(err.to_string()))?;
@@ -53,35 +56,31 @@ impl<'a> UserApi for UserHttp<'a> {
             .map_err(|err| JsValue::from(err.to_string()))?
             .send()
             .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?;
         Ok(())
     }
 
     /// 用户注册
     async fn register(&self, register: UserRegister) -> Result<(), JsValue> {
-        let resp = Request::post("/api/user")
+        Request::post("/api/user")
             .json(&register)
             .map_err(|err| JsValue::from(err.to_string()))?
             .send()
             .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
-        if resp.status() != 200 {
-            return Err(JsValue::from("注册失败"));
-        }
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?;
         Ok(())
     }
 
     async fn update(&self, user: UserUpdate) -> Result<User, JsValue> {
-        let resp = Request::put("/api/user")
+        let user = Request::put("/api/user")
             .json(&user)
             .map_err(|err| JsValue::from(err.to_string()))?
             .send()
             .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
-        if resp.status() != 200 {
-            return Err(JsValue::from("upload failed"));
-        }
-        let user: User = resp
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
             .json()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;

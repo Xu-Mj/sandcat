@@ -1,8 +1,10 @@
 use async_trait::async_trait;
-use reqwasm::http::Request;
+use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
 
 use crate::api::seq::{Seq, SeqApi};
+
+use super::RespStatus;
 
 pub struct SeqHttp {
     token: String,
@@ -18,15 +20,12 @@ impl SeqHttp {
 #[async_trait(?Send)]
 impl SeqApi for SeqHttp {
     async fn get_seq(&self, user_id: &str) -> Result<Seq, JsValue> {
-        let resp = Request::get(format!("/api/message/seq/{}", user_id).as_str())
+        let seq = Request::get(format!("/api/message/seq/{}", user_id).as_str())
             .header(&self.auth_header, &self.token)
             .send()
             .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
-        if resp.status() != 200 {
-            return Err(JsValue::from("获取seq失败"));
-        }
-        let seq = resp
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
             .json()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;

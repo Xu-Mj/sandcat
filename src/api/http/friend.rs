@@ -7,6 +7,8 @@ use crate::{
     model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
 };
 
+use super::RespStatus;
+
 pub struct FriendHttp {
     token: String,
     auth_header: String,
@@ -32,6 +34,7 @@ impl FriendApi for FriendHttp {
             .send()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
             .json()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
@@ -50,6 +53,7 @@ impl FriendApi for FriendHttp {
                 log::debug!("error: {:?}", &err);
                 JsValue::from(err.to_string())
             })?
+            .success()?
             .json()
             .await
             .map_err(|err| {
@@ -66,6 +70,7 @@ impl FriendApi for FriendHttp {
             .send()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
             .json()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
@@ -73,18 +78,15 @@ impl FriendApi for FriendHttp {
     }
 
     async fn delete_friend(&self, user_id: String, friend_id: String) -> Result<(), JsValue> {
-        let resp = Request::get("/api/friend/")
+        Request::get("/api/friend/")
             .header(&self.auth_header, &self.token)
             .json(&DeleteFriend { user_id, friend_id })
             .map_err(|err| JsValue::from(err.to_string()))?
             .send()
             .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
-        if resp.status() == 200 {
-            Ok(())
-        } else {
-            Err(JsValue::from(resp.status().to_string()))
-        }
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?;
+        Ok(())
     }
 }
 

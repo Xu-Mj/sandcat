@@ -5,6 +5,8 @@ use wasm_bindgen::JsValue;
 
 use crate::{api::message::MsgApi, pb::message::Msg};
 
+use super::RespStatus;
+
 pub struct MsgHttp {
     token: String,
     auth_header: String,
@@ -36,21 +38,14 @@ impl MsgApi for MsgHttp {
             start,
             end,
         };
-        let response = Request::post("/api/message")
+        let messages = Request::post("/api/message")
             .header(&self.auth_header, &self.token)
             .json(&requset)
             .map_err(|err| JsValue::from(err.to_string()))?
             .send()
             .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
-        let code = response.status();
-        if !(200..=299).contains(&code) {
-            log::error!("server response with error: {}", code);
-            return Err(JsValue::from_str(&format!(
-                "Server responded with error: {code}"
-            )));
-        }
-        let messages: Vec<Msg> = response
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
             .json()
             .await
             .map_err(|e| JsValue::from(e.to_string()))?;

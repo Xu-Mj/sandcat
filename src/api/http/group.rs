@@ -9,6 +9,8 @@ use crate::{
     },
 };
 
+use super::RespStatus;
+
 pub struct GroupHttp {
     token: String,
     auth_header: String,
@@ -30,6 +32,7 @@ impl GroupApi for GroupHttp {
             .send()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
             .json()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
@@ -38,20 +41,15 @@ impl GroupApi for GroupHttp {
     }
 
     async fn delete_group(&self, data: GroupDelete) -> Result<(), JsValue> {
-        let response = Request::delete("/api/group")
+        Request::delete("/api/group")
             .header(&self.auth_header, &self.token)
             .json(&data)
             .map_err(|err| JsValue::from(err.to_string()))?
             .send()
             .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
-        let code = response.status();
-        if !(200..=299).contains(&code) {
-            log::error!("server response with error: {}", code);
-            return Err(JsValue::from_str(&format!(
-                "Server responded with error: {code}"
-            )));
-        }
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?;
+
         Ok(())
     }
 }
