@@ -18,7 +18,7 @@ use crate::components::right::friendship_list::FriendShipList;
 use crate::components::right::set_window::SetWindow;
 use crate::components::select_friends::SelectFriendList;
 use crate::i18n::{en_us, zh_cn, LanguageType};
-use crate::icons::{CloseIcon, MaxIcon};
+use crate::icons::{CatHeadIcon, CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
 use crate::pages::{ConvState, CreateConvState, FriendListState, I18nState};
@@ -276,7 +276,7 @@ impl Component for Right {
                         }
                     }
                     _ => {
-                        html!()
+                        html!(<div class="cat-head-icon"><CatHeadIcon/></div>)
                     }
                 }
             }

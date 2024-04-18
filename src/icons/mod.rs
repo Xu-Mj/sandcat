@@ -19,6 +19,24 @@ pub fn plus_rect_icon() -> Html {
     }
 }
 
+#[function_component(CatHeadIcon)]
+pub fn cat_head_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 14 14">
+            <path fill="none" stroke="#cccccc" stroke-linecap="round" stroke-linejoin="round" d="M6.5 10.25h1m-7 3l3.5-2m-3.5-3l4 1m2.98-6.97L12.87.77a.46.46 0 0 1 .46.11a.49.49 0 0 1 .16.45l-1.1 5.61c-.06-.15-.12-.31-.17-.47A5.75 5.75 0 0 0 7 2.25a5.75 5.75 0 0 0-5.22 4.22c-.05.17-.11.32-.17.48L.51 1.33A.49.49 0 0 1 .67.88a.46.46 0 0 1 .46-.11l5.39 1.51m1.98 10.8a6.7 6.7 0 0 1-3 0m8 .17l-3.5-2m3.5-3l-4 1"/>
+        </svg>
+    }
+}
+
+#[function_component(CatFootIcon)]
+pub fn cat_foot_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 256 256">
+            <path fill="#cccccc" d="M240 108a28 28 0 1 1-28-28a28 28 0 0 1 28 28m-168 0a28 28 0 1 0-28 28a28 28 0 0 0 28-28m20-20a28 28 0 1 0-28-28a28 28 0 0 0 28 28m72 0a28 28 0 1 0-28-28a28 28 0 0 0 28 28m23.12 60.86a35.3 35.3 0 0 1-16.87-21.14a44 44 0 0 0-84.5 0A35.25 35.25 0 0 1 69 148.82A40 40 0 0 0 88 224a39.48 39.48 0 0 0 15.52-3.13a64.09 64.09 0 0 1 48.87 0a40 40 0 0 0 34.73-72Z"/>
+        </svg>
+    }
+}
+
 #[function_component(CycleIcon)]
 pub fn cycle_icon() -> Html {
     html! {

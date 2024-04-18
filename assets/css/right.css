@@ -166,6 +166,18 @@
         flex-direction: column;
         position: relative;
 
+        .cat-head-icon {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            svg{
+                width: 5rem;
+                height: 5rem;
+            }
+        }
         .file-sender {
             position: absolute;
             width: 15rem;
