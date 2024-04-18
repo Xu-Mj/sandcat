@@ -211,9 +211,6 @@ html {
 }
 
 /* 朋友卡片 */
-.friend-card-container {
-    background-color: white;
-}
 
 .friend-card {
     width: 18rem;
@@ -221,9 +218,10 @@ html {
     display: flex;
     flex-direction: column;
     padding: 1rem;
+    position: fixed;
+    background-color: white;
+    border-radius: .3rem;
 
-    /* position: absolute; */
-    /* left: 3rem; */
     &[tabindex] {
         outline: none;
     }
@@ -253,6 +251,9 @@ html {
         flex-direction: column;
         align-items: flex-start;
         justify-content: flex-start;
+        word-wrap: break-word;
+        overflow: hidden;
+        white-space: pre-wrap;
 
         &:not(:first-child) {
             color: #999;
@@ -300,6 +301,37 @@ html {
                 grid-template-columns: 1fr 1fr;
                 justify-items: center;
             }
+        }
+    }
+}
+
+.action {
+    width: 100%;
+    display: flex;
+    justify-content: space-evenly;
+    height: 5rem;
+
+    & div {
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: .3rem;
+        cursor: pointer;
+        flex-direction: column;
+        font-size: small;
+        color: #90CBFB;
+
+        & svg {
+            width: 2rem;
+            height: 2rem;
+
+            path,
+            circle {
+                stroke-width: 2;
+                stroke: #90CBFB;
+            }
+
         }
     }
 }
@@ -387,8 +419,8 @@ html {
 }
 
 .info-panel {
-    width: 20rem;
-    height: 31rem;
+    width: 21rem;
+    height: 34rem;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -438,15 +470,15 @@ html {
     .info-panel-item {
         width: 100%;
         display: grid;
-        grid-template-columns: 1fr 3fr;
+        grid-template-columns: 1fr 2.5fr;
         height: 3rem;
-        line-height: 3rem;
         align-items: center;
 
         input {
             width: 100%;
-            padding: .2rem;
-            outline: none;
+            padding: .3rem .5rem;
+            border: none;
+            background-color: #e4e9ec;
             font-size: large;
         }
 

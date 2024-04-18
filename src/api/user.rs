@@ -14,5 +14,5 @@ pub trait UserApi {
         &self,
         pattern: String,
         search_user: &str,
-    ) -> Result<Vec<UserWithMatchType>, JsValue>;
+    ) -> Result<Option<UserWithMatchType>, JsValue>;
 }

@@ -4,7 +4,7 @@ use yew::prelude::*;
 use crate::components::left::user_info::UserInfoCom;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::user::UserWithMatchType;
-use crate::{api, tr, utils};
+use crate::{api, db, tr, utils};
 use crate::{components::top_bar::TopBar, model::ComponentType};
 
 #[derive(Properties, PartialEq, Debug)]
@@ -16,7 +16,7 @@ pub struct AddFriendProps {
 
 pub struct AddFriend {
     // 维护一个查询结果集
-    pub result: Vec<UserWithMatchType>,
+    pub result: Option<UserWithMatchType>,
     // 是否正在搜索
     pub is_searching: bool,
     i18n: FluentBundle<FluentResource>,
@@ -31,7 +31,7 @@ pub enum SearchState<T> {
 pub enum AddFriendMsg {
     SearchFriend(AttrValue),
     CleanupSearchResult,
-    SearchFriends(SearchState<Vec<UserWithMatchType>>),
+    SearchFriends(Box<SearchState<Option<UserWithMatchType>>>),
     Cancel,
 }
 
@@ -47,7 +47,7 @@ impl Component for AddFriend {
         };
         let i18n = utils::create_bundle(res);
         Self {
-            result: vec![],
+            result: None,
             is_searching: false,
             i18n,
         }
@@ -59,16 +59,27 @@ impl Component for AddFriend {
                 self.is_searching = true;
                 let user_id = ctx.props().user_id.clone();
                 ctx.link()
-                    .send_message(AddFriendMsg::SearchFriends(SearchState::Searching));
+                    .send_message(AddFriendMsg::SearchFriends(Box::new(
+                        SearchState::Searching,
+                    )));
                 ctx.link().send_future(async move {
+                    // select local friend first
+                    let friend = db::friends().await.get(&pattern).await;
+                    if !friend.friend_id.is_empty() {
+                        return AddFriendMsg::SearchFriends(Box::new(SearchState::Success(Some(
+                            UserWithMatchType::from(friend),
+                        ))));
+                    }
                     match api::users()
                         .search_friend(pattern.to_string(), user_id.as_str())
                         .await
                     {
-                        Ok(list) => AddFriendMsg::SearchFriends(SearchState::Success(list)),
+                        Ok(list) => {
+                            AddFriendMsg::SearchFriends(Box::new(SearchState::Success(list)))
+                        }
                         Err(err) => {
                             log::error!("搜索用户错误:{:?}", err);
-                            AddFriendMsg::SearchFriends(SearchState::Failure)
+                            AddFriendMsg::SearchFriends(Box::new(SearchState::Failure))
                         }
                     }
                 });
@@ -77,10 +88,10 @@ impl Component for AddFriend {
             // 清空搜索结果
             AddFriendMsg::CleanupSearchResult => {
                 self.is_searching = false;
-                self.result.clear();
+                self.result = None;
                 true
             }
-            AddFriendMsg::SearchFriends(friends) => match friends {
+            AddFriendMsg::SearchFriends(friends) => match *friends {
                 SearchState::Success(list) => {
                     self.result = list;
                     true
@@ -98,17 +109,12 @@ impl Component for AddFriend {
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let content = if self.result.is_empty() {
+        let content = if self.result.is_none() {
             html! {<div class="no-result">{tr!(self.i18n, "no_result")}</div>}
         } else {
-            self.result
-                .iter()
-                .map(|item| {
-                    html! {
-                        <UserInfoCom info={item.clone()} key={item.id.clone().as_str()} lang={ctx.props().lang} />
-                    }
-                })
-                .collect::<Html>()
+            html! {
+                <UserInfoCom info={self.result.as_ref().unwrap().clone()}  lang={ctx.props().lang} />
+            }
         };
         let search_callback = ctx.link().callback(AddFriendMsg::SearchFriend);
         let clean_callback = ctx

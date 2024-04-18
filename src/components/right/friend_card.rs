@@ -1,15 +1,17 @@
 use fluent::{FluentBundle, FluentResource};
-use gloo::utils::{document, window};
-use wasm_bindgen::JsCast;
-use web_sys::{Element, HtmlDivElement, HtmlInputElement};
+use gloo::utils::window;
+use web_sys::{HtmlDivElement, HtmlInputElement};
 use yew::prelude::*;
 
 use crate::{
-    api, db,
+    api,
+    components::action::Action,
+    db,
     i18n::{en_us, zh_cn, LanguageType},
     model::{
         friend::{FriendShipRequest, ReadStatus},
-        user::{User, UserWithMatchType},
+        user::UserWithMatchType,
+        RightContentType,
     },
     tr, utils,
 };
@@ -41,59 +43,60 @@ pub enum FriendShipRequestState {
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct FriendCardProps {
-    container: Element,
-    friend_info: UserWithMatchType,
-    user_info: Option<User>,
-    lang: LanguageType,
-    is_friend: bool,
-    x: i32,
-    y: i32,
+    // container: Element,
+    pub friend_info: UserWithMatchType,
+    pub user_id: AttrValue,
+    pub lang: LanguageType,
+    pub close: Callback<()>,
+    pub is_self: bool,
+    pub x: i32,
+    pub y: i32,
 }
 
 impl FriendCard {
-    fn mount(&self, ctx: &Context<Self>) {
-        // 查询body节点
-        let body = document()
-            .get_element_by_id("app")
-            .expect("body is not defined");
-        // 将dialog渲染到容器中
-        body.append_child(&ctx.props().container.clone()).unwrap();
-    }
+    // fn mount(&self, ctx: &Context<Self>) {
+    //     // 查询body节点
+    //     let body = document()
+    //         .get_element_by_id("app")
+    //         .expect("body is not defined");
+    //     // 将dialog渲染到容器中
+    //     body.append_child(&ctx.props().container.clone()).unwrap();
+    // }
 
-    pub fn container_with_position(x: i32, y: i32) -> Element {
-        let container = document().create_element("div").unwrap();
-        container.set_class_name("friend-card-container");
-        // 设置容器绝对定位
-        container
-            .set_attribute("style", "position: fixed;")
-            .unwrap();
+    // pub fn container_with_position(x: i32, y: i32) -> Element {
+    //     let container = document().create_element("div").unwrap();
+    //     container.set_class_name("friend-card-container");
+    //     // 设置容器绝对定位
+    //     container
+    //         .set_attribute("style", "position: fixed;")
+    //         .unwrap();
 
-        container.set_scroll_top(y);
-        container.set_scroll_left(x);
-        container
-    }
+    //     container.set_scroll_top(y);
+    //     container.set_scroll_left(x);
+    //     container
+    // }
 
-    pub fn show(
-        friend_info: UserWithMatchType,
-        user_info: Option<User>,
-        lang: LanguageType,
-        is_friend: bool,
-        x: i32,
-        y: i32,
-    ) {
-        log::debug!("x: {}, y: {}", x, y);
-        let container = FriendCard::container_with_position(x, y);
-        let props = FriendCardProps {
-            container: container.clone(),
-            friend_info,
-            user_info,
-            lang,
-            is_friend,
-            x,
-            y,
-        };
-        yew::Renderer::<FriendCard>::with_root_and_props(container, props).render();
-    }
+    // pub fn show(
+    //     friend_info: UserWithMatchType,
+    //     user_info: Option<User>,
+    //     lang: LanguageType,
+    //     is_friend: bool,
+    //     x: i32,
+    //     y: i32,
+    // ) {
+    //     log::debug!("x: {}, y: {}", x, y);
+    //     let container = FriendCard::container_with_position(x, y);
+    //     let props = FriendCardProps {
+    //         container: container.clone(),
+    //         friend_info,
+    //         user_info,
+    //         lang,
+    //         is_friend,
+    //         x,
+    //         y,
+    //     };
+    //     yew::Renderer::<FriendCard>::with_root_and_props(container, props).render();
+    // }
 }
 
 impl Component for FriendCard {
@@ -108,13 +111,11 @@ impl Component for FriendCard {
             LanguageType::EnUS => en_us::FRIEND_CARD,
         };
         let i18n = utils::create_bundle(res);
-        let self_ = Self {
+        Self {
             i18n,
             friend,
             ..Default::default()
-        };
-        self_.mount(ctx);
-        self_
+        }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
@@ -126,7 +127,7 @@ impl Component for FriendCard {
             FriendCardMsg::Apply => {
                 let friend_id = ctx.props().friend_info.id.clone();
                 let source = ctx.props().friend_info.match_type.clone();
-                let user_id = ctx.props().user_info.as_ref().unwrap().id.clone();
+                let user_id = ctx.props().user_id.clone();
                 let apply_node: HtmlInputElement = self.apply_node.cast().unwrap();
                 let apply_msg = if apply_node.value().is_empty() {
                     None
@@ -149,6 +150,9 @@ impl Component for FriendCard {
                 ctx.link().send_message(FriendCardMsg::ApplyFriendResult(
                     FriendShipRequestState::Pendding,
                 ));
+
+                // send friendship state to friendship list
+                // let update_friendship_list = self.;
                 ctx.link().send_future(async move {
                     match api::friends().apply_friend(new_friend).await {
                         Err(err) => {
@@ -174,16 +178,15 @@ impl Component for FriendCard {
                 true
             }
             FriendCardMsg::Destroy => {
-                let div = self.node_ref.cast::<HtmlDivElement>().unwrap();
-                div.parent_element().unwrap().remove();
+                ctx.props().close.emit(());
                 false
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let apply = if ctx.props().is_friend {
-            html!()
+        let apply = if ctx.props().friend_info.is_friend {
+            html!(<Action id={&ctx.props().friend_info.id} conv_type={RightContentType::Friend} lang={ctx.props().lang}/>)
         } else if self.show_apply {
             let onclick = ctx.link().callback(|_| FriendCardMsg::Apply);
             let apply_msg = if self.is_apply {
@@ -222,7 +225,7 @@ impl Component for FriendCard {
                 class="friend-card box-shadow"
                 tabindex="1"
                 ref={self.node_ref.clone()}
-                /* onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)} */
+                onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >
                 <div class="friend-card-header">
                     <img src={&self.friend.avatar} class="friend-card-avatar"/>
@@ -245,39 +248,28 @@ impl Component for FriendCard {
     }
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
+        let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
+        // node.focus().unwrap();
         if first_render {
-            let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
-            node.focus().unwrap();
-            let node = node
-                .parent_node()
-                .unwrap()
-                .dyn_into::<HtmlDivElement>()
-                .unwrap();
-
             // 计算下边框
             let height = window().inner_height().unwrap().as_f64().unwrap() as i32;
             let width = window().inner_width().unwrap().as_f64().unwrap() as i32;
             let mut x = ctx.props().x;
             let mut y = ctx.props().y;
-            let margin = 0;
-            let offset = 0;
             if node.client_height() > height - y {
-                y = height - node.client_height() - margin;
+                y = height - node.client_height();
             }
             if node.client_width() > width - x {
-                x = width - node.client_width() - margin - offset;
-            } else {
-                x = x + margin + offset;
+                x = width - node.client_width();
             }
 
+            log::debug!("x: {}, y: {}", x, y);
             node.style()
                 .set_property("top", format!("{}px", y).as_str())
                 .unwrap();
             node.style()
                 .set_property("left", format!("{}px", x).as_str())
                 .unwrap();
-            // node.set_tab_index(1);
-            // node.focus().unwrap();
         }
     }
 }

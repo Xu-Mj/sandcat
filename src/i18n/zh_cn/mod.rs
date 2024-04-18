@@ -72,6 +72,9 @@ apply = 申请
 applied = 已申请
 apply_msg = 申请消息
 remark = 备注:
+account = 账号:
+nickname = 昵称:
+region = 地区:
 cancel = 取消
 "#;
 

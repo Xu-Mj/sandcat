@@ -210,6 +210,11 @@ impl MessageList {
             // todo query list item , update state
             Msg::ServerRecResp(_) => false,
             Msg::RecRelationshipDel((friend_id, _)) => {
+                log::debug!(
+                    "rec friendship del in msg list {}, ctx friend id {:?}",
+                    friend_id,
+                    ctx.props().friend_id
+                );
                 // judge if friend_id is current user
                 if friend_id == ctx.props().friend_id {
                     self.is_black = true;

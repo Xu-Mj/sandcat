@@ -239,6 +239,15 @@
         }
     }
 
+    .user-info {
+        width: 100%;
+        height: 4rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+    }
+
     /* 隐藏滚动条 */
 
     .contacts-list::-webkit-scrollbar {

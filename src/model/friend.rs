@@ -74,6 +74,7 @@ pub struct Friend {
     pub friend_id: AttrValue,
     pub signature: AttrValue,
     pub create_time: i64,
+    pub email: Option<AttrValue>,
 }
 
 // #[derive(PartialEq, Serialize, Deserialize, Default)]
@@ -108,6 +109,9 @@ pub struct FriendShipWithUser {
     pub read: ReadStatus,
     #[serde(default)]
     pub is_self: bool,
+    #[serde(default)]
+    pub is_operated: bool,
+    pub email: Option<AttrValue>,
 }
 
 /// we must guarantee the order of the fields and the count of the fields
@@ -127,6 +131,7 @@ pub struct FriendshipWithUser4Response {
     pub create_time: i64,
     pub account: AttrValue,
     pub remark: Option<AttrValue>,
+    pub email: Option<AttrValue>,
 }
 
 impl From<FriendshipWithUser4Response> for FriendShipWithUser {
@@ -148,6 +153,8 @@ impl From<FriendshipWithUser4Response> for FriendShipWithUser {
             gender: value.gender,
             accept_time: 0,
             remark: value.remark,
+            is_operated: false,
+            email: value.email,
         }
     }
 }

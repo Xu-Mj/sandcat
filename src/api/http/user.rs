@@ -34,18 +34,17 @@ impl<'a> UserApi for UserHttp<'a> {
         &self,
         pattern: String,
         search_user: &str,
-    ) -> Result<Vec<UserWithMatchType>, JsValue> {
-        let friends: Vec<UserWithMatchType> =
-            Request::get(format!("/api/user/{}/search/{}", search_user, pattern).as_str())
-                .header(&self.auth_header, &self.get_token())
-                .send()
-                .await
-                .map_err(|err| JsValue::from(err.to_string()))?
-                .success()?
-                .json()
-                .await
-                .map_err(|err| JsValue::from(err.to_string()))?;
-        Ok(friends)
+    ) -> Result<Option<UserWithMatchType>, JsValue> {
+        let friend = Request::get(format!("/api/user/{}/search/{}", search_user, pattern).as_str())
+            .header(&self.auth_header, &self.get_token())
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
+            .json()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?;
+        Ok(friend)
     }
 
     /// 向指定邮箱中发送邮件

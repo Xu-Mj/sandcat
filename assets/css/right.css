@@ -173,11 +173,12 @@
             justify-content: center;
             align-items: center;
 
-            svg{
+            svg {
                 width: 5rem;
                 height: 5rem;
             }
         }
+
         .file-sender {
             position: absolute;
             width: 15rem;
@@ -723,31 +724,6 @@
 
                 .sign {
                     width: 100%;
-                }
-
-                .action {
-                    width: 100%;
-                    display: flex;
-                    justify-content: space-evenly;
-                    height: 5rem;
-                    line-height: 5rem;
-
-                    & div {
-                        height: 100%;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        cursor: pointer;
-                        flex-direction: column;
-                        font-size: small;
-                        color: #90CBFB;
-
-                        & svg {
-                            width: 2rem;
-                            height: 2rem;
-                            fill: #90CBFB;
-                        }
-                    }
                 }
             }
         }

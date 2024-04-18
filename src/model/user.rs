@@ -51,6 +51,7 @@ pub struct UserWithMatchType {
     pub birthday: Option<i64>,
     pub match_type: Option<AttrValue>,
     pub signature: AttrValue,
+    pub is_friend: bool,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
@@ -63,6 +64,25 @@ pub struct UserUpdate {
     pub email: Option<String>,
     pub address: Option<String>,
     pub signature: Option<String>,
+}
+
+impl From<Friend> for UserWithMatchType {
+    fn from(value: Friend) -> Self {
+        Self {
+            id: value.friend_id,
+            name: value.name,
+            account: value.account,
+            avatar: value.avatar,
+            gender: value.gender,
+            age: value.age,
+            email: None,
+            region: value.region,
+            birthday: None,
+            match_type: Some(value.source),
+            signature: value.signature,
+            is_friend: true,
+        }
+    }
 }
 
 impl From<User> for UserWithMatchType {
@@ -79,9 +99,30 @@ impl From<User> for UserWithMatchType {
             birthday: value.birthday.map(|x| x.timestamp_millis()),
             match_type: None,
             signature: value.signature,
+            is_friend: false,
         }
     }
 }
+
+impl From<GroupMember> for UserWithMatchType {
+    fn from(value: GroupMember) -> Self {
+        Self {
+            id: value.user_id.clone(),
+            name: value.group_name,
+            account: value.user_id,
+            avatar: value.avatar,
+            gender: value.gender,
+            age: value.age,
+            region: value.region,
+            birthday: None,
+            match_type: None,
+            email: None,
+            signature: value.signature,
+            is_friend: value.is_friend,
+        }
+    }
+}
+
 impl From<GroupMember> for User {
     fn from(value: GroupMember) -> Self {
         Self {

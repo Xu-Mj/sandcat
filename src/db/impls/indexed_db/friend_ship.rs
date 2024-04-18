@@ -36,9 +36,10 @@ impl Friendships for FriendShipRepo {
     }
 
     async fn agree_by_friend_id(&self, friend_id: &str) {
-        let mut friendship = self.get_friendship_by_friend_id(friend_id).await.unwrap();
-        friendship.status = FriendStatus::Accepted as i32;
-        self.put_friendship(&friendship).await;
+        if let Some(mut friendship) = self.get_friendship_by_friend_id(friend_id).await {
+            friendship.status = FriendStatus::Accepted as i32;
+            self.put_friendship(&friendship).await;
+        }
     }
 
     async fn put_friendship(&self, friendship: &FriendShipWithUser) {
@@ -204,6 +205,30 @@ impl Friendships for FriendShipRepo {
         on_add_error.forget();
         Ok(())
     }
+
+    // async fn update_status(&self, fs: &str) -> Result<(), JsValue> {
+    //     let store = self.store(FRIENDSHIP_TABLE_NAME).await?;
+    //     let req = store.get(&JsValue::from(fs))?;
+    //     let store = store.clone();
+    //     let onsccess = Closure::once(move |event: &Event| {
+    //         let target = event.target().unwrap();
+    //         let result = target
+    //             .dyn_into::<IdbRequest>()
+    //             .unwrap()
+    //             .result()
+    //             .unwrap_or_default();
+    //         if !result.is_undefined() && !result.is_null() {
+    //             let mut fs: FriendShipWithUser = serde_wasm_bindgen::from_value(result).unwrap();
+    //             fs.is_operated = true;
+    //             store
+    //                 .put(&serde_wasm_bindgen::to_value(&fs).unwrap())
+    //                 .unwrap();
+    //         }
+    //     });
+    //     req.set_onsuccess(Some(onsccess.as_ref().unchecked_ref()));
+    //     onsccess.forget();
+    //     Ok(())
+    // }
 
     async fn get_list(&self) -> Vec<FriendShipWithUser> {
         let (tx, rx) = oneshot::channel::<Vec<FriendShipWithUser>>();

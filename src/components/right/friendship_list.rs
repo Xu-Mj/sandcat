@@ -1,10 +1,12 @@
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
+use wasm_bindgen_futures::spawn_local;
 use web_sys::{HtmlInputElement, MouseEvent};
 use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef, Properties};
 
 use crate::i18n::{en_us, zh_cn, LanguageType};
+use crate::icons::UpIcon;
 use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus};
 use crate::model::FriendShipStateType;
 use crate::pages::FriendShipState;
@@ -146,6 +148,8 @@ impl Component for FriendShipList {
                         self.friendship_state
                             .res_change_event
                             .emit((friendship_id, *friend));
+                        // update the is_operated field
+                        spawn_local(async move {});
                         // ship.status = AttrValue::from("1");
                         // ship.read = ReadStatus::True;
                         // 发送通知给contacts，刷新列表
@@ -203,9 +207,15 @@ impl Component for FriendShipList {
                 let mut action = html!(<span>{tr!(self.i18n, "requested")}</span>);
                 let mut remark = html!(<div class="remark">{tr!(self.i18n, "remark")}{item.remark.clone()}</div>);
                 if !item.is_self {
-                    action = html! {
-                        <button {onclick}>{tr!(self.i18n, "go_verify")}</button>
-                    };
+                    if item.status == FriendStatus::Accepted as i32 {
+                        action = html! {
+                            <button>{tr!(self.i18n, "added")}</button>
+                        };
+                    } else if item.status == FriendStatus::Pending as i32{
+                        action = html! {
+                            <button {onclick}>{tr!(self.i18n, "go_verify")}</button>
+                        };
+                    }
                     remark = html! {
                         <div class="remark">{tr!(self.i18n, "apply_msg")}{item.apply_msg.clone()}</div>
                     };
@@ -223,6 +233,7 @@ impl Component for FriendShipList {
                             </div>
                         </div>
                         <div class="friendship-action">
+                            <UpIcon/>
                             {action}
                         </div>
                     </div>

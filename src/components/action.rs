@@ -5,7 +5,7 @@ use nanoid::nanoid;
 use yew::prelude::*;
 
 use crate::i18n::{en_us, zh_cn, LanguageType};
-use crate::icons::{MessagesIcon, PhoneIcon, VideoIcon};
+use crate::icons::{PhoneIcon, SendMsgIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
 use crate::model::{ComponentType, CurrentItem};
 use crate::pages::{ConvState, RecSendCallState};
@@ -112,7 +112,7 @@ impl Component for Action {
         html! {
             <div class="action">
                 <div {onclick}>
-                    <MessagesIcon/>
+                    <SendMsgIcon/>
                     <span>{tr!(self.i18n, "send_message")}</span>
                 </div>
                 // don't support call for group

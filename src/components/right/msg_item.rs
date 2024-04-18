@@ -11,7 +11,7 @@ use crate::icons::{CycleIcon, MsgPhoneIcon, VideoRecordIcon};
 use crate::model::message::{
     GroupMsg, InviteMsg, InviteType, Message, Msg, SendStatus, ServerResponse,
 };
-use crate::model::user::{User, UserWithMatchType};
+use crate::model::user::UserWithMatchType;
 use crate::model::RightContentType;
 use crate::pages::SendMessageState;
 use crate::{components::right::friend_card::FriendCard, model::ContentType};
@@ -26,17 +26,22 @@ pub struct MsgItem {
     timeout: Option<Timeout>,
     show_send_fail: bool,
     show_sending: bool,
+    pointer: (i32, i32),
+    friend_info: Option<UserWithMatchType>,
 }
 
+type FriendCardProps = (UserWithMatchType, i32, i32);
 pub enum MsgItemMsg {
     PreviewImg,
     ShowFriendCard(MouseEvent),
+    SpawnFriendCard(Box<FriendCardProps>),
     CallVideo,
     None,
     CallAudio,
     SendTimeout,
     ReSendMessage,
     QueryGroupMember(AttrValue),
+    CloseFriendCard,
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -86,6 +91,8 @@ impl Component for MsgItem {
             avatar,
             show_send_fail: ctx.props().msg.send_status == SendStatus::Failed,
             show_sending: false,
+            pointer: (0, 0),
+            friend_info: None,
         }
     }
 
@@ -105,7 +112,6 @@ impl Component for MsgItem {
                 true
             }
             MsgItemMsg::ShowFriendCard(event) => {
-                self.show_friend_card = !self.show_friend_card;
                 // 获取xy
                 let x = event.x();
                 let y = event.y();
@@ -124,15 +130,16 @@ impl Component for MsgItem {
                 let user_id = ctx.props().user_id.clone();
                 let conv_type = ctx.props().conv_type.clone();
                 let group_id = ctx.props().friend_id.clone();
-                spawn_local(async move {
+                ctx.link().send_future(async move {
                     // 查询好友信息
                     let user = if is_self {
-                        db::users().await.get(user_id.as_str()).await.unwrap()
+                        let user = db::users().await.get(user_id.as_str()).await.unwrap();
+                        UserWithMatchType::from(user)
                     } else {
                         match conv_type {
                             RightContentType::Friend => {
                                 let friend = db::friends().await.get(friend_id.as_str()).await;
-                                User::from(friend)
+                                UserWithMatchType::from(friend)
                             }
                             // query group member
                             RightContentType::Group => {
@@ -145,19 +152,21 @@ impl Component for MsgItem {
                                     .await
                                     .unwrap()
                                     .unwrap();
-                                User::from(member)
+                                UserWithMatchType::from(member)
                             }
-                            _ => User::default(),
+                            _ => UserWithMatchType::default(),
                         }
                     };
-                    FriendCard::show(
-                        UserWithMatchType::from(user),
-                        None,
-                        LanguageType::EnUS,
-                        true,
-                        x,
-                        y,
-                    );
+
+                    MsgItemMsg::SpawnFriendCard(Box::new((user, x, y)))
+                    // FriendCard::show(
+                    //     UserWithMatchType::from(user),
+                    //     None,
+                    //     LanguageType::EnUS,
+                    //     true,
+                    //     x,
+                    //     y,
+                    // );
                 });
                 false
             }
@@ -239,6 +248,17 @@ impl Component for MsgItem {
                 }));
                 self.show_send_fail = false;
                 self.show_sending = true;
+                true
+            }
+            MsgItemMsg::SpawnFriendCard(b) => {
+                self.show_friend_card = true;
+                self.friend_info = Some(b.0);
+                self.pointer = (b.1, b.2);
+                true
+            }
+            MsgItemMsg::CloseFriendCard => {
+                self.show_friend_card = false;
+                self.friend_info = None;
                 true
             }
         }
@@ -369,11 +389,33 @@ impl Component for MsgItem {
             };
         }
 
+        let mut friend_card = html!();
+        if self.show_friend_card {
+            friend_card = html! {
+                <FriendCard
+                    friend_info={self.friend_info.as_ref().unwrap().clone()}
+                    user_id={ctx.props().user_id.clone()}
+                    lang={LanguageType::ZhCN}
+                    close={ctx.link().callback(|_| MsgItemMsg::CloseFriendCard)}
+                    is_self={ctx.props().msg.is_self}
+                    x={self.pointer.0}
+                    y={self.pointer.1}
+                />
+            };
+        }
+
+        let avatar = if ctx.props().msg.is_self {
+            html!(<img class="avatar" src={self.avatar.clone()} />)
+        } else {
+            html!(<img class="avatar pointer" src={self.avatar.clone()} onclick={_avatar_click} />)
+        };
+
         html! {
             <>
+            {friend_card}
             <div class={classes} id={id.to_string()} >
                 <div class="msg-item-avatar">
-                    <img class="avatar" src={self.avatar.clone()} /* onclick={_avatar_click} */ />
+                    {avatar}
                 </div>
                 <div class="content-wrapper">
                     {content}
