@@ -45,8 +45,8 @@ pub struct FriendShipRequest {
 #[derive(Debug, Clone, Serialize)]
 pub struct FriendShipAgree {
     pub fs_id: AttrValue,
-    pub response_msg: Option<String>,
-    pub remark: Option<String>,
+    pub resp_msg: Option<String>,
+    pub resp_remark: Option<String>,
 }
 
 #[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
@@ -60,29 +60,20 @@ pub enum ReadStatus {
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
 pub struct Friend {
     pub fs_id: AttrValue,
-    pub friend_id: AttrValue,
-    pub remark: Option<AttrValue>,
-    /// 这里的hello是我们发送给对方的消息
-    pub hello: Option<AttrValue>,
-    pub region: Option<AttrValue>,
-    pub status: i32,
-    pub create_time: i64,
-    pub accept_time: i64,
-    pub source: AttrValue,
     pub name: AttrValue,
-    pub signature: AttrValue,
-    pub account: AttrValue,
     pub avatar: AttrValue,
     pub gender: AttrValue,
     pub age: i32,
-    #[serde(default)]
-    pub phone: Option<AttrValue>,
-    #[serde(default)]
-    pub email: Option<AttrValue>,
-    #[serde(default)]
-    pub address: Option<AttrValue>,
-    #[serde(default)]
-    pub birthday: Option<chrono::NaiveDateTime>,
+    pub region: Option<AttrValue>,
+    pub status: i32,
+    pub hello: Option<AttrValue>,
+    pub remark: Option<AttrValue>,
+    pub source: AttrValue,
+    pub accept_time: i64,
+    pub account: AttrValue,
+    pub friend_id: AttrValue,
+    pub signature: AttrValue,
+    pub create_time: i64,
 }
 
 // #[derive(PartialEq, Serialize, Deserialize, Default)]

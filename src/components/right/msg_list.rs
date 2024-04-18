@@ -22,7 +22,6 @@ use crate::{
 };
 
 pub struct MessageList {
-    // list: Vec<Message>,
     list2: IndexMap<AttrValue, Message>,
     node_ref: NodeRef,
     page: u32,
@@ -87,6 +86,7 @@ impl MessageList {
             let page_size = self.page_size;
             let conv_type = ctx.props().conv_type.clone();
             log::debug!("props conv type :{:?}", conv_type);
+
             ctx.link().send_future(async move {
                 match conv_type {
                     RightContentType::Friend => {
@@ -315,7 +315,7 @@ impl Component for MessageList {
             }
             MessageListMsg::QueryFriend(item) => {
                 if let Some(item) = item.as_ref() {
-                    self.is_black = item.status() == FriendStatus::Blacked;
+                    self.is_black = item.status() == FriendStatus::Delete;
                 }
                 self.friend = item;
                 true

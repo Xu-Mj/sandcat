@@ -126,12 +126,12 @@ impl Component for PostCard {
                                         if let Err(e) = db::convs().await.delete(id.as_str()).await
                                         {
                                             log::error!("delete conversation failed: {:?}", e);
-                                        } else {
-                                            // send state message to remove conversation from conversation lis
-                                            remove_conv.emit(id.clone());
-                                            // send state message to remove friend from friend list
-                                            remove_friend.emit((id, ItemType::Friend));
                                         }
+                                        log::debug!("delete friend success");
+                                        // send state message to remove conversation from conversation lis
+                                        remove_conv.emit(id.clone());
+                                        // send state message to remove friend from friend list
+                                        remove_friend.emit((id, ItemType::Friend));
                                     }
                                 }
                                 Err(e) => {

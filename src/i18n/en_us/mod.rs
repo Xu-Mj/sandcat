@@ -72,20 +72,21 @@ cancel = Cancel
 pub const FRIEND_CARD: &str = r#"
 # user info
 apply = Apply
-applied = Applied
-apply_msg = Apply Message
-remark = Remark
+applied = applied
+apply_msg = apply message
+remark = remark
 cancel = Cancel
-nickname = Nickname:
-account = Account:
-region = Region:
+nickname = nickname:
+account = account:
+region = region:
 "#;
 
 pub const FRIENDSHIP: &str = r#"
 # friendship
 requested = Requested
-go_verify = Go Verify
-remark = Remark:
+go_verify = GoVerify
+remark = remark:
+apply_msg = Apply Message:
 title = Friendship Verification
 message = Message:
 accept = Accept
@@ -93,10 +94,10 @@ cancel = Cancel
 "#;
 
 pub const POSTCARD: &str = r#"
-account = Account:
-remark = Remark:
-region = Region:
-signature = Signature:
+account = account:
+remark = remark:
+region = region:
+signature = signature:
 "#;
 
 pub const ACTION: &str = r#"

@@ -9,8 +9,7 @@ use crate::{
 };
 
 use super::{
-    repository::Repository, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
-    FRIEND_USER_ID_INDEX,
+    repository::Repository, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_USER_ID_INDEX,
 };
 
 pub struct FriendShipRepo(Repository);
@@ -71,10 +70,8 @@ impl Friendships for FriendShipRepo {
             .store(&String::from(FRIENDSHIP_TABLE_NAME))
             .await
             .unwrap();
-        let index = store
-            .index(FRIENDSHIP_ID_INDEX)
-            .expect("friend select index error");
-        let request = index
+
+        let request = store
             .get(&JsValue::from(friendship_id))
             .expect("friend select get error");
         let onsuccess = Closure::once(move |event: &Event| {

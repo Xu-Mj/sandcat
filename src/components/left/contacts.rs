@@ -238,10 +238,11 @@ impl Component for Contacts {
                     }
                     ItemType::Friend => {
                         if let Some(item) = self.friends.shift_remove(&state.id) {
-                            friend_id = item.fs_id;
+                            friend_id = item.friend_id;
                         }
                     }
                 }
+
                 if !friend_id.is_empty() && friend_id == self.friend_state.friend.item_id {
                     self.friend_state
                         .state_change_event

@@ -79,6 +79,7 @@ pub const FRIENDSHIP: &str = r#"
 requested = 已申请
 go_verify = 前往好友验证
 remark = 备注:
+apply_msg = 申请消息:
 title = 好友申请验证
 message = 验证信息:
 accept = 通过申请

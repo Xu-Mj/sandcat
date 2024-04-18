@@ -35,7 +35,7 @@ pub enum FriendCardMsg {
 
 pub enum FriendShipRequestState {
     Pendding,
-    Success,
+    // Success,
     Fail,
 }
 
@@ -160,7 +160,8 @@ impl Component for FriendCard {
                             friendship.read = ReadStatus::True;
                             // 数据入库
                             db::friendships().await.put_friendship(&friendship).await;
-                            FriendCardMsg::ApplyFriendResult(FriendShipRequestState::Success)
+                            // FriendCardMsg::ApplyFriendResult(FriendShipRequestState::Success)
+                            FriendCardMsg::Destroy
                         }
                     }
                 });

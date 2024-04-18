@@ -92,20 +92,20 @@ impl Component for FriendShipList {
 
                     let remark = self.apply_msg_node.cast::<HtmlInputElement>().unwrap();
                     let response_msg = self.response_msg_node.cast::<HtmlInputElement>().unwrap();
-                    let remark = if remark.value().is_empty() {
+                    let resp_remark = if remark.value().is_empty() {
                         None
                     } else {
                         Some(remark.value())
                     };
-                    let response_msg = if response_msg.value().is_empty() {
+                    let resp_msg = if response_msg.value().is_empty() {
                         None
                     } else {
                         Some(response_msg.value())
                     };
                     let friendship_req = FriendShipAgree {
                         fs_id: item.fs_id.clone(),
-                        response_msg,
-                        remark,
+                        resp_msg,
+                        resp_remark,
                     };
                     let friendship_id = item.fs_id.clone();
                     // 发送好友同意请求
@@ -113,6 +113,7 @@ impl Component for FriendShipList {
                         match api::friends().agree_friend(friendship_req).await {
                             Ok(res) => {
                                 log::debug!("好友请求成功:{:?}", &res);
+                                // todo
                                 FriendShipListMsg::AgreeFriendShipRes(RequestStatus::Success(
                                     friendship_id,
                                     Box::new(res),
@@ -127,7 +128,7 @@ impl Component for FriendShipList {
                         }
                     });
                 }
-                true
+                false
             }
             FriendShipListMsg::AgreeFriendShipRes(res) => {
                 match res {
@@ -158,6 +159,7 @@ impl Component for FriendShipList {
                         }
                     }
                 }
+                self.show_detail = false;
                 self.detail = None;
                 true
             }
@@ -199,9 +201,13 @@ impl Component for FriendShipList {
                 });
 
                 let mut action = html!(<span>{tr!(self.i18n, "requested")}</span>);
+                let mut remark = html!(<div class="remark">{tr!(self.i18n, "remark")}{item.remark.clone()}</div>);
                 if !item.is_self {
                     action = html! {
                         <button {onclick}>{tr!(self.i18n, "go_verify")}</button>
+                    };
+                    remark = html! {
+                        <div class="remark">{tr!(self.i18n, "apply_msg")}{item.apply_msg.clone()}</div>
                     };
                 }
                 html! {
@@ -213,8 +219,7 @@ impl Component for FriendShipList {
                         //     <div class="name-time">
                                 <span>{item.name.clone()}</span>
                                 // <span class="time">{time_str}</span>
-                                // fixme 如果是被请求方，那么显示apply_msg，如果是请求方，那么显示备注
-                                <div class="remark">{tr!(self.i18n, "remark")}{item.apply_msg.clone()}</div>
+                                {remark}
                             </div>
                         </div>
                         <div class="friendship-action">
@@ -245,7 +250,7 @@ impl Component for FriendShipList {
                         <input type="text" ref={self.apply_msg_node.clone()} value={remark} />
                     </div>
                     <div class="response_msg">
-                        {tr!(self.i18n, "response_msg")}
+                        {tr!(self.i18n, "message")}
                         <input type="text" ref={self.response_msg_node.clone()} />
                     </div>
                     // 通过验证
