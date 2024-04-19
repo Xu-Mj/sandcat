@@ -189,11 +189,6 @@ impl Component for FriendCard {
             html!(<Action id={&ctx.props().friend_info.id} conv_type={RightContentType::Friend} lang={ctx.props().lang}/>)
         } else if self.show_apply {
             let onclick = ctx.link().callback(|_| FriendCardMsg::Apply);
-            let apply_msg = if self.is_apply {
-                tr!(self.i18n, "applied")
-            } else {
-                tr!(self.i18n, "apply")
-            };
             html! {
                 <div class="apply-detail">
                     <div class="apply-msg">
@@ -205,8 +200,8 @@ impl Component for FriendCard {
                         <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
                     </div>
                     <div class="apply-friend" >
-                        <button {onclick} disabled={self.is_apply}>{apply_msg}</button>
-                        <button /* onclick={cancel} */>{tr!(self.i18n, "cancel")}</button>
+                        <span class="btn" {onclick} >{tr!(self.i18n, "apply")}</span>
+                        <span class="btn" onclick={ctx.link().callback(|_|FriendCardMsg::Destroy)}>{tr!(self.i18n, "cancel")}</span>
                     </div>
                 </div>
             }
@@ -215,8 +210,8 @@ impl Component for FriendCard {
             let cancel = ctx.link().callback(|_| FriendCardMsg::Destroy);
             html! {
                 <div class="apply-friend" >
-                    <button {onclick}>{tr!(self.i18n, "apply")}</button>
-                    <button onclick={cancel}>{tr!(self.i18n, "cancel")}</button>
+                    <span class="btn" {onclick}>{tr!(self.i18n, "apply")}</span>
+                    <span class="btn" onclick={cancel}>{tr!(self.i18n, "cancel")}</span>
                 </div>
             }
         };
@@ -236,22 +231,17 @@ impl Component for FriendCard {
                         <span>{tr!(self.i18n, "region")}{&self.friend.region.clone().unwrap_or_default()} </span>
                     </div>
                 </div>
-                // <div class="user-card-body">
-                // dialog 已经脱离了整个文档了，无法使用context中的状态了
-                // <Action id={&self.friend.friend_id}/>
                 <div class="friend-card-body">
                     {apply}
                 </div>
             </div>
-            // </dialog>
         }
     }
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
-        // node.focus().unwrap();
         if first_render {
-            // 计算下边框
+            // calculate border boundary
             let height = window().inner_height().unwrap().as_f64().unwrap() as i32;
             let width = window().inner_width().unwrap().as_f64().unwrap() as i32;
             let mut x = ctx.props().x;
@@ -270,6 +260,7 @@ impl Component for FriendCard {
             node.style()
                 .set_property("left", format!("{}px", x).as_str())
                 .unwrap();
+            node.focus().unwrap();
         }
     }
 }

@@ -93,6 +93,7 @@ impl Component for UserInfoCom {
             )
         }
         html! {
+        <>
         <div class={"user-info"} ref={self.node.clone()} onclick={ctx.link().callback(|_|UserInfoComMsg::FriendItemClicked)}>
             <div class="item-avatar">
                 <img class="avatar" src={props.avatar.clone()} />
@@ -102,8 +103,9 @@ impl Component for UserInfoCom {
                     <span>{props.name.clone()}</span>
                 </div>
             </div>
-            {friend_card}
         </div>
+            {friend_card}
+        </>
         }
     }
 }

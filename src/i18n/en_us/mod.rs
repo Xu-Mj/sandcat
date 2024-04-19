@@ -30,6 +30,7 @@ set_avatar = SET
 region = region
 submit = Submit
 cancel = Cancel
+logout = Logout
 "#;
 
 pub const CONVERSATION: &str = r#"
@@ -85,6 +86,7 @@ pub const FRIENDSHIP: &str = r#"
 # friendship
 requested = Requested
 go_verify = GoVerify
+added = Added
 remark = remark:
 apply_msg = Apply Message:
 title = Friendship Verification

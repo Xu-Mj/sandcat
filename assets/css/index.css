@@ -290,13 +290,13 @@ html {
                 /* font-size: 1rem; */
             }
 
-            > :first-child,
-            :nth-child(2) {
+            >:first-child,
+            >:nth-child(2) {
                 display: grid;
                 grid-template-columns: 1fr 2fr;
             }
 
-            > :last-child {
+            >:last-child {
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 justify-items: center;
@@ -513,6 +513,17 @@ html {
         }
     }
 
+}
+
+.btn {
+    width: 6rem;
+    height: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+    background-color: #e4e9ec;
 }
 
 /* 滚动条 */

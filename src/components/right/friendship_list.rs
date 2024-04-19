@@ -204,7 +204,11 @@ impl Component for FriendShipList {
                     FriendShipListMsg::ShowDetail(Box::new(cloned_item.clone()))
                 });
 
-                let mut action = html!(<span>{tr!(self.i18n, "requested")}</span>);
+                let mut action = if item.status == FriendStatus::Accepted as i32{
+                    html!(<><UpIcon/><span>{tr!(self.i18n, "added")}</span></>)
+                } else  {
+                    html!(<><UpIcon/><span>{tr!(self.i18n, "requested")}</span></>)
+                };
                 let mut remark = html!(<div class="remark">{tr!(self.i18n, "remark")}{item.remark.clone()}</div>);
                 if !item.is_self {
                     if item.status == FriendStatus::Accepted as i32 {
@@ -233,7 +237,7 @@ impl Component for FriendShipList {
                             </div>
                         </div>
                         <div class="friendship-action">
-                            <UpIcon/>
+
                             {action}
                         </div>
                     </div>

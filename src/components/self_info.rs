@@ -6,7 +6,9 @@ use wasm_bindgen_futures::spawn_local;
 use web_sys::Event;
 use web_sys::HtmlInputElement;
 use yew::{html, Callback, Component, ContextHandle, NodeRef, Properties};
+use yew_router::scope_ext::RouterScopeExt;
 
+use crate::pages::Page;
 use crate::{
     api, db,
     i18n::{en_us, zh_cn, LanguageType},
@@ -32,6 +34,7 @@ pub enum SelfInfoMsg {
     Submit,
     I18nStateChanged(Rc<I18nState>),
     GenderChange(Event),
+    Logout,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -128,6 +131,10 @@ impl Component for SelfInfo {
                     .value();
                 self.gender = gender;
                 true
+            }
+            SelfInfoMsg::Logout => {
+                ctx.link().navigator().unwrap().push(&Page::Login);
+                false
             }
         }
     }
@@ -267,6 +274,7 @@ impl Component for SelfInfo {
                 <div class="info-panel-btn">
                     <button type="submit" onclick={on_submit}>{tr!(self.i18n, "submit")}</button>
                     <button type="button" onclick={on_cancel}>{tr!(self.i18n, "cancel")}</button>
+                    <button type="button" onclick={ctx.link().callback(|_| SelfInfoMsg::Logout)}>{tr!(self.i18n, "logout")}</button>
                 </div>
             </div>
         }

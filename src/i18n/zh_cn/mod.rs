@@ -30,6 +30,7 @@ set_avatar = 设置
 region = 地区
 submit = 保存
 cancel = 取消
+logout = 退出登录
 "#;
 
 pub const ADD_FRIEND: &str = r#"
@@ -81,6 +82,7 @@ cancel = 取消
 pub const FRIENDSHIP: &str = r#"
 requested = 已申请
 go_verify = 前往好友验证
+added = 已添加
 remark = 备注:
 apply_msg = 申请消息:
 title = 好友申请验证
