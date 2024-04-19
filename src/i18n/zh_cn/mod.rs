@@ -35,6 +35,15 @@ logout = 退出登录
 
 pub const ADD_FRIEND: &str = r#"
 no_result = 没有搜索结果
+search_prompt = 根据手机号、邮箱、账号搜索
+apply = 申请
+applied = 已申请
+apply_msg = 申请消息
+remark = 备注:
+account = 账号:
+nickname = 昵称:
+region = 地区:
+cancel = 取消
 "#;
 
 pub const CONVERSATION: &str = r#"

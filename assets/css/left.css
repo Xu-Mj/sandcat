@@ -128,10 +128,11 @@
         }
 
         .new-friends {
-            width: 100%;
+            width: calc(100% - 2rem);
             height: 2rem;
             line-height: 2rem;
-            margin-bottom: 1rem;
+            margin: 1rem;
+            margin-top: 0;
             padding-left: 1rem;
             border-top: 1px solid rgb(124, 124, 124);
             border-bottom: 1px solid rgb(124, 124, 124);
@@ -241,11 +242,86 @@
 
     .user-info {
         width: 100%;
-        height: 4rem;
         display: flex;
+        flex-direction: column;
+
         align-items: center;
         gap: 1rem;
-        padding: 1rem;
+        padding: 1rem 2rem;
+
+
+        .friend-card-header {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .friend-card-avatar {
+            width: 3rem;
+            height: 3rem;
+            border-radius: .3rem;
+        }
+
+        .friend-card-info {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: flex-start;
+            word-wrap: break-word;
+            overflow: hidden;
+            white-space: pre-wrap;
+
+            &:not(:first-child) {
+                color: #999;
+            }
+        }
+
+        .friend-card-body {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            button {
+                border: none;
+                background-color: #e4e9ec;
+                width: 6rem;
+                height: 2rem;
+                padding: auto;
+                cursor: pointer;
+            }
+
+            .apply-detail {
+                width: 100%;
+                height: auto;
+                display: flex;
+                flex-direction: column;
+                gap: 1rem;
+
+                .apply-input {
+                    /* border-radius: .3rem; */
+                    outline: none;
+                    padding: 0 .3rem;
+                    /* font-size: 1rem; */
+                }
+
+                >:first-child,
+                >:nth-child(2) {
+                    display: grid;
+                    grid-template-columns: 1fr 2fr;
+                }
+
+                >:last-child {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    justify-items: center;
+                }
+            }
+        }
     }
 
     /* 隐藏滚动条 */

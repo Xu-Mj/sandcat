@@ -221,6 +221,7 @@ html {
     position: fixed;
     background-color: white;
     border-radius: .3rem;
+    z-index: 3;
 
     &[tabindex] {
         outline: none;

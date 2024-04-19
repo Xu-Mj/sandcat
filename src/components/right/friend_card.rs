@@ -1,18 +1,12 @@
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
-use web_sys::{HtmlDivElement, HtmlInputElement};
+use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use crate::{
-    api,
     components::action::Action,
-    db,
     i18n::{en_us, zh_cn, LanguageType},
-    model::{
-        friend::{FriendShipRequest, ReadStatus},
-        user::UserWithMatchType,
-        RightContentType,
-    },
+    model::{user::UserWithMatchType, RightContentType},
     tr, utils,
 };
 
@@ -20,25 +14,11 @@ use crate::{
 pub struct FriendCard {
     friend: UserWithMatchType,
     node_ref: NodeRef,
-    show_apply: bool,
-    is_apply: bool,
     i18n: FluentBundle<FluentResource>,
-    apply_node: NodeRef,
-    remark_node: NodeRef,
 }
 
 pub enum FriendCardMsg {
-    // Close,
-    ShowApply,
-    Apply,
-    ApplyFriendResult(FriendShipRequestState),
     Destroy,
-}
-
-pub enum FriendShipRequestState {
-    Pendding,
-    // Success,
-    Fail,
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -51,52 +31,6 @@ pub struct FriendCardProps {
     pub is_self: bool,
     pub x: i32,
     pub y: i32,
-}
-
-impl FriendCard {
-    // fn mount(&self, ctx: &Context<Self>) {
-    //     // 查询body节点
-    //     let body = document()
-    //         .get_element_by_id("app")
-    //         .expect("body is not defined");
-    //     // 将dialog渲染到容器中
-    //     body.append_child(&ctx.props().container.clone()).unwrap();
-    // }
-
-    // pub fn container_with_position(x: i32, y: i32) -> Element {
-    //     let container = document().create_element("div").unwrap();
-    //     container.set_class_name("friend-card-container");
-    //     // 设置容器绝对定位
-    //     container
-    //         .set_attribute("style", "position: fixed;")
-    //         .unwrap();
-
-    //     container.set_scroll_top(y);
-    //     container.set_scroll_left(x);
-    //     container
-    // }
-
-    // pub fn show(
-    //     friend_info: UserWithMatchType,
-    //     user_info: Option<User>,
-    //     lang: LanguageType,
-    //     is_friend: bool,
-    //     x: i32,
-    //     y: i32,
-    // ) {
-    //     log::debug!("x: {}, y: {}", x, y);
-    //     let container = FriendCard::container_with_position(x, y);
-    //     let props = FriendCardProps {
-    //         container: container.clone(),
-    //         friend_info,
-    //         user_info,
-    //         lang,
-    //         is_friend,
-    //         x,
-    //         y,
-    //     };
-    //     yew::Renderer::<FriendCard>::with_root_and_props(container, props).render();
-    // }
 }
 
 impl Component for FriendCard {
@@ -120,63 +54,6 @@ impl Component for FriendCard {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            FriendCardMsg::ShowApply => {
-                self.show_apply = true;
-                true
-            }
-            FriendCardMsg::Apply => {
-                let friend_id = ctx.props().friend_info.id.clone();
-                let source = ctx.props().friend_info.match_type.clone();
-                let user_id = ctx.props().user_id.clone();
-                let apply_node: HtmlInputElement = self.apply_node.cast().unwrap();
-                let apply_msg = if apply_node.value().is_empty() {
-                    None
-                } else {
-                    Some(AttrValue::from(apply_node.value()))
-                };
-                let remark: HtmlInputElement = self.remark_node.cast().unwrap();
-                let req_remark =
-                    (!remark.value().is_empty()).then_some(AttrValue::from(remark.value()));
-                // 发送好友申请
-                let new_friend = FriendShipRequest {
-                    user_id,
-                    friend_id,
-                    apply_msg,
-                    source,
-                    req_remark,
-                };
-
-                log::debug!("发送好友申请:{:?}", &new_friend);
-                ctx.link().send_message(FriendCardMsg::ApplyFriendResult(
-                    FriendShipRequestState::Pendding,
-                ));
-
-                // send friendship state to friendship list
-                // let update_friendship_list = self.;
-                ctx.link().send_future(async move {
-                    match api::friends().apply_friend(new_friend).await {
-                        Err(err) => {
-                            log::error!("发送好友申请错误: {:?}", err);
-                            FriendCardMsg::ApplyFriendResult(FriendShipRequestState::Fail)
-                        }
-                        Ok(mut friendship) => {
-                            friendship.is_self = true;
-                            friendship.read = ReadStatus::True;
-                            // 数据入库
-                            db::friendships().await.put_friendship(&friendship).await;
-                            // FriendCardMsg::ApplyFriendResult(FriendShipRequestState::Success)
-                            FriendCardMsg::Destroy
-                        }
-                    }
-                });
-                false
-            }
-            FriendCardMsg::ApplyFriendResult(_state) => {
-                self.is_apply = true;
-                self.show_apply = false;
-                // 发送通知，右侧渲染申请列表
-                true
-            }
             FriendCardMsg::Destroy => {
                 ctx.props().close.emit(());
                 false
@@ -185,40 +62,10 @@ impl Component for FriendCard {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let apply = if ctx.props().friend_info.is_friend {
-            html!(<Action id={&ctx.props().friend_info.id} conv_type={RightContentType::Friend} lang={ctx.props().lang}/>)
-        } else if self.show_apply {
-            let onclick = ctx.link().callback(|_| FriendCardMsg::Apply);
-            html! {
-                <div class="apply-detail">
-                    <div class="apply-msg">
-                        <label>{tr!(self.i18n, "apply_msg")}</label>
-                        <input class="apply-input" ref={self.apply_node.clone()} type="text"/>
-                    </div>
-                    <div class="apply-remark">
-                        <label>{tr!(self.i18n, "remark")}</label>
-                        <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
-                    </div>
-                    <div class="apply-friend" >
-                        <span class="btn" {onclick} >{tr!(self.i18n, "apply")}</span>
-                        <span class="btn" onclick={ctx.link().callback(|_|FriendCardMsg::Destroy)}>{tr!(self.i18n, "cancel")}</span>
-                    </div>
-                </div>
-            }
-        } else {
-            let onclick = ctx.link().callback(|_| FriendCardMsg::ShowApply);
-            let cancel = ctx.link().callback(|_| FriendCardMsg::Destroy);
-            html! {
-                <div class="apply-friend" >
-                    <span class="btn" {onclick}>{tr!(self.i18n, "apply")}</span>
-                    <span class="btn" onclick={cancel}>{tr!(self.i18n, "cancel")}</span>
-                </div>
-            }
-        };
         html! {
             <div
                 class="friend-card box-shadow"
-                tabindex="1"
+                tabindex="-1"
                 ref={self.node_ref.clone()}
                 onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >
@@ -232,7 +79,7 @@ impl Component for FriendCard {
                     </div>
                 </div>
                 <div class="friend-card-body">
-                    {apply}
+                    <Action id={&ctx.props().friend_info.id} conv_type={RightContentType::Friend} lang={ctx.props().lang}/>
                 </div>
             </div>
         }

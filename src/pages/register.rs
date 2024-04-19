@@ -166,7 +166,6 @@ impl Component for Register {
                         Err(e) => RegisterMsg::SendCodeFailed(e),
                     }
                 });
-                ctx.link().send_message(RegisterMsg::SendCodeSuccess);
                 false
             }
             RegisterMsg::SendCodeSuccess => {

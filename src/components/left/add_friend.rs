@@ -74,8 +74,19 @@ impl Component for AddFriend {
                         .search_friend(pattern.to_string(), user_id.as_str())
                         .await
                     {
-                        Ok(list) => {
-                            AddFriendMsg::SearchFriends(Box::new(SearchState::Success(list)))
+                        Ok(mut user) => {
+                            // check if user is already in friends
+                            let user = match user {
+                                Some(ref mut u) => {
+                                    let friend = db::friends().await.get(&u.id).await;
+                                    if !friend.friend_id.is_empty() {
+                                        u.is_friend = true;
+                                    }
+                                    user
+                                }
+                                None => None,
+                            };
+                            AddFriendMsg::SearchFriends(Box::new(SearchState::Success(user)))
                         }
                         Err(err) => {
                             log::error!("搜索用户错误:{:?}", err);
@@ -109,7 +120,11 @@ impl Component for AddFriend {
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let content = if self.result.is_none() {
+        let content = if !self.is_searching {
+            html! {
+                <div>{tr!(self.i18n, "search_prompt")}</div>
+            }
+        } else if self.result.is_none() {
             html! {<div class="no-result">{tr!(self.i18n, "no_result")}</div>}
         } else {
             html! {

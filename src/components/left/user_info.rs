@@ -1,20 +1,25 @@
 use std::rc::Rc;
 
-use web_sys::HtmlDivElement;
+use fluent::{FluentBundle, FluentResource};
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use crate::components::right::friend_card::FriendCard;
-use crate::i18n::LanguageType;
+use crate::components::action::Action;
+use crate::i18n::{en_us, zh_cn, LanguageType};
+use crate::model::friend::{FriendShipRequest, ReadStatus};
 use crate::model::user::UserWithMatchType;
+use crate::model::RightContentType;
 use crate::pages::AppState;
+use crate::{api, db, tr, utils};
 
 pub struct UserInfoCom {
     node: NodeRef,
     app_state: Rc<AppState>,
     _listener: ContextHandle<Rc<AppState>>,
-    show_friend_card: bool,
-    x: i32,
-    y: i32,
+    i18n: FluentBundle<FluentResource>,
+    apply_node: NodeRef,
+    remark_node: NodeRef,
+    apply_state: FriendShipRequestState,
 }
 
 #[derive(Properties, PartialEq)]
@@ -24,9 +29,17 @@ pub struct UserInfoComProps {
 }
 
 pub enum UserInfoComMsg {
-    FriendItemClicked,
     AppStateChange(Rc<AppState>),
-    CloseFriendCard,
+    Apply,
+    ApplyFriendResult(FriendShipRequestState),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum FriendShipRequestState {
+    NotApply,
+    Pendding,
+    Success,
+    Fail,
 }
 
 impl Component for UserInfoCom {
@@ -39,72 +52,136 @@ impl Component for UserInfoCom {
             .link()
             .context(ctx.link().callback(UserInfoComMsg::AppStateChange))
             .expect("app state needed");
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::ADD_FRIEND,
+            LanguageType::EnUS => en_us::ADD_FRIEND,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             node: Default::default(),
-            show_friend_card: false,
-            x: 0,
-            y: 0,
+            i18n,
             app_state,
             _listener,
+            apply_node: NodeRef::default(),
+            remark_node: NodeRef::default(),
+            apply_state: FriendShipRequestState::NotApply,
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            UserInfoComMsg::FriendItemClicked => {
-                // 获取自身坐标
-                if let Some(div) = self.node.cast::<HtmlDivElement>() {
-                    let rect = div.get_bounding_client_rect();
-                    let x = rect.x() + rect.width();
-                    log::debug!("user info component x: {}, y: {}", x, rect.y());
-                    self.show_friend_card = true;
-                    self.x = x as i32;
-                    self.y = rect.y() as i32;
-                    return true;
-                }
-                false
-            }
             UserInfoComMsg::AppStateChange(state) => {
                 self.app_state = state;
                 true
             }
-            UserInfoComMsg::CloseFriendCard => {
-                self.show_friend_card = false;
-                true
+            UserInfoComMsg::Apply => {
+                let friend_id = ctx.props().info.id.clone();
+                let source = ctx.props().info.match_type.clone();
+                let user_id = self.app_state.login_user.id.clone();
+                let apply_node: HtmlInputElement = self.apply_node.cast().unwrap();
+                let apply_msg = if apply_node.value().is_empty() {
+                    None
+                } else {
+                    Some(AttrValue::from(apply_node.value()))
+                };
+                let remark: HtmlInputElement = self.remark_node.cast().unwrap();
+                let req_remark =
+                    (!remark.value().is_empty()).then_some(AttrValue::from(remark.value()));
+                // 发送好友申请
+                let new_friend = FriendShipRequest {
+                    user_id,
+                    friend_id,
+                    apply_msg,
+                    source,
+                    req_remark,
+                };
+
+                log::debug!("发送好友申请:{:?}", &new_friend);
+                ctx.link().send_message(UserInfoComMsg::ApplyFriendResult(
+                    FriendShipRequestState::Pendding,
+                ));
+
+                // send friendship state to friendship list
+                // let update_friendship_list = self.;
+                ctx.link().send_future(async move {
+                    match api::friends().apply_friend(new_friend).await {
+                        Err(err) => {
+                            log::error!("发送好友申请错误: {:?}", err);
+                            UserInfoComMsg::ApplyFriendResult(FriendShipRequestState::Fail)
+                        }
+                        Ok(mut friendship) => {
+                            friendship.is_self = true;
+                            friendship.read = ReadStatus::True;
+                            // 数据入库
+                            db::friendships().await.put_friendship(&friendship).await;
+                            UserInfoComMsg::ApplyFriendResult(FriendShipRequestState::Success)
+                        }
+                    }
+                });
+                false
             }
+            UserInfoComMsg::ApplyFriendResult(state) => match state {
+                FriendShipRequestState::Pendding => {
+                    self.apply_state = FriendShipRequestState::Pendding;
+                    true
+                }
+                FriendShipRequestState::Fail => {
+                    self.apply_state = FriendShipRequestState::Fail;
+                    true
+                }
+                FriendShipRequestState::Success => {
+                    self.apply_state = FriendShipRequestState::Success;
+                    true
+                }
+                FriendShipRequestState::NotApply => false,
+            },
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         // 根据参数渲染组件
-        let props = &ctx.props().info;
-        let mut friend_card = html!();
-        if self.show_friend_card {
-            friend_card = html!(
-                <FriendCard
-                    friend_info={ctx.props().info.clone()}
-                    user_id={self.app_state.login_user.id.clone()}
-                    lang={ctx.props().lang}
-                    close={ctx.link().callback(|_| UserInfoComMsg::CloseFriendCard)}
-                    is_self={false}
-                    x={self.x}
-                    y={self.y}
-                />
-            )
-        }
+        let apply_btn = match self.apply_state {
+            FriendShipRequestState::NotApply => tr!(self.i18n, "apply"),
+            FriendShipRequestState::Pendding => tr!(self.i18n, "applying"),
+            FriendShipRequestState::Success => tr!(self.i18n, "applied"),
+            FriendShipRequestState::Fail => tr!(self.i18n, "apply_failed"),
+        };
+        let apply = if ctx.props().info.is_friend {
+            html!(<Action id={&ctx.props().info.id} conv_type={RightContentType::Friend} lang={ctx.props().lang}/>)
+        } else {
+            let onclick = ctx.link().callback(|_| UserInfoComMsg::Apply);
+            html! {
+                <div class="apply-detail">
+                    <div class="apply-msg">
+                        <label>{tr!(self.i18n, "apply_msg")}</label>
+                        <input class="apply-input" ref={self.apply_node.clone()} type="text"/>
+                    </div>
+                    <div class="apply-remark">
+                        <label>{tr!(self.i18n, "remark")}</label>
+                        <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
+                    </div>
+                    <div class="apply-friend" >
+                        <button disabled={self.apply_state != FriendShipRequestState::NotApply} {onclick}  >{apply_btn}</button>
+                    </div>
+                </div>
+            }
+        };
         html! {
         <>
-        <div class={"user-info"} ref={self.node.clone()} onclick={ctx.link().callback(|_|UserInfoComMsg::FriendItemClicked)}>
-            <div class="item-avatar">
-                <img class="avatar" src={props.avatar.clone()} />
-            </div>
-            <div class="item-info">
-                <div class="name-time">
-                    <span>{props.name.clone()}</span>
+        <div class={"user-info"} ref={self.node.clone()}>
+            <div class="friend-card-header">
+                    <img src={&ctx.props().info.avatar} class="friend-card-avatar"/>
+                    <div class="friend-card-info">
+                        // <span><b>{&self.friend.remark}</b></span>
+                        <span>{tr!(self.i18n, "nickname")}{&ctx.props().info.name}</span>
+                        <span>{tr!(self.i18n, "account")}{&ctx.props().info.account}</span>
+                        <span>{tr!(self.i18n, "region")}{&ctx.props().info.region.clone().unwrap_or_default()} </span>
+                    </div>
                 </div>
-            </div>
+                <div class="friend-card-body">
+                    {apply}
+                </div>
         </div>
-            {friend_card}
         </>
         }
     }

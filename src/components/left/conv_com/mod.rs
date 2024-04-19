@@ -476,8 +476,8 @@ fn get_msg_type(
         ContentType::File => AttrValue::from(tr!(bundle, "file")),
         ContentType::Emoji => AttrValue::from(tr!(bundle, "emoji")),
         ContentType::Default => AttrValue::from(""),
-        ContentType::VideoCall => AttrValue::from(tr!(bundle, "video call")),
-        ContentType::AudioCall => AttrValue::from(tr!(bundle, "audio call")),
+        ContentType::VideoCall => AttrValue::from(tr!(bundle, "video_call")),
+        ContentType::AudioCall => AttrValue::from(tr!(bundle, "audio_call")),
         ContentType::Audio => AttrValue::from(tr!(bundle, "audio")),
         ContentType::Error => AttrValue::from(tr!(bundle, "error")),
     }

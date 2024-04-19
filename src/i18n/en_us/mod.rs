@@ -54,6 +54,15 @@ no_groups = No Groups
 
 pub const ADD_FRIEND: &str = r#"
 no_result = No Result
+search_prompt = search by phone number or email address or account
+apply = Apply
+applied = applied
+apply_msg = apply message
+remark = remark
+cancel = Cancel
+nickname = nickname:
+account = account:
+region = region:
 "#;
 
 pub const RIGHT_CLICK_PANEL: &str = r#"
