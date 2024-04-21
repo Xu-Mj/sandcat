@@ -57,6 +57,7 @@ no_result = No Result
 search_prompt = search by phone number or email address or account
 apply = Apply
 applied = applied
+applying = applying
 apply_msg = apply message
 remark = remark
 cancel = Cancel

@@ -38,6 +38,7 @@ no_result = 没有搜索结果
 search_prompt = 根据手机号、邮箱、账号搜索
 apply = 申请
 applied = 已申请
+applying = 申请中
 apply_msg = 申请消息
 remark = 备注:
 account = 账号:

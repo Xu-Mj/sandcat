@@ -271,10 +271,10 @@ impl Component for FriendShipList {
                     // 通过验证
                     <div class="agree">
                         <button onclick={ctx.link().callback(|_| FriendShipListMsg::AgreeFriendShip)}>
-                            {"通过验证"}
+                            {tr!(self.i18n, "accept")}
                         </button>
                         <button onclick={ctx.link().callback(|_| FriendShipListMsg::Cancel)}>
-                            {"取消"}
+                            {tr!(self.i18n, "cancel")}
                         </button>
                     </div>
                 </div>

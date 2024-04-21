@@ -19,7 +19,6 @@
         "center": true,
         "focus": true,
         "closable": true,
-        "titleBarStyle": "Transparent",
         "decorations": true
       }
     ],
