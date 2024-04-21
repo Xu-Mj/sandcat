@@ -28,7 +28,7 @@ use crate::{
     },
     pages::{
         AddFriendState, ConvState, CreateConvState, FriendShipState, I18nState, MuteState,
-        OfflineMsgState, RecMessageState, RemoveConvState, SendMessageState, SendResultState,
+        RecMessageState, RemoveConvState, SendMessageState, SendResultState,
     },
     state::UnreadState,
     tr, utils,
@@ -87,7 +87,6 @@ pub struct Chats {
     add_friend_state: Rc<AddFriendState>,
     // _add_friend_state_listener: ContextHandle<Rc<AddFriendState>>,
     /// send the event to other components after sync offline message completed
-    sync_msg_state: Rc<OfflineMsgState>,
     // _sync_msg_state_listener: ContextHandle<Rc<OfflineMsgState>>,
     /// send the event to other components after receive a message
     rec_msg_state: Rc<RecMessageState>,
@@ -149,10 +148,6 @@ impl Chats {
             .context(ctx.link().callback(ChatsMsg::MuteStateChanged))
             .expect("need state in item");
         let (add_friend_state, _add_friend_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| ChatsMsg::None))
-            .expect("need state in item");
-        let (sync_msg_state, _sync_msg_state_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
@@ -219,13 +214,8 @@ impl Chats {
             _mute_state,
             _mute_state_listener,
             add_friend_state,
-            // _add_friend_state_listener,
-            sync_msg_state,
-            // _sync_msg_state_listener,
             rec_msg_state,
-            // _rec_msg_state_listener,
             fs_state,
-            // _fs_state_listener,
             i18n,
             lang_state,
             _lang_state_listener,

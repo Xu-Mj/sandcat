@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use yewdux::Store;
 
 use crate::{
@@ -5,9 +6,9 @@ use crate::{
     model::{user::User, ComponentType},
 };
 
-#[derive(Debug, Default, Clone, PartialEq)]
+#[derive(Store, Debug, Default, Clone, PartialEq)]
 pub struct OfflineMsgState {
-    pub complete: Option<()>,
+    pub complete: (),
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Store)]
@@ -20,7 +21,7 @@ pub struct AppState {
     pub login_user: User,
 }
 
-#[derive(Store, Default, Debug, Clone, PartialEq)]
+#[derive(Store, Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct UnreadState {
     pub msg_count: usize,
     pub contacts_count: usize,

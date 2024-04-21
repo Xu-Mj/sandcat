@@ -10,8 +10,8 @@ use yewdux::Dispatch;
 
 use super::{
     AddFriendState, AddFriendStateItem, ConvState, CreateConvState, FriendListState,
-    FriendShipState, I18nState, ItemType, OfflineMsgState, RecMessageState, RecSendCallState,
-    RemoveConvState, RemoveFriendState, SendMessageState, SendResultState, UnreadState,
+    FriendShipState, I18nState, ItemType, RecMessageState, RecSendCallState, RemoveConvState,
+    RemoveFriendState, SendMessageState, SendResultState,
 };
 use crate::db::current_item;
 use crate::db::repository::Repository;
@@ -35,14 +35,12 @@ pub struct Home {
     notification_interval: Option<Interval>,
     // state: Rc<AppState>,
     send_msg_state: Rc<SendMessageState>,
-    sync_msg_state: Rc<OfflineMsgState>,
     rec_msg_state: Rc<RecMessageState>,
     call_state: Rc<RecSendCallState>,
     conv_state: Rc<ConvState>,
     mute_state: Rc<MuteState>,
     remove_conv_state: Rc<RemoveConvState>,
     remove_friend_state: Rc<RemoveFriendState>,
-    unread_state: Rc<UnreadState>,
     friend_state: Rc<FriendListState>,
     friend_ship_state: Rc<FriendShipState>,
     add_friend_state: Rc<AddFriendState>,
@@ -58,7 +56,6 @@ pub enum HomeMsg {
     SwitchFriend(CurrentItem),
     // 会话列表选中元素改变
     SwitchConv(CurrentItem),
-    OfflineSyncStateChange(()),
     // 查询数据库
     Query(QueryStatus<QueryResult>),
     // 发送消息
@@ -83,10 +80,6 @@ pub enum HomeMsg {
     Notification(Notification),
     CleanNotification,
     CloseNotificationByIndex(usize),
-    AddUnreadMsgCount(usize),
-    SubUnreadMsgCount(usize),
-    AddUnreadContactCount,
-    SubUnreadContactCount(usize),
     RemoveConv(AttrValue),
     RemoveFriend((AttrValue, ItemType)),
     // 创建会话状态改变回调
@@ -218,30 +211,6 @@ impl Component for Home {
                 }
                 false
             }
-            HomeMsg::AddUnreadMsgCount(count) => {
-                let state = Rc::make_mut(&mut self.unread_state);
-                state.unread.unread_msg = state.unread.unread_msg.saturating_add(count);
-                current_item::save_unread_count(state.unread.clone()).unwrap();
-                true
-            }
-            HomeMsg::AddUnreadContactCount => {
-                let state = Rc::make_mut(&mut self.unread_state);
-                state.unread.unread_contact = state.unread.unread_contact.saturating_add(1);
-                current_item::save_unread_count(state.unread.clone()).unwrap();
-                true
-            }
-            HomeMsg::SubUnreadContactCount(count) => {
-                let state = Rc::make_mut(&mut self.unread_state);
-                state.unread.unread_contact = state.unread.unread_contact.saturating_sub(count);
-                current_item::save_unread_count(state.unread.clone()).unwrap();
-                true
-            }
-            HomeMsg::SubUnreadMsgCount(count) => {
-                let state = Rc::make_mut(&mut self.unread_state);
-                state.unread.unread_msg = state.unread.unread_msg.saturating_sub(count);
-                current_item::save_unread_count(state.unread.clone()).unwrap();
-                true
-            }
             HomeMsg::RemoveConv(id) => {
                 let state = Rc::make_mut(&mut self.remove_conv_state);
                 state.id = id;
@@ -278,11 +247,7 @@ impl Component for Home {
                 state.item = item;
                 true
             }
-            HomeMsg::OfflineSyncStateChange(()) => {
-                let state = Rc::make_mut(&mut self.sync_msg_state);
-                state.null = Some(());
-                true
-            }
+
             HomeMsg::RecMsgStateChange(msg) => {
                 let state = Rc::make_mut(&mut self.rec_msg_state);
                 state.msg = msg;
@@ -344,13 +309,11 @@ impl Component for Home {
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
             <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
             // <ContextProvider<SingleCall> context={self.call_msg.clone()}>
-            <ContextProvider<Rc<UnreadState>> context={self.unread_state.clone()}>
             <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
             <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
             <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
             <ContextProvider<Rc<MuteState>> context={self.mute_state.clone()}>
             <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
-            <ContextProvider<Rc<OfflineMsgState>> context={self.sync_msg_state.clone()}>
             <ContextProvider<Rc<RecMessageState>> context={self.rec_msg_state.clone()}>
             <ContextProvider<Rc<I18nState>> context={self.lang_state.clone()}>
             <ContextProvider<Rc<SendResultState>> context={self.send_result.clone()}>
@@ -366,13 +329,11 @@ impl Component for Home {
             </ContextProvider<Rc<SendResultState>>>
             </ContextProvider<Rc<I18nState>>>
             </ContextProvider<Rc<RecMessageState>>>
-            </ContextProvider<Rc<OfflineMsgState>>>
             </ContextProvider<Rc<AddFriendState>>>
             </ContextProvider<Rc<MuteState>>>
             </ContextProvider<Rc<CreateConvState>>>
             </ContextProvider<Rc<RemoveFriendState>>>
             </ContextProvider<Rc<RemoveConvState>>>
-            </ContextProvider<Rc<UnreadState>>>
             </ContextProvider<Rc<RecSendCallState>>>
             </ContextProvider<Rc<NotificationState>>>
             </ContextProvider<Rc<ConvState>>>

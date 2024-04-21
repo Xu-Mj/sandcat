@@ -4,7 +4,8 @@ use wasm_bindgen::JsValue;
 
 use crate::{
     i18n::LanguageType,
-    model::{ComponentType, CurrentItem, UnreadItem},
+    model::{ComponentType, CurrentItem},
+    state::UnreadState,
 };
 
 pub const CONV_LOCAL_STORAGE_KEY: &str = "__CURRENT_CONV__";
@@ -73,7 +74,7 @@ pub fn get_com_type() -> ComponentType {
     serde_json::from_str(value.as_str()).unwrap_or_default()
 }
 
-pub fn get_unread_count() -> UnreadItem {
+pub fn get_unread_count() -> UnreadState {
     let value = window()
         .local_storage()
         .unwrap()
@@ -84,8 +85,8 @@ pub fn get_unread_count() -> UnreadItem {
     serde_json::from_str(value.as_str()).unwrap_or_default()
 }
 
-pub fn save_unread_count(value: UnreadItem) -> Result<(), JsValue> {
-    let value = serde_json::to_string(&value).unwrap();
+pub fn save_unread_count(value: &UnreadState) -> Result<(), JsValue> {
+    let value = serde_json::to_string(value).unwrap();
     window()
         .local_storage()
         .unwrap()

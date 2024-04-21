@@ -4,6 +4,7 @@ use indexmap::IndexMap;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::db;
 use crate::i18n::LanguageType;
@@ -13,9 +14,9 @@ use crate::model::message::Msg;
 use crate::model::message::SingleCall;
 use crate::model::ItemInfo;
 use crate::model::RightContentType;
-use crate::pages::OfflineMsgState;
 use crate::pages::RecMessageState;
 use crate::pages::SendResultState;
+use crate::state::OfflineMsgState;
 use crate::{
     components::right::{msg_item::MsgItem, sender::Sender},
     model::message::Message,
@@ -32,8 +33,7 @@ pub struct MessageList {
     new_msg_count: u32,
     is_black: bool,
 
-    _sync_msg_state: Rc<OfflineMsgState>,
-    _sync_msg_listener: ContextHandle<Rc<OfflineMsgState>>,
+    _sync_msg_dis: Dispatch<OfflineMsgState>,
     // 监听消息接收状态，用来更新当前对话框消息列表
     _rec_msg_state: Rc<RecMessageState>,
     _rec_msg_listener: ContextHandle<Rc<RecMessageState>>,
@@ -231,10 +231,8 @@ impl Component for MessageList {
     type Properties = MessageListProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (_sync_msg_state, _sync_msg_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg))
-            .expect("need msg context");
+        let _sync_msg_dis =
+            Dispatch::global().subscribe(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg));
         let (_rec_msg_state, _rec_msg_listener) = ctx
             .link()
             .context(ctx.link().callback(MessageListMsg::ReceiveMsg))
@@ -253,8 +251,7 @@ impl Component for MessageList {
             friend: None,
             new_msg_count: 0,
             is_black: false,
-            _sync_msg_state,
-            _sync_msg_listener,
+            _sync_msg_dis,
             _rec_msg_state,
             _rec_msg_listener,
             _send_result_state,

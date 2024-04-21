@@ -9,7 +9,7 @@ use crate::i18n::LanguageType;
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::group::Group;
 use crate::model::message::{InviteMsg, Msg, ServerResponse};
-use crate::model::{CurrentItem, FriendShipStateType, RightContentType, UnreadItem};
+use crate::model::{CurrentItem, FriendShipStateType, RightContentType};
 
 // 1. 对话卡片切换
 // 2. 朋友卡片切换
@@ -17,22 +17,9 @@ use crate::model::{CurrentItem, FriendShipStateType, RightContentType, UnreadIte
 // 4. 全局组件切换
 
 #[derive(Debug, Default, Clone, PartialEq)]
-pub struct OfflineMsgState {
-    pub null: Option<()>,
-    pub complete: Callback<()>,
-}
-
-#[derive(Debug, Default, Clone, PartialEq)]
 pub struct I18nState {
     pub lang: LanguageType,
     pub switch_lang: Callback<LanguageType>,
-}
-
-#[derive(Default, Clone, PartialEq)]
-pub struct UnreadMsgCountState {
-    pub count: usize,
-    pub add: Callback<usize>,
-    pub sub: Callback<usize>,
 }
 
 /// 收发消息状态，收到消息触发receive_msg_event回调，发送消息通过send_msg_event回调来发送
@@ -107,15 +94,6 @@ impl RemoveFriendState {
             ..Default::default()
         }
     }
-}
-/// 记录当前未读消息数量
-#[derive(Default, Debug, Clone, PartialEq)]
-pub struct UnreadState {
-    pub unread: UnreadItem,
-    pub add_contact_count: Callback<()>,
-    pub sub_contact_count: Callback<usize>,
-    pub add_msg_count: Callback<usize>,
-    pub sub_msg_count: Callback<usize>,
 }
 
 /// 记录当前朋友列表状态

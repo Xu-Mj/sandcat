@@ -15,8 +15,8 @@ use crate::{
     },
     pages::{
         home_page::HomeMsg, AddFriendState, ConvState, CreateConvState, FriendListState,
-        FriendShipState, MuteState, OfflineMsgState, RecMessageState, RecSendCallState,
-        RemoveConvState, RemoveFriendState, SendMessageState, UnreadState,
+        FriendShipState, MuteState, RecMessageState, RecSendCallState, RemoveConvState,
+        RemoveFriendState, SendMessageState,
     },
 };
 
@@ -57,11 +57,6 @@ impl Home {
         let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
         let remove_conv_callback = ctx.link().callback(HomeMsg::RemoveConv);
         let remove_event = ctx.link().callback(HomeMsg::RemoveFriend);
-        let add_contact_count = ctx.link().callback(|_| HomeMsg::AddUnreadContactCount);
-        let sub_contact_count = ctx.link().callback(HomeMsg::SubUnreadContactCount);
-        let sub_msg_count = ctx.link().callback(HomeMsg::SubUnreadMsgCount);
-        let add_msg_count = ctx.link().callback(HomeMsg::AddUnreadMsgCount);
-        let complete = ctx.link().callback(HomeMsg::OfflineSyncStateChange);
         let rec_msg_event = ctx.link().callback(HomeMsg::SendMsgStateChange);
         let rec_msg_notify_event = ctx.link().callback(HomeMsg::RecMsgStateChange);
         // let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
@@ -92,13 +87,6 @@ impl Home {
             remove_conv_state: Rc::new(RemoveConvState {
                 id: AttrValue::default(),
                 remove_event: remove_conv_callback,
-            }),
-            unread_state: Rc::new(UnreadState {
-                unread: current_item::get_unread_count(),
-                add_contact_count,
-                add_msg_count,
-                sub_contact_count,
-                sub_msg_count,
             }),
             // ws,
             friend_ship_state: Rc::new(FriendShipState {
@@ -140,10 +128,6 @@ impl Home {
             add_friend_state: Rc::new(AddFriendState {
                 add,
                 ..Default::default()
-            }),
-            sync_msg_state: Rc::new(OfflineMsgState {
-                null: None,
-                complete,
             }),
             rec_msg_state: Rc::new(RecMessageState {
                 notify: rec_msg_notify_event,

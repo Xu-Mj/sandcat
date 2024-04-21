@@ -159,12 +159,6 @@ pub struct CurrentItem {
     pub content_type: RightContentType,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct UnreadItem {
-    pub unread_msg: usize,
-    pub unread_contact: usize,
-}
-
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct CommonProps {
     pub id: AttrValue,

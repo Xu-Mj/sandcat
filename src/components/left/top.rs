@@ -42,12 +42,13 @@ impl Component for Top {
         let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
         let unread_dis =
             Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
+        let unread_state = current_item::get_unread_count();
         Self {
             node: NodeRef::default(),
             show_info: false,
             app_state: dispatch.get(),
             app_s_dis: dispatch,
-            unread_state: unread_dis.get(),
+            unread_state: Rc::new(unread_state),
             _unread_dis: unread_dis,
         }
     }
@@ -56,6 +57,7 @@ impl Component for Top {
         match msg {
             TopMsg::EmptyCallback => false,
             TopMsg::UnreadStateChanged(state) => {
+                current_item::save_unread_count(state.as_ref()).unwrap();
                 self.unread_state = state;
                 true
             }
@@ -91,8 +93,10 @@ impl Component for Top {
         let mut contact_class = "top-icon-selected";
         let contact_onclick = if self.app_state.component_type != ComponentType::Contacts {
             contact_class = "hover";
-            self.app_s_dis
-                .reduce_mut_callback(|s| s.component_type = ComponentType::Contacts)
+            self.app_s_dis.reduce_mut_callback(|s| {
+                current_item::save_com_type(&ComponentType::Messages).unwrap();
+                s.component_type = ComponentType::Contacts
+            })
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };

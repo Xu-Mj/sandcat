@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::{
     db,
@@ -14,6 +15,7 @@ use crate::{
         ContentType, RightContentType,
     },
     pb::message::Msg as PbMsg,
+    state::OfflineMsgState,
 };
 
 use super::{conversations::ChatsMsg, Chats};
@@ -197,6 +199,6 @@ impl Chats {
         }
 
         // send sync offline message complete message to msg_list component
-        self.sync_msg_state.complete.emit(());
+        Dispatch::<OfflineMsgState>::global().reduce_mut(|s| s.complete = ());
     }
 }
