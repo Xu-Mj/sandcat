@@ -16,11 +16,11 @@ use crate::{
     pages::{
         home_page::HomeMsg, AddFriendState, ConvState, CreateConvState, FriendListState,
         FriendShipState, MuteState, OfflineMsgState, RecMessageState, RecSendCallState,
-        RemoveConvState, RemoveFriendState, SendMessageState, UnreadState, WaitState,
+        RemoveConvState, RemoveFriendState, SendMessageState, UnreadState,
     },
 };
 
-use super::{Home, QueryResult, WAIT_COUNT};
+use super::{Home, QueryResult};
 
 async fn query(id: &str) -> Result<QueryResult, QueryError> {
     let user_repo = db::users().await;
@@ -61,7 +61,6 @@ impl Home {
         let sub_contact_count = ctx.link().callback(HomeMsg::SubUnreadContactCount);
         let sub_msg_count = ctx.link().callback(HomeMsg::SubUnreadMsgCount);
         let add_msg_count = ctx.link().callback(HomeMsg::AddUnreadMsgCount);
-        let ready = ctx.link().callback(|_| HomeMsg::WaitStateChanged);
         let complete = ctx.link().callback(HomeMsg::OfflineSyncStateChange);
         let rec_msg_event = ctx.link().callback(HomeMsg::SendMsgStateChange);
         let rec_msg_notify_event = ctx.link().callback(HomeMsg::RecMsgStateChange);
@@ -126,11 +125,6 @@ impl Home {
                 rec_msg_event,
                 call_event,
             }),
-            // call_msg: SingleCall::default(),
-            wait_state: Rc::new(WaitState {
-                wait_count: WAIT_COUNT,
-                ready,
-            }),
             remove_friend_state: Rc::new(RemoveFriendState::with_event(remove_event)),
             create_conv: Rc::new(CreateConvState {
                 friend: None,
@@ -165,17 +159,6 @@ impl Home {
             }),
         }
     }
-    // pub fn send_msg(&self, msg: Msg) {
-    //     // 发送已收到消息给服务器
-    //     match self.ws.borrow().send_message(msg) {
-    //         Ok(_) => {
-    //             log::info!("发送成功")
-    //         }
-    //         Err(e) => {
-    //             log::error!("发送失败: {:?}", e)
-    //         }
-    //     };
-    // }
 
     pub fn info(&mut self, value: AttrValue) {
         self.notifications.push(Notification {
@@ -256,168 +239,4 @@ impl Home {
         });
         true
     }
-
-    /* pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
-        match message {
-            Msg::Single(ref mut msg) => {
-                let friend_id = msg.send_id.clone();
-                msg.send_id = msg.friend_id.clone();
-                msg.friend_id = friend_id;
-                msg.is_read = false;
-
-                let mut msg = msg.clone();
-                let msg_id = msg.server_id.to_string();
-                ctx.link().send_future(async move {
-                    // save to db
-                    if let Err(err) = db::messages().await.add_message(&mut msg).await {
-                        HomeMsg::Notification(Notification::error_from_content(
-                            format!("Internal Error:{:?}", err).into(),
-                        ))
-                    } else {
-                        HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
-                    }
-                });
-
-                ctx.link()
-                    .send_message(HomeMsg::SendMsgStateChange(message));
-            }
-            Msg::Group(ref group_msg) => {
-                match group_msg {
-                    GroupMsg::Invitation(_) => {
-                        // receive create group message
-                        ctx.link()
-                            .send_message(HomeMsg::SendMsgStateChange(message));
-                    }
-                    GroupMsg::Message(msg) => {
-                        let msg = msg.clone();
-                        let msg_id = msg.server_id.to_string();
-
-                        // if self.conv_state.conv.item_id != msg.friend_id {
-                        //     let conv_state = Rc::make_mut(&mut self.conv_state);
-                        //     let _ = current_item::save_conv(&conv_state.conv)
-                        //         .map_err(|err| log::error!("save conv fail{:?}", err));
-                        // }
-                        ctx.link().send_future(async move {
-                            // 数据入库
-                            if let Err(err) = db::group_msgs().await.put(&msg).await {
-                                HomeMsg::Notification(Notification::error_from_content(
-                                    format!("内部错误:{:?}", err).into(),
-                                ))
-                            } else {
-                                HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
-                            }
-                        });
-
-                        ctx.link()
-                            .send_message(HomeMsg::SendMsgStateChange(message));
-                    }
-                    GroupMsg::MemberExit((mem_id, group_id)) => {
-                        // delete member information from da
-                        let user_id = self.state.login_user.id.clone();
-                        let mem_id = mem_id.clone();
-                        let group_id = group_id.clone();
-                        let ctx = ctx.link().clone();
-                        spawn_local(async move {
-                            if let Err(err) =
-                                db::group_members().await.delete(&mem_id, &group_id).await
-                            {
-                                log::error!("remove group member fail:{:?}", err);
-                            } else {
-                                // send message received
-                                ctx.send_message(HomeMsg::SendBackMsg(Msg::Group(
-                                    GroupMsg::DismissOrExitReceived((
-                                        user_id.to_string(),
-                                        group_id,
-                                    )),
-                                )));
-                            }
-                        })
-                    }
-                    GroupMsg::Dismiss(group_id) => {
-                        // delete group from db
-                        let user_id = self.state.login_user.id.clone();
-                        // we can consume the group_msg here because it is behind in the reference
-                        let group_id = group_id.clone();
-                        let ctx = ctx.link().clone();
-                        log::debug!("received dismiss message, group id : {}", group_id);
-                        spawn_local(async move {
-                            if let Err(err) = db::groups().await.dismiss(&group_id).await {
-                                log::error!("remove group fail:{:?}", err);
-                            } else {
-                                // send message to other component
-                                ctx.send_message(HomeMsg::SendMsgStateChange(message));
-                                // send message received
-                                ctx.send_message(HomeMsg::SendBackMsg(Msg::Group(
-                                    GroupMsg::DismissOrExitReceived((
-                                        user_id.to_string(),
-                                        group_id,
-                                    )),
-                                )));
-                            }
-                        });
-                    }
-                    GroupMsg::DismissOrExitReceived(_) | GroupMsg::InvitationReceived(_) => {}
-                }
-            }
-            Msg::SendRelationshipReq(_msg) => {}
-            Msg::RecRelationship(msg) => {
-                // 收到好友请求
-                ctx.link().send_message(HomeMsg::ReceiveFriendShipReq(msg));
-            }
-            Msg::ReadNotice(_) | Msg::SingleDeliveredNotice(_) => {}
-            Msg::OfflineSync(_) => {}
-            Msg::SingleCall(_m) => {
-                // 保存电话信息，通知phone call组件
-                // self.call_msg = m;
-                // return true;
-            }
-            Msg::FriendshipDeliveredNotice(_) => {}
-            Msg::RelationshipRes(friend) => {
-                // 收到好友同意消息
-                self.info(AttrValue::from("好友同意"));
-                let send_id = self.state.login_user.id.clone();
-                // 需要通知联系人列表更新
-                // 数据入库
-                let cloned_ctx = ctx.link().clone();
-                ctx.link().send_future(async move {
-                    db::friendships()
-                        .await
-                        .agree_by_friend_id(friend.friend_id.as_str())
-                        .await;
-                    db::friends().await.put_friend(&friend).await;
-                    // send received message
-                    cloned_ctx.send_message(HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(
-                        friend.fs_id.to_string(),
-                    )));
-                    // send hello message
-                    let mut msg = Message {
-                        seq: 0,
-                        local_id: nanoid::nanoid!().into(),
-                        server_id: AttrValue::default(),
-                        send_id,
-                        friend_id: friend.friend_id.clone(),
-                        content_type: ContentType::Text,
-                        content: friend
-                            .hello
-                            .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
-                        create_time: chrono::Local::now().timestamp_millis(),
-                        is_read: true,
-                        is_self: true,
-                        file_content: AttrValue::default(),
-                        id: 0,
-                        send_time: 0,
-                        is_success: false,
-                    };
-                    let _ = db::messages()
-                        .await
-                        .add_message(&mut msg)
-                        .await
-                        .map_err(|err| log::error!("save message fail:{:?}", err));
-                    HomeMsg::SendMessage(Msg::Single(msg))
-                });
-            }
-            Msg::ServerRecResp(_) => {}
-        }
-        false
-    } */
 }

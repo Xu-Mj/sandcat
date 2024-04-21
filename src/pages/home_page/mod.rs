@@ -11,7 +11,7 @@ use yewdux::Dispatch;
 use super::{
     AddFriendState, AddFriendStateItem, ConvState, CreateConvState, FriendListState,
     FriendShipState, I18nState, ItemType, OfflineMsgState, RecMessageState, RecSendCallState,
-    RemoveConvState, RemoveFriendState, SendMessageState, SendResultState, UnreadState, WaitState,
+    RemoveConvState, RemoveFriendState, SendMessageState, SendResultState, UnreadState,
 };
 use crate::db::current_item;
 use crate::db::repository::Repository;
@@ -48,24 +48,16 @@ pub struct Home {
     add_friend_state: Rc<AddFriendState>,
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
-    wait_state: Rc<WaitState>,
     create_conv: Rc<CreateConvState>,
     lang_state: Rc<I18nState>,
     send_result: Rc<SendResultState>,
 }
 
-const WAIT_COUNT: usize = 1;
-
 pub enum HomeMsg {
-    // 全局组件切换
-    // UpdateUser(User),
-    // SwitchComponent(ComponentType),
     // 联系人列表选中元素改变
     SwitchFriend(CurrentItem),
     // 会话列表选中元素改变
     SwitchConv(CurrentItem),
-    // 需要等待子组件完成必须操作
-    WaitStateChanged,
     OfflineSyncStateChange(()),
     // 查询数据库
     Query(QueryStatus<QueryResult>),
@@ -124,15 +116,6 @@ impl Component for Home {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            // HomeMsg::SwitchComponent(component_type) => {
-            //     let shared_state = Rc::make_mut(&mut self.state);
-            //     if shared_state.component_type == component_type {
-            //         return false;
-            //     }
-
-            //     shared_state.component_type = component_type;
-            //     true
-            // }
             HomeMsg::SwitchFriend(conv) => {
                 let friend_state = Rc::make_mut(&mut self.friend_state);
                 if friend_state.friend.item_id == conv.item_id && !conv.item_id.is_empty() {
@@ -228,7 +211,6 @@ impl Component for Home {
                 conv_state.msg = msg;
                 true
             }
-            HomeMsg::WaitStateChanged => false,
             HomeMsg::CloseNotificationByIndex(index) => {
                 if index < self.notifications.len() {
                     self.notifications.remove(index);
@@ -362,7 +344,6 @@ impl Component for Home {
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
             <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
             // <ContextProvider<SingleCall> context={self.call_msg.clone()}>
-            <ContextProvider<Rc<WaitState>> context={self.wait_state.clone()}>
             <ContextProvider<Rc<UnreadState>> context={self.unread_state.clone()}>
             <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
             <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
@@ -392,8 +373,6 @@ impl Component for Home {
             </ContextProvider<Rc<RemoveFriendState>>>
             </ContextProvider<Rc<RemoveConvState>>>
             </ContextProvider<Rc<UnreadState>>>
-            </ContextProvider<Rc<WaitState>>>
-            // </ContextProvider<SingleCall>>
             </ContextProvider<Rc<RecSendCallState>>>
             </ContextProvider<Rc<NotificationState>>>
             </ContextProvider<Rc<ConvState>>>

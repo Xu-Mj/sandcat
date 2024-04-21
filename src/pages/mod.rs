@@ -9,27 +9,12 @@ use crate::i18n::LanguageType;
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::group::Group;
 use crate::model::message::{InviteMsg, Msg, ServerResponse};
-use crate::model::user::User;
-use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType, UnreadItem};
+use crate::model::{CurrentItem, FriendShipStateType, RightContentType, UnreadItem};
 
 // 1. 对话卡片切换
 // 2. 朋友卡片切换
 // 3. 消息收发
 // 4. 全局组件切换
-
-#[derive(Default, Clone, PartialEq)]
-pub struct AppState {
-    pub component_type: ComponentType,
-    pub switch_com_event: Callback<ComponentType>,
-    pub update_user: Callback<User>,
-    pub login_user: User,
-}
-
-#[derive(Debug, Default, Clone, PartialEq)]
-pub struct WaitState {
-    pub wait_count: usize,
-    pub ready: Callback<()>,
-}
 
 #[derive(Debug, Default, Clone, PartialEq)]
 pub struct OfflineMsgState {

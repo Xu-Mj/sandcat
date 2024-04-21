@@ -34,7 +34,6 @@ pub enum ChatsMsg {
     InsertConv(Conversation),
     InsertConvWithoutUpdate(Conversation),
     ConvStateChanged(Rc<ConvState>),
-    WaitStateChanged,
     ShowSelectFriendList,
     CreateGroup(Vec<String>),
     SendBackGroupInvitation(AttrValue),
@@ -96,7 +95,7 @@ impl Component for Chats {
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
-                self.wait_state.ready.emit(());
+                // self.wait_state.ready.emit(());
                 self.seq = seq;
                 // handle offline messages
                 self.handle_offline_messages(ctx, messages);
@@ -116,7 +115,6 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::ConvStateChanged(state) => self.deal_with_conv_state_change(ctx, state),
-            ChatsMsg::WaitStateChanged => false,
             ChatsMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
                 if nodes.is_empty() {

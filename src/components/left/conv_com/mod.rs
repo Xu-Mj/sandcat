@@ -29,7 +29,6 @@ use crate::{
     pages::{
         AddFriendState, ConvState, CreateConvState, FriendShipState, I18nState, MuteState,
         OfflineMsgState, RecMessageState, RemoveConvState, SendMessageState, SendResultState,
-        WaitState,
     },
     state::UnreadState,
     tr, utils,
@@ -77,9 +76,6 @@ pub struct Chats {
     _remove_conv_listener: ContextHandle<Rc<RemoveConvState>>,
     /// change the global unread count
     unread_dis: Dispatch<UnreadState>,
-    /// when this component is ready, send the event to notify the parent component
-    wait_state: Rc<WaitState>,
-    _wait_listener: ContextHandle<Rc<WaitState>>,
     /// listen to the create conv event, like:
     _create_conv: Rc<CreateConvState>,
     _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
@@ -143,10 +139,7 @@ impl Chats {
             .link()
             .context(ctx.link().callback(ChatsMsg::RemoveConvStateChanged))
             .expect("need state in item");
-        let (wait_state, _wait_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| ChatsMsg::WaitStateChanged))
-            .expect("need state in item");
+
         let (_create_conv, _create_conv_listener) = ctx
             .link()
             .context(ctx.link().callback(ChatsMsg::CreateConvStateChanged))
@@ -221,8 +214,6 @@ impl Chats {
             unread_dis,
             _send_msg_state,
             _send_msg_listener,
-            wait_state,
-            _wait_listener,
             _create_conv,
             _create_conv_listener,
             _mute_state,
