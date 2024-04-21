@@ -11,10 +11,10 @@ use crate::{
         friend::Friend,
         message::{InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
-        ComponentType, ContentType, CurrentItem, FriendShipStateType,
+        ContentType, CurrentItem, FriendShipStateType,
     },
     pages::{
-        home_page::HomeMsg, AddFriendState, AppState, ConvState, CreateConvState, FriendListState,
+        home_page::HomeMsg, AddFriendState, ConvState, CreateConvState, FriendListState,
         FriendShipState, MuteState, OfflineMsgState, RecMessageState, RecSendCallState,
         RemoveConvState, RemoveFriendState, SendMessageState, UnreadState, WaitState,
     },
@@ -53,8 +53,6 @@ impl Home {
         // 使用ctx发送一个正在查询的状态
         ctx.link()
             .send_message(HomeMsg::Query(QueryStatus::Querying));
-        let update_user = ctx.link().callback(HomeMsg::UpdateUser);
-        let callback = ctx.link().callback(HomeMsg::SwitchComponent);
         let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
         let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
         let remove_conv_callback = ctx.link().callback(HomeMsg::RemoveConv);
@@ -82,12 +80,6 @@ impl Home {
         let switch_lang = ctx.link().callback(HomeMsg::SwitchLang);
         let send_result = ctx.link().callback(HomeMsg::SendResultState);
         Self {
-            state: Rc::new(AppState {
-                component_type: ComponentType::Messages,
-                switch_com_event: callback,
-                update_user,
-                ..Default::default()
-            }),
             send_msg_state: Rc::new(SendMessageState {
                 msg: Msg::Single(Message::default()),
                 // send_back_event,
@@ -230,7 +222,7 @@ impl Home {
         state.friend = Some(friend.clone());
         state.state_type = FriendShipStateType::Res;
 
-        let send_id = self.state.login_user.id.clone();
+        let send_id = ctx.props().id.clone();
         // 入库
         ctx.link().send_future(async move {
             db::friendships().await.agree(friendship_id.as_str()).await;

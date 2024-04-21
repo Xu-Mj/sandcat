@@ -2,40 +2,35 @@ use std::rc::Rc;
 
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::{
     components::self_info::SelfInfo,
+    db::current_item,
     icons::{ContactsIcon, MessagesIcon},
     model::{user::User, ComponentType},
-    pages::{AppState, ConvState, UnreadState},
+    state::{AppState, UnreadState},
 };
 
 /// 增加双击切换置顶未读消息
 pub struct Top {
     node: NodeRef,
     show_info: bool,
-    state: Rc<AppState>,
-    _handler: ContextHandle<Rc<AppState>>,
-    // 修改为单独的未读消息增加减少的状态
-    conv_state: Rc<ConvState>,
-    _conv_handler: ContextHandle<Rc<ConvState>>,
+    app_state: Rc<AppState>,
+    app_s_dis: Dispatch<AppState>,
     unread_state: Rc<UnreadState>,
-    _unread_handler: ContextHandle<Rc<UnreadState>>,
+    _unread_dis: Dispatch<UnreadState>,
 }
 
 #[derive(Properties, PartialEq)]
-pub struct TopProps {
-    pub avatar: AttrValue,
-    pub name: AttrValue,
-}
+pub struct TopProps {}
 
 pub enum TopMsg {
-    AppContextChanged(Rc<AppState>),
-    ConvStateChanged(Rc<ConvState>),
     UnreadStateChanged(Rc<UnreadState>),
     EmptyCallback,
     ShowInfoPanel,
     SubmitInfo(Box<User>),
+    AppStateChanged(Rc<AppState>),
 }
 
 impl Component for Top {
@@ -44,41 +39,22 @@ impl Component for Top {
     type Properties = TopProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (state, _handler) = ctx
-            .link()
-            .context::<Rc<AppState>>(ctx.link().callback(TopMsg::AppContextChanged))
-            .expect("need state");
-        let (conv_state, _conv_handler) = ctx
-            .link()
-            .context::<Rc<ConvState>>(ctx.link().callback(TopMsg::ConvStateChanged))
-            .expect("need state");
-        let (unread_state, _unread_handler) = ctx
-            .link()
-            .context::<Rc<UnreadState>>(ctx.link().callback(TopMsg::UnreadStateChanged))
-            .expect("need state");
+        let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
+        let unread_dis =
+            Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
         Self {
             node: NodeRef::default(),
             show_info: false,
-            state,
-            _handler,
-            conv_state,
-            _conv_handler,
-            unread_state,
-            _unread_handler,
+            app_state: dispatch.get(),
+            app_s_dis: dispatch,
+            unread_state: unread_dis.get(),
+            _unread_dis: unread_dis,
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            TopMsg::AppContextChanged(state) => {
-                self.state = state;
-                true
-            }
             TopMsg::EmptyCallback => false,
-            TopMsg::ConvStateChanged(state) => {
-                self.conv_state = state;
-                true
-            }
             TopMsg::UnreadStateChanged(state) => {
                 self.unread_state = state;
                 true
@@ -89,7 +65,11 @@ impl Component for Top {
             }
             TopMsg::SubmitInfo(user) => {
                 self.show_info = !self.show_info;
-                self.state.update_user.emit(*user);
+                self.app_s_dis.reduce_mut(|s| s.login_user = *user);
+                true
+            }
+            TopMsg::AppStateChanged(state) => {
+                self.app_state = state;
                 true
             }
         }
@@ -97,22 +77,22 @@ impl Component for Top {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let mut msg_class = "top-icon-selected";
-        let msg_onclick = if self.state.component_type != ComponentType::Messages {
+        let msg_onclick = if self.app_state.component_type != ComponentType::Messages {
             msg_class = "hover";
-            self.state
-                .switch_com_event
-                .reform(move |_| ComponentType::Messages)
+            self.app_s_dis.reduce_mut_callback(|s| {
+                current_item::save_com_type(&ComponentType::Messages).unwrap();
+                s.component_type = ComponentType::Messages;
+            })
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
         let mut msg_class = classes!(msg_class);
         msg_class.push("msg-icon");
         let mut contact_class = "top-icon-selected";
-        let contact_onclick = if self.state.component_type != ComponentType::Contacts {
+        let contact_onclick = if self.app_state.component_type != ComponentType::Contacts {
             contact_class = "hover";
-            self.state
-                .switch_com_event
-                .reform(move |_| ComponentType::Contacts)
+            self.app_s_dis
+                .reduce_mut_callback(|s| s.component_type = ComponentType::Contacts)
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
@@ -126,10 +106,10 @@ impl Component for Top {
         //     ctx.link().callback(move |_| TopMsg::EmptyCallback)
         // };
         let mut count = html!();
-        if self.unread_state.unread.unread_msg > 0 {
+        if self.unread_state.msg_count > 0 {
             count = html! {
                 <span class="unread-count">
-                    {self.unread_state.unread.unread_msg}
+                    {self.unread_state.msg_count}
                 </span>
             };
         }
@@ -138,14 +118,15 @@ impl Component for Top {
         if self.show_info {
             let close = ctx.link().callback(|_| TopMsg::ShowInfoPanel);
             let submit = ctx.link().callback(TopMsg::SubmitInfo);
-            info_panel = html!(<SelfInfo user={self.state.login_user.clone()} {close} {submit} />)
+            info_panel =
+                html!(<SelfInfo user={self.app_state.login_user.clone()} {close} {submit} />)
         }
         let onclick = ctx.link().callback(|_| TopMsg::ShowInfoPanel);
         html! {
             <div class="top" ref={self.node.clone()}>
                 {info_panel}
                 <div class="top-left pointer" {onclick}>
-                    <img class="avatar" title={ctx.props().name.clone()} src={ctx.props().avatar.clone()} />
+                    <img class="avatar" title={self.app_state.login_user.name.clone()} src={self.app_state.login_user.avatar.clone()} />
                 </div>
                 <div class="top-right">
                     <span class={msg_class} onclick={msg_onclick}>

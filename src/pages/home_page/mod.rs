@@ -6,9 +6,10 @@ use gloo::utils::window;
 use web_sys::HtmlDivElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use super::{
-    AddFriendState, AddFriendStateItem, AppState, ConvState, CreateConvState, FriendListState,
+    AddFriendState, AddFriendStateItem, ConvState, CreateConvState, FriendListState,
     FriendShipState, I18nState, ItemType, OfflineMsgState, RecMessageState, RecSendCallState,
     RemoveConvState, RemoveFriendState, SendMessageState, SendResultState, UnreadState, WaitState,
 };
@@ -23,6 +24,7 @@ use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType};
 use crate::pages::MuteState;
 
+use crate::state::AppState;
 use crate::{
     components::{left::Left, right::Right},
     db::QueryStatus,
@@ -31,7 +33,7 @@ use crate::{
 pub struct Home {
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
-    state: Rc<AppState>,
+    // state: Rc<AppState>,
     send_msg_state: Rc<SendMessageState>,
     sync_msg_state: Rc<OfflineMsgState>,
     rec_msg_state: Rc<RecMessageState>,
@@ -56,8 +58,8 @@ const WAIT_COUNT: usize = 1;
 
 pub enum HomeMsg {
     // 全局组件切换
-    UpdateUser(User),
-    SwitchComponent(ComponentType),
+    // UpdateUser(User),
+    // SwitchComponent(ComponentType),
     // 联系人列表选中元素改变
     SwitchFriend(CurrentItem),
     // 会话列表选中元素改变
@@ -122,15 +124,15 @@ impl Component for Home {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            HomeMsg::SwitchComponent(component_type) => {
-                let shared_state = Rc::make_mut(&mut self.state);
-                if shared_state.component_type == component_type {
-                    return false;
-                }
-                current_item::save_com_type(&component_type).unwrap();
-                shared_state.component_type = component_type;
-                true
-            }
+            // HomeMsg::SwitchComponent(component_type) => {
+            //     let shared_state = Rc::make_mut(&mut self.state);
+            //     if shared_state.component_type == component_type {
+            //         return false;
+            //     }
+
+            //     shared_state.component_type = component_type;
+            //     true
+            // }
             HomeMsg::SwitchFriend(conv) => {
                 let friend_state = Rc::make_mut(&mut self.friend_state);
                 if friend_state.friend.item_id == conv.item_id && !conv.item_id.is_empty() {
@@ -154,15 +156,16 @@ impl Component for Home {
                 true
             }
             HomeMsg::Query(status) => {
-                let shared_state = Rc::make_mut(&mut self.state);
                 match status {
                     QueryStatus::QuerySuccess(u) => {
-                        shared_state.login_user = u.0;
+                        Dispatch::<AppState>::global().reduce_mut(|s| {
+                            s.login_user = u.0;
+                            s.component_type = u.3;
+                        });
                         let conv_state = Rc::make_mut(&mut self.conv_state);
                         conv_state.conv = u.1;
                         let friend_state = Rc::make_mut(&mut self.friend_state);
                         friend_state.friend = u.2;
-                        shared_state.component_type = u.3;
                     }
                     QueryStatus::QueryFail(_) => {
                         gloo::console::log!("query fail")
@@ -319,11 +322,6 @@ impl Component for Home {
                 state.msg = resp;
                 true
             }
-            HomeMsg::UpdateUser(user) => {
-                let state = Rc::make_mut(&mut self.state);
-                state.login_user = user;
-                true
-            }
         }
     }
 
@@ -357,7 +355,6 @@ impl Component for Home {
             .collect::<Html>();
 
         html! {
-            <ContextProvider<Rc<AppState>> context={self.state.clone()}>
             <ContextProvider<Rc<SendMessageState>> context={self.send_msg_state.clone()}>
             <ContextProvider<Rc<FriendShipState>> context={self.friend_ship_state.clone()}>
             <ContextProvider<Rc<FriendListState>> context={self.friend_state.clone()}>
@@ -403,7 +400,6 @@ impl Component for Home {
             </ContextProvider<Rc<FriendListState>>>
             </ContextProvider<Rc<FriendShipState>>>
             </ContextProvider<Rc<SendMessageState>>>
-            </ContextProvider<Rc<AppState>>>
         }
     }
 

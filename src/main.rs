@@ -8,6 +8,7 @@ mod icons;
 mod model;
 mod pages;
 mod pb;
+mod state;
 mod utils;
 mod web_rtc;
 mod ws;

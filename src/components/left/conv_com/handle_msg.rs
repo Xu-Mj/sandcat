@@ -146,7 +146,8 @@ impl Chats {
             let mut old = dest.unwrap();
             // deal with unread message count
             if !old.mute && !is_self && self.conv_state.conv.item_id != friend_id {
-                self.unread_state.add_msg_count.emit(unread_count);
+                self.unread_dis
+                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(unread_count));
             }
             // 这里是因为要直接更新面板上的数据，所以需要处理未读数量
             if friend_id != self.conv_state.conv.item_id {
@@ -167,7 +168,7 @@ impl Chats {
             });
             true
         } else {
-            let add_msg_count = self.unread_state.add_msg_count.clone();
+            let add_msg_count = self.unread_dis.clone();
             let current_id = self.conv_state.conv.item_id.clone();
             // 如果会话列表中不存在那么需要新建
             ctx.link().send_future(async move {
@@ -185,7 +186,8 @@ impl Chats {
 
                 // add global unread
                 if !is_self && current_id != friend_id {
-                    add_msg_count.emit(unread_count);
+                    add_msg_count
+                        .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(unread_count));
                 }
                 conv.unread_count = unread_count;
                 log::debug!("create conversation: {:?}", &conv);

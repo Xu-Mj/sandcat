@@ -9,12 +9,13 @@ pub mod user_info;
 use std::rc::Rc;
 
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::components::left::contacts::Contacts;
 use crate::components::left::conv_com::Chats;
 use crate::components::left::top::Top;
 use crate::model::ComponentType;
-use crate::pages::AppState;
+use crate::state::AppState;
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct LeftProps {
@@ -22,12 +23,11 @@ pub struct LeftProps {
 }
 
 pub enum LeftMsg {
-    ContextChanged(Rc<AppState>),
-    RequestState,
+    StateChanged(Rc<AppState>),
 }
 pub struct Left {
-    pub state: Rc<AppState>,
-    _context_listener: ContextHandle<Rc<AppState>>,
+    _dispatch: Dispatch<AppState>,
+    test_state: Rc<AppState>,
 }
 
 impl Component for Left {
@@ -35,25 +35,19 @@ impl Component for Left {
     type Properties = LeftProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        // 向服务器查询会话列表、联系人列表
-        ctx.link().send_future(async { LeftMsg::RequestState });
-        let (state, _context_listener) = ctx
-            .link()
-            .context(ctx.link().callback(LeftMsg::ContextChanged))
-            .expect("init state error");
+        let dispatch = Dispatch::global().subscribe(ctx.link().callback(LeftMsg::StateChanged));
         Self {
-            state,
-            _context_listener,
+            test_state: dispatch.get(),
+            _dispatch: dispatch,
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            LeftMsg::ContextChanged(state) => {
-                self.state = state;
+            LeftMsg::StateChanged(state) => {
+                self.test_state = state;
                 true
             }
-            LeftMsg::RequestState => false,
         }
     }
 
@@ -61,7 +55,7 @@ impl Component for Left {
     // 点击顶部选项栏切换左侧列表
     fn view(&self, _ctx: &Context<Self>) -> Html {
         let mut classes = "slider";
-        match self.state.component_type {
+        match self.test_state.component_type {
             ComponentType::Contacts => {
                 classes = "slider move-left";
             }
@@ -74,12 +68,12 @@ impl Component for Left {
         html! {
             <div class="left-container">
                 // 左侧顶部组件：包含头像以及功能切换
-                <Top avatar={self.state.login_user.avatar.clone()} name={self.state.login_user.name.clone()} />
+                <Top />
                 <div class="left-down">
                     <div class={classes}>
                     <Chats user_id={_ctx.props().user_id.clone()}
-                            avatar={self.state.login_user.avatar.clone()} />
-                    <Contacts user_id={self.state.login_user.id.clone()}/>
+                            avatar={self.test_state.login_user.avatar.clone()} />
+                    <Contacts user_id={self.test_state.login_user.id.clone()}/>
                     </div>
                 </div>
             </div>

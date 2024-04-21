@@ -10,6 +10,7 @@ use gloo::utils::window;
 use indexmap::IndexMap;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::{
     api,
@@ -28,8 +29,9 @@ use crate::{
     pages::{
         AddFriendState, ConvState, CreateConvState, FriendShipState, I18nState, MuteState,
         OfflineMsgState, RecMessageState, RemoveConvState, SendMessageState, SendResultState,
-        UnreadState, WaitState,
+        WaitState,
     },
+    state::UnreadState,
     tr, utils,
     ws::WebSocketManager,
 };
@@ -74,8 +76,7 @@ pub struct Chats {
     _remove_conv_state: Rc<RemoveConvState>,
     _remove_conv_listener: ContextHandle<Rc<RemoveConvState>>,
     /// change the global unread count
-    unread_state: Rc<UnreadState>,
-    _unread_listener: ContextHandle<Rc<UnreadState>>,
+    unread_dis: Dispatch<UnreadState>,
     /// when this component is ready, send the event to notify the parent component
     wait_state: Rc<WaitState>,
     _wait_listener: ContextHandle<Rc<WaitState>>,
@@ -138,10 +139,6 @@ impl Chats {
             .link()
             .context(ctx.link().callback(ChatsMsg::ConvStateChanged))
             .expect("need state in item");
-        let (unread_state, _unread_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| ChatsMsg::None))
-            .expect("need state in item");
         let (_remove_conv_state, _remove_conv_listener) = ctx
             .link()
             .context(ctx.link().callback(ChatsMsg::RemoveConvStateChanged))
@@ -183,6 +180,8 @@ impl Chats {
             .context(ctx.link().callback(ChatsMsg::SwitchLanguage))
             .expect("need state in item");
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
+        let unread_dis =
+            Dispatch::<UnreadState>::global().subscribe(ctx.link().callback(|_| ChatsMsg::None));
         let token = window()
             .local_storage()
             .unwrap()
@@ -219,8 +218,7 @@ impl Chats {
             _conv_listener,
             _remove_conv_state,
             _remove_conv_listener,
-            unread_state,
-            _unread_listener,
+            unread_dis,
             _send_msg_state,
             _send_msg_listener,
             wait_state,
@@ -267,7 +265,8 @@ impl Chats {
 
         if let Some(conv) = self.list.shift_remove(self.context_menu_pos.2.as_str()) {
             if conv.unread_count > 0 {
-                self.unread_state.sub_msg_count.emit(conv.unread_count);
+                self.unread_dis
+                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(conv.unread_count));
             }
         }
 
@@ -286,9 +285,11 @@ impl Chats {
             // if concel mute need to notify unread count event
             if conv.mute {
                 // notify
-                self.unread_state.add_msg_count.emit(conv.unread_count);
+                self.unread_dis
+                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(conv.unread_count));
             } else {
-                self.unread_state.sub_msg_count.emit(conv.unread_count);
+                self.unread_dis
+                    .reduce_mut(|s| s.msg_count.saturating_sub(conv.unread_count));
             }
 
             conv.mute = !conv.mute;

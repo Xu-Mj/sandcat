@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use fluent::{FluentBundle, FluentResource};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -7,7 +5,6 @@ use yew::prelude::*;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{PeoplePlusIcon, PlusIcon, SearchIcon};
 use crate::model::ComponentType;
-use crate::pages::AppState;
 use crate::{tr, utils};
 
 /// 左侧组件顶部选项栏
@@ -30,14 +27,11 @@ pub struct TopBar {
     search_node: NodeRef,
     search_value: AttrValue,
     i18n: FluentBundle<FluentResource>,
-    state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
 }
 
 pub enum TopBarMsg {
     SearchInputChanged(Event),
     SearchInputEnterListener(KeyboardEvent),
-    StateChanged(Rc<AppState>),
     PlusButtonClicked,
     SearchButtonClicked,
 }
@@ -48,10 +42,6 @@ impl Component for TopBar {
     type Properties = TopBarProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (state, _listener) = ctx
-            .link()
-            .context(ctx.link().callback(TopBarMsg::StateChanged))
-            .expect("expect state");
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::SEARCH_DOCK,
             LanguageType::EnUS => en_us::SEARCH_DOCK,
@@ -61,8 +51,6 @@ impl Component for TopBar {
             i18n,
             search_node: NodeRef::default(),
             search_value: AttrValue::default(),
-            state,
-            _listener,
         }
     }
 
@@ -89,10 +77,6 @@ impl Component for TopBar {
                 // ctx.props().clean_callback.emit(AttrValue::default());
                 // }
                 // true
-                false
-            }
-            TopBarMsg::StateChanged(state) => {
-                self.state = state;
                 false
             }
             TopBarMsg::PlusButtonClicked => {

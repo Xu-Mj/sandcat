@@ -157,7 +157,9 @@ impl Component for Chats {
                 // delete conversation from database should be here
                 if let Some(conv) = self.list.shift_remove(state.id.as_str()) {
                     if conv.unread_count > 0 {
-                        self.unread_state.sub_msg_count.emit(conv.unread_count);
+                        self.unread_dis.reduce_mut(|s| {
+                            s.msg_count = s.msg_count.saturating_sub(conv.unread_count)
+                        });
                     }
                     if conv.friend_id == self.conv_state.conv.item_id {
                         self.conv_state

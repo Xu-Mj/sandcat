@@ -3,20 +3,21 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use nanoid::nanoid;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{PhoneIcon, SendMsgIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
 use crate::model::{ComponentType, CurrentItem};
 use crate::pages::{ConvState, RecSendCallState};
-use crate::{model::RightContentType, pages::AppState};
+use crate::{model::RightContentType, state::AppState};
 use crate::{tr, utils};
 
 // 联系人卡面上的动作组件：发消息、点电话、打视频
 pub struct Action {
     i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
+    app_dis: Dispatch<AppState>,
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
     msg_state: Rc<RecSendCallState>,
@@ -26,7 +27,7 @@ pub struct Action {
 pub enum ActionMsg {
     AppStateChanged(Rc<AppState>),
     ConvStateChanged(Rc<ConvState>),
-    CallStateChanged(Rc<RecSendCallState>),
+    None,
     SendMessage,
     SendCallInvite(InviteType),
 }
@@ -43,17 +44,14 @@ impl Component for Action {
     type Properties = ActionProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (state, _listener) = ctx
-            .link()
-            .context(ctx.link().callback(ActionMsg::AppStateChanged))
-            .expect("action state needed");
+        let app_dis = Dispatch::global().subscribe(ctx.link().callback(ActionMsg::AppStateChanged));
         let (conv_state, _conv_listener) = ctx
             .link()
             .context(ctx.link().callback(ActionMsg::ConvStateChanged))
             .expect("action state needed");
         let (msg_state, _call_listener) = ctx
             .link()
-            .context(ctx.link().callback(ActionMsg::CallStateChanged))
+            .context(ctx.link().callback(|_| ActionMsg::None))
             .expect("action state needed");
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::ACTION,
@@ -62,8 +60,8 @@ impl Component for Action {
         let i18n = utils::create_bundle(res);
         Action {
             i18n,
-            state,
-            _listener,
+            state: app_dis.get(),
+            app_dis,
             conv_state,
             _conv_listener,
             msg_state,
@@ -75,23 +73,21 @@ impl Component for Action {
         match msg {
             ActionMsg::SendMessage => {
                 let id = ctx.props().id.clone();
-                self.state.switch_com_event.emit(ComponentType::Messages);
+                self.app_dis
+                    .reduce_mut(|s| s.component_type = ComponentType::Messages);
                 self.conv_state.state_change_event.emit(CurrentItem {
                     item_id: id,
                     content_type: ctx.props().conv_type.clone(),
                 });
                 log::debug!("conv type: {:?}", ctx.props().conv_type.clone());
-                true
             }
             ActionMsg::AppStateChanged(state) => {
                 self.state = state;
-                false
             }
             ActionMsg::ConvStateChanged(state) => {
                 self.conv_state = state;
-                false
             }
-            ActionMsg::CallStateChanged(_) => false,
+            ActionMsg::None => {}
             ActionMsg::SendCallInvite(t) => {
                 self.msg_state.call_event.emit(InviteMsg {
                     local_id: nanoid!().into(),
@@ -101,9 +97,9 @@ impl Component for Action {
                     create_time: chrono::Local::now().timestamp_millis(),
                     invite_type: t,
                 });
-                false
             }
         }
+        false
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {

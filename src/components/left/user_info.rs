@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use fluent::{FluentBundle, FluentResource};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -9,13 +7,10 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::friend::{FriendShipRequest, ReadStatus};
 use crate::model::user::UserWithMatchType;
 use crate::model::RightContentType;
-use crate::pages::AppState;
 use crate::{api, db, tr, utils};
 
 pub struct UserInfoCom {
     node: NodeRef,
-    app_state: Rc<AppState>,
-    _listener: ContextHandle<Rc<AppState>>,
     i18n: FluentBundle<FluentResource>,
     apply_node: NodeRef,
     remark_node: NodeRef,
@@ -24,12 +19,12 @@ pub struct UserInfoCom {
 
 #[derive(Properties, PartialEq)]
 pub struct UserInfoComProps {
+    pub user_id: AttrValue,
     pub lang: LanguageType,
     pub info: UserWithMatchType,
 }
 
 pub enum UserInfoComMsg {
-    AppStateChange(Rc<AppState>),
     Apply,
     ApplyFriendResult(FriendShipRequestState),
 }
@@ -48,10 +43,6 @@ impl Component for UserInfoCom {
     type Properties = UserInfoComProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (app_state, _listener) = ctx
-            .link()
-            .context(ctx.link().callback(UserInfoComMsg::AppStateChange))
-            .expect("app state needed");
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::ADD_FRIEND,
             LanguageType::EnUS => en_us::ADD_FRIEND,
@@ -60,8 +51,6 @@ impl Component for UserInfoCom {
         Self {
             node: Default::default(),
             i18n,
-            app_state,
-            _listener,
             apply_node: NodeRef::default(),
             remark_node: NodeRef::default(),
             apply_state: FriendShipRequestState::NotApply,
@@ -70,14 +59,10 @@ impl Component for UserInfoCom {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            UserInfoComMsg::AppStateChange(state) => {
-                self.app_state = state;
-                true
-            }
             UserInfoComMsg::Apply => {
                 let friend_id = ctx.props().info.id.clone();
                 let source = ctx.props().info.match_type.clone();
-                let user_id = self.app_state.login_user.id.clone();
+                let user_id = ctx.props().user_id.clone();
                 let apply_node: HtmlInputElement = self.apply_node.cast().unwrap();
                 let apply_msg = if apply_node.value().is_empty() {
                     None

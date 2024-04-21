@@ -13,6 +13,7 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::components::right::friendship_list::FriendShipList;
 use crate::components::right::set_window::SetWindow;
@@ -24,7 +25,7 @@ use crate::model::{ComponentType, ItemInfo};
 use crate::pages::{ConvState, CreateConvState, FriendListState, I18nState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
-    pages::AppState,
+    state::AppState,
 };
 use crate::{db, tr, utils};
 
@@ -33,7 +34,7 @@ pub struct Right {
     show_friend_list: bool,
     i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
-    _ctx_listener: ContextHandle<Rc<AppState>>,
+    _app_dis: Dispatch<AppState>,
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
     cur_conv_info: Option<Box<dyn ItemInfo>>,
@@ -101,10 +102,6 @@ impl Component for Right {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (state, _ctx_listener) = ctx
-            .link()
-            .context(ctx.link().callback(RightMsg::StateChanged))
-            .expect("expect state");
         let (conv_state, _conv_listener) = ctx
             .link()
             .context(ctx.link().callback(RightMsg::ConvStateChanged))
@@ -121,6 +118,7 @@ impl Component for Right {
             .link()
             .context(ctx.link().callback(RightMsg::SwitchLang))
             .expect("expect state");
+        let app_dis = Dispatch::global().subscribe(ctx.link().callback(RightMsg::StateChanged));
         let cur_conv_info = None;
         let res = match lang_state.lang {
             LanguageType::ZhCN => zh_cn::RIGHT_PANEL,
@@ -131,8 +129,8 @@ impl Component for Right {
             show_setting: false,
             show_friend_list: false,
             i18n,
-            state,
-            _ctx_listener,
+            state: app_dis.get(),
+            _app_dis: app_dis,
             conv_state,
             _conv_listener,
             cur_conv_info,
