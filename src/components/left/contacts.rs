@@ -12,8 +12,8 @@ use crate::db::groups::GroupInterface;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use crate::pages::{FriendShipState, ItemType};
-use crate::state::{AddFriendState, FriendListState, I18nState, RemoveFriendState};
+use crate::pages::FriendShipState;
+use crate::state::{AddFriendState, FriendListState, I18nState, ItemType, RemoveFriendState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     model::friend::Friend,

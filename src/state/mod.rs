@@ -11,7 +11,6 @@ use crate::{
         user::User,
         ComponentType, CurrentItem, RightContentType,
     },
-    pages::ItemType,
 };
 
 /// offline message. notify other components after offline handled complete
@@ -27,7 +26,7 @@ pub struct I18nState {
 }
 
 /// component type,
-#[derive(Default, Clone, PartialEq, Store)]
+#[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct AppState {
     pub component_type: ComponentType,
     pub login_user: User,
@@ -63,6 +62,13 @@ pub struct RemoveConvState {
 pub struct RemoveFriendState {
     pub id: AttrValue,
     pub type_: ItemType,
+}
+
+#[derive(Default, Debug, Clone, PartialEq)]
+pub enum ItemType {
+    Group,
+    #[default]
+    Friend,
 }
 
 /// send message from send or home component
@@ -135,7 +141,7 @@ pub struct ConvState {
 }
 
 /// current friend id and type
-#[derive(Default, Clone, PartialEq, Store)]
+#[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct FriendListState {
     pub friend: CurrentItem,
 }

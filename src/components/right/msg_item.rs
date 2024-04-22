@@ -238,6 +238,7 @@ impl Component for MsgItem {
                 };
 
                 // send message
+                log::debug!("send message in message item ");
                 Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = msg);
 
                 let ctx = ctx.link().clone();

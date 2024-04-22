@@ -8,8 +8,7 @@ use crate::components::right::set_drawer::SetDrawer;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::GroupDelete;
 use crate::model::{ItemInfo, RightContentType};
-use crate::pages::ItemType;
-use crate::state::{RemoveConvState, RemoveFriendState};
+use crate::state::{ItemType, RemoveConvState, RemoveFriendState};
 use crate::{api, db, tr, utils};
 
 #[derive(Properties, Clone, PartialEq)]

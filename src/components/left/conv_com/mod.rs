@@ -72,8 +72,6 @@ pub struct Chats {
     /// listen the conversation remove,
     /// used to receive that contact list to delete the friends to remove the conversation
     _remove_conv_dis: Dispatch<RemoveConvState>,
-    /// change the global unread count
-    unread_dis: Dispatch<UnreadState>,
     /// listen to the create conv event, like:
     _create_conv_dis: Dispatch<CreateConvState>,
     // _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
@@ -134,8 +132,6 @@ impl Chats {
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SwitchLanguage));
         let lang_state = lang_dispatch.get();
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
-        let unread_dis =
-            Dispatch::<UnreadState>::global().subscribe(ctx.link().callback(|_| ChatsMsg::None));
         let token = window()
             .local_storage()
             .unwrap()
@@ -169,7 +165,6 @@ impl Chats {
             show_context_menu: false,
             context_menu_pos: (0, 0, AttrValue::default(), false),
             _remove_conv_dis,
-            unread_dis,
             _send_msg_dis,
             _create_conv_dis,
             _mute_dis,
@@ -206,7 +201,7 @@ impl Chats {
 
         if let Some(conv) = self.list.shift_remove(self.context_menu_pos.2.as_str()) {
             if conv.unread_count > 0 {
-                self.unread_dis
+                Dispatch::<UnreadState>::global()
                     .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(conv.unread_count));
             }
         }
@@ -215,7 +210,11 @@ impl Chats {
         self.context_menu_pos = (0, 0, AttrValue::default(), false);
 
         // set right content type
-        Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = CurrentItem::default());
+        Dispatch::<ConvState>::global().reduce_mut(|s| {
+            let conv = CurrentItem::default();
+            current_item::save_conv(&conv).unwrap();
+            s.conv = conv;
+        });
     }
 
     fn mute(&mut self) -> bool {
@@ -223,10 +222,10 @@ impl Chats {
             // if concel mute need to notify unread count event
             if conv.mute {
                 // notify
-                self.unread_dis
+                Dispatch::<UnreadState>::global()
                     .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(conv.unread_count));
             } else {
-                self.unread_dis
+                Dispatch::<UnreadState>::global()
                     .reduce_mut(|s| s.msg_count.saturating_sub(conv.unread_count));
             }
 

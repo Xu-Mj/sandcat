@@ -104,6 +104,7 @@ impl Sender {
     }
 
     fn send_msg(&self, ctx: &Context<Self>, msg: Message) {
+        log::debug!("send message state in sender");
         match ctx.props().conv_type {
             RightContentType::Friend => {
                 Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));

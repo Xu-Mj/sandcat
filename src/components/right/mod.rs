@@ -39,11 +39,12 @@ pub struct Right {
     _conv_dis: Dispatch<ConvState>,
     cur_conv_info: Option<Box<dyn ItemInfo>>,
     friend_list_state: Rc<FriendListState>,
-    _friend_list_listener: ContextHandle<Rc<FriendListState>>,
+    _friend_list_dis: Dispatch<FriendListState>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
 }
 
+#[derive(Debug)]
 pub enum RightMsg {
     StateChanged(Rc<AppState>),
     ConvStateChanged(Rc<ConvState>),
@@ -101,10 +102,8 @@ impl Component for Right {
     fn create(ctx: &Context<Self>) -> Self {
         let conv_dis =
             Dispatch::global().subscribe(ctx.link().callback(RightMsg::ConvStateChanged));
-        let (friend_list_state, _friend_list_listener) = ctx
-            .link()
-            .context(ctx.link().callback(RightMsg::FriendListStateChanged))
-            .expect("expect state");
+        let _friend_list_dis =
+            Dispatch::global().subscribe(ctx.link().callback(RightMsg::FriendListStateChanged));
         let lang_dispatch = Dispatch::global().subscribe(ctx.link().callback(RightMsg::SwitchLang));
         let app_dis = Dispatch::global().subscribe(ctx.link().callback(RightMsg::StateChanged));
         let lang_state = lang_dispatch.get();
@@ -123,14 +122,15 @@ impl Component for Right {
             conv_state: conv_dis.get(),
             _conv_dis: conv_dis,
             cur_conv_info,
-            friend_list_state,
-            _friend_list_listener,
+            friend_list_state: _friend_list_dis.get(),
+            _friend_list_dis,
             lang_state,
             _lang_dispatch: lang_dispatch,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        log::debug!("Right update msg: {:?}", msg);
         match msg {
             RightMsg::StateChanged(state) => {
                 // 根据state中的不同数据变化，渲染右侧页面
@@ -251,9 +251,6 @@ impl Component for Right {
                     RightContentType::FriendShipList => {
                         log::debug!("right msg container");
                         html! {
-                            // self.friendships.iter().map(|item|
-                            //
-                            // )
                             <FriendShipList lang={self.lang_state.lang}/>
                         }
                     }

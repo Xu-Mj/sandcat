@@ -31,6 +31,7 @@ pub struct Home {
     notification: Rc<NotificationState>,
 }
 
+#[derive(Debug)]
 pub enum HomeMsg {
     // 联系人列表选中元素改变
     // SwitchFriend(CurrentItem),
@@ -77,6 +78,7 @@ impl Component for Home {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+        log::debug!("home update: {:?}", msg);
         match msg {
             HomeMsg::Query(status) => {
                 match status {
@@ -101,6 +103,7 @@ impl Component for Home {
             }
             HomeMsg::SendMessage(msg) => {
                 // change the send message state to send hello
+                log::debug!("send message in home");
                 Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = msg);
                 false
             }

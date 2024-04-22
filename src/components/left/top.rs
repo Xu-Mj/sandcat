@@ -94,7 +94,7 @@ impl Component for Top {
         let contact_onclick = if self.app_state.component_type != ComponentType::Contacts {
             contact_class = "hover";
             self.app_s_dis.reduce_mut_callback(|s| {
-                current_item::save_com_type(&ComponentType::Messages).unwrap();
+                current_item::save_com_type(&ComponentType::Contacts).unwrap();
                 s.component_type = ComponentType::Contacts
             })
         } else {

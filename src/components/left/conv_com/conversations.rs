@@ -9,17 +9,18 @@ use crate::components::left::right_click_panel::RightClickPanel;
 use crate::components::phone_call::PhoneCall;
 use crate::components::select_friends::SelectFriendList;
 use crate::components::top_bar::TopBar;
+use crate::db::current_item;
 use crate::model::conversation::Conversation;
 use crate::model::group::Group;
 use crate::model::message::Msg;
 use crate::model::seq::Seq;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pb::message::Msg as PbMsg;
-use crate::state::ConvState;
 use crate::state::{
     AddFriendState, AddFriendStateItem, CreateConvState, I18nState, MuteState, RemoveConvState,
     SendMessageState,
 };
+use crate::state::{ConvState, UnreadState};
 use crate::ws::WebSocketManager;
 
 #[derive(Debug)]
@@ -157,13 +158,16 @@ impl Component for Chats {
                 // delete conversation from database should be here
                 if let Some(conv) = self.list.shift_remove(state.id.as_str()) {
                     if conv.unread_count > 0 {
-                        self.unread_dis.reduce_mut(|s| {
+                        Dispatch::<UnreadState>::global().reduce_mut(|s| {
                             s.msg_count = s.msg_count.saturating_sub(conv.unread_count)
                         });
                     }
                     if conv.friend_id == self.conv_state.conv.item_id {
-                        self.conv_dispatch
-                            .reduce_mut(|s| s.conv = CurrentItem::default());
+                        self.conv_dispatch.reduce_mut(|s| {
+                            let conv = CurrentItem::default();
+                            current_item::save_conv(&conv).unwrap();
+                            s.conv = conv;
+                        });
                     }
                 };
                 true

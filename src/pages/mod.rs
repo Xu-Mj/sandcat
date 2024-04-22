@@ -12,13 +12,6 @@ use crate::model::FriendShipStateType;
 /// msg保存当前收到的消息或者正在发送的消息内容
 /// 将收发消息状态切割
 
-#[derive(Default, Debug, Clone, PartialEq)]
-pub enum ItemType {
-    Group,
-    #[default]
-    Friend,
-}
-
 /// 记录当前朋友列表状态
 
 /// 好友请求状态，当收到好友请求时触发状态改变的钩子

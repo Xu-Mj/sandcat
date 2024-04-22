@@ -67,7 +67,6 @@ impl Component for ListItem {
             ListItemMsg::CleanUnreadCount => {
                 Dispatch::<UnreadState>::global().reduce_mut(|s| {
                     s.msg_count = s.msg_count.saturating_sub(self.unread_count);
-                    current_item::save_unread_count(s).unwrap();
                 });
                 self.unread_count = 0;
 
@@ -76,10 +75,12 @@ impl Component for ListItem {
                     return false;
                 }
                 self.conv_dispatch.reduce_mut(|s| {
-                    s.conv = CurrentItem {
+                    let conv = CurrentItem {
                         item_id: ctx.props().props.id.clone(),
                         content_type: ctx.props().conv_type.clone(),
-                    }
+                    };
+                    current_item::save_conv(&conv).unwrap();
+                    s.conv = conv;
                 });
                 true
             }
