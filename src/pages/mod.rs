@@ -6,8 +6,7 @@ use yew::{AttrValue, Callback};
 use yew_router::Routable;
 
 use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::group::Group;
-use crate::model::{CurrentItem, FriendShipStateType, RightContentType};
+use crate::model::{CurrentItem, FriendShipStateType};
 
 /// 收发消息状态，收到消息触发receive_msg_event回调，发送消息通过send_msg_event回调来发送
 /// msg保存当前收到的消息或者正在发送的消息内容
@@ -35,29 +34,6 @@ pub struct FriendListState {
 }
 
 /// 记录当前朋友列表状态
-#[derive(Default, Clone, PartialEq)]
-pub struct AddFriendState {
-    pub item: AddFriendStateItem,
-    pub add: Callback<AddFriendStateItem>,
-}
-
-/// 记录当前朋友列表状态
-#[derive(Default, Clone, PartialEq)]
-pub struct AddFriendStateItem {
-    pub friend: Option<Friend>,
-    pub group: Option<Group>,
-    pub type_: RightContentType,
-}
-
-impl From<Group> for AddFriendStateItem {
-    fn from(value: Group) -> Self {
-        Self {
-            friend: None,
-            group: Some(value),
-            type_: RightContentType::Group,
-        }
-    }
-}
 
 /// 好友请求状态，当收到好友请求时触发状态改变的钩子
 #[derive(Default, Clone, PartialEq, Debug)]

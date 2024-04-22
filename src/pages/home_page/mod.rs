@@ -8,7 +8,7 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use super::{AddFriendState, AddFriendStateItem, ConvState, FriendListState, FriendShipState};
+use super::{ConvState, FriendListState, FriendShipState};
 use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
@@ -30,7 +30,7 @@ pub struct Home {
     conv_state: Rc<ConvState>,
     friend_state: Rc<FriendListState>,
     friend_ship_state: Rc<FriendShipState>,
-    add_friend_state: Rc<AddFriendState>,
+    // add_friend_state: Rc<AddFriendState>,
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
 }
@@ -62,7 +62,7 @@ pub enum HomeMsg {
     CleanNotification,
     CloseNotificationByIndex(usize),
     // 创建会话状态改变回调
-    AddFriendStateChange(AddFriendStateItem),
+    // AddFriendStateChange(AddFriendStateItem),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -171,11 +171,6 @@ impl Component for Home {
                 }
                 false
             }
-            HomeMsg::AddFriendStateChange(item) => {
-                let state = Rc::make_mut(&mut self.add_friend_state);
-                state.item = item;
-                true
-            }
             HomeMsg::RecFsResp(friend) => {
                 let state = Rc::make_mut(&mut self.friend_ship_state);
                 state.friend = Some(friend);
@@ -219,7 +214,6 @@ impl Component for Home {
             <ContextProvider<Rc<FriendListState>> context={self.friend_state.clone()}>
             <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
-            <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
                 <div class="home" id="app">
                     <Left user_id={ctx.props().id.clone()}/>
                     <Right />
@@ -229,7 +223,6 @@ impl Component for Home {
                         {notify}
                     </div>
                 </div>
-            </ContextProvider<Rc<AddFriendState>>>
             </ContextProvider<Rc<NotificationState>>>
             </ContextProvider<Rc<ConvState>>>
             </ContextProvider<Rc<FriendListState>>>

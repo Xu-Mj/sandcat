@@ -14,7 +14,7 @@ use crate::{
         notification::{Notification, NotificationState, NotificationType},
         ContentType, CurrentItem, FriendShipStateType,
     },
-    pages::{home_page::HomeMsg, AddFriendState, ConvState, FriendListState, FriendShipState},
+    pages::{home_page::HomeMsg, ConvState, FriendListState, FriendShipState},
 };
 
 use super::{Home, QueryResult};
@@ -56,7 +56,6 @@ impl Home {
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
         let rec_resp = ctx.link().callback(HomeMsg::RecFsResp);
         let error_event = ctx.link().callback(HomeMsg::Notification);
-        let add = ctx.link().callback(HomeMsg::AddFriendStateChange);
         // change lang state
         Dispatch::<I18nState>::global()
             .reduce_mut(|state| state.lang = current_item::get_language());
@@ -84,11 +83,6 @@ impl Home {
             }),
             notification_node: NodeRef::default(),
             notification_interval: None,
-
-            add_friend_state: Rc::new(AddFriendState {
-                add,
-                ..Default::default()
-            }),
         }
     }
 

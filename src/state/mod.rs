@@ -5,6 +5,8 @@ use yewdux::Store;
 use crate::{
     i18n::LanguageType,
     model::{
+        friend::Friend,
+        group::Group,
         message::{InviteMsg, Msg, ServerResponse},
         user::User,
         ComponentType, RightContentType,
@@ -101,4 +103,27 @@ impl CreateConvState {
     //     self.type_ = RightContentType::Friend;
     //     self.group = None;
     // }
+}
+
+#[derive(Default, Clone, PartialEq, Store)]
+pub struct AddFriendState {
+    pub item: AddFriendStateItem,
+}
+
+/// 记录当前朋友列表状态
+#[derive(Default, Clone, PartialEq)]
+pub struct AddFriendStateItem {
+    pub friend: Option<Friend>,
+    pub group: Option<Group>,
+    pub type_: RightContentType,
+}
+
+impl From<Group> for AddFriendStateItem {
+    fn from(value: Group) -> Self {
+        Self {
+            friend: None,
+            group: Some(value),
+            type_: RightContentType::Group,
+        }
+    }
 }

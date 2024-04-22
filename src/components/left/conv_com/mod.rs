@@ -26,7 +26,7 @@ use crate::{
         seq::Seq,
         CommonProps, ComponentType, ContentType, RightContentType,
     },
-    pages::{AddFriendState, ConvState, FriendShipState},
+    pages::{ConvState, FriendShipState},
     state::{
         CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState, SendMessageState,
         UnreadState,
@@ -81,14 +81,10 @@ pub struct Chats {
     /// used to receive the mute event from right panel
     _mute_dis: Dispatch<MuteState>,
     /// send the create friend/group event to contact list
-    add_friend_state: Rc<AddFriendState>,
     /// send the event to other components after receive a message
     rec_msg_dis: Dispatch<RecMessageState>,
-    // _rec_msg_state_listener: ContextHandle<Rc<RecMessageState>>,
     /// friendship state, notify the contact component after receive a friend application
     fs_state: Rc<FriendShipState>,
-    // send_result: Rc<SendResultState>,
-    // _fs_state_listener: ContextHandle<Rc<FriendShipState>>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
 }
@@ -131,10 +127,6 @@ impl Chats {
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::CreateConvStateChanged));
         let _mute_dis =
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::MuteStateChanged));
-        let (add_friend_state, _add_friend_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| ChatsMsg::None))
-            .expect("need state in item");
         let rec_msg_dis = Dispatch::global().subscribe(ctx.link().callback(|_| ChatsMsg::None));
         let (fs_state, _fs_state_listener) = ctx
             .link()
@@ -185,7 +177,6 @@ impl Chats {
             _send_msg_dis,
             _create_conv_dis,
             _mute_dis,
-            add_friend_state,
             rec_msg_dis,
             fs_state,
             i18n,
