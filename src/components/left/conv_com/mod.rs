@@ -26,9 +26,10 @@ use crate::{
         seq::Seq,
         CommonProps, ComponentType, ContentType, RightContentType,
     },
-    pages::{AddFriendState, ConvState, CreateConvState, FriendShipState},
+    pages::{AddFriendState, ConvState, FriendShipState},
     state::{
-        I18nState, MuteState, RecMessageState, RemoveConvState, SendMessageState, UnreadState,
+        CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState, SendMessageState,
+        UnreadState,
     },
     tr, utils,
     ws::WebSocketManager,
@@ -74,8 +75,8 @@ pub struct Chats {
     /// change the global unread count
     unread_dis: Dispatch<UnreadState>,
     /// listen to the create conv event, like:
-    _create_conv: Rc<CreateConvState>,
-    _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
+    _create_conv_dis: Dispatch<CreateConvState>,
+    // _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
     /// mute conversation,
     /// used to receive the mute event from right panel
     _mute_dis: Dispatch<MuteState>,
@@ -126,10 +127,8 @@ impl Chats {
             .expect("need state in item");
         let _remove_conv_dis =
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::RemoveConvStateChanged));
-        let (_create_conv, _create_conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ChatsMsg::CreateConvStateChanged))
-            .expect("need state in item");
+        let _create_conv_dis =
+            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::CreateConvStateChanged));
         let _mute_dis =
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::MuteStateChanged));
         let (add_friend_state, _add_friend_state_listener) = ctx
@@ -184,8 +183,7 @@ impl Chats {
             _remove_conv_dis,
             unread_dis,
             _send_msg_dis,
-            _create_conv,
-            _create_conv_listener,
+            _create_conv_dis,
             _mute_dis,
             add_friend_state,
             rec_msg_dis,

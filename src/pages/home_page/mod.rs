@@ -8,10 +8,7 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use super::{
-    AddFriendState, AddFriendStateItem, ConvState, CreateConvState, FriendListState,
-    FriendShipState,
-};
+use super::{AddFriendState, AddFriendStateItem, ConvState, FriendListState, FriendShipState};
 use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
@@ -19,7 +16,7 @@ use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::Msg;
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
-use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType};
+use crate::model::{ComponentType, CurrentItem, FriendShipStateType};
 
 use crate::state::{AppState, SendMessageState};
 use crate::{
@@ -36,7 +33,6 @@ pub struct Home {
     add_friend_state: Rc<AddFriendState>,
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
-    create_conv: Rc<CreateConvState>,
 }
 
 pub enum HomeMsg {
@@ -66,8 +62,6 @@ pub enum HomeMsg {
     CleanNotification,
     CloseNotificationByIndex(usize),
     // 创建会话状态改变回调
-    CreateFriendConv((RightContentType, Friend)),
-    CreateGroupConv((RightContentType, Vec<String>)),
     AddFriendStateChange(AddFriendStateItem),
 }
 
@@ -177,21 +171,6 @@ impl Component for Home {
                 }
                 false
             }
-            HomeMsg::CreateFriendConv((t, info)) => {
-                let state = Rc::make_mut(&mut self.create_conv);
-                state.type_ = t;
-                state.friend = Some(info);
-                true
-            }
-            HomeMsg::CreateGroupConv((t, list)) => {
-                if list.is_empty() {
-                    return false;
-                }
-                let state = Rc::make_mut(&mut self.create_conv);
-                state.type_ = t;
-                state.group = Some(list);
-                true
-            }
             HomeMsg::AddFriendStateChange(item) => {
                 let state = Rc::make_mut(&mut self.add_friend_state);
                 state.item = item;
@@ -240,7 +219,6 @@ impl Component for Home {
             <ContextProvider<Rc<FriendListState>> context={self.friend_state.clone()}>
             <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
-            <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
             <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
                 <div class="home" id="app">
                     <Left user_id={ctx.props().id.clone()}/>
@@ -252,7 +230,6 @@ impl Component for Home {
                     </div>
                 </div>
             </ContextProvider<Rc<AddFriendState>>>
-            </ContextProvider<Rc<CreateConvState>>>
             </ContextProvider<Rc<NotificationState>>>
             </ContextProvider<Rc<ConvState>>>
             </ContextProvider<Rc<FriendListState>>>

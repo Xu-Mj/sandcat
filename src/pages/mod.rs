@@ -75,17 +75,6 @@ pub struct FriendShipState {
     pub res_change_event: Callback<(AttrValue, Friend)>,
 }
 
-#[derive(Default, Clone, PartialEq, Debug)]
-pub struct CreateConvState {
-    pub type_: RightContentType,
-    // 可以是好友，或者其他实现了   ItemInfo的类型
-    pub friend: Option<Friend>,
-    // 创建群聊，接收一个NodeList，在chats中会生成群聊
-    pub group: Option<Vec<String>>,
-    pub create_friend: Callback<(RightContentType, Friend)>,
-    pub create_group: Callback<(RightContentType, Vec<String>)>,
-}
-
 // 定义路由
 #[derive(Clone, PartialEq, Routable)]
 pub enum Page {

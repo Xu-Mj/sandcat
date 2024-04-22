@@ -13,9 +13,9 @@ use crate::model::group::Group;
 use crate::model::message::Msg;
 use crate::model::seq::Seq;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
-use crate::pages::{AddFriendStateItem, ConvState, CreateConvState};
+use crate::pages::{AddFriendStateItem, ConvState};
 use crate::pb::message::Msg as PbMsg;
-use crate::state::{I18nState, MuteState, RemoveConvState, SendMessageState};
+use crate::state::{CreateConvState, I18nState, MuteState, RemoveConvState, SendMessageState};
 use crate::ws::WebSocketManager;
 
 #[derive(Debug)]

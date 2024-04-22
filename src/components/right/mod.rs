@@ -22,8 +22,8 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CatHeadIcon, CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
-use crate::pages::{ConvState, CreateConvState, FriendListState};
-use crate::state::I18nState;
+use crate::pages::{ConvState, FriendListState};
+use crate::state::{CreateConvState, I18nState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     state::AppState,
@@ -41,8 +41,6 @@ pub struct Right {
     cur_conv_info: Option<Box<dyn ItemInfo>>,
     friend_list_state: Rc<FriendListState>,
     _friend_list_listener: ContextHandle<Rc<FriendListState>>,
-    create_conv: Rc<CreateConvState>,
-    _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
 }
@@ -55,7 +53,6 @@ pub enum RightMsg {
     ShowSetting,
     ShowSelectFriendList,
     CreateGroup(Vec<String>),
-    None,
     SwitchLang(Rc<I18nState>),
 }
 
@@ -111,10 +108,6 @@ impl Component for Right {
             .link()
             .context(ctx.link().callback(RightMsg::FriendListStateChanged))
             .expect("expect state");
-        let (create_conv, _create_conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| RightMsg::None))
-            .expect("expect state");
         let lang_dispatch = Dispatch::global().subscribe(ctx.link().callback(RightMsg::SwitchLang));
         let app_dis = Dispatch::global().subscribe(ctx.link().callback(RightMsg::StateChanged));
         let lang_state = lang_dispatch.get();
@@ -135,8 +128,6 @@ impl Component for Right {
             cur_conv_info,
             friend_list_state,
             _friend_list_listener,
-            create_conv,
-            _create_conv_listener,
             lang_state,
             _lang_dispatch: lang_dispatch,
         }
@@ -181,14 +172,11 @@ impl Component for Right {
                     return true;
                 }
                 // create group conversation and send 'create group' message
-                self.create_conv
-                    .create_group
-                    .emit((RightContentType::Group, nodes));
+                Dispatch::<CreateConvState>::global().reduce_mut(|s| s.create_group(nodes));
                 self.show_friend_list = false;
                 self.show_setting = false;
                 true
             }
-            RightMsg::None => false,
             RightMsg::SwitchLang(state) => {
                 self.lang_state = state;
                 true

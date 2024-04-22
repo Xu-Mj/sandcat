@@ -7,7 +7,7 @@ use crate::{
     model::{
         message::{InviteMsg, Msg, ServerResponse},
         user::User,
-        ComponentType,
+        ComponentType, RightContentType,
     },
     pages::ItemType,
 };
@@ -78,4 +78,27 @@ pub struct SendCallState {
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct SendResultState {
     pub msg: ServerResponse,
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct CreateConvState {
+    pub type_: RightContentType,
+    // 可以是好友，或者其他实现了   ItemInfo的类型
+    // pub friend: Option<Friend>,
+    // 创建群聊，接收一个NodeList，在chats中会生成群聊
+    pub group: Option<Vec<String>>,
+}
+
+impl CreateConvState {
+    pub fn create_group(&mut self, group: Vec<String>) {
+        self.group = Some(group);
+        self.type_ = RightContentType::Group;
+        // self.friend = None;
+    }
+
+    // pub fn create_friend(&mut self, friend: Friend) {
+    //     self.friend = Some(friend);
+    //     self.type_ = RightContentType::Friend;
+    //     self.group = None;
+    // }
 }
