@@ -7,27 +7,12 @@ use yew_router::Routable;
 
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::group::Group;
-use crate::model::message::{InviteMsg, Msg, ServerResponse};
+use crate::model::message::ServerResponse;
 use crate::model::{CurrentItem, FriendShipStateType, RightContentType};
 
 /// 收发消息状态，收到消息触发receive_msg_event回调，发送消息通过send_msg_event回调来发送
 /// msg保存当前收到的消息或者正在发送的消息内容
 /// 将收发消息状态切割
-#[derive(Default, Clone, PartialEq, Debug)]
-pub struct SendMessageState {
-    pub msg: Msg,
-    pub send_msg_event: Callback<Msg>,
-    // dail a single call
-    pub call_event: Callback<InviteMsg>,
-}
-
-#[derive(Default, Clone, PartialEq, Debug)]
-pub struct RecSendCallState {
-    pub msg: InviteMsg,
-    pub send_msg_event: Callback<Msg>,
-    pub rec_msg_event: Callback<Msg>,
-    pub call_event: Callback<InviteMsg>,
-}
 
 /// 记录当前会话状态
 #[derive(Default, Debug, Clone, PartialEq)]

@@ -11,13 +11,13 @@ use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME},
     model::{
         friend::Friend,
-        message::{InviteMsg, Message, Msg, DEFAULT_HELLO_MESSAGE},
+        message::{Message, Msg, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
         ContentType, CurrentItem, FriendShipStateType,
     },
     pages::{
         home_page::HomeMsg, AddFriendState, ConvState, CreateConvState, FriendListState,
-        FriendShipState, RecSendCallState, SendMessageState,
+        FriendShipState,
     },
 };
 
@@ -56,9 +56,6 @@ impl Home {
             .send_message(HomeMsg::Query(QueryStatus::Querying));
         let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
         let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
-        let rec_msg_event = ctx.link().callback(HomeMsg::SendMsgStateChange);
-        let send_msg_event = ctx.link().callback(HomeMsg::SendMessage);
-        let call_event = ctx.link().callback(HomeMsg::SendCallInvite);
         let rec_friend_req_event = ctx.link().callback(HomeMsg::ReceiveFriendShipReq);
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
         let rec_resp = ctx.link().callback(HomeMsg::RecFsResp);
@@ -71,12 +68,6 @@ impl Home {
         Dispatch::<I18nState>::global()
             .reduce_mut(|state| state.lang = current_item::get_language());
         Self {
-            send_msg_state: Rc::new(SendMessageState {
-                msg: Msg::Single(Message::default()),
-                // send_back_event,
-                send_msg_event: send_msg_event.clone(),
-                call_event: call_event.clone(),
-            }),
             conv_state: Rc::new(ConvState {
                 conv: CurrentItem::default(),
                 state_change_event: switch_conv_callback,
@@ -100,12 +91,6 @@ impl Home {
             }),
             notification_node: NodeRef::default(),
             notification_interval: None,
-            call_state: Rc::new(RecSendCallState {
-                msg: InviteMsg::default(),
-                send_msg_event,
-                rec_msg_event,
-                call_event,
-            }),
             create_conv: Rc::new(CreateConvState {
                 friend: None,
                 group: None,

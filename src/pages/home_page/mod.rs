@@ -10,18 +10,18 @@ use yewdux::Dispatch;
 
 use super::{
     AddFriendState, AddFriendStateItem, ConvState, CreateConvState, FriendListState,
-    FriendShipState, RecSendCallState, SendMessageState, SendResultState,
+    FriendShipState, SendResultState,
 };
 use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::message::{InviteMsg, Msg, ServerResponse};
+use crate::model::message::{Msg, ServerResponse};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType};
 
-use crate::state::AppState;
+use crate::state::{AppState, SendMessageState};
 use crate::{
     components::{left::Left, right::Right},
     db::QueryStatus,
@@ -30,10 +30,7 @@ use crate::{
 pub struct Home {
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
-    // state: Rc<AppState>,
-    send_msg_state: Rc<SendMessageState>,
-    // rec_msg_state: Rc<RecMessageState>,
-    call_state: Rc<RecSendCallState>,
+    // call_state: Rc<RecSendCallState>,
     conv_state: Rc<ConvState>,
     friend_state: Rc<FriendListState>,
     friend_ship_state: Rc<FriendShipState>,
@@ -51,8 +48,6 @@ pub enum HomeMsg {
     SwitchConv(CurrentItem),
     // 查询数据库
     Query(QueryStatus<QueryResult>),
-    // 发送消息
-    SendMsgStateChange(Msg),
     // 收到消息
     // RecMsgStateChange(Msg),
     // 收到消息
@@ -65,7 +60,6 @@ pub enum HomeMsg {
     RecFsResp(Friend),
     // 显示顶部消息通知
     // 发送视频电话请求
-    SendCallInvite(InviteMsg),
     // 发送消息
     SendMessage(Msg),
     // 发送消息收到
@@ -140,15 +134,8 @@ impl Component for Home {
             }
             HomeMsg::SendMessage(msg) => {
                 // change the send message state to send hello
-                let state = Rc::make_mut(&mut self.send_msg_state);
-                state.msg = msg;
-                true
-            }
-            HomeMsg::SendMsgStateChange(msg) => {
-                log::debug!("send message from sender");
-                let conv_state = Rc::make_mut(&mut self.send_msg_state);
-                conv_state.msg = msg;
-                true
+                Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = msg);
+                false
             }
             // todo don't need anymore
             // HomeMsg::SendBackMsg(_msg) => {
@@ -184,12 +171,6 @@ impl Component for Home {
                 } else {
                     self.notification_interval = None;
                 }
-                true
-            }
-            HomeMsg::SendCallInvite(msg) => {
-                log::debug!("home rec video call event");
-                let conv_state = Rc::make_mut(&mut self.call_state);
-                conv_state.msg = msg;
                 true
             }
             HomeMsg::CloseNotificationByIndex(index) => {
@@ -263,12 +244,10 @@ impl Component for Home {
             .collect::<Html>();
 
         html! {
-            <ContextProvider<Rc<SendMessageState>> context={self.send_msg_state.clone()}>
             <ContextProvider<Rc<FriendShipState>> context={self.friend_ship_state.clone()}>
             <ContextProvider<Rc<FriendListState>> context={self.friend_state.clone()}>
             <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
-            <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
             <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
             <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
             <ContextProvider<Rc<SendResultState>> context={self.send_result.clone()}>
@@ -284,12 +263,10 @@ impl Component for Home {
             </ContextProvider<Rc<SendResultState>>>
             </ContextProvider<Rc<AddFriendState>>>
             </ContextProvider<Rc<CreateConvState>>>
-            </ContextProvider<Rc<RecSendCallState>>>
             </ContextProvider<Rc<NotificationState>>>
             </ContextProvider<Rc<ConvState>>>
             </ContextProvider<Rc<FriendListState>>>
             </ContextProvider<Rc<FriendShipState>>>
-            </ContextProvider<Rc<SendMessageState>>>
         }
     }
 

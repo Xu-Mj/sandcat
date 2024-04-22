@@ -1,9 +1,8 @@
-use std::rc::Rc;
-
 use gloo::timers::callback::Timeout;
 use nanoid::nanoid;
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::db;
 use crate::i18n::LanguageType;
@@ -13,15 +12,13 @@ use crate::model::message::{
 };
 use crate::model::user::UserWithMatchType;
 use crate::model::RightContentType;
-use crate::pages::SendMessageState;
+use crate::state::{RecSendCallState, SendMessageState};
 use crate::{components::right::friend_card::FriendCard, model::ContentType};
 
 pub struct MsgItem {
     avatar: AttrValue,
     show_img_preview: bool,
     show_friend_card: bool,
-    msg_state: Rc<SendMessageState>,
-    // receive a resp
     // timeout for sending message
     timeout: Option<Timeout>,
     show_send_fail: bool,
@@ -36,7 +33,6 @@ pub enum MsgItemMsg {
     ShowFriendCard(MouseEvent),
     SpawnFriendCard(Box<FriendCardProps>),
     CallVideo,
-    None,
     CallAudio,
     SendTimeout,
     ReSendMessage,
@@ -71,10 +67,7 @@ impl Component for MsgItem {
                 MsgItemMsg::QueryGroupMember(member.unwrap().avatar)
             });
         }
-        let (msg_state, _listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| MsgItemMsg::None))
-            .expect("need msg context");
+
         let avatar = ctx.props().avatar.clone();
         let mut timeout = None;
         if ctx.props().msg.is_self && ctx.props().msg.send_status == SendStatus::Sending {
@@ -87,7 +80,6 @@ impl Component for MsgItem {
             timeout,
             show_img_preview: false,
             show_friend_card: false,
-            msg_state,
             avatar,
             show_send_fail: ctx.props().msg.send_status == SendStatus::Failed,
             show_sending: false,
@@ -171,28 +163,31 @@ impl Component for MsgItem {
                 false
             }
             MsgItemMsg::CallVideo => {
-                self.msg_state.call_event.emit(InviteMsg {
-                    local_id: nanoid!().into(),
-                    server_id: AttrValue::default(),
-                    send_id: ctx.props().user_id.clone(),
-                    friend_id: ctx.props().friend_id.clone(),
-                    create_time: chrono::Local::now().timestamp_millis(),
-                    invite_type: InviteType::Video,
+                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                    s.msg = InviteMsg {
+                        local_id: nanoid!().into(),
+                        server_id: AttrValue::default(),
+                        send_id: ctx.props().user_id.clone(),
+                        friend_id: ctx.props().friend_id.clone(),
+                        create_time: chrono::Local::now().timestamp_millis(),
+                        invite_type: InviteType::Video,
+                    }
                 });
                 false
             }
             MsgItemMsg::CallAudio => {
-                self.msg_state.call_event.emit(InviteMsg {
-                    local_id: nanoid!().into(),
-                    server_id: AttrValue::default(),
-                    send_id: ctx.props().user_id.clone(),
-                    friend_id: ctx.props().friend_id.clone(),
-                    create_time: chrono::Local::now().timestamp_millis(),
-                    invite_type: InviteType::Audio,
+                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                    s.msg = InviteMsg {
+                        local_id: nanoid!().into(),
+                        server_id: AttrValue::default(),
+                        send_id: ctx.props().user_id.clone(),
+                        friend_id: ctx.props().friend_id.clone(),
+                        create_time: chrono::Local::now().timestamp_millis(),
+                        invite_type: InviteType::Audio,
+                    }
                 });
                 false
             }
-            MsgItemMsg::None => false,
             MsgItemMsg::QueryGroupMember(avatar) => {
                 self.avatar = avatar;
                 true
@@ -241,7 +236,10 @@ impl Component for MsgItem {
                     RightContentType::Group => Msg::Group(GroupMsg::Message(msg)),
                     _ => return false,
                 };
-                self.msg_state.send_msg_event.emit(msg);
+
+                // send message
+                Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = msg);
+
                 let ctx = ctx.link().clone();
                 self.timeout = Some(Timeout::new(3000, move || {
                     ctx.send_message(MsgItemMsg::SendTimeout);

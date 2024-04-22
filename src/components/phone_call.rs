@@ -15,6 +15,7 @@ use yew::platform::spawn_local;
 use yew::{
     html, AttrValue, Callback, Component, Context, ContextHandle, Html, NodeRef, Properties,
 };
+use yewdux::Dispatch;
 
 use crate::icons::{
     AnswerPhoneIcon, HangupInNotifyIcon, MicrophoneIcon, MicrophoneMuteIcon, VideoRecordIcon,
@@ -27,7 +28,7 @@ use crate::model::message::{
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::ContentType;
 use crate::model::ItemInfo;
-use crate::pages::RecSendCallState;
+use crate::state::RecSendCallState;
 use crate::ws::WebSocketManager;
 use crate::{db, utils, web_rtc};
 
@@ -65,8 +66,8 @@ pub struct PhoneCall {
     /// 用来监听是否有通话消息
     // _listener: ContextHandle<SingleCall>,
     /// 通话状态， 用来挂断、取消等等。。
-    call_state: Rc<RecSendCallState>,
-    _call_listener: ContextHandle<Rc<RecSendCallState>>,
+    _call_state_dis: Dispatch<RecSendCallState>,
+    // _call_listener: ContextHandle<Rc<RecSendCallState>>,
     /// 发送通知
     notify_state: Rc<NotificationState>,
     _notify_listener: ContextHandle<Rc<NotificationState>>,
@@ -126,10 +127,8 @@ impl Component for PhoneCall {
     type Properties = PhoneCallProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (call_state, _call_listener) = ctx
-            .link()
-            .context(ctx.link().callback(PhoneCallMsg::CallStateChange))
-            .expect("need msg context");
+        let call_state_dis =
+            Dispatch::global().subscribe(ctx.link().callback(PhoneCallMsg::CallStateChange));
         let (notify_state, _notify_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| PhoneCallMsg::None))
@@ -150,8 +149,8 @@ impl Component for PhoneCall {
             call_timer: None,
             volume_mute: false,
             microphone_mute: false,
-            call_state,
-            _call_listener,
+            _call_state_dis: call_state_dis,
+            // _call_listener,
             notify_state,
             _notify_listener,
             pos_x: 0,
@@ -854,7 +853,7 @@ impl Component for PhoneCall {
                 }
                 ctx.link()
                     .send_message(PhoneCallMsg::SendCallInvite(state.msg.clone()));
-                self.call_state = state;
+                // self.call_state = state;
                 true
             }
             PhoneCallMsg::None => false,

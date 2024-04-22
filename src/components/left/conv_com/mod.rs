@@ -26,11 +26,10 @@ use crate::{
         seq::Seq,
         CommonProps, ComponentType, ContentType, RightContentType,
     },
-    pages::{
-        AddFriendState, ConvState, CreateConvState, FriendShipState, SendMessageState,
-        SendResultState,
+    pages::{AddFriendState, ConvState, CreateConvState, FriendShipState, SendResultState},
+    state::{
+        I18nState, MuteState, RecMessageState, RemoveConvState, SendMessageState, UnreadState,
     },
-    state::{I18nState, MuteState, RecMessageState, RemoveConvState, UnreadState},
     tr, utils,
     ws::WebSocketManager,
 };
@@ -64,8 +63,7 @@ pub struct Chats {
 
     /// receive the message state from sender
     /// sender send message through Home Component
-    _send_msg_state: Rc<SendMessageState>,
-    _send_msg_listener: ContextHandle<Rc<SendMessageState>>,
+    _send_msg_dis: Dispatch<SendMessageState>,
     /// listen the conversation change
     /// used to change the right panel content
     conv_state: Rc<ConvState>,
@@ -121,10 +119,7 @@ impl Chats {
             ChatsMsg::QueryConvs((convs, messages, local_seq))
         });
         // register state
-        let (_send_msg_state, _send_msg_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ChatsMsg::SendMsg))
-            .expect("need conv state in item");
+        let _send_msg_dis = Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SendMsg));
         let (conv_state, _conv_listener) = ctx
             .link()
             .context(ctx.link().callback(ChatsMsg::ConvStateChanged))
@@ -192,8 +187,7 @@ impl Chats {
             _conv_listener,
             _remove_conv_dis,
             unread_dis,
-            _send_msg_state,
-            _send_msg_listener,
+            _send_msg_dis,
             _create_conv,
             _create_conv_listener,
             _mute_dis,

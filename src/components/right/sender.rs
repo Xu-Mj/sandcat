@@ -1,5 +1,4 @@
 use std::cmp::Ordering;
-use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
 use futures_channel::oneshot;
@@ -11,18 +10,20 @@ use web_sys::{
 };
 use yew::platform::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CloseIcon, ImageIcon};
 use crate::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
 use crate::model::RightContentType;
+use crate::state::RecSendCallState;
 use crate::{api, db, tr, utils};
 use crate::{
     components::right::emoji::EmojiSpan,
     icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon},
     model::message::Message,
     model::ContentType,
-    pages::SendMessageState,
+    state::SendMessageState,
 };
 
 use super::emoji::{get_emojis, Emoji};
@@ -42,8 +43,8 @@ pub struct Sender {
     emoji_wrapper_ref: NodeRef,
     show_file_sender: bool,
     i18n: FluentBundle<FluentResource>,
-    send_msg: Rc<SendMessageState>,
-    _send_msg_listener: ContextHandle<Rc<SendMessageState>>,
+    // send_msg: Rc<SendMessageState>,
+    // _send_msg_listener: ContextHandle<Rc<SendMessageState>>,
     file_list: Vec<FileListItem>,
 }
 
@@ -66,7 +67,6 @@ pub enum SenderMsg {
     SendFileIconClicked,
     FileInputChanged(Event),
     SendFile,
-    None,
     FileOnload(String, ContentType, JsValue),
     OnEnterKeyDown(KeyboardEvent),
     OnPaste(Event),
@@ -106,12 +106,11 @@ impl Sender {
     fn send_msg(&self, ctx: &Context<Self>, msg: Message) {
         match ctx.props().conv_type {
             RightContentType::Friend => {
-                self.send_msg.send_msg_event.emit(Msg::Single(msg));
+                Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
             }
             RightContentType::Group => {
-                self.send_msg
-                    .send_msg_event
-                    .emit(Msg::Group(GroupMsg::Message(msg)));
+                Dispatch::<SendMessageState>::global()
+                    .reduce_mut(|s| s.msg = Msg::Group(GroupMsg::Message(msg)));
             }
             _ => {}
         }
@@ -164,10 +163,10 @@ impl Component for Sender {
     type Properties = SenderProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (conv_state, _conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| SenderMsg::None))
-            .expect("needed to get context");
+        // let (conv_state, _conv_listener) = ctx
+        //     .link()
+        //     .context(ctx.link().callback(|_| SenderMsg::None))
+        //     .expect("needed to get context");
 
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::SENDER,
@@ -186,8 +185,8 @@ impl Component for Sender {
             emoji_wrapper_ref: NodeRef::default(),
             show_file_sender: false,
             i18n,
-            send_msg: conv_state,
-            _send_msg_listener: _conv_listener,
+            // send_msg: conv_state,
+            // _send_msg_listener: _conv_listener,
             file_list: vec![],
         }
     }
@@ -325,7 +324,6 @@ impl Component for Sender {
                 self.send_msg(ctx, msg);
                 true
             }
-            SenderMsg::None => false,
             SenderMsg::OnEnterKeyDown(event) => {
                 if event.shift_key() {
                     if event.key() == "Enter" {
@@ -418,24 +416,28 @@ impl Component for Sender {
                 true
             }
             SenderMsg::SendVideoCall => {
-                self.send_msg.call_event.emit(InviteMsg {
-                    local_id: nanoid::nanoid!().into(),
-                    server_id: AttrValue::default(),
-                    create_time: chrono::Local::now().timestamp_millis(),
-                    friend_id: ctx.props().friend_id.clone(),
-                    send_id: ctx.props().cur_user_id.clone(),
-                    invite_type: InviteType::Video,
+                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                    s.msg = InviteMsg {
+                        local_id: nanoid::nanoid!().into(),
+                        server_id: AttrValue::default(),
+                        create_time: chrono::Local::now().timestamp_millis(),
+                        friend_id: ctx.props().friend_id.clone(),
+                        send_id: ctx.props().cur_user_id.clone(),
+                        invite_type: InviteType::Video,
+                    }
                 });
                 false
             }
             SenderMsg::SendAudioCall => {
-                self.send_msg.call_event.emit(InviteMsg {
-                    local_id: nanoid::nanoid!().into(),
-                    server_id: AttrValue::default(),
-                    create_time: chrono::Local::now().timestamp_millis(),
-                    friend_id: ctx.props().friend_id.clone(),
-                    send_id: ctx.props().cur_user_id.clone(),
-                    invite_type: InviteType::Audio,
+                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                    s.msg = InviteMsg {
+                        local_id: nanoid::nanoid!().into(),
+                        server_id: AttrValue::default(),
+                        create_time: chrono::Local::now().timestamp_millis(),
+                        friend_id: ctx.props().friend_id.clone(),
+                        send_id: ctx.props().cur_user_id.clone(),
+                        invite_type: InviteType::Audio,
+                    }
                 });
                 false
             }

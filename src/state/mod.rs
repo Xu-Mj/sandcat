@@ -4,7 +4,11 @@ use yewdux::Store;
 
 use crate::{
     i18n::LanguageType,
-    model::{message::Msg, user::User, ComponentType},
+    model::{
+        message::{InviteMsg, Msg},
+        user::User,
+        ComponentType,
+    },
     pages::ItemType,
 };
 
@@ -57,4 +61,15 @@ pub struct RemoveConvState {
 pub struct RemoveFriendState {
     pub id: AttrValue,
     pub type_: ItemType,
+}
+
+/// send message from send or home component
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct SendMessageState {
+    pub msg: Msg,
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct RecSendCallState {
+    pub msg: InviteMsg,
 }

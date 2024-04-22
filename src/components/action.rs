@@ -9,7 +9,8 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{PhoneIcon, SendMsgIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
 use crate::model::{ComponentType, CurrentItem};
-use crate::pages::{ConvState, RecSendCallState};
+use crate::pages::ConvState;
+use crate::state::RecSendCallState;
 use crate::{model::RightContentType, state::AppState};
 use crate::{tr, utils};
 
@@ -20,14 +21,11 @@ pub struct Action {
     app_dis: Dispatch<AppState>,
     conv_state: Rc<ConvState>,
     _conv_listener: ContextHandle<Rc<ConvState>>,
-    msg_state: Rc<RecSendCallState>,
-    _call_listener: ContextHandle<Rc<RecSendCallState>>,
 }
 
 pub enum ActionMsg {
     AppStateChanged(Rc<AppState>),
     ConvStateChanged(Rc<ConvState>),
-    None,
     SendMessage,
     SendCallInvite(InviteType),
 }
@@ -49,10 +47,6 @@ impl Component for Action {
             .link()
             .context(ctx.link().callback(ActionMsg::ConvStateChanged))
             .expect("action state needed");
-        let (msg_state, _call_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| ActionMsg::None))
-            .expect("action state needed");
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::ACTION,
             LanguageType::EnUS => en_us::ACTION,
@@ -64,8 +58,6 @@ impl Component for Action {
             app_dis,
             conv_state,
             _conv_listener,
-            msg_state,
-            _call_listener,
         }
     }
 
@@ -87,15 +79,16 @@ impl Component for Action {
             ActionMsg::ConvStateChanged(state) => {
                 self.conv_state = state;
             }
-            ActionMsg::None => {}
             ActionMsg::SendCallInvite(t) => {
-                self.msg_state.call_event.emit(InviteMsg {
-                    local_id: nanoid!().into(),
-                    server_id: AttrValue::default(),
-                    send_id: self.state.login_user.id.clone(),
-                    friend_id: ctx.props().id.clone(),
-                    create_time: chrono::Local::now().timestamp_millis(),
-                    invite_type: t,
+                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                    s.msg = InviteMsg {
+                        local_id: nanoid!().into(),
+                        server_id: AttrValue::default(),
+                        send_id: self.state.login_user.id.clone(),
+                        friend_id: ctx.props().id.clone(),
+                        create_time: chrono::Local::now().timestamp_millis(),
+                        invite_type: t,
+                    }
                 });
             }
         }
