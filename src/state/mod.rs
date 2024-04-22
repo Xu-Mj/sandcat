@@ -5,6 +5,7 @@ use yewdux::Store;
 use crate::{
     i18n::LanguageType,
     model::{message::Msg, user::User, ComponentType},
+    pages::ItemType,
 };
 
 /// offline message. notify other components after offline handled complete
@@ -49,4 +50,11 @@ pub struct MuteState {
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct RemoveConvState {
     pub id: AttrValue,
+}
+
+/// to notify contacts component to remove friend item by id
+#[derive(Default, Debug, Clone, PartialEq, Store)]
+pub struct RemoveFriendState {
+    pub id: AttrValue,
+    pub type_: ItemType,
 }

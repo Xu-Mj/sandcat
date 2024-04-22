@@ -48,21 +48,6 @@ pub enum ItemType {
     #[default]
     Friend,
 }
-#[derive(Default, Debug, Clone, PartialEq)]
-pub struct RemoveFriendState {
-    pub id: AttrValue,
-    pub type_: ItemType,
-    pub remove_event: Callback<(AttrValue, ItemType)>,
-}
-
-impl RemoveFriendState {
-    pub fn with_event(event: Callback<(AttrValue, ItemType)>) -> Self {
-        Self {
-            remove_event: event,
-            ..Default::default()
-        }
-    }
-}
 
 /// 记录当前朋友列表状态
 #[derive(Default, Clone, PartialEq)]

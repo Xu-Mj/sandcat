@@ -10,8 +10,7 @@ use yewdux::Dispatch;
 
 use super::{
     AddFriendState, AddFriendStateItem, ConvState, CreateConvState, FriendListState,
-    FriendShipState, ItemType, RecSendCallState, RemoveFriendState, SendMessageState,
-    SendResultState,
+    FriendShipState, RecSendCallState, SendMessageState, SendResultState,
 };
 use crate::db::current_item;
 use crate::db::repository::Repository;
@@ -36,7 +35,6 @@ pub struct Home {
     // rec_msg_state: Rc<RecMessageState>,
     call_state: Rc<RecSendCallState>,
     conv_state: Rc<ConvState>,
-    remove_friend_state: Rc<RemoveFriendState>,
     friend_state: Rc<FriendListState>,
     friend_ship_state: Rc<FriendShipState>,
     add_friend_state: Rc<AddFriendState>,
@@ -75,7 +73,6 @@ pub enum HomeMsg {
     Notification(Notification),
     CleanNotification,
     CloseNotificationByIndex(usize),
-    RemoveFriend((AttrValue, ItemType)),
     // 创建会话状态改变回调
     CreateFriendConv((RightContentType, Friend)),
     CreateGroupConv((RightContentType, Vec<String>)),
@@ -202,12 +199,6 @@ impl Component for Home {
                 }
                 false
             }
-            HomeMsg::RemoveFriend((id, type_)) => {
-                let state = Rc::make_mut(&mut self.remove_friend_state);
-                state.id = id;
-                state.type_ = type_;
-                true
-            }
             HomeMsg::CreateFriendConv((t, info)) => {
                 let state = Rc::make_mut(&mut self.create_conv);
                 state.type_ = t;
@@ -278,8 +269,6 @@ impl Component for Home {
             <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
             <ContextProvider<Rc<RecSendCallState>> context={self.call_state.clone()}>
-            // <ContextProvider<SingleCall> context={self.call_msg.clone()}>
-            <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
             <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
             <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
             <ContextProvider<Rc<SendResultState>> context={self.send_result.clone()}>
@@ -295,7 +284,6 @@ impl Component for Home {
             </ContextProvider<Rc<SendResultState>>>
             </ContextProvider<Rc<AddFriendState>>>
             </ContextProvider<Rc<CreateConvState>>>
-            </ContextProvider<Rc<RemoveFriendState>>>
             </ContextProvider<Rc<RecSendCallState>>>
             </ContextProvider<Rc<NotificationState>>>
             </ContextProvider<Rc<ConvState>>>

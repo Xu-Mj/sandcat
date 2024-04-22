@@ -11,8 +11,8 @@ use crate::db::groups::GroupInterface;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use crate::pages::{AddFriendState, FriendListState, FriendShipState, ItemType, RemoveFriendState};
-use crate::state::I18nState;
+use crate::pages::{AddFriendState, FriendListState, FriendShipState, ItemType};
+use crate::state::{I18nState, RemoveFriendState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     model::friend::Friend,
@@ -41,8 +41,7 @@ pub struct Contacts {
     _listener: ContextHandle<Rc<FriendShipState>>,
     friend_state: Rc<FriendListState>,
     _friend_listener: ContextHandle<Rc<FriendListState>>,
-    _remove_friend_state: Rc<RemoveFriendState>,
-    _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
+    _remove_friend_dis: Dispatch<RemoveFriendState>,
     _add_friend_state: Rc<AddFriendState>,
     _add_friend_listener: ContextHandle<Rc<AddFriendState>>,
     lang_state: Rc<I18nState>,
@@ -104,10 +103,8 @@ impl Component for Contacts {
             .link()
             .context(ctx.link().callback(ContactsMsg::FriendListStateChanged))
             .expect("need friend ship state");
-        let (_remove_friend_state, _remove_friend_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ContactsMsg::RemoveFriend))
-            .expect("postcard friend_state needed");
+        let _remove_friend_dis =
+            Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::RemoveFriend));
         let (_add_friend_state, _add_friend_listener) = ctx
             .link()
             .context(ctx.link().callback(ContactsMsg::AddFriend))
@@ -133,8 +130,7 @@ impl Component for Contacts {
             _listener,
             friend_state,
             _friend_listener,
-            _remove_friend_state,
-            _remove_friend_listener,
+            _remove_friend_dis,
             _add_friend_state,
             _add_friend_listener,
             lang_state,

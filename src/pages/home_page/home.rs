@@ -17,7 +17,7 @@ use crate::{
     },
     pages::{
         home_page::HomeMsg, AddFriendState, ConvState, CreateConvState, FriendListState,
-        FriendShipState, RecSendCallState, RemoveFriendState, SendMessageState,
+        FriendShipState, RecSendCallState, SendMessageState,
     },
 };
 
@@ -56,11 +56,8 @@ impl Home {
             .send_message(HomeMsg::Query(QueryStatus::Querying));
         let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
         let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
-        let remove_event = ctx.link().callback(HomeMsg::RemoveFriend);
         let rec_msg_event = ctx.link().callback(HomeMsg::SendMsgStateChange);
-        // let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
         let send_msg_event = ctx.link().callback(HomeMsg::SendMessage);
-        // let send_back_event = ctx.link().callback(HomeMsg::SendBackMsg);
         let call_event = ctx.link().callback(HomeMsg::SendCallInvite);
         let rec_friend_req_event = ctx.link().callback(HomeMsg::ReceiveFriendShipReq);
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
@@ -109,7 +106,6 @@ impl Home {
                 rec_msg_event,
                 call_event,
             }),
-            remove_friend_state: Rc::new(RemoveFriendState::with_event(remove_event)),
             create_conv: Rc::new(CreateConvState {
                 friend: None,
                 group: None,

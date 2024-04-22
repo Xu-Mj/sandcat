@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -10,8 +8,8 @@ use crate::components::right::set_drawer::SetDrawer;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::GroupDelete;
 use crate::model::{ItemInfo, RightContentType};
-use crate::pages::{ItemType, RemoveFriendState};
-use crate::state::RemoveConvState;
+use crate::pages::ItemType;
+use crate::state::{RemoveConvState, RemoveFriendState};
 use crate::{api, db, tr, utils};
 
 #[derive(Properties, Clone, PartialEq)]
@@ -26,7 +24,6 @@ pub enum PostCardMsg {
     QueryInformation(QueryState<Option<Box<dyn ItemInfo>>>),
     Delete,
     ShowSetDrawer,
-    None,
 }
 
 pub enum QueryState<T> {
@@ -41,8 +38,6 @@ pub struct PostCard {
     // user_info: User,
     show_set_drawer: bool,
     i18n: FluentBundle<FluentResource>,
-    remove_friend_state: Rc<RemoveFriendState>,
-    _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
 }
 
 impl Component for PostCard {
@@ -51,10 +46,6 @@ impl Component for PostCard {
 
     fn create(ctx: &Context<Self>) -> Self {
         log::debug!("postcard conv type:{:?}", ctx.props().conv_type.clone());
-        let (remove_friend_state, _remove_friend_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| PostCardMsg::None))
-            .expect("postcard friend_state needed");
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::POSTCARD,
             LanguageType::EnUS => en_us::POSTCARD,
@@ -65,8 +56,6 @@ impl Component for PostCard {
             show_set_drawer: false,
             is_group_owner: false,
             i18n,
-            remove_friend_state,
-            _remove_friend_listener,
         };
         self_.query(ctx);
         self_
@@ -104,8 +93,6 @@ impl Component for PostCard {
                 let user_id = ctx.props().user_id.clone().to_string();
                 let id = info.id();
 
-                let remove_friend = self.remove_friend_state.remove_event.clone();
-
                 match info.get_type() {
                     RightContentType::Friend => {
                         spawn_local(async move {
@@ -126,7 +113,10 @@ impl Component for PostCard {
                                         Dispatch::<RemoveConvState>::global()
                                             .reduce_mut(|s| s.id = id.clone());
                                         // send state message to remove friend from friend list
-                                        remove_friend.emit((id, ItemType::Friend));
+                                        Dispatch::<RemoveFriendState>::global().reduce_mut(|s| {
+                                            s.id = id;
+                                            s.type_ = ItemType::Friend;
+                                        });
                                     }
                                 }
                                 Err(e) => {
@@ -156,7 +146,10 @@ impl Component for PostCard {
                                     Dispatch::<RemoveConvState>::global()
                                         .reduce_mut(|s| s.id = id.clone());
                                     // send state message to remove friend from friend list
-                                    remove_friend.emit((id, ItemType::Group));
+                                    Dispatch::<RemoveFriendState>::global().reduce_mut(|s| {
+                                        s.id = id;
+                                        s.type_ = ItemType::Group;
+                                    });
                                     return;
                                 }
                             }
@@ -182,7 +175,10 @@ impl Component for PostCard {
                                     Dispatch::<RemoveConvState>::global()
                                         .reduce_mut(|s| s.id = id.clone());
                                     // send state message to remove friend from friend list
-                                    remove_friend.emit((id, ItemType::Group));
+                                    Dispatch::<RemoveFriendState>::global().reduce_mut(|s| {
+                                        s.id = id;
+                                        s.type_ = ItemType::Group;
+                                    });
                                 }
                                 Err(e) => {
                                     log::error!("send delete group request error: {:?}", e);
@@ -195,7 +191,6 @@ impl Component for PostCard {
 
                 true
             }
-            PostCardMsg::None => false,
         }
     }
 
