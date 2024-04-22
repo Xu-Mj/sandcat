@@ -5,7 +5,6 @@ use yewdux::Dispatch;
 
 use crate::db;
 use crate::model::message::SendStatus;
-use crate::pages::SendResultState;
 use crate::state::I18nState;
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME},
@@ -63,7 +62,6 @@ impl Home {
         let create_friend_conv = ctx.link().callback(HomeMsg::CreateFriendConv);
         let create_group_conv = ctx.link().callback(HomeMsg::CreateGroupConv);
         let add = ctx.link().callback(HomeMsg::AddFriendStateChange);
-        let send_result = ctx.link().callback(HomeMsg::SendResultState);
         // change lang state
         Dispatch::<I18nState>::global()
             .reduce_mut(|state| state.lang = current_item::get_language());
@@ -101,11 +99,6 @@ impl Home {
 
             add_friend_state: Rc::new(AddFriendState {
                 add,
-                ..Default::default()
-            }),
-
-            send_result: Rc::new(SendResultState {
-                notify: send_result,
                 ..Default::default()
             }),
         }

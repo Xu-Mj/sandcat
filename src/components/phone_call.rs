@@ -28,7 +28,7 @@ use crate::model::message::{
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::ContentType;
 use crate::model::ItemInfo;
-use crate::state::RecSendCallState;
+use crate::state::SendCallState;
 use crate::ws::WebSocketManager;
 use crate::{db, utils, web_rtc};
 
@@ -66,7 +66,7 @@ pub struct PhoneCall {
     /// 用来监听是否有通话消息
     // _listener: ContextHandle<SingleCall>,
     /// 通话状态， 用来挂断、取消等等。。
-    _call_state_dis: Dispatch<RecSendCallState>,
+    _call_state_dis: Dispatch<SendCallState>,
     // _call_listener: ContextHandle<Rc<RecSendCallState>>,
     /// 发送通知
     notify_state: Rc<NotificationState>,
@@ -113,7 +113,7 @@ pub enum PhoneCallMsg {
     SwitchVolume,
     SwitchMicrophoneMute,
     SendMessage(SingleCall),
-    CallStateChange(Rc<RecSendCallState>),
+    CallStateChange(Rc<SendCallState>),
     None,
     OnMouseDown(MouseEvent),
     OnMouseMove(MouseEvent),

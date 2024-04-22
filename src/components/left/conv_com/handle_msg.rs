@@ -1,5 +1,6 @@
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::{
     api,
@@ -11,6 +12,7 @@ use crate::{
         message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
         ContentType, RightContentType,
     },
+    state::SendResultState,
 };
 
 use super::Chats;
@@ -520,7 +522,6 @@ impl Chats {
             Msg::ServerRecResp(msg) => {
                 // need to use the local to mark the message as send-success
                 // log::debug!("receive server response: {:?}", msg);
-                let send_result = self.send_result.notify.clone();
                 // update database
                 spawn_local(async move {
                     match msg.resp_msg_type {
@@ -535,8 +536,7 @@ impl Chats {
                             }
                         }
                     }
-
-                    send_result.emit(msg);
+                    Dispatch::<SendResultState>::global().reduce_mut(|s| s.msg = msg);
                 });
             }
             Msg::RecRelationshipDel((friend_id, seq)) => {

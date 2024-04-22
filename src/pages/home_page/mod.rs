@@ -10,13 +10,13 @@ use yewdux::Dispatch;
 
 use super::{
     AddFriendState, AddFriendStateItem, ConvState, CreateConvState, FriendListState,
-    FriendShipState, SendResultState,
+    FriendShipState,
 };
 use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::message::{Msg, ServerResponse};
+use crate::model::message::Msg;
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType};
@@ -30,7 +30,6 @@ use crate::{
 pub struct Home {
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
-    // call_state: Rc<RecSendCallState>,
     conv_state: Rc<ConvState>,
     friend_state: Rc<FriendListState>,
     friend_ship_state: Rc<FriendShipState>,
@@ -38,7 +37,6 @@ pub struct Home {
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
     create_conv: Rc<CreateConvState>,
-    send_result: Rc<SendResultState>,
 }
 
 pub enum HomeMsg {
@@ -71,7 +69,6 @@ pub enum HomeMsg {
     CreateFriendConv((RightContentType, Friend)),
     CreateGroupConv((RightContentType, Vec<String>)),
     AddFriendStateChange(AddFriendStateItem),
-    SendResultState(ServerResponse),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -206,11 +203,6 @@ impl Component for Home {
                 state.state_type = FriendShipStateType::RecResp;
                 true
             }
-            HomeMsg::SendResultState(resp) => {
-                let state = Rc::make_mut(&mut self.send_result);
-                state.msg = resp;
-                true
-            }
         }
     }
 
@@ -250,7 +242,6 @@ impl Component for Home {
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
             <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
             <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
-            <ContextProvider<Rc<SendResultState>> context={self.send_result.clone()}>
                 <div class="home" id="app">
                     <Left user_id={ctx.props().id.clone()}/>
                     <Right />
@@ -260,7 +251,6 @@ impl Component for Home {
                         {notify}
                     </div>
                 </div>
-            </ContextProvider<Rc<SendResultState>>>
             </ContextProvider<Rc<AddFriendState>>>
             </ContextProvider<Rc<CreateConvState>>>
             </ContextProvider<Rc<NotificationState>>>

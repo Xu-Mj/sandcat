@@ -7,7 +7,6 @@ use yew_router::Routable;
 
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::group::Group;
-use crate::model::message::ServerResponse;
 use crate::model::{CurrentItem, FriendShipStateType, RightContentType};
 
 /// 收发消息状态，收到消息触发receive_msg_event回调，发送消息通过send_msg_event回调来发送
@@ -19,12 +18,6 @@ use crate::model::{CurrentItem, FriendShipStateType, RightContentType};
 pub struct ConvState {
     pub conv: CurrentItem,
     pub state_change_event: Callback<CurrentItem>,
-}
-
-#[derive(Default, Debug, Clone, PartialEq)]
-pub struct SendResultState {
-    pub msg: ServerResponse,
-    pub notify: Callback<ServerResponse>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]

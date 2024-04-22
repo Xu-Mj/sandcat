@@ -5,7 +5,7 @@ use yewdux::Store;
 use crate::{
     i18n::LanguageType,
     model::{
-        message::{InviteMsg, Msg},
+        message::{InviteMsg, Msg, ServerResponse},
         user::User,
         ComponentType,
     },
@@ -70,6 +70,12 @@ pub struct SendMessageState {
 }
 
 #[derive(Default, Clone, PartialEq, Debug, Store)]
-pub struct RecSendCallState {
+pub struct SendCallState {
     pub msg: InviteMsg,
+}
+
+/// send message result, success or failed or timeout
+#[derive(Default, Debug, Clone, PartialEq, Store)]
+pub struct SendResultState {
+    pub msg: ServerResponse,
 }

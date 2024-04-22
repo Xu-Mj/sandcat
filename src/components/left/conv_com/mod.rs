@@ -26,7 +26,7 @@ use crate::{
         seq::Seq,
         CommonProps, ComponentType, ContentType, RightContentType,
     },
-    pages::{AddFriendState, ConvState, CreateConvState, FriendShipState, SendResultState},
+    pages::{AddFriendState, ConvState, CreateConvState, FriendShipState},
     state::{
         I18nState, MuteState, RecMessageState, RemoveConvState, SendMessageState, UnreadState,
     },
@@ -86,7 +86,7 @@ pub struct Chats {
     // _rec_msg_state_listener: ContextHandle<Rc<RecMessageState>>,
     /// friendship state, notify the contact component after receive a friend application
     fs_state: Rc<FriendShipState>,
-    send_result: Rc<SendResultState>,
+    // send_result: Rc<SendResultState>,
     // _fs_state_listener: ContextHandle<Rc<FriendShipState>>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
@@ -138,10 +138,6 @@ impl Chats {
             .expect("need state in item");
         let rec_msg_dis = Dispatch::global().subscribe(ctx.link().callback(|_| ChatsMsg::None));
         let (fs_state, _fs_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| ChatsMsg::None))
-            .expect("need state in item");
-        let (send_result, _send_result_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
@@ -197,7 +193,6 @@ impl Chats {
             i18n,
             lang_state,
             _lang_dispatch: lang_dispatch,
-            send_result,
         }
     }
 

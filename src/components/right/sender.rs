@@ -16,7 +16,7 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CloseIcon, ImageIcon};
 use crate::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
 use crate::model::RightContentType;
-use crate::state::RecSendCallState;
+use crate::state::SendCallState;
 use crate::{api, db, tr, utils};
 use crate::{
     components::right::emoji::EmojiSpan,
@@ -416,7 +416,7 @@ impl Component for Sender {
                 true
             }
             SenderMsg::SendVideoCall => {
-                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                Dispatch::<SendCallState>::global().reduce_mut(|s| {
                     s.msg = InviteMsg {
                         local_id: nanoid::nanoid!().into(),
                         server_id: AttrValue::default(),
@@ -429,7 +429,7 @@ impl Component for Sender {
                 false
             }
             SenderMsg::SendAudioCall => {
-                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                Dispatch::<SendCallState>::global().reduce_mut(|s| {
                     s.msg = InviteMsg {
                         local_id: nanoid::nanoid!().into(),
                         server_id: AttrValue::default(),

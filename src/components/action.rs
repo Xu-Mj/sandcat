@@ -10,7 +10,7 @@ use crate::icons::{PhoneIcon, SendMsgIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
 use crate::model::{ComponentType, CurrentItem};
 use crate::pages::ConvState;
-use crate::state::RecSendCallState;
+use crate::state::SendCallState;
 use crate::{model::RightContentType, state::AppState};
 use crate::{tr, utils};
 
@@ -80,7 +80,7 @@ impl Component for Action {
                 self.conv_state = state;
             }
             ActionMsg::SendCallInvite(t) => {
-                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                Dispatch::<SendCallState>::global().reduce_mut(|s| {
                     s.msg = InviteMsg {
                         local_id: nanoid!().into(),
                         server_id: AttrValue::default(),

@@ -12,7 +12,7 @@ use crate::model::message::{
 };
 use crate::model::user::UserWithMatchType;
 use crate::model::RightContentType;
-use crate::state::{RecSendCallState, SendMessageState};
+use crate::state::{SendCallState, SendMessageState};
 use crate::{components::right::friend_card::FriendCard, model::ContentType};
 
 pub struct MsgItem {
@@ -163,7 +163,7 @@ impl Component for MsgItem {
                 false
             }
             MsgItemMsg::CallVideo => {
-                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                Dispatch::<SendCallState>::global().reduce_mut(|s| {
                     s.msg = InviteMsg {
                         local_id: nanoid!().into(),
                         server_id: AttrValue::default(),
@@ -176,7 +176,7 @@ impl Component for MsgItem {
                 false
             }
             MsgItemMsg::CallAudio => {
-                Dispatch::<RecSendCallState>::global().reduce_mut(|s| {
+                Dispatch::<SendCallState>::global().reduce_mut(|s| {
                     s.msg = InviteMsg {
                         local_id: nanoid!().into(),
                         server_id: AttrValue::default(),

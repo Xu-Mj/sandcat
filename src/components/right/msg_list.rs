@@ -14,9 +14,9 @@ use crate::model::message::Msg;
 use crate::model::message::SingleCall;
 use crate::model::ItemInfo;
 use crate::model::RightContentType;
-use crate::pages::SendResultState;
 use crate::state::OfflineMsgState;
 use crate::state::RecMessageState;
+use crate::state::SendResultState;
 use crate::{
     components::right::{msg_item::MsgItem, sender::Sender},
     model::message::Message,
@@ -33,11 +33,12 @@ pub struct MessageList {
     new_msg_count: u32,
     is_black: bool,
 
+    // listen sync offline message, query message list
     _sync_msg_dis: Dispatch<OfflineMsgState>,
-    // 监听消息接收状态，用来更新当前对话框消息列表
+    // listen rec message, update message list
     _rec_msg_dis: Dispatch<RecMessageState>,
-    _send_result_state: Rc<SendResultState>,
-    _send_result_listener: ContextHandle<Rc<SendResultState>>,
+    // listen send result, update message item status
+    _send_result_dis: Dispatch<SendResultState>,
 }
 
 pub enum MessageListMsg {
@@ -234,10 +235,8 @@ impl Component for MessageList {
             Dispatch::global().subscribe(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg));
         let _rec_msg_dis =
             Dispatch::global().subscribe(ctx.link().callback(MessageListMsg::ReceiveMsg));
-        let (_send_result_state, _send_result_listener) = ctx
-            .link()
-            .context(ctx.link().callback(MessageListMsg::SendResultCallback))
-            .expect("need msg context");
+        let _send_result_dis =
+            Dispatch::global().subscribe(ctx.link().callback(MessageListMsg::SendResultCallback));
         let self_ = Self {
             // list: vec![],
             node_ref: NodeRef::default(),
@@ -250,8 +249,7 @@ impl Component for MessageList {
             is_black: false,
             _sync_msg_dis,
             _rec_msg_dis,
-            _send_result_state,
-            _send_result_listener,
+            _send_result_dis,
             list2: IndexMap::new(),
         };
         self_.query_friend(ctx);
