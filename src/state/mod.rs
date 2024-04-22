@@ -128,8 +128,14 @@ impl From<Group> for AddFriendStateItem {
     }
 }
 
-/// 记录当前会话状态
+/// current conversation id and type
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct ConvState {
     pub conv: CurrentItem,
+}
+
+/// current friend id and type
+#[derive(Default, Clone, PartialEq, Store)]
+pub struct FriendListState {
+    pub friend: CurrentItem,
 }

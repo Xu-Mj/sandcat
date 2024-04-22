@@ -14,7 +14,7 @@ use crate::{
         notification::{Notification, NotificationState, NotificationType},
         ContentType, FriendShipStateType,
     },
-    pages::{home_page::HomeMsg, FriendListState, FriendShipState},
+    pages::{home_page::HomeMsg, FriendShipState},
 };
 
 use super::{Home, QueryResult};
@@ -50,7 +50,6 @@ impl Home {
         // 使用ctx发送一个正在查询的状态
         ctx.link()
             .send_message(HomeMsg::Query(QueryStatus::Querying));
-        let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
         let rec_friend_req_event = ctx.link().callback(HomeMsg::ReceiveFriendShipReq);
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
         let rec_resp = ctx.link().callback(HomeMsg::RecFsResp);
@@ -67,10 +66,6 @@ impl Home {
                 req_change_event: rec_friend_req_event,
                 res_change_event: rec_friend_res_event,
                 rec_resp,
-            }),
-            friend_state: Rc::new(FriendListState {
-                friend: Default::default(),
-                state_change_event: switch_friend_callback,
             }),
             notifications: vec![],
             notification: Rc::new(NotificationState {

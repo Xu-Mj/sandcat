@@ -22,8 +22,7 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CatHeadIcon, CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
-use crate::pages::FriendListState;
-use crate::state::{ConvState, CreateConvState, I18nState};
+use crate::state::{ConvState, CreateConvState, FriendListState, I18nState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     state::AppState,

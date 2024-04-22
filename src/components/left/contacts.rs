@@ -6,13 +6,14 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use crate::components::left::add_friend::AddFriend;
+use crate::db::current_item;
 use crate::db::group::GroupRepo;
 use crate::db::groups::GroupInterface;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use crate::pages::{FriendListState, FriendShipState, ItemType};
-use crate::state::{AddFriendState, I18nState, RemoveFriendState};
+use crate::pages::{FriendShipState, ItemType};
+use crate::state::{AddFriendState, FriendListState, I18nState, RemoveFriendState};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     model::friend::Friend,
@@ -40,7 +41,7 @@ pub struct Contacts {
     _friendship_state: Rc<FriendShipState>,
     _listener: ContextHandle<Rc<FriendShipState>>,
     friend_state: Rc<FriendListState>,
-    _friend_listener: ContextHandle<Rc<FriendListState>>,
+    friend_dispatch: Dispatch<FriendListState>,
     _remove_friend_dis: Dispatch<RemoveFriendState>,
     _add_friend_dis: Dispatch<AddFriendState>,
     lang_state: Rc<I18nState>,
@@ -98,10 +99,8 @@ impl Component for Contacts {
             .link()
             .context(ctx.link().callback(ContactsMsg::RecFriendShipReq))
             .expect("need friend ship state");
-        let (friend_state, _friend_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ContactsMsg::FriendListStateChanged))
-            .expect("need friend ship state");
+        let friend_dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::FriendListStateChanged));
         let _remove_friend_dis =
             Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::RemoveFriend));
         let _add_friend_dis =
@@ -125,8 +124,8 @@ impl Component for Contacts {
             i18n,
             _friendship_state,
             _listener,
-            friend_state,
-            _friend_listener,
+            friend_state: friend_dispatch.get(),
+            friend_dispatch,
             _remove_friend_dis,
             _add_friend_dis,
             lang_state,
@@ -194,9 +193,13 @@ impl Component for Contacts {
                 log::debug!("new friend clicked");
                 self.friendships_unread_count = 0;
                 // send friendship list event
-                self.friend_state.state_change_event.emit(CurrentItem {
-                    item_id: AttrValue::default(),
-                    content_type: RightContentType::FriendShipList,
+                self.friend_dispatch.reduce_mut(|s| {
+                    let friend = CurrentItem {
+                        item_id: AttrValue::default(),
+                        content_type: RightContentType::FriendShipList,
+                    };
+                    current_item::save_friend(&friend).unwrap();
+                    s.friend = friend;
                 });
                 // clean unread count
                 spawn_local(async {
@@ -235,9 +238,11 @@ impl Component for Contacts {
                 }
 
                 if !friend_id.is_empty() && friend_id == self.friend_state.friend.item_id {
-                    self.friend_state
-                        .state_change_event
-                        .emit(CurrentItem::default());
+                    self.friend_dispatch.reduce_mut(|s| {
+                        let friend = CurrentItem::default();
+                        current_item::save_friend(&friend).unwrap();
+                        s.friend = friend;
+                    });
                     return true;
                 }
                 false

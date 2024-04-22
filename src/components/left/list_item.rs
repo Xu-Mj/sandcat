@@ -6,15 +6,14 @@ use yewdux::Dispatch;
 use crate::{
     db::current_item,
     model::{CommonProps, ComponentType, CurrentItem, RightContentType},
-    pages::FriendListState,
-    state::{ConvState, UnreadState},
+    state::{ConvState, FriendListState, UnreadState},
 };
 
 pub struct ListItem {
     conv_state: Rc<ConvState>,
     conv_dispatch: Dispatch<ConvState>,
     friend_state: Rc<FriendListState>,
-    _friend_listener: ContextHandle<Rc<FriendListState>>,
+    friend_dispatch: Dispatch<FriendListState>,
     unread_count: usize,
 }
 
@@ -45,15 +44,13 @@ impl Component for ListItem {
     fn create(ctx: &Context<Self>) -> Self {
         let conv_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ListItemMsg::ConvStateChanged));
-        let (friend_state, _friend_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ListItemMsg::FriendStateChanged))
-            .expect("need state in item");
+        let friend_dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(ListItemMsg::FriendStateChanged));
         let unread_count = ctx.props().unread_count;
 
         Self {
-            friend_state,
-            _friend_listener,
+            friend_state: friend_dispatch.get(),
+            friend_dispatch,
             unread_count,
             conv_state: conv_dispatch.get(),
             conv_dispatch,
@@ -96,9 +93,17 @@ impl Component for ListItem {
 
                     return false;
                 }
-                self.friend_state.state_change_event.emit(CurrentItem {
-                    item_id: ctx.props().props.id.clone(),
-                    content_type: ctx.props().conv_type.clone(),
+                if self.friend_state.friend.item_id == ctx.props().props.id {
+                    return false;
+                }
+
+                self.friend_dispatch.reduce_mut(|s| {
+                    let friend = CurrentItem {
+                        item_id: ctx.props().props.id.clone(),
+                        content_type: ctx.props().conv_type.clone(),
+                    };
+                    current_item::save_friend(&friend).unwrap();
+                    s.friend = friend;
                 });
                 false
             }
