@@ -12,9 +12,9 @@ use crate::{
         friend::Friend,
         message::{Message, Msg, DEFAULT_HELLO_MESSAGE},
         notification::{Notification, NotificationState, NotificationType},
-        ContentType, CurrentItem, FriendShipStateType,
+        ContentType, FriendShipStateType,
     },
-    pages::{home_page::HomeMsg, ConvState, FriendListState, FriendShipState},
+    pages::{home_page::HomeMsg, FriendListState, FriendShipState},
 };
 
 use super::{Home, QueryResult};
@@ -51,7 +51,6 @@ impl Home {
         ctx.link()
             .send_message(HomeMsg::Query(QueryStatus::Querying));
         let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
-        let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
         let rec_friend_req_event = ctx.link().callback(HomeMsg::ReceiveFriendShipReq);
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
         let rec_resp = ctx.link().callback(HomeMsg::RecFsResp);
@@ -60,10 +59,6 @@ impl Home {
         Dispatch::<I18nState>::global()
             .reduce_mut(|state| state.lang = current_item::get_language());
         Self {
-            conv_state: Rc::new(ConvState {
-                conv: CurrentItem::default(),
-                state_change_event: switch_conv_callback,
-            }),
             // ws,
             friend_ship_state: Rc::new(FriendShipState {
                 ship: None,

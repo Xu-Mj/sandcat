@@ -9,7 +9,7 @@ use crate::{
         group::Group,
         message::{InviteMsg, Msg, ServerResponse},
         user::User,
-        ComponentType, RightContentType,
+        ComponentType, CurrentItem, RightContentType,
     },
     pages::ItemType,
 };
@@ -126,4 +126,10 @@ impl From<Group> for AddFriendStateItem {
             type_: RightContentType::Group,
         }
     }
+}
+
+/// 记录当前会话状态
+#[derive(Default, Debug, Clone, PartialEq, Store)]
+pub struct ConvState {
+    pub conv: CurrentItem,
 }

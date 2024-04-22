@@ -12,13 +12,6 @@ use crate::model::{CurrentItem, FriendShipStateType};
 /// msg保存当前收到的消息或者正在发送的消息内容
 /// 将收发消息状态切割
 
-/// 记录当前会话状态
-#[derive(Default, Debug, Clone, PartialEq)]
-pub struct ConvState {
-    pub conv: CurrentItem,
-    pub state_change_event: Callback<CurrentItem>,
-}
-
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum ItemType {
     Group,

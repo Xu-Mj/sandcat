@@ -8,7 +8,7 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use super::{ConvState, FriendListState, FriendShipState};
+use super::{FriendListState, FriendShipState};
 use crate::db::current_item;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
@@ -18,7 +18,7 @@ use crate::model::notification::{Notification, NotificationState, NotificationTy
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, FriendShipStateType};
 
-use crate::state::{AppState, SendMessageState};
+use crate::state::{AppState, ConvState, SendMessageState};
 use crate::{
     components::{left::Left, right::Right},
     db::QueryStatus,
@@ -27,10 +27,8 @@ use crate::{
 pub struct Home {
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
-    conv_state: Rc<ConvState>,
     friend_state: Rc<FriendListState>,
     friend_ship_state: Rc<FriendShipState>,
-    // add_friend_state: Rc<AddFriendState>,
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
 }
@@ -39,7 +37,7 @@ pub enum HomeMsg {
     // 联系人列表选中元素改变
     SwitchFriend(CurrentItem),
     // 会话列表选中元素改变
-    SwitchConv(CurrentItem),
+    // SwitchConv(CurrentItem),
     // 查询数据库
     Query(QueryStatus<QueryResult>),
     // 收到消息
@@ -92,18 +90,6 @@ impl Component for Home {
                 current_item::save_friend(&conv).unwrap();
                 true
             }
-            HomeMsg::SwitchConv(conv) => {
-                let conv_state = Rc::make_mut(&mut self.conv_state);
-                // 如果id没有变化，那么不更新数据库
-                if conv_state.conv.item_id == conv.item_id
-                    && conv_state.conv.content_type == conv.content_type
-                {
-                    return false;
-                }
-                current_item::save_conv(&conv).unwrap();
-                conv_state.conv = conv;
-                true
-            }
             HomeMsg::Query(status) => {
                 match status {
                     QueryStatus::QuerySuccess(u) => {
@@ -111,8 +97,10 @@ impl Component for Home {
                             s.login_user = u.0;
                             s.component_type = u.3;
                         });
-                        let conv_state = Rc::make_mut(&mut self.conv_state);
-                        conv_state.conv = u.1;
+
+                        // update conversation state
+                        Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = u.1);
+
                         let friend_state = Rc::make_mut(&mut self.friend_state);
                         friend_state.friend = u.2;
                     }
@@ -212,7 +200,6 @@ impl Component for Home {
         html! {
             <ContextProvider<Rc<FriendShipState>> context={self.friend_ship_state.clone()}>
             <ContextProvider<Rc<FriendListState>> context={self.friend_state.clone()}>
-            <ContextProvider<Rc<ConvState>> context={self.conv_state.clone()}>
             <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
                 <div class="home" id="app">
                     <Left user_id={ctx.props().id.clone()}/>
@@ -224,7 +211,6 @@ impl Component for Home {
                     </div>
                 </div>
             </ContextProvider<Rc<NotificationState>>>
-            </ContextProvider<Rc<ConvState>>>
             </ContextProvider<Rc<FriendListState>>>
             </ContextProvider<Rc<FriendShipState>>>
         }

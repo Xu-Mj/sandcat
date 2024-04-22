@@ -14,8 +14,8 @@ use crate::model::group::Group;
 use crate::model::message::Msg;
 use crate::model::seq::Seq;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
-use crate::pages::ConvState;
 use crate::pb::message::Msg as PbMsg;
+use crate::state::ConvState;
 use crate::state::{
     AddFriendState, AddFriendStateItem, CreateConvState, I18nState, MuteState, RemoveConvState,
     SendMessageState,
@@ -162,9 +162,8 @@ impl Component for Chats {
                         });
                     }
                     if conv.friend_id == self.conv_state.conv.item_id {
-                        self.conv_state
-                            .state_change_event
-                            .emit(CurrentItem::default());
+                        self.conv_dispatch
+                            .reduce_mut(|s| s.conv = CurrentItem::default());
                     }
                 };
                 true

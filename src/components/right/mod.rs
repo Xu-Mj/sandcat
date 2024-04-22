@@ -22,8 +22,8 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CatHeadIcon, CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
-use crate::pages::{ConvState, FriendListState};
-use crate::state::{CreateConvState, I18nState};
+use crate::pages::FriendListState;
+use crate::state::{ConvState, CreateConvState, I18nState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     state::AppState,
@@ -37,7 +37,7 @@ pub struct Right {
     state: Rc<AppState>,
     _app_dis: Dispatch<AppState>,
     conv_state: Rc<ConvState>,
-    _conv_listener: ContextHandle<Rc<ConvState>>,
+    _conv_dis: Dispatch<ConvState>,
     cur_conv_info: Option<Box<dyn ItemInfo>>,
     friend_list_state: Rc<FriendListState>,
     _friend_list_listener: ContextHandle<Rc<FriendListState>>,
@@ -100,10 +100,8 @@ impl Component for Right {
     type Properties = ();
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (conv_state, _conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(RightMsg::ConvStateChanged))
-            .expect("expect state");
+        let conv_dis =
+            Dispatch::global().subscribe(ctx.link().callback(RightMsg::ConvStateChanged));
         let (friend_list_state, _friend_list_listener) = ctx
             .link()
             .context(ctx.link().callback(RightMsg::FriendListStateChanged))
@@ -123,8 +121,8 @@ impl Component for Right {
             i18n,
             state: app_dis.get(),
             _app_dis: app_dis,
-            conv_state,
-            _conv_listener,
+            conv_state: conv_dis.get(),
+            _conv_dis: conv_dis,
             cur_conv_info,
             friend_list_state,
             _friend_list_listener,

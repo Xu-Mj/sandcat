@@ -6,13 +6,13 @@ use yewdux::Dispatch;
 use crate::{
     db::current_item,
     model::{CommonProps, ComponentType, CurrentItem, RightContentType},
-    pages::{ConvState, FriendListState},
-    state::UnreadState,
+    pages::FriendListState,
+    state::{ConvState, UnreadState},
 };
 
 pub struct ListItem {
     conv_state: Rc<ConvState>,
-    _conv_listener: ContextHandle<Rc<ConvState>>,
+    conv_dispatch: Dispatch<ConvState>,
     friend_state: Rc<FriendListState>,
     _friend_listener: ContextHandle<Rc<FriendListState>>,
     unread_count: usize,
@@ -43,10 +43,8 @@ impl Component for ListItem {
     type Properties = ListItemProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let (conv_state, _conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ListItemMsg::ConvStateChanged))
-            .expect("need state in item");
+        let conv_dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(ListItemMsg::ConvStateChanged));
         let (friend_state, _friend_listener) = ctx
             .link()
             .context(ctx.link().callback(ListItemMsg::FriendStateChanged))
@@ -54,11 +52,11 @@ impl Component for ListItem {
         let unread_count = ctx.props().unread_count;
 
         Self {
-            conv_state,
-            _conv_listener,
             friend_state,
             _friend_listener,
             unread_count,
+            conv_state: conv_dispatch.get(),
+            conv_dispatch,
         }
     }
 
@@ -70,17 +68,22 @@ impl Component for ListItem {
             }
             ListItemMsg::GoToSetting => false,
             ListItemMsg::CleanUnreadCount => {
-                let conv = CurrentItem {
-                    item_id: ctx.props().props.id.clone(),
-                    content_type: ctx.props().conv_type.clone(),
-                };
                 Dispatch::<UnreadState>::global().reduce_mut(|s| {
                     s.msg_count = s.msg_count.saturating_sub(self.unread_count);
                     current_item::save_unread_count(s).unwrap();
                 });
-
-                self.conv_state.state_change_event.emit(conv);
                 self.unread_count = 0;
+
+                // do not update if current item is the same
+                if self.conv_state.conv.item_id == ctx.props().props.id {
+                    return false;
+                }
+                self.conv_dispatch.reduce_mut(|s| {
+                    s.conv = CurrentItem {
+                        item_id: ctx.props().props.id.clone(),
+                        content_type: ctx.props().conv_type.clone(),
+                    }
+                });
                 true
             }
             ListItemMsg::FriendStateChanged(state) => {

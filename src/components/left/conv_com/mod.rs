@@ -15,7 +15,7 @@ use yewdux::Dispatch;
 use crate::{
     api,
     components::left::list_item::ListItem,
-    db::{self, TOKEN, WS_ADDR},
+    db::{self, current_item, TOKEN, WS_ADDR},
     i18n::{
         en_us::{self, CONVERSATION},
         zh_cn, LanguageType,
@@ -24,12 +24,12 @@ use crate::{
         conversation::Conversation,
         message::{Msg, SingleCall},
         seq::Seq,
-        CommonProps, ComponentType, ContentType, RightContentType,
+        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType,
     },
-    pages::{ConvState, FriendShipState},
+    pages::FriendShipState,
     state::{
-        CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState, SendMessageState,
-        UnreadState,
+        ConvState, CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState,
+        SendMessageState, UnreadState,
     },
     tr, utils,
     ws::WebSocketManager,
@@ -68,7 +68,7 @@ pub struct Chats {
     /// listen the conversation change
     /// used to change the right panel content
     conv_state: Rc<ConvState>,
-    _conv_listener: ContextHandle<Rc<ConvState>>,
+    conv_dispatch: Dispatch<ConvState>,
     /// listen the conversation remove,
     /// used to receive that contact list to delete the friends to remove the conversation
     _remove_conv_dis: Dispatch<RemoveConvState>,
@@ -117,10 +117,8 @@ impl Chats {
         });
         // register state
         let _send_msg_dis = Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SendMsg));
-        let (conv_state, _conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ChatsMsg::ConvStateChanged))
-            .expect("need state in item");
+        let conv_dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::ConvStateChanged));
         let _remove_conv_dis =
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::RemoveConvStateChanged));
         let _create_conv_dis =
@@ -170,8 +168,6 @@ impl Chats {
             show_friend_list: false,
             show_context_menu: false,
             context_menu_pos: (0, 0, AttrValue::default(), false),
-            conv_state,
-            _conv_listener,
             _remove_conv_dis,
             unread_dis,
             _send_msg_dis,
@@ -182,6 +178,8 @@ impl Chats {
             i18n,
             lang_state,
             _lang_dispatch: lang_dispatch,
+            conv_state: conv_dispatch.get(),
+            conv_dispatch,
         }
     }
 
@@ -217,10 +215,7 @@ impl Chats {
         self.context_menu_pos = (0, 0, AttrValue::default(), false);
 
         // set right content type
-        let mut conv = self.conv_state.conv.clone();
-        conv.item_id = AttrValue::default();
-        conv.content_type = RightContentType::Default;
-        self.conv_state.state_change_event.emit(conv);
+        Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = CurrentItem::default());
     }
 
     fn mute(&mut self) -> bool {
@@ -299,8 +294,11 @@ impl Chats {
     }
 
     fn deal_with_conv_state_change(&mut self, ctx: &Context<Self>, state: Rc<ConvState>) -> bool {
-        self.conv_state = state;
-        let cur_conv_id = self.conv_state.conv.item_id.clone();
+        // self.conv_state = state;
+        let state = state.conv.clone();
+        let cur_conv_id = state.item_id.clone();
+        // save current conv id
+        current_item::save_conv(&state).unwrap();
         // 设置了一个查询状态，如果在查询没有完成时更新了状态，那么不进行更新列表，这里有待于优化，
         // 因为状态会在
         if cur_conv_id.is_empty() || !self.query_complete {
@@ -324,7 +322,7 @@ impl Chats {
         } else {
             // not exists, create a new conversation
             let friend_id = cur_conv_id.clone();
-            let conv_type = self.conv_state.conv.content_type.clone();
+            let conv_type = state.content_type.clone();
             log::debug!("conv type in messages: {:?}", conv_type.clone());
 
             ctx.link().send_future(async move {

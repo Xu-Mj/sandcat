@@ -9,7 +9,7 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{PhoneIcon, SendMsgIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
 use crate::model::{ComponentType, CurrentItem};
-use crate::pages::ConvState;
+use crate::state::ConvState;
 use crate::state::SendCallState;
 use crate::{model::RightContentType, state::AppState};
 use crate::{tr, utils};
@@ -19,13 +19,10 @@ pub struct Action {
     i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
     app_dis: Dispatch<AppState>,
-    conv_state: Rc<ConvState>,
-    _conv_listener: ContextHandle<Rc<ConvState>>,
 }
 
 pub enum ActionMsg {
     AppStateChanged(Rc<AppState>),
-    ConvStateChanged(Rc<ConvState>),
     SendMessage,
     SendCallInvite(InviteType),
 }
@@ -43,10 +40,6 @@ impl Component for Action {
 
     fn create(ctx: &Context<Self>) -> Self {
         let app_dis = Dispatch::global().subscribe(ctx.link().callback(ActionMsg::AppStateChanged));
-        let (conv_state, _conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ActionMsg::ConvStateChanged))
-            .expect("action state needed");
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::ACTION,
             LanguageType::EnUS => en_us::ACTION,
@@ -56,8 +49,6 @@ impl Component for Action {
             i18n,
             state: app_dis.get(),
             app_dis,
-            conv_state,
-            _conv_listener,
         }
     }
 
@@ -65,19 +56,20 @@ impl Component for Action {
         match msg {
             ActionMsg::SendMessage => {
                 let id = ctx.props().id.clone();
+
                 self.app_dis
                     .reduce_mut(|s| s.component_type = ComponentType::Messages);
-                self.conv_state.state_change_event.emit(CurrentItem {
-                    item_id: id,
-                    content_type: ctx.props().conv_type.clone(),
+
+                Dispatch::<ConvState>::global().reduce_mut(|s| {
+                    s.conv = CurrentItem {
+                        item_id: id,
+                        content_type: ctx.props().conv_type.clone(),
+                    }
                 });
                 log::debug!("conv type: {:?}", ctx.props().conv_type.clone());
             }
             ActionMsg::AppStateChanged(state) => {
                 self.state = state;
-            }
-            ActionMsg::ConvStateChanged(state) => {
-                self.conv_state = state;
             }
             ActionMsg::SendCallInvite(t) => {
                 Dispatch::<SendCallState>::global().reduce_mut(|s| {
