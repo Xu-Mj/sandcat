@@ -212,7 +212,7 @@ impl Chats {
                     m.is_self = false;
                     self.handle_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
-                    self.rec_msg_state.notify.emit(message);
+                    self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
                 SingleCall::NotAnswer(m) => {
                     let friend_id = m.send_id.clone();
@@ -221,7 +221,7 @@ impl Chats {
                     m.is_self = false;
                     self.handle_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
-                    self.rec_msg_state.notify.emit(message);
+                    self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
                 SingleCall::InviteAnswer(m) => {
                     let friend_id = m.send_id.clone();
@@ -230,7 +230,7 @@ impl Chats {
                     m.is_self = false;
                     self.handle_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
-                    self.rec_msg_state.notify.emit(message);
+                    self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
                 SingleCall::HangUp(m) => {
                     let friend_id = m.send_id.clone();
@@ -239,7 +239,7 @@ impl Chats {
                     m.is_self = false;
                     self.handle_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
-                    self.rec_msg_state.notify.emit(message);
+                    self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
                 _ => {}
             }

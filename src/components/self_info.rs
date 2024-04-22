@@ -5,15 +5,16 @@ use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::Event;
 use web_sys::HtmlInputElement;
-use yew::{html, Callback, Component, ContextHandle, NodeRef, Properties};
+use yew::{html, Callback, Component, NodeRef, Properties};
 use yew_router::scope_ext::RouterScopeExt;
+use yewdux::Dispatch;
 
 use crate::pages::Page;
 use crate::{
     api, db,
     i18n::{en_us, zh_cn, LanguageType},
     model::user::{User, UserUpdate},
-    pages::I18nState,
+    state::I18nState,
     tr, utils,
 };
 
@@ -26,8 +27,7 @@ pub struct SelfInfo {
     signature_node: NodeRef,
     avatar: String,
     gender: String,
-    _i18n_state: Rc<I18nState>,
-    _i18n_handler: ContextHandle<Rc<I18nState>>,
+    _dispatch: Dispatch<I18nState>,
 }
 
 pub enum SelfInfoMsg {
@@ -50,12 +50,9 @@ impl Component for SelfInfo {
     type Properties = SelfInfoProps;
 
     fn create(ctx: &yew::prelude::Context<Self>) -> Self {
-        let (i18n_state, _i18n_handler) = ctx
-            .link()
-            .context::<Rc<I18nState>>(ctx.link().callback(SelfInfoMsg::I18nStateChanged))
-            .expect("need state");
-
-        let res = match i18n_state.lang {
+        let dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(SelfInfoMsg::I18nStateChanged));
+        let res = match dispatch.get().lang {
             LanguageType::ZhCN => zh_cn::USER_INFO,
             LanguageType::EnUS => en_us::USER_INFO,
         };
@@ -69,8 +66,7 @@ impl Component for SelfInfo {
             signature_node: NodeRef::default(),
             gender: ctx.props().user.gender.to_string(),
             avatar: ctx.props().user.avatar.to_string(),
-            _i18n_state: i18n_state,
-            _i18n_handler,
+            _dispatch: dispatch,
         }
     }
 

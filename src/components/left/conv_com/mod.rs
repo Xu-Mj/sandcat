@@ -27,10 +27,10 @@ use crate::{
         CommonProps, ComponentType, ContentType, RightContentType,
     },
     pages::{
-        AddFriendState, ConvState, CreateConvState, FriendShipState, I18nState, MuteState,
-        RecMessageState, RemoveConvState, SendMessageState, SendResultState,
+        AddFriendState, ConvState, CreateConvState, FriendShipState, RemoveConvState,
+        SendMessageState, SendResultState,
     },
-    state::UnreadState,
+    state::{I18nState, MuteState, RecMessageState, UnreadState},
     tr, utils,
     ws::WebSocketManager,
 };
@@ -81,22 +81,18 @@ pub struct Chats {
     _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
     /// mute conversation,
     /// used to receive the mute event from right panel
-    _mute_state: Rc<MuteState>,
-    _mute_state_listener: ContextHandle<Rc<MuteState>>,
+    _mute_dis: Dispatch<MuteState>,
     /// send the create friend/group event to contact list
     add_friend_state: Rc<AddFriendState>,
-    // _add_friend_state_listener: ContextHandle<Rc<AddFriendState>>,
-    /// send the event to other components after sync offline message completed
-    // _sync_msg_state_listener: ContextHandle<Rc<OfflineMsgState>>,
     /// send the event to other components after receive a message
-    rec_msg_state: Rc<RecMessageState>,
+    rec_msg_dis: Dispatch<RecMessageState>,
     // _rec_msg_state_listener: ContextHandle<Rc<RecMessageState>>,
     /// friendship state, notify the contact component after receive a friend application
     fs_state: Rc<FriendShipState>,
     send_result: Rc<SendResultState>,
     // _fs_state_listener: ContextHandle<Rc<FriendShipState>>,
     lang_state: Rc<I18nState>,
-    _lang_state_listener: ContextHandle<Rc<I18nState>>,
+    _lang_dispatch: Dispatch<I18nState>,
 }
 
 impl Chats {
@@ -143,18 +139,13 @@ impl Chats {
             .link()
             .context(ctx.link().callback(ChatsMsg::CreateConvStateChanged))
             .expect("need state in item");
-        let (_mute_state, _mute_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ChatsMsg::MuteStateChanged))
-            .expect("need state in item");
+        let _mute_dis =
+            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::MuteStateChanged));
         let (add_friend_state, _add_friend_state_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
-        let (rec_msg_state, _rec_msg_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| ChatsMsg::None))
-            .expect("need state in item");
+        let rec_msg_dis = Dispatch::global().subscribe(ctx.link().callback(|_| ChatsMsg::None));
         let (fs_state, _fs_state_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
@@ -163,10 +154,9 @@ impl Chats {
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
-        let (lang_state, _lang_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ChatsMsg::SwitchLanguage))
-            .expect("need state in item");
+        let lang_dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SwitchLanguage));
+        let lang_state = lang_dispatch.get();
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let unread_dis =
             Dispatch::<UnreadState>::global().subscribe(ctx.link().callback(|_| ChatsMsg::None));
@@ -211,14 +201,13 @@ impl Chats {
             _send_msg_listener,
             _create_conv,
             _create_conv_listener,
-            _mute_state,
-            _mute_state_listener,
+            _mute_dis,
             add_friend_state,
-            rec_msg_state,
+            rec_msg_dis,
             fs_state,
             i18n,
             lang_state,
-            _lang_state_listener,
+            _lang_dispatch: lang_dispatch,
             send_result,
         }
     }

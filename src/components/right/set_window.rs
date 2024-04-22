@@ -1,26 +1,25 @@
-use std::rc::Rc;
-
 use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::{
     db::{self, conv::ConvRepo, conversations::Conversations},
     i18n::{en_us, zh_cn, LanguageType},
     icons::PlusRectIcon,
     model::{conversation::Conversation, ItemInfo, RightContentType},
-    pages::MuteState,
+    state::MuteState,
     tr, utils,
 };
-#[derive(Default)]
+
 pub struct SetWindow {
     list: Vec<Box<dyn ItemInfo>>,
     info: Option<Box<dyn ItemInfo>>,
     conv: Conversation,
     node: NodeRef,
     i18n: FluentBundle<FluentResource>,
-    mute_state: Rc<MuteState>,
+    mute_dispatch: Dispatch<MuteState>,
 }
 
 pub enum SetWindowMsg {
@@ -93,14 +92,15 @@ impl Component for SetWindow {
             LanguageType::EnUS => en_us::SET_WINDOW,
         };
         let i18n = utils::create_bundle(res);
-        let (mute_state, _mute_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| SetWindowMsg::None))
-            .expect("need state in item");
+        let mute_dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(|_| SetWindowMsg::None));
         Self {
             i18n,
-            mute_state,
-            ..Default::default()
+            mute_dispatch,
+            list: Vec::new(),
+            info: None,
+            conv: Conversation::default(),
+            node: NodeRef::default(),
         }
     }
 
@@ -126,7 +126,7 @@ impl Component for SetWindow {
                 });
                 // todo send mute message to conversation component
                 if let Some(info) = self.info.as_ref() {
-                    self.mute_state.mute.emit(info.id());
+                    self.mute_dispatch.reduce_mut(|s| s.conv_id = info.id());
                 }
                 true
             }

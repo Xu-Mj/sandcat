@@ -1,10 +1,12 @@
 use std::rc::Rc;
 
 use yew::{AttrValue, Context, NodeRef};
+use yewdux::Dispatch;
 
 use crate::db;
 use crate::model::message::SendStatus;
-use crate::pages::{I18nState, SendResultState};
+use crate::pages::SendResultState;
+use crate::state::I18nState;
 use crate::{
     db::{current_item, QueryError, QueryStatus, DB_NAME},
     model::{
@@ -15,8 +17,7 @@ use crate::{
     },
     pages::{
         home_page::HomeMsg, AddFriendState, ConvState, CreateConvState, FriendListState,
-        FriendShipState, MuteState, RecMessageState, RecSendCallState, RemoveConvState,
-        RemoveFriendState, SendMessageState,
+        FriendShipState, RecSendCallState, RemoveConvState, RemoveFriendState, SendMessageState,
     },
 };
 
@@ -58,7 +59,6 @@ impl Home {
         let remove_conv_callback = ctx.link().callback(HomeMsg::RemoveConv);
         let remove_event = ctx.link().callback(HomeMsg::RemoveFriend);
         let rec_msg_event = ctx.link().callback(HomeMsg::SendMsgStateChange);
-        let rec_msg_notify_event = ctx.link().callback(HomeMsg::RecMsgStateChange);
         // let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
         let send_msg_event = ctx.link().callback(HomeMsg::SendMessage);
         // let send_back_event = ctx.link().callback(HomeMsg::SendBackMsg);
@@ -69,10 +69,11 @@ impl Home {
         let error_event = ctx.link().callback(HomeMsg::Notification);
         let create_friend_conv = ctx.link().callback(HomeMsg::CreateFriendConv);
         let create_group_conv = ctx.link().callback(HomeMsg::CreateGroupConv);
-        let mute = ctx.link().callback(HomeMsg::MuteStateChange);
         let add = ctx.link().callback(HomeMsg::AddFriendStateChange);
-        let switch_lang = ctx.link().callback(HomeMsg::SwitchLang);
         let send_result = ctx.link().callback(HomeMsg::SendResultState);
+        // change lang state
+        Dispatch::<I18nState>::global()
+            .reduce_mut(|state| state.lang = current_item::get_language());
         Self {
             send_msg_state: Rc::new(SendMessageState {
                 msg: Msg::Single(Message::default()),
@@ -121,22 +122,12 @@ impl Home {
                 create_friend: create_friend_conv,
                 create_group: create_group_conv,
             }),
-            mute_state: Rc::new(MuteState {
-                mute,
-                ..Default::default()
-            }),
+
             add_friend_state: Rc::new(AddFriendState {
                 add,
                 ..Default::default()
             }),
-            rec_msg_state: Rc::new(RecMessageState {
-                notify: rec_msg_notify_event,
-                ..Default::default()
-            }),
-            lang_state: Rc::new(I18nState {
-                switch_lang,
-                lang: current_item::get_language(),
-            }),
+
             send_result: Rc::new(SendResultState {
                 notify: send_result,
                 ..Default::default()

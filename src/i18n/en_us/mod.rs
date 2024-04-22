@@ -50,6 +50,7 @@ pub const CONTACTS: &str = r#"
 new_friends = New Friends
 no_friends = No Friends
 no_groups = No Groups
+no_result = No Result
 "#;
 
 pub const ADD_FRIEND: &str = r#"

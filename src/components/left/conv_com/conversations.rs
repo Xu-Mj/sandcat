@@ -14,13 +14,13 @@ use crate::model::message::Msg;
 use crate::model::seq::Seq;
 use crate::model::{ComponentType, CurrentItem, RightContentType};
 use crate::pages::{
-    AddFriendStateItem, ConvState, CreateConvState, I18nState, MuteState, RemoveConvState,
-    SendMessageState,
+    AddFriendStateItem, ConvState, CreateConvState, RemoveConvState, SendMessageState,
 };
 use crate::pb::message::Msg as PbMsg;
+use crate::state::{I18nState, MuteState};
 use crate::ws::WebSocketManager;
-#[derive(Debug)]
 
+#[derive(Debug)]
 pub enum ChatsMsg {
     FilterContact(AttrValue),
     CleanupSearchResult,
@@ -206,17 +206,17 @@ impl Component for Chats {
                 log::debug!("send message from sender in conversation");
                 let msg = state.msg.clone();
                 self.send_msg(msg.clone());
-                self.rec_msg_state.notify.emit(msg.clone());
+                self.rec_msg_dis.reduce_mut(|s| s.msg = msg.clone());
                 self.handle_sent_msg(ctx, msg);
                 true
             }
             ChatsMsg::RecMsgNotify(msg) => {
-                self.rec_msg_state.notify.emit(msg);
+                self.rec_msg_dis.reduce_mut(|s| s.msg = msg.clone());
                 false
             }
             ChatsMsg::SendMessage(msg) => {
                 self.send_msg(msg.clone());
-                self.rec_msg_state.notify.emit(msg.clone());
+                self.rec_msg_dis.reduce_mut(|s| s.msg = msg.clone());
                 self.handle_sent_msg(ctx, msg);
                 true
             }
@@ -302,12 +302,6 @@ impl Component for Chats {
 
         }
     }
-
-    // fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
-    //     if first_render {
-    //         WebSocketManager::connect(self.ws.clone());
-    //     }
-    // }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
         self.ws.borrow_mut().cleanup();

@@ -14,9 +14,9 @@ use crate::model::message::Msg;
 use crate::model::message::SingleCall;
 use crate::model::ItemInfo;
 use crate::model::RightContentType;
-use crate::pages::RecMessageState;
 use crate::pages::SendResultState;
 use crate::state::OfflineMsgState;
+use crate::state::RecMessageState;
 use crate::{
     components::right::{msg_item::MsgItem, sender::Sender},
     model::message::Message,
@@ -35,8 +35,7 @@ pub struct MessageList {
 
     _sync_msg_dis: Dispatch<OfflineMsgState>,
     // 监听消息接收状态，用来更新当前对话框消息列表
-    _rec_msg_state: Rc<RecMessageState>,
-    _rec_msg_listener: ContextHandle<Rc<RecMessageState>>,
+    _rec_msg_dis: Dispatch<RecMessageState>,
     _send_result_state: Rc<SendResultState>,
     _send_result_listener: ContextHandle<Rc<SendResultState>>,
 }
@@ -233,10 +232,8 @@ impl Component for MessageList {
     fn create(ctx: &Context<Self>) -> Self {
         let _sync_msg_dis =
             Dispatch::global().subscribe(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg));
-        let (_rec_msg_state, _rec_msg_listener) = ctx
-            .link()
-            .context(ctx.link().callback(MessageListMsg::ReceiveMsg))
-            .expect("need msg context");
+        let _rec_msg_dis =
+            Dispatch::global().subscribe(ctx.link().callback(MessageListMsg::ReceiveMsg));
         let (_send_result_state, _send_result_listener) = ctx
             .link()
             .context(ctx.link().callback(MessageListMsg::SendResultCallback))
@@ -252,8 +249,7 @@ impl Component for MessageList {
             new_msg_count: 0,
             is_black: false,
             _sync_msg_dis,
-            _rec_msg_state,
-            _rec_msg_listener,
+            _rec_msg_dis,
             _send_result_state,
             _send_result_listener,
             list2: IndexMap::new(),

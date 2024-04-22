@@ -3,6 +3,7 @@ use indexmap::IndexMap;
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::components::left::add_friend::AddFriend;
 use crate::db::group::GroupRepo;
@@ -10,9 +11,8 @@ use crate::db::groups::GroupInterface;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use crate::pages::{
-    AddFriendState, FriendListState, FriendShipState, I18nState, ItemType, RemoveFriendState,
-};
+use crate::pages::{AddFriendState, FriendListState, FriendShipState, ItemType, RemoveFriendState};
+use crate::state::I18nState;
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     model::friend::Friend,
@@ -46,7 +46,7 @@ pub struct Contacts {
     _add_friend_state: Rc<AddFriendState>,
     _add_friend_listener: ContextHandle<Rc<AddFriendState>>,
     lang_state: Rc<I18nState>,
-    _lang_state_listener: ContextHandle<Rc<I18nState>>,
+    _lang_dispatch: Dispatch<I18nState>,
 }
 
 pub enum QueryState<T> {
@@ -112,10 +112,9 @@ impl Component for Contacts {
             .link()
             .context(ctx.link().callback(ContactsMsg::AddFriend))
             .expect("postcard friend_state needed");
-        let (lang_state, _lang_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ContactsMsg::SwitchLanguage))
-            .expect("need state in item");
+        let lang_dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::SwitchLanguage));
+        let lang_state = lang_dispatch.get();
         let res = match lang_state.lang {
             LanguageType::ZhCN => zh_cn::CONTACTS,
             LanguageType::EnUS => en_us::CONTACTS,
@@ -139,7 +138,7 @@ impl Component for Contacts {
             _add_friend_state,
             _add_friend_listener,
             lang_state,
-            _lang_state_listener,
+            _lang_dispatch: lang_dispatch,
         }
     }
 
@@ -286,7 +285,7 @@ impl Component for Contacts {
             .callback(|((x, y), id, is_mute)| ContactsMsg::ShowContextMenu((x, y), id, is_mute));
         let content = if self.is_searching {
             if self.result.is_empty() {
-                html! {<div class="no-result">{"没有搜索结果"}</div>}
+                html! {<div class="no-result">{tr!(self.i18n, "no_result")}</div>}
             } else {
                 self.result
                     .iter()

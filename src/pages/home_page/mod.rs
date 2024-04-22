@@ -10,19 +10,17 @@ use yewdux::Dispatch;
 
 use super::{
     AddFriendState, AddFriendStateItem, ConvState, CreateConvState, FriendListState,
-    FriendShipState, I18nState, ItemType, RecMessageState, RecSendCallState, RemoveConvState,
-    RemoveFriendState, SendMessageState, SendResultState,
+    FriendShipState, ItemType, RecSendCallState, RemoveConvState, RemoveFriendState,
+    SendMessageState, SendResultState,
 };
 use crate::db::current_item;
 use crate::db::repository::Repository;
-use crate::i18n::LanguageType;
 use crate::icons::CloseIcon;
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::{InviteMsg, Msg, ServerResponse};
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
 use crate::model::{ComponentType, CurrentItem, FriendShipStateType, RightContentType};
-use crate::pages::MuteState;
 
 use crate::state::AppState;
 use crate::{
@@ -35,10 +33,9 @@ pub struct Home {
     notification_interval: Option<Interval>,
     // state: Rc<AppState>,
     send_msg_state: Rc<SendMessageState>,
-    rec_msg_state: Rc<RecMessageState>,
+    // rec_msg_state: Rc<RecMessageState>,
     call_state: Rc<RecSendCallState>,
     conv_state: Rc<ConvState>,
-    mute_state: Rc<MuteState>,
     remove_conv_state: Rc<RemoveConvState>,
     remove_friend_state: Rc<RemoveFriendState>,
     friend_state: Rc<FriendListState>,
@@ -47,7 +44,6 @@ pub struct Home {
     notifications: Vec<Notification>,
     notification: Rc<NotificationState>,
     create_conv: Rc<CreateConvState>,
-    lang_state: Rc<I18nState>,
     send_result: Rc<SendResultState>,
 }
 
@@ -61,7 +57,7 @@ pub enum HomeMsg {
     // 发送消息
     SendMsgStateChange(Msg),
     // 收到消息
-    RecMsgStateChange(Msg),
+    // RecMsgStateChange(Msg),
     // 收到消息
     // ReceiveMessage(Msg),
     // 收到好友请求
@@ -85,10 +81,7 @@ pub enum HomeMsg {
     // 创建会话状态改变回调
     CreateFriendConv((RightContentType, Friend)),
     CreateGroupConv((RightContentType, Vec<String>)),
-    // mute state changed
-    MuteStateChange(AttrValue),
     AddFriendStateChange(AddFriendStateItem),
-    SwitchLang(LanguageType),
     SendResultState(ServerResponse),
 }
 
@@ -237,31 +230,15 @@ impl Component for Home {
                 state.group = Some(list);
                 true
             }
-            HomeMsg::MuteStateChange(id) => {
-                let state = Rc::make_mut(&mut self.mute_state);
-                state.conv_id = id;
-                true
-            }
             HomeMsg::AddFriendStateChange(item) => {
                 let state = Rc::make_mut(&mut self.add_friend_state);
                 state.item = item;
-                true
-            }
-
-            HomeMsg::RecMsgStateChange(msg) => {
-                let state = Rc::make_mut(&mut self.rec_msg_state);
-                state.msg = msg;
                 true
             }
             HomeMsg::RecFsResp(friend) => {
                 let state = Rc::make_mut(&mut self.friend_ship_state);
                 state.friend = Some(friend);
                 state.state_type = FriendShipStateType::RecResp;
-                true
-            }
-            HomeMsg::SwitchLang(lang) => {
-                let state = Rc::make_mut(&mut self.lang_state);
-                state.lang = lang;
                 true
             }
             HomeMsg::SendResultState(resp) => {
@@ -312,10 +289,7 @@ impl Component for Home {
             <ContextProvider<Rc<RemoveConvState>> context={self.remove_conv_state.clone()}>
             <ContextProvider<Rc<RemoveFriendState>> context={self.remove_friend_state.clone()}>
             <ContextProvider<Rc<CreateConvState>> context={self.create_conv.clone()}>
-            <ContextProvider<Rc<MuteState>> context={self.mute_state.clone()}>
             <ContextProvider<Rc<AddFriendState>> context={self.add_friend_state.clone()}>
-            <ContextProvider<Rc<RecMessageState>> context={self.rec_msg_state.clone()}>
-            <ContextProvider<Rc<I18nState>> context={self.lang_state.clone()}>
             <ContextProvider<Rc<SendResultState>> context={self.send_result.clone()}>
                 <div class="home" id="app">
                     <Left user_id={ctx.props().id.clone()}/>
@@ -327,10 +301,7 @@ impl Component for Home {
                     </div>
                 </div>
             </ContextProvider<Rc<SendResultState>>>
-            </ContextProvider<Rc<I18nState>>>
-            </ContextProvider<Rc<RecMessageState>>>
             </ContextProvider<Rc<AddFriendState>>>
-            </ContextProvider<Rc<MuteState>>>
             </ContextProvider<Rc<CreateConvState>>>
             </ContextProvider<Rc<RemoveFriendState>>>
             </ContextProvider<Rc<RemoveConvState>>>

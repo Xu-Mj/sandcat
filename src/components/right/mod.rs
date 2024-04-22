@@ -22,7 +22,8 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CatHeadIcon, CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
-use crate::pages::{ConvState, CreateConvState, FriendListState, I18nState};
+use crate::pages::{ConvState, CreateConvState, FriendListState};
+use crate::state::I18nState;
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     state::AppState,
@@ -43,7 +44,7 @@ pub struct Right {
     create_conv: Rc<CreateConvState>,
     _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
     lang_state: Rc<I18nState>,
-    _lang_state_listener: ContextHandle<Rc<I18nState>>,
+    _lang_dispatch: Dispatch<I18nState>,
 }
 
 pub enum RightMsg {
@@ -114,11 +115,9 @@ impl Component for Right {
             .link()
             .context(ctx.link().callback(|_| RightMsg::None))
             .expect("expect state");
-        let (lang_state, _lang_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(RightMsg::SwitchLang))
-            .expect("expect state");
+        let lang_dispatch = Dispatch::global().subscribe(ctx.link().callback(RightMsg::SwitchLang));
         let app_dis = Dispatch::global().subscribe(ctx.link().callback(RightMsg::StateChanged));
+        let lang_state = lang_dispatch.get();
         let cur_conv_info = None;
         let res = match lang_state.lang {
             LanguageType::ZhCN => zh_cn::RIGHT_PANEL,
@@ -139,7 +138,7 @@ impl Component for Right {
             create_conv,
             _create_conv_listener,
             lang_state,
-            _lang_state_listener,
+            _lang_dispatch: lang_dispatch,
         }
     }
 

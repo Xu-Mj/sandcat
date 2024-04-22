@@ -5,22 +5,10 @@ pub mod register;
 use yew::{AttrValue, Callback};
 use yew_router::Routable;
 
-use crate::i18n::LanguageType;
 use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::group::Group;
 use crate::model::message::{InviteMsg, Msg, ServerResponse};
 use crate::model::{CurrentItem, FriendShipStateType, RightContentType};
-
-// 1. 对话卡片切换
-// 2. 朋友卡片切换
-// 3. 消息收发
-// 4. 全局组件切换
-
-#[derive(Debug, Default, Clone, PartialEq)]
-pub struct I18nState {
-    pub lang: LanguageType,
-    pub switch_lang: Callback<LanguageType>,
-}
 
 /// 收发消息状态，收到消息触发receive_msg_event回调，发送消息通过send_msg_event回调来发送
 /// msg保存当前收到的消息或者正在发送的消息内容
@@ -28,17 +16,9 @@ pub struct I18nState {
 #[derive(Default, Clone, PartialEq, Debug)]
 pub struct SendMessageState {
     pub msg: Msg,
-    // pub send_back_event: Callback<Msg>,
     pub send_msg_event: Callback<Msg>,
     // dail a single call
     pub call_event: Callback<InviteMsg>,
-}
-
-/// notify other components after received a message
-#[derive(Default, Clone, PartialEq, Debug)]
-pub struct RecMessageState {
-    pub msg: Msg,
-    pub notify: Callback<Msg>,
 }
 
 #[derive(Default, Clone, PartialEq, Debug)]
@@ -54,12 +34,6 @@ pub struct RecSendCallState {
 pub struct ConvState {
     pub conv: CurrentItem,
     pub state_change_event: Callback<CurrentItem>,
-}
-
-#[derive(Default, Debug, Clone, PartialEq)]
-pub struct MuteState {
-    pub conv_id: AttrValue,
-    pub mute: Callback<AttrValue>,
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]

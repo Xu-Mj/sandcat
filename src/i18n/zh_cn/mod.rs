@@ -61,8 +61,8 @@ audio_call = [语音通话]
 
 pub const CONTACTS: &str = r#"
 new_friends = 新的朋友
-no_friends = No Friends
-no_groups = No Groups
+no_friends = 没有搜索结果
+no_result = 没有搜索结果
 "#;
 
 pub const RIGHT_CLICK_PANEL: &str = r#"
