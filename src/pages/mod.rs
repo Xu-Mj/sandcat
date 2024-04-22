@@ -43,12 +43,6 @@ pub struct SendResultState {
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]
-pub struct RemoveConvState {
-    pub id: AttrValue,
-    pub remove_event: Callback<AttrValue>,
-}
-
-#[derive(Default, Debug, Clone, PartialEq)]
 pub enum ItemType {
     Group,
     #[default]

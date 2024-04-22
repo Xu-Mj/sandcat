@@ -27,10 +27,10 @@ use crate::{
         CommonProps, ComponentType, ContentType, RightContentType,
     },
     pages::{
-        AddFriendState, ConvState, CreateConvState, FriendShipState, RemoveConvState,
-        SendMessageState, SendResultState,
+        AddFriendState, ConvState, CreateConvState, FriendShipState, SendMessageState,
+        SendResultState,
     },
-    state::{I18nState, MuteState, RecMessageState, UnreadState},
+    state::{I18nState, MuteState, RecMessageState, RemoveConvState, UnreadState},
     tr, utils,
     ws::WebSocketManager,
 };
@@ -72,8 +72,7 @@ pub struct Chats {
     _conv_listener: ContextHandle<Rc<ConvState>>,
     /// listen the conversation remove,
     /// used to receive that contact list to delete the friends to remove the conversation
-    _remove_conv_state: Rc<RemoveConvState>,
-    _remove_conv_listener: ContextHandle<Rc<RemoveConvState>>,
+    _remove_conv_dis: Dispatch<RemoveConvState>,
     /// change the global unread count
     unread_dis: Dispatch<UnreadState>,
     /// listen to the create conv event, like:
@@ -130,11 +129,8 @@ impl Chats {
             .link()
             .context(ctx.link().callback(ChatsMsg::ConvStateChanged))
             .expect("need state in item");
-        let (_remove_conv_state, _remove_conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(ChatsMsg::RemoveConvStateChanged))
-            .expect("need state in item");
-
+        let _remove_conv_dis =
+            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::RemoveConvStateChanged));
         let (_create_conv, _create_conv_listener) = ctx
             .link()
             .context(ctx.link().callback(ChatsMsg::CreateConvStateChanged))
@@ -194,8 +190,7 @@ impl Chats {
             context_menu_pos: (0, 0, AttrValue::default(), false),
             conv_state,
             _conv_listener,
-            _remove_conv_state,
-            _remove_conv_listener,
+            _remove_conv_dis,
             unread_dis,
             _send_msg_state,
             _send_msg_listener,

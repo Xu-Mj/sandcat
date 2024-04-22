@@ -3,13 +3,15 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use crate::components::action::Action;
 use crate::components::right::set_drawer::SetDrawer;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::GroupDelete;
 use crate::model::{ItemInfo, RightContentType};
-use crate::pages::{ItemType, RemoveConvState, RemoveFriendState};
+use crate::pages::{ItemType, RemoveFriendState};
+use crate::state::RemoveConvState;
 use crate::{api, db, tr, utils};
 
 #[derive(Properties, Clone, PartialEq)]
@@ -39,8 +41,6 @@ pub struct PostCard {
     // user_info: User,
     show_set_drawer: bool,
     i18n: FluentBundle<FluentResource>,
-    remove_conv_state: Rc<RemoveConvState>,
-    _remove_conv_listener: ContextHandle<Rc<RemoveConvState>>,
     remove_friend_state: Rc<RemoveFriendState>,
     _remove_friend_listener: ContextHandle<Rc<RemoveFriendState>>,
 }
@@ -51,10 +51,6 @@ impl Component for PostCard {
 
     fn create(ctx: &Context<Self>) -> Self {
         log::debug!("postcard conv type:{:?}", ctx.props().conv_type.clone());
-        let (remove_conv_state, _remove_conv_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| PostCardMsg::None))
-            .expect("postcard remove_conv_state needed");
         let (remove_friend_state, _remove_friend_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| PostCardMsg::None))
@@ -69,8 +65,6 @@ impl Component for PostCard {
             show_set_drawer: false,
             is_group_owner: false,
             i18n,
-            remove_conv_state,
-            _remove_conv_listener,
             remove_friend_state,
             _remove_friend_listener,
         };
@@ -109,7 +103,7 @@ impl Component for PostCard {
                 let info = self.info.as_ref().unwrap();
                 let user_id = ctx.props().user_id.clone().to_string();
                 let id = info.id();
-                let remove_conv = self.remove_conv_state.remove_event.clone();
+
                 let remove_friend = self.remove_friend_state.remove_event.clone();
 
                 match info.get_type() {
@@ -129,7 +123,8 @@ impl Component for PostCard {
                                         }
                                         log::debug!("delete friend success");
                                         // send state message to remove conversation from conversation lis
-                                        remove_conv.emit(id.clone());
+                                        Dispatch::<RemoveConvState>::global()
+                                            .reduce_mut(|s| s.id = id.clone());
                                         // send state message to remove friend from friend list
                                         remove_friend.emit((id, ItemType::Friend));
                                     }
@@ -158,7 +153,8 @@ impl Component for PostCard {
                                         log::error!("delete conversation failed: {:?}", e);
                                     }
                                     // send state message to remove conversation from conversation lis
-                                    remove_conv.emit(id.clone());
+                                    Dispatch::<RemoveConvState>::global()
+                                        .reduce_mut(|s| s.id = id.clone());
                                     // send state message to remove friend from friend list
                                     remove_friend.emit((id, ItemType::Group));
                                     return;
@@ -183,7 +179,8 @@ impl Component for PostCard {
                                         log::error!("delete conversation failed: {:?}", e);
                                     }
                                     // send state message to remove conversation from conversation lis
-                                    remove_conv.emit(id.clone());
+                                    Dispatch::<RemoveConvState>::global()
+                                        .reduce_mut(|s| s.id = id.clone());
                                     // send state message to remove friend from friend list
                                     remove_friend.emit((id, ItemType::Group));
                                 }

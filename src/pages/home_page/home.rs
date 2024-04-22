@@ -17,7 +17,7 @@ use crate::{
     },
     pages::{
         home_page::HomeMsg, AddFriendState, ConvState, CreateConvState, FriendListState,
-        FriendShipState, RecSendCallState, RemoveConvState, RemoveFriendState, SendMessageState,
+        FriendShipState, RecSendCallState, RemoveFriendState, SendMessageState,
     },
 };
 
@@ -56,7 +56,6 @@ impl Home {
             .send_message(HomeMsg::Query(QueryStatus::Querying));
         let switch_friend_callback = ctx.link().callback(HomeMsg::SwitchFriend);
         let switch_conv_callback = ctx.link().callback(HomeMsg::SwitchConv);
-        let remove_conv_callback = ctx.link().callback(HomeMsg::RemoveConv);
         let remove_event = ctx.link().callback(HomeMsg::RemoveFriend);
         let rec_msg_event = ctx.link().callback(HomeMsg::SendMsgStateChange);
         // let rec_listener = ctx.link().callback(HomeMsg::ReceiveMessage);
@@ -84,10 +83,6 @@ impl Home {
             conv_state: Rc::new(ConvState {
                 conv: CurrentItem::default(),
                 state_change_event: switch_conv_callback,
-            }),
-            remove_conv_state: Rc::new(RemoveConvState {
-                id: AttrValue::default(),
-                remove_event: remove_conv_callback,
             }),
             // ws,
             friend_ship_state: Rc::new(FriendShipState {

@@ -44,3 +44,9 @@ pub struct RecMessageState {
 pub struct MuteState {
     pub conv_id: AttrValue,
 }
+
+/// to notify chats component to remove conversation by id
+#[derive(Default, Debug, Clone, PartialEq, Store)]
+pub struct RemoveConvState {
+    pub id: AttrValue,
+}
