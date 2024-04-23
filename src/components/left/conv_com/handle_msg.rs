@@ -10,9 +10,9 @@ use crate::{
         conversation::Conversation,
         friend::FriendStatus,
         message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
-        ContentType, RightContentType,
+        ContentType, FriendShipStateType, RightContentType,
     },
-    state::{SendResultState, UnreadState},
+    state::{FriendShipState, SendResultState, UnreadState},
 };
 
 use super::Chats;
@@ -448,12 +448,15 @@ impl Chats {
                 // 收到好友请求
                 log::debug!("ReceiveFriendShipReq:{:?}", &friendship);
 
-                let req = self.fs_state.req_change_event.clone();
                 // save friendship
                 spawn_local(async move {
                     db::friendships().await.put_friendship(&friendship).await;
                     // notify
-                    req.emit(friendship);
+                    Dispatch::<FriendShipState>::global().reduce_mut(|s| {
+                        s.ship = Some(friendship);
+                        s.friend = None;
+                        s.state_type = FriendShipStateType::Req;
+                    });
                 });
 
                 // handle sequence
@@ -470,26 +473,18 @@ impl Chats {
                 return true;
             }
             Msg::FriendshipDeliveredNotice(_) => {}
-            // todo need handle the message sequence
             Msg::RelationshipRes((friend, seq)) => {
                 self.handle_lack_msg(ctx, seq);
                 // 收到好友同意消息
-                // self.info(AttrValue::from("好友同意"));
                 let send_id = ctx.props().user_id.clone();
                 // 需要通知联系人列表更新
                 // 数据入库
-                // let cloned_ctx = ctx.link().clone();
-                let resp = self.fs_state.rec_resp.clone();
                 ctx.link().send_future(async move {
                     db::friendships()
                         .await
                         .agree_by_friend_id(friend.friend_id.as_str())
                         .await;
                     db::friends().await.put_friend(&friend).await;
-                    // send received message
-                    // cloned_ctx.send_message(HomeMsg::SendBackMsg(Msg::FriendshipDeliveredNotice(
-                    // friend.fs_id.to_string(),
-                    // )));
                     // send hello message
                     let mut msg = Message {
                         local_id: nanoid::nanoid!().into(),
@@ -513,7 +508,11 @@ impl Chats {
                         .unwrap();
 
                     // send message to contact component to update the friend list
-                    resp.emit(friend);
+                    Dispatch::<FriendShipState>::global().reduce_mut(|s| {
+                        s.friend = Some(friend);
+                        s.ship = None;
+                        s.state_type = FriendShipStateType::RecResp;
+                    });
 
                     ChatsMsg::SendMessage(Msg::Single(msg))
                 });

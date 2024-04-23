@@ -5,11 +5,12 @@ use yewdux::Store;
 use crate::{
     i18n::LanguageType,
     model::{
-        friend::Friend,
+        friend::{Friend, FriendShipWithUser},
         group::Group,
         message::{InviteMsg, Msg, ServerResponse},
+        notification::Notification,
         user::User,
-        ComponentType, CurrentItem, RightContentType,
+        ComponentType, CurrentItem, FriendShipStateType, RightContentType,
     },
 };
 
@@ -155,4 +156,16 @@ pub struct ConvState {
 #[store(storage = "local")]
 pub struct FriendListState {
     pub friend: CurrentItem,
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct FriendShipState {
+    pub ship: Option<FriendShipWithUser>,
+    pub friend: Option<Friend>,
+    pub state_type: FriendShipStateType,
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct NotificationState {
+    pub noti: Notification,
 }

@@ -12,9 +12,7 @@ use web_sys::{
     RtcSessionDescriptionInit, RtcSignalingState,
 };
 use yew::platform::spawn_local;
-use yew::{
-    html, AttrValue, Callback, Component, Context, ContextHandle, Html, NodeRef, Properties,
-};
+use yew::{html, AttrValue, Callback, Component, Context, Html, NodeRef, Properties};
 use yewdux::Dispatch;
 
 use crate::icons::{
@@ -25,10 +23,10 @@ use crate::model::message::{
     Agree, Hangup, InviteAnswerMsg, InviteCancelMsg, InviteInfo, InviteMsg, InviteNotAnswerMsg,
     InviteType, Message, Msg, SingleCall,
 };
-use crate::model::notification::{Notification, NotificationState, NotificationType};
+use crate::model::notification::{Notification, NotificationType};
 use crate::model::ContentType;
 use crate::model::ItemInfo;
-use crate::state::SendCallState;
+use crate::state::{NotificationState, SendCallState};
 use crate::ws::WebSocketManager;
 use crate::{db, utils, web_rtc};
 
@@ -64,16 +62,8 @@ pub struct PhoneCall {
     /// 邀请计时器，到时间即为未接听
     call_timer: Option<Timeout>,
     /// 用来监听是否有通话消息
-    // _listener: ContextHandle<SingleCall>,
     /// 通话状态， 用来挂断、取消等等。。
     _call_state_dis: Dispatch<SendCallState>,
-    // _call_listener: ContextHandle<Rc<RecSendCallState>>,
-    /// 发送通知
-    notify_state: Rc<NotificationState>,
-    _notify_listener: ContextHandle<Rc<NotificationState>>,
-    /// send receive message
-    // msg_state: Rc<SendMessageState>,
-    // _msg_listener: ContextHandle<Rc<SendMessageState>>,
     /// 面板拖动记录x、y坐标
     pos_x: i32,
     pos_y: i32,
@@ -129,10 +119,7 @@ impl Component for PhoneCall {
     fn create(ctx: &Context<Self>) -> Self {
         let call_state_dis =
             Dispatch::global().subscribe(ctx.link().callback(PhoneCallMsg::CallStateChange));
-        let (notify_state, _notify_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| PhoneCallMsg::None))
-            .expect("need msg context");
+
         Self {
             show_video: false,
             show_audio: false,
@@ -150,9 +137,6 @@ impl Component for PhoneCall {
             volume_mute: false,
             microphone_mute: false,
             _call_state_dis: call_state_dis,
-            // _call_listener,
-            notify_state,
-            _notify_listener,
             pos_x: 0,
             pos_y: 0,
             is_dragging: false,
@@ -795,7 +779,7 @@ impl Component for PhoneCall {
             PhoneCallMsg::Notification(item) => {
                 log::debug!("CallTimeout");
                 let type_ = item.type_.clone();
-                self.notify_state.notify.emit(item);
+                Dispatch::<NotificationState>::global().reduce_mut(|s| s.noti = item);
                 if type_ == NotificationType::Error {
                     self.finish_call();
                     return true;

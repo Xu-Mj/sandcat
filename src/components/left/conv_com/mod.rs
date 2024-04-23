@@ -26,7 +26,6 @@ use crate::{
         seq::Seq,
         CommonProps, ComponentType, ContentType, CurrentItem, RightContentType,
     },
-    pages::FriendShipState,
     state::{
         ConvState, CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState,
         SendMessageState, UnreadState,
@@ -81,8 +80,6 @@ pub struct Chats {
     /// send the create friend/group event to contact list
     /// send the event to other components after receive a message
     rec_msg_dis: Dispatch<RecMessageState>,
-    /// friendship state, notify the contact component after receive a friend application
-    fs_state: Rc<FriendShipState>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
 }
@@ -127,10 +124,6 @@ impl Chats {
             Dispatch::global().subscribe_silent(ctx.link().callback(ChatsMsg::MuteStateChanged));
         let rec_msg_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(|_| ChatsMsg::None));
-        let (fs_state, _fs_state_listener) = ctx
-            .link()
-            .context(ctx.link().callback(|_| ChatsMsg::None))
-            .expect("need state in item");
         // same as conv state
         let lang_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SwitchLanguage));
@@ -173,7 +166,6 @@ impl Chats {
             _create_conv_dis,
             _mute_dis,
             rec_msg_dis,
-            fs_state,
             i18n,
             lang_state,
             _lang_dispatch: lang_dispatch,

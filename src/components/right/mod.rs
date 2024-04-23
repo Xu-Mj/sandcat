@@ -252,8 +252,8 @@ impl Component for Right {
                     | RightContentType::Group
                     | RightContentType::UserInfo => {
                         html! {
-                            <PostCard user_id={&self.state.login_user.id.clone()}
-                            id={&self.friend_list_state.friend.item_id.clone()}
+                            <PostCard user_id={&self.state.login_user.id}
+                            id={&self.friend_list_state.friend.item_id}
                             conv_type={self.friend_list_state.friend.content_type.clone()}
                             lang={self.lang_state.lang}/>
                         }
@@ -261,7 +261,7 @@ impl Component for Right {
                     RightContentType::FriendShipList => {
                         log::debug!("right msg container");
                         html! {
-                            <FriendShipList lang={self.lang_state.lang}/>
+                            <FriendShipList user_id={&self.state.login_user.id} lang={self.lang_state.lang}/>
                         }
                     }
                     _ => {

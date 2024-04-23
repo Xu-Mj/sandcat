@@ -3,19 +3,21 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{HtmlInputElement, MouseEvent};
-use yew::{html, AttrValue, Component, Context, ContextHandle, Html, NodeRef, Properties};
+use yew::{html, AttrValue, Component, Context, Html, NodeRef, Properties};
+use yewdux::Dispatch;
 
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::UpIcon;
 use crate::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus};
-use crate::model::FriendShipStateType;
-use crate::pages::FriendShipState;
+use crate::model::message::{Message, Msg, SendStatus, DEFAULT_HELLO_MESSAGE};
+use crate::model::{ContentType, FriendShipStateType};
+use crate::state::{FriendShipState, SendMessageState};
 use crate::{api, db, tr, utils};
 
 pub struct FriendShipList {
     list: Vec<FriendShipWithUser>,
     friendship_state: Rc<FriendShipState>,
-    _listener: ContextHandle<Rc<FriendShipState>>,
+    _fs_dis: Dispatch<FriendShipState>,
     show_detail: bool,
     detail: Option<FriendShipWithUser>,
     apply_msg_node: NodeRef,
@@ -41,6 +43,7 @@ pub enum RequestStatus {
 #[derive(Properties, PartialEq, Clone)]
 pub struct FriendShipListProps {
     pub lang: LanguageType,
+    pub user_id: AttrValue,
 }
 
 impl Component for FriendShipList {
@@ -51,13 +54,10 @@ impl Component for FriendShipList {
         ctx.link().send_future(async {
             FriendShipListMsg::QueryFriendships(db::friendships().await.get_list().await)
         });
-        let (friendship_state, _listener) = ctx
-            .link()
-            .context(
-                ctx.link()
-                    .callback(FriendShipListMsg::FriendShipStateChanged),
-            )
-            .expect("need friend ship state");
+        let fs_dis = Dispatch::global().subscribe(
+            ctx.link()
+                .callback(FriendShipListMsg::FriendShipStateChanged),
+        );
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::FRIENDSHIP,
             LanguageType::EnUS => en_us::FRIENDSHIP,
@@ -66,8 +66,8 @@ impl Component for FriendShipList {
         Self {
             list: vec![],
             i18n,
-            friendship_state,
-            _listener,
+            friendship_state: fs_dis.get(),
+            _fs_dis: fs_dis,
             show_detail: false,
             detail: None,
             apply_msg_node: NodeRef::default(),
@@ -145,11 +145,40 @@ impl Component for FriendShipList {
                             item.read = ReadStatus::True;
                         }
                         // todo should update the database at here
-                        self.friendship_state
-                            .res_change_event
-                            .emit((friendship_id, *friend));
+                        Dispatch::<FriendShipState>::global().reduce_mut(|s| {
+                            s.friend = Some(*friend.clone());
+                            s.ship = None;
+                            s.state_type = FriendShipStateType::Res
+                        });
+                        let send_id = ctx.props().user_id.clone();
                         // update the is_operated field
-                        spawn_local(async move {});
+                        spawn_local(async move {
+                            db::friendships().await.agree(friendship_id.as_str()).await;
+                            db::friends().await.put_friend(&friend).await;
+                            let mut msg = Message {
+                                local_id: nanoid::nanoid!().into(),
+                                send_id,
+                                friend_id: friend.friend_id.clone(),
+                                content_type: ContentType::Text,
+                                content: friend
+                                    .hello
+                                    .clone()
+                                    .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
+                                create_time: chrono::Local::now().timestamp_millis(),
+                                is_read: true,
+                                is_self: true,
+                                send_status: SendStatus::Sending,
+                                ..Default::default()
+                            };
+                            let _ = db::messages()
+                                .await
+                                .add_message(&mut msg)
+                                .await
+                                .map_err(|err| log::error!("添加好友打招呼消息入库失败:{:?}", err));
+                            log::debug!("发送打招呼:{:?}", &msg);
+                            Dispatch::<SendMessageState>::global()
+                                .reduce_mut(|s| s.msg = Msg::Single(msg));
+                        });
                         // ship.status = AttrValue::from("1");
                         // ship.read = ReadStatus::True;
                         // 发送通知给contacts，刷新列表
@@ -174,13 +203,26 @@ impl Component for FriendShipList {
                     &state.state_type
                 );
 
-                if state.state_type == FriendShipStateType::Req {
-                    self.friendship_state = state;
-                    self.list
-                        .insert(0, self.friendship_state.ship.as_ref().unwrap().clone());
-                    return true;
+                match state.state_type {
+                    FriendShipStateType::Req => {
+                        self.friendship_state = state;
+                        self.list
+                            .insert(0, self.friendship_state.ship.as_ref().unwrap().clone());
+                    }
+                    FriendShipStateType::Res => {
+                        // response friend
+                    }
+                    FriendShipStateType::RecResp => {
+                        self.list
+                            .iter_mut()
+                            .filter(|v| v.fs_id == state.friend.as_ref().unwrap().fs_id)
+                            .for_each(|v| {
+                                v.status = FriendStatus::Accepted as i32;
+                                v.read = ReadStatus::True
+                            });
+                    }
                 }
-                false
+                true
             }
             FriendShipListMsg::ShowDetail(item) => {
                 self.detail = Some(*item);

@@ -1,11 +1,6 @@
-use yew::{AttrValue, Callback};
+use yew::AttrValue;
 
-#[derive(Default, Clone, PartialEq)]
-pub struct NotificationState {
-    pub notify: Callback<Notification>,
-}
-
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, PartialEq)]
 pub struct Notification {
     pub type_: NotificationType,
     pub title: AttrValue,

@@ -8,16 +8,12 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use super::FriendShipState;
 use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
-use crate::model::friend::{Friend, FriendShipWithUser};
-use crate::model::message::Msg;
-use crate::model::notification::{Notification, NotificationState, NotificationType};
+use crate::model::notification::{Notification, NotificationType};
 use crate::model::user::User;
-use crate::model::FriendShipStateType;
 
-use crate::state::{AppState, SendMessageState};
+use crate::state::{AppState, NotificationState};
 use crate::{
     components::{left::Left, right::Right},
     db::QueryStatus,
@@ -26,40 +22,17 @@ use crate::{
 pub struct Home {
     notification_node: NodeRef,
     notification_interval: Option<Interval>,
-    friend_ship_state: Rc<FriendShipState>,
     notifications: Vec<Notification>,
-    notification: Rc<NotificationState>,
+    _noti_dis: Dispatch<NotificationState>,
 }
 
 #[derive(Debug)]
 pub enum HomeMsg {
-    // 联系人列表选中元素改变
-    // SwitchFriend(CurrentItem),
-    // 会话列表选中元素改变
-    // SwitchConv(CurrentItem),
     // 查询数据库
-    Query(QueryStatus<User>),
-    // 收到消息
-    // RecMsgStateChange(Msg),
-    // 收到消息
-    // ReceiveMessage(Msg),
-    // 收到好友请求
-    ReceiveFriendShipReq(FriendShipWithUser),
-    // 回复好友请求
-    FriendShipResponse((AttrValue, Friend)),
-    // received friend application response
-    RecFsResp(Friend),
-    // 显示顶部消息通知
-    // 发送视频电话请求
-    // 发送消息
-    SendMessage(Msg),
-    // 发送消息收到
-    // SendBackMsg(Msg),
-    Notification(Notification),
+    Query(Box<QueryStatus<User>>),
+    NotificationStateChanged(Rc<NotificationState>),
     CleanNotification,
     CloseNotificationByIndex(usize),
-    // 创建会话状态改变回调
-    // AddFriendStateChange(AddFriendStateItem),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -79,50 +52,16 @@ impl Component for Home {
         log::debug!("home update: {:?}", msg);
         match msg {
             HomeMsg::Query(status) => {
-                match status {
+                match *status {
                     QueryStatus::QuerySuccess(u) => {
                         Dispatch::<AppState>::global().reduce_mut(|s| {
                             s.login_user = u;
                         });
-
-                        // update conversation state
-                        // Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = u.1);
-
-                        // // update friend state
-                        // Dispatch::<FriendListState>::global().reduce_mut(|s| s.friend = u.2);
                     }
                     QueryStatus::QueryFail(_) => {
                         gloo::console::log!("query fail")
                     }
                     _ => {}
-                }
-                true
-            }
-            HomeMsg::SendMessage(msg) => {
-                // change the send message state to send hello
-                log::debug!("send message in home");
-                Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = msg);
-                false
-            }
-            // don't need anymore, at the conversation component
-            HomeMsg::ReceiveFriendShipReq(friendship) => {
-                // self.handle_friendship_req(ctx, friendship)
-                let state = Rc::make_mut(&mut self.friend_ship_state);
-                state.ship = Some(friendship.clone());
-                state.state_type = FriendShipStateType::Req;
-                true
-            }
-            HomeMsg::FriendShipResponse((friendship_id, friend)) => {
-                self.agree_friendship(ctx, friendship_id, friend)
-            }
-            HomeMsg::Notification(noti) => {
-                log::debug!("notification:{:?}", &noti);
-                self.notify(noti);
-                let ctx = ctx.link().clone();
-                if self.notification_interval.is_none() {
-                    self.notification_interval = Some(Interval::new(3 * 1000, move || {
-                        ctx.send_message(HomeMsg::CleanNotification)
-                    }));
                 }
                 true
             }
@@ -141,10 +80,14 @@ impl Component for Home {
                 }
                 false
             }
-            HomeMsg::RecFsResp(friend) => {
-                let state = Rc::make_mut(&mut self.friend_ship_state);
-                state.friend = Some(friend);
-                state.state_type = FriendShipStateType::RecResp;
+            HomeMsg::NotificationStateChanged(state) => {
+                self.notify(state.noti.clone());
+                let ctx = ctx.link().clone();
+                if self.notification_interval.is_none() {
+                    self.notification_interval = Some(Interval::new(3 * 1000, move || {
+                        ctx.send_message(HomeMsg::CleanNotification)
+                    }));
+                }
                 true
             }
         }
@@ -180,8 +123,6 @@ impl Component for Home {
             .collect::<Html>();
 
         html! {
-            <ContextProvider<Rc<FriendShipState>> context={self.friend_ship_state.clone()}>
-            <ContextProvider<Rc<NotificationState>> context={self.notification.clone()}>
                 <div class="home" id="app">
                     <Left user_id={ctx.props().id.clone()}/>
                     <Right />
@@ -191,8 +132,6 @@ impl Component for Home {
                         {notify}
                     </div>
                 </div>
-            </ContextProvider<Rc<NotificationState>>>
-            </ContextProvider<Rc<FriendShipState>>>
         }
     }
 

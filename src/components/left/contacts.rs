@@ -11,8 +11,9 @@ use crate::db::groups::GroupInterface;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use crate::pages::FriendShipState;
-use crate::state::{AddFriendState, FriendListState, I18nState, ItemType, RemoveFriendState};
+use crate::state::{
+    AddFriendState, FriendListState, FriendShipState, I18nState, ItemType, RemoveFriendState,
+};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     model::friend::Friend,
@@ -37,8 +38,7 @@ pub struct Contacts {
     is_add_friend: bool,
     show_context_menu: bool,
     i18n: FluentBundle<FluentResource>,
-    _friendship_state: Rc<FriendShipState>,
-    _listener: ContextHandle<Rc<FriendShipState>>,
+    _fs_dis: Dispatch<FriendShipState>,
     friend_state: Rc<FriendListState>,
     friend_dispatch: Dispatch<FriendListState>,
     _remove_friend_dis: Dispatch<RemoveFriendState>,
@@ -94,10 +94,8 @@ impl Component for Contacts {
             ContactsMsg::QueryFriendship(count)
         });
         // register state
-        let (_friendship_state, _listener) = ctx
-            .link()
-            .context(ctx.link().callback(ContactsMsg::RecFriendShipReq))
-            .expect("need friend ship state");
+        let fs_dis =
+            Dispatch::global().subscribe_silent(ctx.link().callback(ContactsMsg::RecFriendShipReq));
 
         let friend_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::FriendListStateChanged));
@@ -124,8 +122,7 @@ impl Component for Contacts {
             is_add_friend: false,
             show_context_menu: false,
             i18n,
-            _friendship_state,
-            _listener,
+            _fs_dis: fs_dis,
             friend_state: friend_dispatch.get(),
             friend_dispatch,
             _remove_friend_dis,
