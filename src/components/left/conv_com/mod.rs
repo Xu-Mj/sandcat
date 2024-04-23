@@ -285,13 +285,9 @@ impl Chats {
     }
 
     fn deal_with_conv_state_change(&mut self, ctx: &Context<Self>, state: Rc<ConvState>) -> bool {
-        // self.conv_state = state;
-        let state = state.conv.clone();
-        let cur_conv_id = state.item_id.clone();
-        // save current conv id
-        // current_item::save_conv(&state).unwrap();
+        self.conv_state = state;
+        let cur_conv_id = self.conv_state.conv.item_id.clone();
         // 设置了一个查询状态，如果在查询没有完成时更新了状态，那么不进行更新列表，这里有待于优化，
-        // 因为状态会在
         if cur_conv_id.is_empty() || !self.query_complete {
             return false;
         }
@@ -312,8 +308,8 @@ impl Chats {
             need_rerender
         } else {
             // not exists, create a new conversation
-            let friend_id = cur_conv_id.clone();
-            let conv_type = state.content_type.clone();
+            let friend_id = cur_conv_id;
+            let conv_type = self.conv_state.conv.content_type.clone();
             log::debug!("conv type in messages: {:?}", conv_type.clone());
 
             ctx.link().send_future(async move {

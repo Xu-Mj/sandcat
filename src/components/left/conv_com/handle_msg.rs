@@ -306,6 +306,7 @@ impl Chats {
                 let mut msg = msg.clone();
                 // let msg_id = msg.server_id.to_string();
 
+                log::debug!("conversation state is {:?}", self.conv_state);
                 let is_send = (self.conv_state.conv.content_type == RightContentType::Friend
                     || self.conv_state.conv.content_type == RightContentType::Group)
                     && self.conv_state.conv.item_id == msg.friend_id;

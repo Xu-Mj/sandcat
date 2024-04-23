@@ -54,7 +54,7 @@ impl Component for FriendShipList {
         ctx.link().send_future(async {
             FriendShipListMsg::QueryFriendships(db::friendships().await.get_list().await)
         });
-        let fs_dis = Dispatch::global().subscribe(
+        let fs_dis = Dispatch::global().subscribe_silent(
             ctx.link()
                 .callback(FriendShipListMsg::FriendShipStateChanged),
         );
