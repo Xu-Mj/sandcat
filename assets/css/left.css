@@ -29,7 +29,7 @@
     user-select: none;
     /* background-color: #333; */
 
-    border-right: 1px solid var(--hover-color);
+    border-right: 1px solid var(--color-border);
 
     /* 顶部导航栏 */
 
@@ -201,7 +201,7 @@
                     display: flex;
                     justify-content: end;
                     align-items: center;
-                    color: grap;
+                    color: var(--color-text);
                     font-size: .6rem;
                     position: absolute;
                     top: 1.5rem;
@@ -233,7 +233,7 @@
                     text-overflow: ellipsis;
                     word-break: keep-all;
                     font-size: .8rem;
-                    color: #1d141c;
+                    color: var(--color-text);
                     white-space: nowrap;
                 }
             }
@@ -275,7 +275,7 @@
             white-space: pre-wrap;
 
             &:not(:first-child) {
-                color: #999;
+                color: var(--color-text);
             }
         }
 

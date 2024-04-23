@@ -30,6 +30,7 @@ pub struct SelfInfo {
     _dispatch: Dispatch<I18nState>,
 }
 
+#[derive(Debug)]
 pub enum SelfInfoMsg {
     Submit,
     I18nStateChanged(Rc<I18nState>),
@@ -51,7 +52,7 @@ impl Component for SelfInfo {
 
     fn create(ctx: &yew::prelude::Context<Self>) -> Self {
         let dispatch =
-            Dispatch::global().subscribe(ctx.link().callback(SelfInfoMsg::I18nStateChanged));
+            Dispatch::global().subscribe_silent(ctx.link().callback(SelfInfoMsg::I18nStateChanged));
         let res = match dispatch.get().lang {
             LanguageType::ZhCN => zh_cn::USER_INFO,
             LanguageType::EnUS => en_us::USER_INFO,

@@ -3,7 +3,7 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
-    background-color: white;
+    background-color: var(--color-background);
     width: 70%;
     height: 100%;
     position: relative;
@@ -19,7 +19,7 @@
         flex-direction: column;
         top: 0;
         position: absolute;
-        background-color: white;
+        background-color: var(--color-background);
         z-index: 2;
 
         .close-bar {
@@ -57,7 +57,7 @@
         display: flex;
         flex-direction: column;
         align-items: center;
-        background-color: white;
+        background-color: var(--color-background);
         z-index: 3;
 
         &[tabindex] {
@@ -101,7 +101,7 @@
                 height: 1.3rem;
                 padding: auto;
                 outline: none;
-                background-color: #c5c2c2;
+                background-color: var(--color-background-input);
                 border: none;
             }
         }
@@ -130,7 +130,7 @@
             width: var(--width);
             height: var(--height);
             border-radius: var(--height);
-            background-color: #c5c2c2;
+            background-color: var(--color-background-input);
             position: relative;
             transition: .5s;
 
@@ -142,7 +142,7 @@
                 margin: var(--child-margin);
                 left: 0;
                 border-radius: 50%;
-                background-color: white;
+                background-color: var(--color-background);
                 transition: .5s;
             }
 
@@ -184,7 +184,7 @@
             position: absolute;
             width: 15rem;
             height: 20rem;
-            background-color: white;
+            background-color: var(--color-background);
             display: flex;
             flex-direction: column;
             top: 50%;
@@ -490,7 +490,7 @@
             left: .5rem;
             border-radius: .5rem;
             overflow-y: auto;
-            background-color: white;
+            background-color: var(--color-background);
             padding: .5rem;
             filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
             /*box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),*/
@@ -532,7 +532,7 @@
             padding: .3rem;
             overflow: hidden;
             position: relative;
-            border-top: 1px solid #E0E0E0;
+            border-top: 1px solid var(--color-border);
 
             /* 发送框顶部的条 */
 
@@ -570,6 +570,7 @@
                     font-size: 1rem;
                     font-family: inherit;
                     resize: none;
+                    background-color: transparent;
                 }
 
                 .empty-msg-tip {
@@ -580,7 +581,7 @@
                     right: 1rem;
                     bottom: 3rem;
                     font-size: .8rem;
-                    background-color: aliceblue;
+                    background-color: var(--color-background);
                 }
 
                 .send-btn {
@@ -651,7 +652,7 @@
                     position: absolute;
                     right: 0;
                     top: 1rem;
-                    background-color: white;
+                    background-color: var(--color-background);
 
                     &[tabindex] {
                         outline: none;
@@ -764,7 +765,7 @@
 
                 .friendship-action button {
                     border: none;
-                    background-color: #e4e9ec;
+                    background-color: var(--color-background-btn);
                     width: 6rem;
                     height: 2rem;
                     padding: auto;
@@ -783,7 +784,7 @@
                 justify-content: flex-start;
                 align-items: center;
                 gap: 1rem;
-                background-color: white;
+                background-color: var(--color-background);
                 left: 50%;
                 top: 10%;
                 transform: translateX(-50%);
@@ -816,7 +817,7 @@
 
                     button {
                         border: none;
-                        background-color: #e4e9ec;
+                        background-color: var(--color-background-btn);
                         width: 6rem;
                         height: 2rem;
                         padding: auto;
