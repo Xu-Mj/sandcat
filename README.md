@@ -74,7 +74,7 @@ Audio and video calling are implemented using the browser's native API--WebRTC, 
 
 Sequence Diagram
 
-![sequence](./assets/images/doc\phone_call.png)
+![sequence](./assets/images/doc/phone_call.png)
 
 WebRTC technology enables audio and video call functionalities for our instant messaging service. Its core is built on our WebSocket service and exchanges necessary Point-to-Point (P2P) connection information between users through the "signalling channel," such as media information (codec support), network information (including IP addresses and ports), and session control messages for call handling. Before starting to exchange these P2P connection details, a call invitation needs to be sent to the receiver. The entire process is as follows:
 
@@ -99,16 +99,16 @@ Except for establishing the P2P connection, which WebRTC handles automatically, 
 
 - register
 
-![image-20240421095851773](.\assets\images\doc\register.png)
+![image-20240421095851773](./assets/images/doc/register.png)
 
 - friend application
 
-![image-20240421100832052](.\assets\images\doc\add_friend.png)
+![image-20240421100832052](./assets/images/doc/add_friend.png)
 
 - conversation
 
-![image-20240421100035307](.\assets\images\doc\home.png)
+![image-20240421100035307](./assets/images/doc/home.png)
 
 - friend list
 
-![image-20240421101337271](.\assets\images\doc\contacts.png)
+![image-20240421101337271](./assets/images/doc/contacts.png)
