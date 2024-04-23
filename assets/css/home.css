@@ -5,6 +5,7 @@
 
     }
 }
+
 /* 主页 */
 .home {
     height: 80vh;
@@ -24,231 +25,241 @@
     background-color: var(--color-background);
     position: relative;
 
-    .video-or-audio-notify {
-        position: absolute;
-        width: 0;
-        height: 0;
-        top: -100%;
-        border-radius: .5rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        animation: video-notify-spawn .2s forwards;
-        background-color: white;
-        padding-left: 1rem;
-        padding-right: 1rem;
-        z-index: 3;
 
-        img {
-            width: 2rem;
-            height: 2rem;
-            border-radius: .2rem;
-        }
+}
 
-        .video-audio-notify-operate {
-            display: flex;
-            gap: 1rem;
+.video-or-audio-notify {
+    position: fixed;
+    width: 0;
+    height: 0;
+    top: -100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: .5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    animation: video-notify-spawn .2s forwards;
+    background-color: white;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    z-index: 3;
 
-            > :first-child {
-                background-color: red;
-            }
-
-            > :nth-child(2) {
-                background-color: #95EC69;
-            }
-
-            span {
-                cursor: pointer;
-                width: 2rem;
-                height: 2rem;
-                border-radius: 50%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-
-                svg path {
-                    fill: white;
-                    stroke: white;
-                }
-            }
-        }
+    img {
+        width: 2rem;
+        height: 2rem;
+        border-radius: .2rem;
     }
 
-    .video-container {
-        position: fixed;
-        width: 0;
-        height: 0;
-        top: 1rem;
-        border-radius: .5rem;
-        background-color: white;
-        animation: video-spawn .2s forwards;
-        z-index: 20;
-        overflow: hidden;
-
-        .video-self {
-            width: 100%;
-            height: auto;
-            position: absolute;
-            bottom: 0;
-            right: 0;
-            border-radius: .2rem;
-            z-index: 2;
-        }
-
-        .video-friend {
-            position: absolute;
-            width: 100%;
-            height: auto;
-            top: 50%;
-            transform: translateY(-50%);
-            z-index: 1;
-        }
-
-
-    }
-
-    .audio-container {
-        width: 0;
-        height: 0;
-        top: 1rem;
-        position: fixed;
+    .video-audio-notify-operate {
         display: flex;
-        justify-content: center;
-        align-items: center;
-        /* 居中 */
-        background-position: center;
-        /* 铺满 */
-        background-size: cover;
-        /* 保持图片不重复 */
-        background-repeat: no-repeat;
-        animation: video-spawn .2s forwards;
-        z-index: 3;
+        gap: 1rem;
 
-        .audio-avatar {
-            width: 50%;
-            /*保持宽高比为1:1*/
-            aspect-ratio: 1 / 1;
-            border-radius: .3rem;
-            z-index: 1;
+        > :first-child {
+            background-color: red;
         }
 
-        &::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            backdrop-filter: blur(10px);
+        > :nth-child(2) {
+            background-color: #95EC69;
         }
-    }
-
-    .call-operate {
-        position: absolute;
-        width: 100%;
-        height: 3.5rem;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: space-evenly;
-        z-index: 3;
-
-        background-color: rgba(0, 0, 0, .2);
 
         span {
-            width: 3rem;
-            height: 3rem;
+            cursor: pointer;
+            width: 2rem;
+            height: 2rem;
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
-            cursor: pointer;
 
-        }
-
-        .switch-microphone {
-            background-color: white;
-
-            svg {
-                width: 2rem;
-                height: 2rem;
+            svg path {
+                fill: white;
+                stroke: white;
             }
         }
+    }
+}
 
-        .hangup-icon {
-            background-color: red;
 
-            svg {
-                width: 2rem;
-                height: 2rem;
+.video-container {
+    position: fixed;
+    width: 0;
+    height: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 1rem;
+    border-radius: .5rem;
+    background-color: white;
+    animation: video-spawn .2s forwards;
+    z-index: 20;
+    overflow: hidden;
 
-                path {
-                    fill: white;
-                    stroke: white;
-                }
-            }
+    .video-self {
+        width: 100%;
+        height: auto;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        border-radius: .2rem;
+        z-index: 2;
+    }
+
+    .video-friend {
+        position: absolute;
+        width: 100%;
+        height: auto;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 1;
+    }
+
+
+}
+
+.audio-container {
+    width: 0;
+    height: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    top: 1rem;
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* 居中 */
+    background-position: center;
+    /* 铺满 */
+    background-size: cover;
+    /* 保持图片不重复 */
+    background-repeat: no-repeat;
+    animation: video-spawn .2s forwards;
+    z-index: 3;
+
+    .audio-avatar {
+        width: 50%;
+        /*保持宽高比为1:1*/
+        aspect-ratio: 1 / 1;
+        border-radius: .3rem;
+        z-index: 1;
+    }
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        backdrop-filter: blur(10px);
+    }
+}
+
+
+.call-operate {
+    position: absolute;
+    width: 100%;
+    height: 3.5rem;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    z-index: 3;
+
+    background-color: rgba(0, 0, 0, .2);
+
+    span {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+
+    }
+
+    .switch-microphone {
+        background-color: white;
+
+        svg {
+            width: 2rem;
+            height: 2rem;
         }
+    }
 
-        .call-volume {
-            background-color: white;
+    .hangup-icon {
+        background-color: red;
 
-            svg {
-                width: 2rem;
-                height: 2rem;
+        svg {
+            width: 2rem;
+            height: 2rem;
+
+            path {
+                fill: white;
+                stroke: white;
             }
         }
     }
 
+    .call-volume {
+        background-color: white;
 
-    .notify {
-        position: absolute;
-        top: 2rem;
-        right: 1rem;
-        width: 15rem;
-        max-height: 10rem;
+        svg {
+            width: 2rem;
+            height: 2rem;
+        }
+    }
+}
+
+
+.notify {
+    position: absolute;
+    top: 2rem;
+    right: 1rem;
+    width: 15rem;
+    max-height: 10rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    overflow-y: auto;
+    scroll-behavior: smooth;
+
+    .error {
+        background-color: red;
+        color: aliceblue;
+
+        svg path {
+            fill: aliceblue;
+            stroke: aliceblue;
+        }
+    }
+
+    .notification-item {
+        width: 100%;
+        min-height: 4rem;
+        position: relative;
+        border-radius: .5rem;
         display: flex;
         flex-direction: column;
-        gap: .5rem;
-        overflow-y: auto;
-        scroll-behavior: smooth;
+        padding: .3rem;
+        overflow: hidden;
 
-        .error {
-            background-color: red;
-            color: aliceblue;
-
-            svg path {
-                fill: aliceblue;
-                stroke: aliceblue;
-            }
+        .notification-title {
+            font-size: 1.2rem;
         }
 
-        .notification-item {
+        .notification-content {
             width: 100%;
-            min-height: 4rem;
-            position: relative;
-            border-radius: .5rem;
-            display: flex;
-            flex-direction: column;
-            padding: .3rem;
-            overflow: hidden;
+            height: 100%;
+        }
 
-            .notification-title {
-                font-size: 1.2rem;
-            }
-
-            .notification-content {
-                width: 100%;
-                height: 100%;
-            }
-
-            .notification-close {
-                position: absolute;
-                top: 0;
-                right: 0;
-                width: 1rem;
-                height: 1rem;
-                cursor: pointer;
-            }
+        .notification-close {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 1rem;
+            height: 1rem;
+            cursor: pointer;
         }
     }
 }
