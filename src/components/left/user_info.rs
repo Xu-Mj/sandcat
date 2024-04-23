@@ -132,7 +132,11 @@ impl Component for UserInfoCom {
             FriendShipRequestState::Fail => tr!(self.i18n, "apply_failed"),
         };
         let apply = if ctx.props().info.is_friend {
-            html!(<Action id={&ctx.props().info.id} conv_type={RightContentType::Friend} lang={ctx.props().lang}/>)
+            html!(<Action
+                    friend_id={&ctx.props().info.id}
+                    user_id={&ctx.props().user_id}
+                    conv_type={RightContentType::Friend}
+                    lang={ctx.props().lang}/>)
         } else {
             let onclick = ctx.link().callback(|_| UserInfoComMsg::Apply);
             html! {

@@ -22,7 +22,7 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CatHeadIcon, CloseIcon, MaxIcon};
 use crate::model::RightContentType;
 use crate::model::{ComponentType, ItemInfo};
-use crate::state::{ConvState, CreateConvState, FriendListState, I18nState};
+use crate::state::{ComponentTypeState, ConvState, CreateConvState, FriendListState, I18nState};
 use crate::{
     components::right::{msg_list::MessageList, postcard::PostCard},
     state::AppState,
@@ -35,6 +35,8 @@ pub struct Right {
     i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
     _app_dis: Dispatch<AppState>,
+    com_state: Rc<ComponentTypeState>,
+    _com_dis: Dispatch<ComponentTypeState>,
     conv_state: Rc<ConvState>,
     _conv_dis: Dispatch<ConvState>,
     cur_conv_info: Option<Box<dyn ItemInfo>>,
@@ -47,6 +49,7 @@ pub struct Right {
 #[derive(Debug)]
 pub enum RightMsg {
     StateChanged(Rc<AppState>),
+    ComStateChanged(Rc<ComponentTypeState>),
     ConvStateChanged(Rc<ConvState>),
     ContentChange(Option<Box<dyn ItemInfo>>),
     FriendListStateChanged(Rc<FriendListState>),
@@ -63,7 +66,7 @@ impl Right {
             self.cur_conv_info = None;
             return;
         }
-        match self.state.component_type {
+        match self.com_state.component_type {
             ComponentType::Messages => {
                 log::debug!(
                     "right conv content type:{:?}",
@@ -106,6 +109,7 @@ impl Component for Right {
             Dispatch::global().subscribe(ctx.link().callback(RightMsg::FriendListStateChanged));
         let lang_dispatch = Dispatch::global().subscribe(ctx.link().callback(RightMsg::SwitchLang));
         let app_dis = Dispatch::global().subscribe(ctx.link().callback(RightMsg::StateChanged));
+        let com_dis = Dispatch::global().subscribe(ctx.link().callback(RightMsg::ComStateChanged));
         let lang_state = lang_dispatch.get();
         let cur_conv_info = None;
         let res = match lang_state.lang {
@@ -126,6 +130,8 @@ impl Component for Right {
             _friend_list_dis,
             lang_state,
             _lang_dispatch: lang_dispatch,
+            com_state: com_dis.get(),
+            _com_dis: com_dis,
         }
     }
 
@@ -136,7 +142,6 @@ impl Component for Right {
                 // 根据state中的不同数据变化，渲染右侧页面
                 self.state = state;
                 // 为了标题栏展示好友名字以及当前会话设置
-                self.match_content(ctx);
                 true
             }
             RightMsg::ContentChange(item) => {
@@ -178,6 +183,11 @@ impl Component for Right {
                 self.lang_state = state;
                 true
             }
+            RightMsg::ComStateChanged(state) => {
+                self.com_state = state;
+                self.match_content(ctx);
+                true
+            }
         }
     }
 
@@ -217,7 +227,7 @@ impl Component for Right {
                 </div>
             }
         }
-        let content = match self.state.component_type {
+        let content = match self.com_state.component_type {
             ComponentType::Messages => {
                 // 处理没有选中会话的情况
                 if self.conv_state.conv.item_id.is_empty() {

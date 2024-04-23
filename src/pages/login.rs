@@ -7,10 +7,12 @@ use wasm_bindgen::{JsCast, JsValue};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
+use yewdux::Dispatch;
 
-use crate::db::{self, current_item, TOKEN, WS_ADDR};
+use crate::db::{self, TOKEN, WS_ADDR};
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::user::User;
+use crate::state::I18nState;
 use crate::{api, db::DB_NAME};
 use crate::{tr, utils};
 
@@ -94,7 +96,7 @@ impl Component for Login {
 
     fn create(_ctx: &Context<Self>) -> Self {
         // load the i18n bundle
-        let lang = current_item::get_language();
+        let lang = Dispatch::<I18nState>::global().get().lang;
         let res = match lang {
             LanguageType::ZhCN => zh_cn::LOGIN,
             LanguageType::EnUS => en_us::LOGIN,
@@ -107,7 +109,7 @@ impl Component for Login {
             login_state: LoginState::Nothing,
             show_error: false,
             i18n,
-            lang: current_item::get_language(),
+            lang,
         }
     }
 
@@ -185,11 +187,12 @@ impl Component for Login {
                 let value = input.value();
                 if value == "zh_cn" {
                     self.i18n = utils::create_bundle(zh_cn::LOGIN);
-                    current_item::save_language(LanguageType::ZhCN).unwrap();
+                    // save language type with yewdux
+                    Dispatch::<I18nState>::global().reduce_mut(|s| s.lang = LanguageType::ZhCN);
                     self.lang = LanguageType::ZhCN;
                 } else if value == "en_us" {
                     self.i18n = utils::create_bundle(en_us::LOGIN);
-                    current_item::save_language(LanguageType::EnUS).unwrap();
+                    Dispatch::<I18nState>::global().reduce_mut(|s| s.lang = LanguageType::EnUS);
                     self.lang = LanguageType::EnUS;
                 }
                 true

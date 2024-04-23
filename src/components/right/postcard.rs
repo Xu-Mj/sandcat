@@ -243,7 +243,10 @@ impl Component for PostCard {
                     {tr!(self.i18n, "signature")}{self.info.as_ref().unwrap().signature()}
                 </div>
 
-                <Action id={id.clone()} conv_type={ctx.props().conv_type.clone()} lang={ctx.props().lang} />
+                <Action friend_id={id.clone()}
+                    user_id={ctx.props().user_id.clone()}
+                    conv_type={ctx.props().conv_type.clone()}
+                    lang={ctx.props().lang} />
             </div>
             }
         </div>

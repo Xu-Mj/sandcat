@@ -6,10 +6,9 @@ use yewdux::Dispatch;
 
 use crate::{
     components::self_info::SelfInfo,
-    db::current_item,
     icons::{ContactsIcon, MessagesIcon},
     model::{user::User, ComponentType},
-    state::{AppState, UnreadState},
+    state::{AppState, ComponentTypeState, UnreadState},
 };
 
 /// 增加双击切换置顶未读消息
@@ -18,6 +17,8 @@ pub struct Top {
     show_info: bool,
     app_state: Rc<AppState>,
     app_s_dis: Dispatch<AppState>,
+    com_state: Rc<ComponentTypeState>,
+    com_s_dis: Dispatch<ComponentTypeState>,
     unread_state: Rc<UnreadState>,
     _unread_dis: Dispatch<UnreadState>,
 }
@@ -31,6 +32,7 @@ pub enum TopMsg {
     ShowInfoPanel,
     SubmitInfo(Box<User>),
     AppStateChanged(Rc<AppState>),
+    ComStateChanged(Rc<ComponentTypeState>),
 }
 
 impl Component for Top {
@@ -40,16 +42,18 @@ impl Component for Top {
 
     fn create(ctx: &Context<Self>) -> Self {
         let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
+        let com_s_dis = Dispatch::global().subscribe(ctx.link().callback(TopMsg::ComStateChanged));
         let unread_dis =
             Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
-        let unread_state = current_item::get_unread_count();
         Self {
             node: NodeRef::default(),
             show_info: false,
             app_state: dispatch.get(),
             app_s_dis: dispatch,
-            unread_state: Rc::new(unread_state),
+            unread_state: unread_dis.get(),
             _unread_dis: unread_dis,
+            com_state: com_s_dis.get(),
+            com_s_dis,
         }
     }
 
@@ -57,7 +61,6 @@ impl Component for Top {
         match msg {
             TopMsg::EmptyCallback => false,
             TopMsg::UnreadStateChanged(state) => {
-                current_item::save_unread_count(state.as_ref()).unwrap();
                 self.unread_state = state;
                 true
             }
@@ -74,29 +77,29 @@ impl Component for Top {
                 self.app_state = state;
                 true
             }
+            TopMsg::ComStateChanged(state) => {
+                self.com_state = state;
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let mut msg_class = "top-icon-selected";
-        let msg_onclick = if self.app_state.component_type != ComponentType::Messages {
+        let msg_onclick = if self.com_state.component_type != ComponentType::Messages {
             msg_class = "hover";
-            self.app_s_dis.reduce_mut_callback(|s| {
-                current_item::save_com_type(&ComponentType::Messages).unwrap();
-                s.component_type = ComponentType::Messages;
-            })
+            self.com_s_dis
+                .reduce_mut_callback(|s| s.component_type = ComponentType::Messages)
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
         let mut msg_class = classes!(msg_class);
         msg_class.push("msg-icon");
         let mut contact_class = "top-icon-selected";
-        let contact_onclick = if self.app_state.component_type != ComponentType::Contacts {
+        let contact_onclick = if self.com_state.component_type != ComponentType::Contacts {
             contact_class = "hover";
-            self.app_s_dis.reduce_mut_callback(|s| {
-                current_item::save_com_type(&ComponentType::Contacts).unwrap();
-                s.component_type = ComponentType::Contacts
-            })
+            self.com_s_dis
+                .reduce_mut_callback(|s| s.component_type = ComponentType::Contacts)
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };

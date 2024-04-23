@@ -4,7 +4,6 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use crate::{
-    db::current_item,
     model::{CommonProps, ComponentType, CurrentItem, RightContentType},
     state::{ConvState, FriendListState, UnreadState},
 };
@@ -46,6 +45,7 @@ impl Component for ListItem {
             Dispatch::global().subscribe(ctx.link().callback(ListItemMsg::ConvStateChanged));
         let friend_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ListItemMsg::FriendStateChanged));
+
         let unread_count = ctx.props().unread_count;
 
         Self {
@@ -75,12 +75,10 @@ impl Component for ListItem {
                     return false;
                 }
                 self.conv_dispatch.reduce_mut(|s| {
-                    let conv = CurrentItem {
+                    s.conv = CurrentItem {
                         item_id: ctx.props().props.id.clone(),
                         content_type: ctx.props().conv_type.clone(),
                     };
-                    current_item::save_conv(&conv).unwrap();
-                    s.conv = conv;
                 });
                 true
             }
@@ -103,7 +101,7 @@ impl Component for ListItem {
                         item_id: ctx.props().props.id.clone(),
                         content_type: ctx.props().conv_type.clone(),
                     };
-                    current_item::save_friend(&friend).unwrap();
+                    // current_item::save_friend(&friend).unwrap();
                     s.friend = friend;
                 });
                 false

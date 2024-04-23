@@ -6,7 +6,6 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use crate::components::left::add_friend::AddFriend;
-use crate::db::current_item;
 use crate::db::group::GroupRepo;
 use crate::db::groups::GroupInterface;
 use crate::i18n::{en_us, zh_cn, LanguageType};
@@ -99,12 +98,15 @@ impl Component for Contacts {
             .link()
             .context(ctx.link().callback(ContactsMsg::RecFriendShipReq))
             .expect("need friend ship state");
+
         let friend_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::FriendListStateChanged));
+
         let _remove_friend_dis =
-            Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::RemoveFriend));
+            Dispatch::global().subscribe_silent(ctx.link().callback(ContactsMsg::RemoveFriend));
         let _add_friend_dis =
-            Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::AddFriend));
+            Dispatch::global().subscribe_silent(ctx.link().callback(ContactsMsg::AddFriend));
+
         let lang_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::SwitchLanguage));
         let lang_state = lang_dispatch.get();
@@ -194,12 +196,10 @@ impl Component for Contacts {
                 self.friendships_unread_count = 0;
                 // send friendship list event
                 self.friend_dispatch.reduce_mut(|s| {
-                    let friend = CurrentItem {
+                    s.friend = CurrentItem {
                         item_id: AttrValue::default(),
                         content_type: RightContentType::FriendShipList,
                     };
-                    current_item::save_friend(&friend).unwrap();
-                    s.friend = friend;
                 });
                 // clean unread count
                 spawn_local(async {
@@ -240,7 +240,7 @@ impl Component for Contacts {
                 if !friend_id.is_empty() && friend_id == self.friend_state.friend.item_id {
                     self.friend_dispatch.reduce_mut(|s| {
                         let friend = CurrentItem::default();
-                        current_item::save_friend(&friend).unwrap();
+                        // current_item::save_friend(&friend).unwrap();
                         s.friend = friend;
                     });
                     return true;

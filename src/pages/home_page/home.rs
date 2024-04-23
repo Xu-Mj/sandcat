@@ -1,13 +1,12 @@
 use std::rc::Rc;
 
 use yew::{AttrValue, Context, NodeRef};
-use yewdux::Dispatch;
 
 use crate::db;
 use crate::model::message::SendStatus;
-use crate::state::I18nState;
+use crate::model::user::User;
 use crate::{
-    db::{current_item, QueryError, QueryStatus, DB_NAME},
+    db::{QueryError, QueryStatus, DB_NAME},
     model::{
         friend::Friend,
         message::{Message, Msg, DEFAULT_HELLO_MESSAGE},
@@ -17,18 +16,13 @@ use crate::{
     pages::{home_page::HomeMsg, FriendShipState},
 };
 
-use super::{Home, QueryResult};
+use super::Home;
 
-async fn query(id: &str) -> Result<QueryResult, QueryError> {
+async fn query(id: &str) -> Result<User, QueryError> {
     let user_repo = db::users().await;
     let user = user_repo.get(id).await.unwrap();
 
-    Ok((
-        user,
-        current_item::get_conv(),
-        current_item::get_friend(),
-        current_item::get_com_type(),
-    ))
+    Ok(user)
 }
 
 impl Home {
@@ -54,9 +48,6 @@ impl Home {
         let rec_friend_res_event = ctx.link().callback(HomeMsg::FriendShipResponse);
         let rec_resp = ctx.link().callback(HomeMsg::RecFsResp);
         let error_event = ctx.link().callback(HomeMsg::Notification);
-        // change lang state
-        Dispatch::<I18nState>::global()
-            .reduce_mut(|state| state.lang = current_item::get_language());
         Self {
             // ws,
             friend_ship_state: Rc::new(FriendShipState {

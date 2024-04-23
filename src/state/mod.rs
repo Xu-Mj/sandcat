@@ -20,7 +20,8 @@ pub struct OfflineMsgState {
 }
 
 /// language type
-#[derive(Debug, Default, Clone, PartialEq, Store)]
+#[derive(Debug, Default, Clone, PartialEq, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
 pub struct I18nState {
     pub lang: LanguageType,
 }
@@ -28,12 +29,20 @@ pub struct I18nState {
 /// component type,
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct AppState {
-    pub component_type: ComponentType,
+    // pub component_type: ComponentType,
     pub login_user: User,
+}
+
+/// component type,
+#[derive(Default, Debug, Clone, PartialEq, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
+pub struct ComponentTypeState {
+    pub component_type: ComponentType,
 }
 
 /// global unread count and contacts count(add friends)
 #[derive(Store, Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[store(storage = "local")]
 pub struct UnreadState {
     pub msg_count: usize,
     pub contacts_count: usize,
@@ -135,13 +144,15 @@ impl From<Group> for AddFriendStateItem {
 }
 
 /// current conversation id and type
-#[derive(Default, Debug, Clone, PartialEq, Store)]
+#[derive(Default, Debug, Clone, PartialEq, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
 pub struct ConvState {
     pub conv: CurrentItem,
 }
 
 /// current friend id and type
-#[derive(Default, Debug, Clone, PartialEq, Store)]
+#[derive(Default, Debug, Clone, PartialEq, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
 pub struct FriendListState {
     pub friend: CurrentItem,
 }

@@ -6,12 +6,13 @@ use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::RouterScopeExt;
+use yewdux::Dispatch;
 use zxcvbn::zxcvbn;
 
-use crate::db::current_item;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::user::UserRegister;
 use crate::pages::Page;
+use crate::state::I18nState;
 use crate::{api, tr, utils};
 
 #[derive(Default)]
@@ -80,7 +81,7 @@ impl Component for Register {
         let avatar = avatars[0].clone();
 
         // load the i18n bundle
-        let lang = current_item::get_language();
+        let lang = Dispatch::<I18nState>::global().get().lang;
         let res = match lang {
             LanguageType::ZhCN => zh_cn::REGISTER,
             LanguageType::EnUS => en_us::REGISTER,

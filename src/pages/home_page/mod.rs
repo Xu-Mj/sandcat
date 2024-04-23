@@ -15,9 +15,9 @@ use crate::model::friend::{Friend, FriendShipWithUser};
 use crate::model::message::Msg;
 use crate::model::notification::{Notification, NotificationState, NotificationType};
 use crate::model::user::User;
-use crate::model::{ComponentType, CurrentItem, FriendShipStateType};
+use crate::model::FriendShipStateType;
 
-use crate::state::{AppState, ConvState, FriendListState, SendMessageState};
+use crate::state::{AppState, SendMessageState};
 use crate::{
     components::{left::Left, right::Right},
     db::QueryStatus,
@@ -38,7 +38,7 @@ pub enum HomeMsg {
     // 会话列表选中元素改变
     // SwitchConv(CurrentItem),
     // 查询数据库
-    Query(QueryStatus<QueryResult>),
+    Query(QueryStatus<User>),
     // 收到消息
     // RecMsgStateChange(Msg),
     // 收到消息
@@ -67,8 +67,6 @@ pub struct HomeProps {
     pub id: AttrValue,
 }
 
-type QueryResult = (User, CurrentItem, CurrentItem, ComponentType);
-
 impl Component for Home {
     type Message = HomeMsg;
     type Properties = HomeProps;
@@ -84,15 +82,14 @@ impl Component for Home {
                 match status {
                     QueryStatus::QuerySuccess(u) => {
                         Dispatch::<AppState>::global().reduce_mut(|s| {
-                            s.login_user = u.0;
-                            s.component_type = u.3;
+                            s.login_user = u;
                         });
 
                         // update conversation state
-                        Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = u.1);
+                        // Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = u.1);
 
-                        // update friend state
-                        Dispatch::<FriendListState>::global().reduce_mut(|s| s.friend = u.2);
+                        // // update friend state
+                        // Dispatch::<FriendListState>::global().reduce_mut(|s| s.friend = u.2);
                     }
                     QueryStatus::QueryFail(_) => {
                         gloo::console::log!("query fail")
@@ -107,12 +104,6 @@ impl Component for Home {
                 Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = msg);
                 false
             }
-            // todo don't need anymore
-            // HomeMsg::SendBackMsg(_msg) => {
-            // 发送已收到消息给服务器
-            // self.send_msg(msg);
-            // false
-            // }
             // don't need anymore, at the conversation component
             HomeMsg::ReceiveFriendShipReq(friendship) => {
                 // self.handle_friendship_req(ctx, friendship)

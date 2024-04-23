@@ -1,6 +1,5 @@
 pub mod config;
 pub mod conv;
-pub mod current_item;
 pub mod friend;
 pub mod friend_ship;
 pub mod group;

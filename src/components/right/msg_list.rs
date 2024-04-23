@@ -231,12 +231,12 @@ impl Component for MessageList {
     type Properties = MessageListProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let _sync_msg_dis =
-            Dispatch::global().subscribe(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg));
+        let _sync_msg_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg));
         let _rec_msg_dis =
-            Dispatch::global().subscribe(ctx.link().callback(MessageListMsg::ReceiveMsg));
-        let _send_result_dis =
-            Dispatch::global().subscribe(ctx.link().callback(MessageListMsg::SendResultCallback));
+            Dispatch::global().subscribe_silent(ctx.link().callback(MessageListMsg::ReceiveMsg));
+        let _send_result_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(MessageListMsg::SendResultCallback));
         let self_ = Self {
             // list: vec![],
             node_ref: NodeRef::default(),

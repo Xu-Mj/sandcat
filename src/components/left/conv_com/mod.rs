@@ -15,7 +15,7 @@ use yewdux::Dispatch;
 use crate::{
     api,
     components::left::list_item::ListItem,
-    db::{self, current_item, TOKEN, WS_ADDR},
+    db::{self, TOKEN, WS_ADDR},
     i18n::{
         en_us::{self, CONVERSATION},
         zh_cn, LanguageType,
@@ -113,21 +113,25 @@ impl Chats {
             }
             ChatsMsg::QueryConvs((convs, messages, local_seq))
         });
-        // register state
-        let _send_msg_dis = Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SendMsg));
+        // we need use conv state to rerender the chats component, so use subscribe in create
         let conv_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::ConvStateChanged));
-        let _remove_conv_dis =
-            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::RemoveConvStateChanged));
-        let _create_conv_dis =
-            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::CreateConvStateChanged));
+
+        let _send_msg_dis =
+            Dispatch::global().subscribe_silent(ctx.link().callback(ChatsMsg::SendMsg));
+        let _remove_conv_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(ChatsMsg::RemoveConvStateChanged));
+        let _create_conv_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(ChatsMsg::CreateConvStateChanged));
         let _mute_dis =
-            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::MuteStateChanged));
-        let rec_msg_dis = Dispatch::global().subscribe(ctx.link().callback(|_| ChatsMsg::None));
+            Dispatch::global().subscribe_silent(ctx.link().callback(ChatsMsg::MuteStateChanged));
+        let rec_msg_dis =
+            Dispatch::global().subscribe_silent(ctx.link().callback(|_| ChatsMsg::None));
         let (fs_state, _fs_state_listener) = ctx
             .link()
             .context(ctx.link().callback(|_| ChatsMsg::None))
             .expect("need state in item");
+        // same as conv state
         let lang_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SwitchLanguage));
         let lang_state = lang_dispatch.get();
@@ -210,11 +214,7 @@ impl Chats {
         self.context_menu_pos = (0, 0, AttrValue::default(), false);
 
         // set right content type
-        Dispatch::<ConvState>::global().reduce_mut(|s| {
-            let conv = CurrentItem::default();
-            current_item::save_conv(&conv).unwrap();
-            s.conv = conv;
-        });
+        Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = CurrentItem::default());
     }
 
     fn mute(&mut self) -> bool {
@@ -297,7 +297,7 @@ impl Chats {
         let state = state.conv.clone();
         let cur_conv_id = state.item_id.clone();
         // save current conv id
-        current_item::save_conv(&state).unwrap();
+        // current_item::save_conv(&state).unwrap();
         // 设置了一个查询状态，如果在查询没有完成时更新了状态，那么不进行更新列表，这里有待于优化，
         // 因为状态会在
         if cur_conv_id.is_empty() || !self.query_complete {

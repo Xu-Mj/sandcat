@@ -1,5 +1,3 @@
-use std::rc::Rc;
-
 use fluent::{FluentBundle, FluentResource};
 use nanoid::nanoid;
 use yew::prelude::*;
@@ -8,28 +6,26 @@ use yewdux::Dispatch;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{PhoneIcon, SendMsgIcon, VideoIcon};
 use crate::model::message::{InviteMsg, InviteType};
+use crate::model::RightContentType;
 use crate::model::{ComponentType, CurrentItem};
-use crate::state::ConvState;
 use crate::state::SendCallState;
-use crate::{model::RightContentType, state::AppState};
+use crate::state::{ComponentTypeState, ConvState};
 use crate::{tr, utils};
 
 // 联系人卡面上的动作组件：发消息、点电话、打视频
 pub struct Action {
     i18n: FluentBundle<FluentResource>,
-    state: Rc<AppState>,
-    app_dis: Dispatch<AppState>,
 }
 
 pub enum ActionMsg {
-    AppStateChanged(Rc<AppState>),
     SendMessage,
     SendCallInvite(InviteType),
 }
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct ActionProps {
-    pub id: AttrValue,
+    pub friend_id: AttrValue,
+    pub user_id: AttrValue,
     pub conv_type: RightContentType,
     pub lang: LanguageType,
 }
@@ -39,25 +35,20 @@ impl Component for Action {
     type Properties = ActionProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let app_dis = Dispatch::global().subscribe(ctx.link().callback(ActionMsg::AppStateChanged));
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::ACTION,
             LanguageType::EnUS => en_us::ACTION,
         };
         let i18n = utils::create_bundle(res);
-        Action {
-            i18n,
-            state: app_dis.get(),
-            app_dis,
-        }
+        Action { i18n }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             ActionMsg::SendMessage => {
-                let id = ctx.props().id.clone();
+                let id = ctx.props().friend_id.clone();
 
-                self.app_dis
+                Dispatch::<ComponentTypeState>::global()
                     .reduce_mut(|s| s.component_type = ComponentType::Messages);
 
                 Dispatch::<ConvState>::global().reduce_mut(|s| {
@@ -68,16 +59,13 @@ impl Component for Action {
                 });
                 log::debug!("conv type: {:?}", ctx.props().conv_type.clone());
             }
-            ActionMsg::AppStateChanged(state) => {
-                self.state = state;
-            }
             ActionMsg::SendCallInvite(t) => {
                 Dispatch::<SendCallState>::global().reduce_mut(|s| {
                     s.msg = InviteMsg {
                         local_id: nanoid!().into(),
                         server_id: AttrValue::default(),
-                        send_id: self.state.login_user.id.clone(),
-                        friend_id: ctx.props().id.clone(),
+                        send_id: ctx.props().user_id.clone(),
+                        friend_id: ctx.props().friend_id.clone(),
                         create_time: chrono::Local::now().timestamp_millis(),
                         invite_type: t,
                     }

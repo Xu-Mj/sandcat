@@ -79,7 +79,11 @@ impl Component for FriendCard {
                     </div>
                 </div>
                 <div class="friend-card-body">
-                    <Action id={&ctx.props().friend_info.id} conv_type={RightContentType::Friend} lang={ctx.props().lang}/>
+                    <Action
+                        friend_id={&ctx.props().friend_info.id}
+                        user_id={&ctx.props().user_id}
+                        conv_type={RightContentType::Friend}
+                        lang={ctx.props().lang}/>
                 </div>
             </div>
         }
