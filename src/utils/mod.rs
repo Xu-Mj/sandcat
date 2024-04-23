@@ -1,5 +1,5 @@
 use fluent::{FluentBundle, FluentResource};
-use gloo::utils::window;
+use gloo::utils::{document, window};
 use unic_langid::langid;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
@@ -107,4 +107,12 @@ pub fn create_bundle(content: impl Into<String>) -> FluentBundle<FluentResource>
         .expect("Failed to add FTL resources to the bundle.");
 
     bundle
+}
+
+pub fn set_theme(theme: &str) {
+    document()
+        .document_element()
+        .unwrap()
+        .set_attribute("theme", theme)
+        .unwrap()
 }

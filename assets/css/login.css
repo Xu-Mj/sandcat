@@ -6,15 +6,13 @@
     /* IE 10 and IE 11 */
     user-select: none;
     /* Standard syntax */
-    width: 100%;
-    height: 25rem;
+    width: 100vw;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     position: relative;
-    background-color: white;
-    padding: 2rem;
     border-radius: .5rem;
 
     .error {
@@ -35,7 +33,8 @@
         align-items: center;
         justify-content: center;
         background-color: var(--color-background);
-        border-radius: 5px;
+        border-radius: .3rem;
+        position: relative;
 
         .email,
         .pwd {
@@ -47,7 +46,7 @@
                 width: 100%;
                 height: 100%;
                 padding: 1em;
-                background-color: #f0f0ee;
+                background-color: var(--color-background-input);
                 outline: none;
                 border: none;
                 font: inherit;
@@ -61,7 +60,7 @@
             align-items: center;
             gap: 2rem;
 
-            label{
+            label {
                 display: flex;
                 align-items: center;
                 gap: .2rem;
@@ -83,7 +82,12 @@
             border: none;
             font-size: 1rem;
         }
+    }
 
+    .theme-login {
+        position: fixed;
+        top: 1rem;
+        right: 3rem;
     }
 }
 
@@ -98,6 +102,9 @@
 /* 注册链接 */
 .login-register {
     font-size: small;
+    margin: auto;
+    bottom: 1rem;
+    position: absolute;
 }
 
 /* 登录结束 */

@@ -120,44 +120,6 @@
             }
         }
 
-        .switch {
-            --width: 3rem;
-            --height: 1.2rem;
-            --child-width: 1rem;
-            --child-height: 1rem;
-            --child-margin: calc((var(--height) - var(--child-height))/2);
-            display: inline-block;
-            width: var(--width);
-            height: var(--height);
-            border-radius: var(--height);
-            background-color: var(--color-background-input);
-            position: relative;
-            transition: .5s;
-
-            .slider {
-                display: inline-block;
-                width: var(--child-width);
-                height: var(--child-height);
-                position: absolute;
-                margin: var(--child-margin);
-                left: 0;
-                border-radius: 50%;
-                background-color: var(--color-background);
-                transition: .5s;
-            }
-
-            .left {
-                left: 0;
-            }
-
-            .right {
-                left: calc(var(--width) - var(--child-width) - var(--child-margin)*2);
-            }
-        }
-
-        .background-change {
-            background-color: aqua;
-        }
     }
 
     .msg-container {
@@ -766,6 +728,7 @@
                 .friendship-action button {
                     border: none;
                     background-color: var(--color-background-btn);
+                    color: var(--color-text);
                     width: 6rem;
                     height: 2rem;
                     padding: auto;

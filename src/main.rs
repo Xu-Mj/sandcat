@@ -17,7 +17,7 @@ use yew::prelude::*;
 use yew_router::{BrowserRouter, Switch};
 
 use crate::pages::register::Register;
-use crate::pages::{home_page::Home, login::Login, Page};
+use crate::pages::{home::Home, login::Login, Page};
 
 #[function_component(App)]
 fn app() -> Html {

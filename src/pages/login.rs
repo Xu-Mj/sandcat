@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use fluent::{FluentBundle, FluentResource};
@@ -12,7 +14,7 @@ use yewdux::Dispatch;
 use crate::db::{self, TOKEN, WS_ADDR};
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::user::User;
-use crate::state::I18nState;
+use crate::state::{I18nState, ThemeState};
 use crate::{api, db::DB_NAME};
 use crate::{tr, utils};
 
@@ -25,6 +27,7 @@ pub struct Login {
     show_error: bool,
     i18n: FluentBundle<FluentResource>,
     lang: LanguageType,
+    theme: Dispatch<ThemeState>,
 }
 
 pub enum LoginMsg {
@@ -33,6 +36,7 @@ pub enum LoginMsg {
     Failed,
     OnEnterKeyDown(SubmitEvent),
     SwitchLanguage(Event),
+    SwitchTheme(Rc<ThemeState>),
 }
 
 pub enum LoginState {
@@ -95,6 +99,9 @@ impl Component for Login {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
+        // load theme
+        let theme =
+            Dispatch::<ThemeState>::global().subscribe(_ctx.link().callback(LoginMsg::SwitchTheme));
         // load the i18n bundle
         let lang = Dispatch::<I18nState>::global().get().lang;
         let res = match lang {
@@ -110,6 +117,7 @@ impl Component for Login {
             show_error: false,
             i18n,
             lang,
+            theme,
         }
     }
 
@@ -197,6 +205,10 @@ impl Component for Login {
                 }
                 true
             }
+            LoginMsg::SwitchTheme(state) => {
+                utils::set_theme(&state.to_string());
+                true
+            }
         }
     }
 
@@ -213,6 +225,25 @@ impl Component for Login {
         let login_title = tr!(self.i18n, "login_text");
         let email = tr!(self.i18n, "email");
         let onchange = ctx.link().callback(LoginMsg::SwitchLanguage);
+
+        let mut switch = classes!("switch", "pointer");
+        let mut slider = classes!("slider");
+        if *self.theme.get() == ThemeState::Dark {
+            switch.push("background-change");
+            slider.push("right");
+        } else {
+            slider.push("left");
+        }
+
+        let theme = html! {
+            <span class={switch} onclick={self.theme.reduce_mut_callback(|s| {if *s == ThemeState::Dark{
+                *s = ThemeState::Light;
+            } else {
+                *s = ThemeState::Dark;
+            }})}>
+                <span class={slider}></span>
+            </span>
+        };
         html! {
             <div class="login-container">
                 {info}
@@ -236,10 +267,13 @@ impl Component for Login {
                         </label>
                     </div>
                     <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title}/>
+                    <div class="login-register">
+                        {tr!(self.i18n, "to_register_prefix")}
+                        <a href="/register">{tr!(self.i18n, "to_register")}</a>
+                    </div>
                 </form>
-                <div class="login-register">
-                    {tr!(self.i18n, "to_register_prefix")}
-                    <a href="/register">{tr!(self.i18n, "to_register")}</a>
+                <div class="theme-login">
+                    {theme}
                 </div>
             </div>
         }

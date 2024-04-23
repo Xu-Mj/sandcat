@@ -1,3 +1,5 @@
+use std::fmt::{Display, Formatter};
+
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 use yewdux::Store;
@@ -168,4 +170,21 @@ pub struct FriendShipState {
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct NotificationState {
     pub noti: Notification,
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
+pub enum ThemeState {
+    #[default]
+    Light,
+    Dark,
+}
+
+impl Display for ThemeState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ThemeState::Light => write!(f, "light"),
+            ThemeState::Dark => write!(f, "dark"),
+        }
+    }
 }
