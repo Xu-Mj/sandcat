@@ -571,6 +571,7 @@
                     font-family: inherit;
                     resize: none;
                     background-color: transparent;
+                    color: var(--color-text);
                 }
 
                 .empty-msg-tip {
@@ -587,11 +588,10 @@
                 .send-btn {
                     width: 6rem;
                     height: 2rem;
-                    background-color: #E0E0E0;
-                    color: #2CFF38;
-                    border-radius: .1rem;
+                    background-color: var(--color-background-btn);
+                    color: var(--sender-btn-color-text);
+                    border-radius: .2rem;
                     border: none;
-                    /* border: 1px solid #999; */
                     cursor: pointer;
                     position: absolute;
                     right: 1rem;

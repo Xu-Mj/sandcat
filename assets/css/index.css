@@ -52,6 +52,7 @@
 
     --color-heading: var(--vt-c-text-light-1);
     --color-text: var(--vt-c-text-light-1);
+    --sender-btn-color-text: #2CFF38;
 
     --section-gap: 160px;
 
@@ -66,7 +67,7 @@
 
     --color-background-mask: rgba(235, 235, 235, 0.64);
 
-    --color-background-btn: #e4e9ec;
+    --color-background-btn: black;
     --color-background-input: var(--vt-c-black);
 
     --color-border: var(--vt-c-black-soft);
@@ -74,6 +75,7 @@
 
     --color-heading: var(--vt-c-text-dark-1);
     --color-text: var(--vt-c-text-dark-1);
+    --sender-btn-color-text: #fff;
 }
 
 *,
@@ -497,7 +499,7 @@ input {
             padding: .3rem .5rem;
             border: none;
             background-color: var(--color-background-input);
-            font-size: large;
+            font-size: medium;
         }
 
         .info-panel-item-gender {
