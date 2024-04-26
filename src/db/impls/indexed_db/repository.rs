@@ -119,7 +119,9 @@ impl Repository {
             store
                 .create_index_with_str(MESSAGE_TYPE_INDEX, "content_type")
                 .unwrap();
-
+            store
+                .create_index_with_str(MESSAGE_IS_READ_INDEX, "is_read")
+                .unwrap();
             let store = db
                 .create_object_store_with_optional_parameters(
                     &String::from(CONVERSATION_TABLE_NAME),

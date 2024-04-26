@@ -2,7 +2,7 @@
 
 ## Technical Implementation
 
-Our software has primarily implemented the basic functionalities of an IM application, which includes a fundamental friend system, one-on-one chat, group chat, and one-on-one audio/video calls. It also supports i18n and currently offers a switch between Chinese and English.
+the software has primarily implemented the basic functionalities of an IM application, which includes a fundamental friend system, one-on-one chat, group chat, and one-on-one audio/video calls. It also supports i18n and currently offers a switch between Chinese and English.
 
 ### One-on-One Chat/Group Chat
 
@@ -20,7 +20,7 @@ We have implemented the real-time message exchange for individual and group chat
 5. Front-end Technical Implementation:
    - Focusing on leveraging Rust's features, such as closures, callback functions, and lifecycle management, the front end emphasizes a lightweight yet efficient client-side communication.
 
-By synthesizing these strategies and technologies, the messaging system for both one-on-one and group chats aims to provide a continuous and seamless communication experience. We are committed to utilizing advanced front-end technology to ensure the stability and security of message transmissions, meeting various needs of users in their daily communications.
+By synthesizing these strategies and technologies, the messaging system for both one-on-one and group chats aims to provide a continuous and seamless communication experience.
 
 ### Friend System
 

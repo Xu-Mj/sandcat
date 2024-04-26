@@ -211,6 +211,7 @@
     gap: .5rem;
     overflow-y: auto;
     scroll-behavior: smooth;
+    z-index: 10;
 
     .error {
         background-color: red;

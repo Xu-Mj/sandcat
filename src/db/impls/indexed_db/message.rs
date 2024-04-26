@@ -288,4 +288,53 @@ impl Messages for MessageRepo {
         on_add_error.forget();
         Ok(())
     }
+
+    async fn update_read_status(&self, friend_id: &str) -> Result<(), JsValue> {
+        let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
+        let rang = IdbKeyRange::only(&JsValue::from(friend_id));
+        let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
+        let request = index
+            .open_cursor_with_range_and_direction(
+                &JsValue::from(&rang.unwrap()),
+                web_sys::IdbCursorDirection::Prev,
+            )
+            .unwrap();
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("读取数据失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+
+        // let mut messages = Vec::new();
+
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+
+        let store = store.clone();
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = req.result().unwrap_or_else(|_err| JsValue::null());
+
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+                if let Ok(value) = cursor.value() {
+                    // 反序列化
+                    if let Ok(mut msg) = serde_wasm_bindgen::from_value::<Message>(value) {
+                        msg.is_read = true;
+                        store
+                            .put(&serde_wasm_bindgen::to_value(&msg).unwrap())
+                            .unwrap();
+                    }
+                }
+                let _ = cursor.continue_();
+            }
+        }) as Box<dyn FnMut(&Event)>);
+
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        success.forget();
+        Ok(())
+    }
 }

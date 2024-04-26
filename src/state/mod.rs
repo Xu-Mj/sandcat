@@ -174,6 +174,7 @@ pub struct NotificationState {
 
 #[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
+#[serde(rename_all = "lowercase")]
 pub enum ThemeState {
     #[default]
     Light,

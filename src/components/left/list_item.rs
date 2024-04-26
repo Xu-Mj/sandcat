@@ -1,9 +1,11 @@
 use chrono::TimeZone;
 use std::rc::Rc;
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use crate::{
+    db,
     model::{CommonProps, ComponentType, CurrentItem, RightContentType},
     state::{ConvState, FriendListState, UnreadState},
 };
@@ -65,8 +67,20 @@ impl Component for ListItem {
             }
             ListItemMsg::GoToSetting => false,
             ListItemMsg::CleanUnreadCount => {
-                Dispatch::<UnreadState>::global().reduce_mut(|s| {
-                    s.msg_count = s.msg_count.saturating_sub(self.unread_count);
+                // set message is_read to true
+                let friend_id = ctx.props().props.id.clone();
+                let unread_count = self.unread_count;
+                spawn_local(async move {
+                    if db::messages()
+                        .await
+                        .update_read_status(&friend_id)
+                        .await
+                        .is_ok()
+                    {
+                        Dispatch::<UnreadState>::global().reduce_mut(|s| {
+                            s.msg_count = s.msg_count.saturating_sub(unread_count);
+                        });
+                    }
                 });
                 self.unread_count = 0;
 
