@@ -1,8 +1,6 @@
 use std::rc::Rc;
 
 use gloo::timers::callback::Interval;
-use gloo::utils::window;
-use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
 use yew::{classes, html, AttrValue, Component, Context, Html, NodeRef, Properties};
 use yewdux::Dispatch;
@@ -10,7 +8,6 @@ use yewdux::Dispatch;
 use crate::components::left::Left;
 use crate::components::right::Right;
 use crate::db;
-use crate::db::repository::Repository;
 use crate::icons::CloseIcon;
 use crate::model::user::User;
 use crate::state::{AppState, NotificationState};
@@ -142,16 +139,6 @@ impl Component for Home {
                 div.set_scroll_top(div.scroll_height());
             }
         }
-    }
-
-    fn destroy(&mut self, _ctx: &Context<Self>) {
-        // self.ws.borrow_mut().cleanup();
-        log::debug!("home destroy==> delete database");
-        // 测试阶段，销毁时删除数据库
-        spawn_local(async {
-            let _ = Repository::new().await.delete_db().await;
-        });
-        window().local_storage().unwrap().unwrap().clear().unwrap();
     }
 }
 
