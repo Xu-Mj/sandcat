@@ -1,8 +1,43 @@
 # SandCat
 
+## Development
+
+```shell
+git clone https://github.com/Xu-Mj/sandcat.git
+cd sandcat
+```
+
+1.  use trunk
+
+   ```shell
+   # install trunk
+   cargo install trunk
+   # run
+   trunk serve
+   # build
+   trunk build
+   ```
+
+2. use tauri
+
+   ```shell
+   # install tauri, we use the tauri2.0-beta
+   cargo install tauri-cli --version "^2.0.0-beta"
+   cargo tauri dev
+   ```
+
+3. set trunk configuration
+
+   if you need to change the backend proxy or something else, change the Trunk.toml
+
+**important:** you need to run the backend service [sandcat-backend](https://github.com/Xu-Mj/sandcat-backend)
+
+
+
+
 ## Technical Implementation
 
-Our software has primarily implemented the basic functionalities of an IM application, which includes a fundamental friend system, one-on-one chat, group chat, and one-on-one audio/video calls. It also supports i18n and currently offers a switch between Chinese and English.
+the software has primarily implemented the basic functionalities of an IM application, which includes a fundamental friend system, one-on-one chat, group chat, and one-on-one audio/video calls. It also supports i18n and currently offers a switch between Chinese and English.
 
 ### One-on-One Chat/Group Chat
 
@@ -20,7 +55,7 @@ We have implemented the real-time message exchange for individual and group chat
 5. Front-end Technical Implementation:
    - Focusing on leveraging Rust's features, such as closures, callback functions, and lifecycle management, the front end emphasizes a lightweight yet efficient client-side communication.
 
-By synthesizing these strategies and technologies, the messaging system for both one-on-one and group chats aims to provide a continuous and seamless communication experience. We are committed to utilizing advanced front-end technology to ensure the stability and security of message transmissions, meeting various needs of users in their daily communications.
+By synthesizing these strategies and technologies, the messaging system for both one-on-one and group chats aims to provide a continuous and seamless communication experience.
 
 ### Friend System
 

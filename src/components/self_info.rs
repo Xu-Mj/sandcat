@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
+use gloo::utils::window;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::Event;
@@ -9,6 +10,7 @@ use yew::{html, Callback, Component, NodeRef, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
+use crate::db::repository::Repository;
 use crate::pages::Page;
 use crate::{
     api, db,
@@ -130,6 +132,12 @@ impl Component for SelfInfo {
                 true
             }
             SelfInfoMsg::Logout => {
+                log::debug!("user logout ==> delete database");
+                // 测试阶段，销毁时删除数据库
+                spawn_local(async {
+                    let _ = Repository::new().await.delete_db().await;
+                });
+                window().local_storage().unwrap().unwrap().clear().unwrap();
                 ctx.link().navigator().unwrap().push(&Page::Login);
                 false
             }

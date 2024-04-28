@@ -18,4 +18,6 @@ pub trait Messages {
     async fn add_message(&self, msg: &mut Message) -> Result<(), JsValue>;
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<(), JsValue>;
+
+    async fn update_read_status(&self, friend_id: &str) -> Result<(), JsValue>;
 }
