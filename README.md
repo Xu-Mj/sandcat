@@ -1,5 +1,40 @@
 # SandCat
 
+## Development
+
+```shell
+git clone https://github.com/Xu-Mj/sandcat.git
+cd sandcat
+```
+
+1.  use trunk
+
+   ```shell
+   # install trunk
+   cargo install trunk
+   # run
+   trunk serve
+   # build
+   trunk build
+   ```
+
+2. use tauri
+
+   ```shell
+   # install tauri, we use the tauri2.0-beta
+   cargo install tauri-cli --version "^2.0.0-beta"
+   cargo tauri dev
+   ```
+
+3. set trunk configuration
+
+   if you need to change the backend proxy or something else, change the Trunk.toml
+
+**important:** you need to run the backend service [sandcat-backend](https://github.com/Xu-Mj/sandcat-backend)
+
+
+
+
 ## Technical Implementation
 
 the software has primarily implemented the basic functionalities of an IM application, which includes a fundamental friend system, one-on-one chat, group chat, and one-on-one audio/video calls. It also supports i18n and currently offers a switch between Chinese and English.
