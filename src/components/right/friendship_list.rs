@@ -165,7 +165,7 @@ impl Component for FriendShipList {
                                     .clone()
                                     .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
                                 create_time: chrono::Local::now().timestamp_millis(),
-                                is_read: true,
+                                is_read: 1,
                                 is_self: true,
                                 send_status: SendStatus::Sending,
                                 ..Default::default()

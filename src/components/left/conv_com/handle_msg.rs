@@ -289,7 +289,7 @@ impl Chats {
                 let friend_id = msg.send_id.clone();
                 msg.send_id = msg.friend_id.clone();
                 msg.friend_id = friend_id;
-                msg.is_read = false;
+                msg.is_read = 0;
                 msg.is_self = false;
 
                 let conv = Conversation {
@@ -497,7 +497,7 @@ impl Chats {
                             .clone()
                             .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
                         create_time: chrono::Local::now().timestamp_millis(),
-                        is_read: true,
+                        is_read: 1,
                         is_self: true,
                         ..Default::default()
                     };

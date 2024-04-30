@@ -43,7 +43,7 @@ pub struct Message {
     pub send_status: SendStatus,
     // pub update_time: String,
     #[serde(default)]
-    pub is_read: bool,
+    pub is_read: u8,
     #[serde(default)]
     pub is_self: bool,
     // 是否删除字段可以只存储在服务端
@@ -78,7 +78,7 @@ impl From<InviteCancelMsg> for Message {
             create_time: value.create_time,
             send_time: value.send_time,
             send_status: value.send_status,
-            is_read: false,
+            is_read: 0,
             is_self: value.is_self,
             file_content: Default::default(),
         }
@@ -108,7 +108,7 @@ impl From<InviteAnswerMsg> for Message {
             create_time: value.create_time,
             send_time: value.send_time,
             send_status: value.send_status,
-            is_read: false,
+            is_read: 0,
             is_self: value.is_self,
             file_content: Default::default(),
         }
@@ -134,7 +134,7 @@ impl From<InviteNotAnswerMsg> for Message {
             create_time: value.create_time,
             send_time: value.send_time,
             send_status: value.send_status,
-            is_read: false,
+            is_read: 0,
             is_self: value.is_self,
             file_content: Default::default(),
         }
@@ -161,7 +161,7 @@ impl From<Hangup> for Message {
             create_time: value.create_time,
             send_time: value.send_time,
             send_status: value.send_status,
-            is_read: false,
+            is_read: 0,
             is_self: value.is_self,
             file_content: Default::default(),
         }
@@ -188,7 +188,7 @@ impl Message {
             create_time: value.create_time,
             send_time: value.send_time,
             send_status: value.send_status,
-            is_read: false,
+            is_read: 0,
             is_self: value.is_self,
             file_content: Default::default(),
         }
@@ -211,7 +211,7 @@ impl Message {
             create_time: msg.create_time,
             send_time: msg.send_time,
             send_status: msg.send_status,
-            is_read: msg.is_self,
+            is_read: 0,
             is_self: msg.is_self,
             file_content: Default::default(),
         }
@@ -466,7 +466,7 @@ impl TryFrom<pb::message::Msg> for Message {
             create_time: value.create_time,
             send_time: value.send_time,
             send_status,
-            is_read: false,
+            is_read: 0,
             is_self: false,
             file_content: AttrValue::default(),
         })

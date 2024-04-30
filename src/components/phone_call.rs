@@ -552,7 +552,7 @@ impl Component for PhoneCall {
                             content_type,
                             content: AttrValue::from(utils::format_milliseconds(sustain)),
                             create_time,
-                            is_read: true,
+                            is_read: 1,
                             is_self: true,
                             ..Default::default()
                         })
@@ -685,7 +685,7 @@ impl Component for PhoneCall {
                             content_type,
                             content: AttrValue::from("Rejected"),
                             create_time,
-                            is_read: true,
+                            is_read: 1,
                             is_self: true,
                             ..Default::default()
                         })

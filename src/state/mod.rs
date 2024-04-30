@@ -45,7 +45,6 @@ pub struct ComponentTypeState {
 
 /// global unread count and contacts count(add friends)
 #[derive(Store, Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[store(storage = "local")]
 pub struct UnreadState {
     pub msg_count: usize,
     pub contacts_count: usize,
