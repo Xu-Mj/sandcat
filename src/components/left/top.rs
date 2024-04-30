@@ -28,7 +28,7 @@ pub struct Top {
 pub struct TopProps {}
 
 pub enum TopMsg {
-    UnreadStateChanged,
+    UnreadStateChanged(Rc<UnreadState>),
     EmptyCallback,
     ShowInfoPanel,
     SubmitInfo(Box<User>),
@@ -46,7 +46,8 @@ impl Component for Top {
         let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
         let com_s_dis = Dispatch::global().subscribe(ctx.link().callback(TopMsg::ComStateChanged));
         let unread_dis =
-            Dispatch::global().subscribe(ctx.link().callback(|_| TopMsg::UnreadStateChanged));
+            Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
+        log::debug!("sub unread state: {:?}", unread_dis.get());
         ctx.link().send_future(async {
             let count = db::messages().await.unread_count().await;
             TopMsg::RenderUnreadCount(count)
@@ -66,9 +67,11 @@ impl Component for Top {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             TopMsg::EmptyCallback => false,
-            TopMsg::UnreadStateChanged => {
+            TopMsg::UnreadStateChanged(state) => {
+                log::debug!("unread state change:{:?}", state);
                 // query unread count from db
                 ctx.link().send_future(async {
+                    log::debug!("unread state change, query db...");
                     let count = db::messages().await.unread_count().await;
                     TopMsg::RenderUnreadCount(count)
                 });

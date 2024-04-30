@@ -44,7 +44,11 @@ pub struct ComponentTypeState {
 }
 
 /// global unread count and contacts count(add friends)
+/// there is an issue that I've encountered which is difficult to understand.
+/// If the state not stored, and it's not at default value,
+/// subscribe do not receive the first change notification following a browser refresh.
 #[derive(Store, Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[store(storage = "local")]
 pub struct UnreadState {
     pub msg_count: usize,
     pub contacts_count: usize,

@@ -270,6 +270,7 @@ impl Component for Right {
                 }
             }
             ComponentType::Setting => html! {},
+            ComponentType::Default => html!(),
         };
         html! {
             <div class="right-container">

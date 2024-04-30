@@ -110,6 +110,7 @@ impl Chats {
         mut conv: Conversation,
         is_self: bool,
     ) -> bool {
+        log::debug!("operate msg, conv:{:?}", conv);
         let friend_id = conv.friend_id.clone();
         let mut clean = false;
         let unread_count = conv.unread_count;
@@ -166,7 +167,10 @@ impl Chats {
             self.list.shift_insert(0, friend_id, conv.clone());
             log::debug!("dest: {:?}", self.list);
             spawn_local(async move {
-                db::convs().await.put_conv(&conv, clean).await.unwrap();
+                if clean {
+                    conv.unread_count = 0;
+                }
+                db::convs().await.put_conv(&conv).await.unwrap();
             });
             true
         } else {
@@ -183,7 +187,7 @@ impl Chats {
                 } else {
                     conv.name = friend.name;
                 }
-                db::convs().await.put_conv(&conv, false).await.unwrap();
+                db::convs().await.put_conv(&conv).await.unwrap();
 
                 // add global unread
                 if !is_self && current_id != friend_id {
@@ -248,6 +252,11 @@ impl Chats {
     }
 
     pub fn handle_lack_msg(&mut self, ctx: &Context<Self>, end: i64) {
+        log::debug!(
+            "handle_lack_msg: self seq{}, end seq{}",
+            self.seq.local_seq,
+            end
+        );
         if self.seq.local_seq > end - 1 {
             return;
         }
@@ -258,10 +267,10 @@ impl Chats {
         }
 
         let start = self.seq.local_seq;
-        let seq = self.seq.clone();
         let user_id = ctx.props().user_id.clone();
 
         self.seq.local_seq = end;
+        let seq = self.seq.clone();
 
         ctx.link().send_future(async move {
             db::seq().await.put(&seq).await.unwrap();

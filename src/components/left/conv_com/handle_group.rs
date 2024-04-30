@@ -18,8 +18,10 @@ impl Chats {
         ctx.link().send_future(async move {
             // store conversation
             let info = Group::from(msg.info.unwrap());
-            let conv = Conversation::from(info.clone());
-            db::convs().await.put_conv(&conv, true).await.unwrap();
+            let mut conv = Conversation::from(info.clone());
+            conv.unread_count = 0;
+
+            db::convs().await.put_conv(&conv).await.unwrap();
 
             // store group information
             if let Err(err) = db::groups().await.put(&info).await {
@@ -112,8 +114,9 @@ impl Chats {
                     cloned_ctx.send_message(ChatsMsg::SendCreateGroupToContacts(g.clone()));
 
                     // store conversation info to db
-                    let conv = Conversation::from(g);
-                    db::convs().await.put_conv(&conv, true).await.unwrap();
+                    let mut conv = Conversation::from(g);
+                    conv.unread_count = 0;
+                    db::convs().await.put_conv(&conv).await.unwrap();
 
                     // insert conversation to ui list
                     ChatsMsg::InsertConv(conv)
@@ -141,8 +144,9 @@ impl Chats {
                     {
                         let message = format!("{} dismissed this group", mem.group_name);
                         conv.last_msg = message.clone().into();
+                        conv.unread_count = 0;
 
-                        if let Err(e) = db::convs().await.put_conv(&conv, true).await {
+                        if let Err(e) = db::convs().await.put_conv(&conv).await {
                             log::error!("dismiss group error: {:?}", e);
                         } else {
                             return ChatsMsg::DismissGroup(key, message);

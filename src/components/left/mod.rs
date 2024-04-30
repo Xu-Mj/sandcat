@@ -74,6 +74,7 @@ impl Component for Left {
                 // <Messages />
             }
             ComponentType::Setting => {}
+            ComponentType::Default => {}
         };
         html! {
             <div class="left-container">

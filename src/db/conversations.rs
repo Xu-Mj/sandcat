@@ -15,11 +15,7 @@ pub struct Test {
 pub trait Conversations {
     async fn mute(&self, conv: &Conversation) -> Result<(), JsValue>;
 
-    async fn put_conv(
-        &self,
-        conv: &Conversation,
-        is_clean_unread_count: bool,
-    ) -> Result<(), JsValue>;
+    async fn put_conv(&self, conv: &Conversation) -> Result<(), JsValue>;
 
     async fn get_convs2(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue>;
 

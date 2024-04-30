@@ -305,10 +305,10 @@ impl Messages for MessageRepo {
             web_sys::console::log_1(&event.into());
         });
 
-        // let mut messages = Vec::new();
-
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
 
+        let (tx, rx) = oneshot::channel::<()>();
+        let mut tx = Some(tx);
         let store = store.clone();
         let success = Closure::wrap(Box::new(move |event: &Event| {
             let target = event.target().expect("msg");
@@ -331,11 +331,15 @@ impl Messages for MessageRepo {
                     }
                 }
                 let _ = cursor.continue_();
+            } else {
+                log::debug!("read status update success");
+                tx.take().unwrap().send(()).unwrap();
             }
         }) as Box<dyn FnMut(&Event)>);
 
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
         success.forget();
+        rx.await.unwrap();
         Ok(())
     }
 
