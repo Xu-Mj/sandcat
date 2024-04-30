@@ -78,9 +78,7 @@ impl Component for ListItem {
                         .await
                         .is_ok()
                     {
-                        log::debug!("caonima    ");
                         Dispatch::<UnreadState>::global().reduce_mut(|s| {
-                            log::debug!("change unread count");
                             s.msg_count = s.msg_count.saturating_sub(unread_count);
                         });
                     }

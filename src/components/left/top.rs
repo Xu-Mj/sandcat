@@ -7,7 +7,7 @@ use yewdux::Dispatch;
 use crate::{
     components::self_info::SelfInfo,
     db,
-    icons::{ContactsIcon, MessagesIcon},
+    icons::{ContactsIcon, MessagesIcon, SettingIcon},
     model::{user::User, ComponentType},
     state::{AppState, ComponentTypeState, UnreadState},
 };
@@ -28,7 +28,7 @@ pub struct Top {
 pub struct TopProps {}
 
 pub enum TopMsg {
-    UnreadStateChanged(Rc<UnreadState>),
+    UnreadStateChanged,
     EmptyCallback,
     ShowInfoPanel,
     SubmitInfo(Box<User>),
@@ -46,8 +46,7 @@ impl Component for Top {
         let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
         let com_s_dis = Dispatch::global().subscribe(ctx.link().callback(TopMsg::ComStateChanged));
         let unread_dis =
-            Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
-        log::debug!("sub unread state: {:?}", unread_dis.get());
+            Dispatch::global().subscribe(ctx.link().callback(|_| TopMsg::UnreadStateChanged));
         ctx.link().send_future(async {
             let count = db::messages().await.unread_count().await;
             TopMsg::RenderUnreadCount(count)
@@ -67,11 +66,9 @@ impl Component for Top {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             TopMsg::EmptyCallback => false,
-            TopMsg::UnreadStateChanged(state) => {
-                log::debug!("unread state change:{:?}", state);
+            TopMsg::UnreadStateChanged => {
                 // query unread count from db
                 ctx.link().send_future(async {
-                    log::debug!("unread state change, query db...");
                     let count = db::messages().await.unread_count().await;
                     TopMsg::RenderUnreadCount(count)
                 });
@@ -120,15 +117,14 @@ impl Component for Top {
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
-        // let mut setting_class = "top-icon-selected";
-        // let setting_onclick = if self.state.component_type != ComponentType::Setting {
-        //     setting_class = "hover";
-        //     self.state
-        //         .switch_com_event
-        //         .reform(move |_| ComponentType::Setting)
-        // } else {
-        //     ctx.link().callback(move |_| TopMsg::EmptyCallback)
-        // };
+        let mut setting_class = "top-icon-selected";
+        let setting_onclick = if self.com_state.component_type != ComponentType::Setting {
+            setting_class = "hover";
+            self.com_s_dis
+                .reduce_mut_callback(|s| s.component_type = ComponentType::Setting)
+        } else {
+            ctx.link().callback(move |_| TopMsg::EmptyCallback)
+        };
         let mut count = html!();
         if self.unread_count > 0 {
             count = html! {
@@ -160,9 +156,9 @@ impl Component for Top {
                     <span class={contact_class} onclick={contact_onclick}>
                         <ContactsIcon/>
                     </span>
-                    // <span class={setting_class} onclick={setting_onclick}>
-                    //     <SettingIcon />
-                    // </span>
+                    <span class={setting_class} onclick={setting_onclick}>
+                        <SettingIcon />
+                    </span>
                 </div>
 
             </div>
