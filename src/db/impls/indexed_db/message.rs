@@ -12,7 +12,8 @@ use crate::{
 };
 
 use super::{
-    repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_TABLE_NAME,
+    repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX,
+    MESSAGE_TABLE_NAME,
 };
 
 pub struct MessageRepo(Repository);
@@ -323,7 +324,7 @@ impl Messages for MessageRepo {
                 if let Ok(value) = cursor.value() {
                     // 反序列化
                     if let Ok(mut msg) = serde_wasm_bindgen::from_value::<Message>(value) {
-                        msg.is_read = true;
+                        msg.is_read = 1;
                         store
                             .put(&serde_wasm_bindgen::to_value(&msg).unwrap())
                             .unwrap();
@@ -336,5 +337,30 @@ impl Messages for MessageRepo {
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
         success.forget();
         Ok(())
+    }
+
+    async fn unread_count(&self) -> usize {
+        let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
+        let index = store.index(MESSAGE_IS_READ_INDEX).unwrap();
+        let request = index.count_with_key(&JsValue::from(0)).unwrap();
+        let (tx, rx) = futures::channel::oneshot::channel();
+        let onsuccess = Closure::once(move |event: &Event| {
+            let value = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            if !value.is_undefined() && !value.is_null() {
+                let result = value.as_f64().unwrap() as usize;
+                tx.send(result).unwrap();
+            } else {
+                tx.send(0).unwrap();
+            }
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        onsuccess.forget();
+        rx.await.unwrap_or_default()
     }
 }

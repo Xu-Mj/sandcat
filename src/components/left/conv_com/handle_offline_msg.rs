@@ -171,7 +171,7 @@ impl Chats {
                                 .hello
                                 .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
                             create_time: chrono::Local::now().timestamp_millis(),
-                            is_read: true,
+                            is_read: 1,
                             is_self: true,
                             ..Default::default()
                         };

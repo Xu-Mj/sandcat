@@ -6,6 +6,7 @@ use yewdux::Dispatch;
 
 use crate::{
     components::self_info::SelfInfo,
+    db,
     icons::{ContactsIcon, MessagesIcon},
     model::{user::User, ComponentType},
     state::{AppState, ComponentTypeState, UnreadState},
@@ -19,7 +20,7 @@ pub struct Top {
     app_s_dis: Dispatch<AppState>,
     com_state: Rc<ComponentTypeState>,
     com_s_dis: Dispatch<ComponentTypeState>,
-    unread_state: Rc<UnreadState>,
+    unread_count: usize,
     _unread_dis: Dispatch<UnreadState>,
 }
 
@@ -27,12 +28,13 @@ pub struct Top {
 pub struct TopProps {}
 
 pub enum TopMsg {
-    UnreadStateChanged(Rc<UnreadState>),
+    UnreadStateChanged,
     EmptyCallback,
     ShowInfoPanel,
     SubmitInfo(Box<User>),
     AppStateChanged(Rc<AppState>),
     ComStateChanged(Rc<ComponentTypeState>),
+    RenderUnreadCount(usize),
 }
 
 impl Component for Top {
@@ -44,25 +46,33 @@ impl Component for Top {
         let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
         let com_s_dis = Dispatch::global().subscribe(ctx.link().callback(TopMsg::ComStateChanged));
         let unread_dis =
-            Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
+            Dispatch::global().subscribe(ctx.link().callback(|_| TopMsg::UnreadStateChanged));
+        ctx.link().send_future(async {
+            let count = db::messages().await.unread_count().await;
+            TopMsg::RenderUnreadCount(count)
+        });
         Self {
             node: NodeRef::default(),
             show_info: false,
             app_state: dispatch.get(),
             app_s_dis: dispatch,
-            unread_state: unread_dis.get(),
+            unread_count: 0,
             _unread_dis: unread_dis,
             com_state: com_s_dis.get(),
             com_s_dis,
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             TopMsg::EmptyCallback => false,
-            TopMsg::UnreadStateChanged(state) => {
-                self.unread_state = state;
-                true
+            TopMsg::UnreadStateChanged => {
+                // query unread count from db
+                ctx.link().send_future(async {
+                    let count = db::messages().await.unread_count().await;
+                    TopMsg::RenderUnreadCount(count)
+                });
+                false
             }
             TopMsg::ShowInfoPanel => {
                 self.show_info = !self.show_info;
@@ -79,6 +89,10 @@ impl Component for Top {
             }
             TopMsg::ComStateChanged(state) => {
                 self.com_state = state;
+                true
+            }
+            TopMsg::RenderUnreadCount(count) => {
+                self.unread_count = count;
                 true
             }
         }
@@ -113,10 +127,10 @@ impl Component for Top {
         //     ctx.link().callback(move |_| TopMsg::EmptyCallback)
         // };
         let mut count = html!();
-        if self.unread_state.msg_count > 0 {
+        if self.unread_count > 0 {
             count = html! {
                 <span class="unread-count">
-                    {self.unread_state.msg_count}
+                    {self.unread_count}
                 </span>
             };
         }
