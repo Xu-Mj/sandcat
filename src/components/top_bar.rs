@@ -105,6 +105,7 @@ impl Component for TopBar {
             ComponentType::Contacts => "contacts",
             ComponentType::Messages => "messages",
             ComponentType::Setting => "setting",
+            ComponentType::Default => "default",
         };
         let icon = match ctx.props().components_type {
             ComponentType::Contacts => {
@@ -115,12 +116,13 @@ impl Component for TopBar {
             ComponentType::Messages => {
                 html!(<PlusIcon />)
             }
-            ComponentType::Setting => {
+            ComponentType::Default => {
                 html!({ tr!(self.i18n, "cancel") })
             }
+            ComponentType::Setting => html!(),
         };
         let click_plus = ctx.link().callback(|_| TopBarMsg::PlusButtonClicked);
-        let onclick = ctx.link().callback(move |_| TopBarMsg::SearchButtonClicked);
+        let onclick = ctx.link().callback(|_| TopBarMsg::SearchButtonClicked);
         html! {
             // 水平布局，从左到右分别为排序选项卡、搜索输入框、设置按钮
             <div class="top-bar">

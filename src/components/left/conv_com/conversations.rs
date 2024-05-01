@@ -21,6 +21,7 @@ use crate::state::{
 };
 use crate::state::{ConvState, UnreadState};
 use crate::ws::WebSocketManager;
+use crate::{i18n, utils};
 
 #[derive(Debug)]
 pub enum ChatsMsg {
@@ -93,21 +94,15 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::QueryConvs((convs, messages, seq)) => {
-                log::debug!("query complete:{:?}", convs);
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
-                // self.wait_state.ready.emit(());
                 self.seq = seq;
                 // handle offline messages
                 self.handle_offline_messages(ctx, messages);
                 WebSocketManager::connect(self.ws.clone());
                 true
             }
-            /* ChatsMsg::ReceiveMessage(state) => {
-                let msg = state.msg.clone();
-                self.handle_received_messages(ctx, msg)
-            } */
             ChatsMsg::InsertConv(conv) => {
                 self.list.shift_insert(0, conv.friend_id.clone(), conv);
                 true
@@ -233,6 +228,11 @@ impl Component for Chats {
             }
             ChatsMsg::SwitchLanguage(state) => {
                 self.lang_state = state;
+                let content = match self.lang_state.lang {
+                    crate::i18n::LanguageType::ZhCN => i18n::zh_cn::CONVERSATION,
+                    crate::i18n::LanguageType::EnUS => i18n::en_us::CONVERSATION,
+                };
+                self.i18n = utils::create_bundle(content);
                 true
             }
         }

@@ -44,7 +44,11 @@ pub struct ComponentTypeState {
 }
 
 /// global unread count and contacts count(add friends)
+/// there is an issue that I've encountered which is difficult to understand.
+/// If the state not stored, and it's not at default value,
+/// subscribe do not receive the first change notification following a browser refresh.
 #[derive(Store, Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[store(storage = "local")]
 pub struct UnreadState {
     pub msg_count: usize,
     pub contacts_count: usize,
@@ -173,6 +177,39 @@ pub struct NotificationState {
 
 #[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
+pub enum FontSizeState {
+    Small,
+    #[default]
+    Medium,
+    Large,
+    Larger,
+}
+
+impl From<&str> for FontSizeState {
+    fn from(value: &str) -> Self {
+        match value {
+            "small" => Self::Small,
+            "medium" => Self::Medium,
+            "large" => Self::Large,
+            "larger" => Self::Larger,
+            _ => Self::Medium,
+        }
+    }
+}
+
+impl ToString for FontSizeState {
+    fn to_string(&self) -> String {
+        match self {
+            FontSizeState::Small => "small".to_string(),
+            FontSizeState::Medium => "medium".to_string(),
+            FontSizeState::Large => "large".to_string(),
+            FontSizeState::Larger => "larger".to_string(),
+        }
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
 #[serde(rename_all = "lowercase")]
 pub enum ThemeState {
     #[default]
@@ -185,6 +222,16 @@ impl Display for ThemeState {
         match self {
             ThemeState::Light => write!(f, "light"),
             ThemeState::Dark => write!(f, "dark"),
+        }
+    }
+}
+
+impl From<&str> for ThemeState {
+    fn from(value: &str) -> Self {
+        match value {
+            "light" => ThemeState::Light,
+            "dark" => ThemeState::Dark,
+            _ => ThemeState::Light,
         }
     }
 }

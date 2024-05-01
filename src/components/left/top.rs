@@ -7,7 +7,7 @@ use yewdux::Dispatch;
 use crate::{
     components::self_info::SelfInfo,
     db,
-    icons::{ContactsIcon, MessagesIcon},
+    icons::{ContactsIcon, MessagesIcon, SettingIcon},
     model::{user::User, ComponentType},
     state::{AppState, ComponentTypeState, UnreadState},
 };
@@ -117,15 +117,14 @@ impl Component for Top {
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
-        // let mut setting_class = "top-icon-selected";
-        // let setting_onclick = if self.state.component_type != ComponentType::Setting {
-        //     setting_class = "hover";
-        //     self.state
-        //         .switch_com_event
-        //         .reform(move |_| ComponentType::Setting)
-        // } else {
-        //     ctx.link().callback(move |_| TopMsg::EmptyCallback)
-        // };
+        let mut setting_class = "top-icon-selected";
+        let setting_onclick = if self.com_state.component_type != ComponentType::Setting {
+            setting_class = "hover";
+            self.com_s_dis
+                .reduce_mut_callback(|s| s.component_type = ComponentType::Setting)
+        } else {
+            ctx.link().callback(move |_| TopMsg::EmptyCallback)
+        };
         let mut count = html!();
         if self.unread_count > 0 {
             count = html! {
@@ -157,9 +156,9 @@ impl Component for Top {
                     <span class={contact_class} onclick={contact_onclick}>
                         <ContactsIcon/>
                     </span>
-                    // <span class={setting_class} onclick={setting_onclick}>
-                    //     <SettingIcon />
-                    // </span>
+                    <span class={setting_class} onclick={setting_onclick}>
+                        <SettingIcon />
+                    </span>
                 </div>
 
             </div>

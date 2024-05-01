@@ -3,7 +3,7 @@ use gloo::utils::{document, window};
 use unic_langid::langid;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{MediaStream, MediaStreamConstraints, MediaStreamTrack};
+use web_sys::{HtmlElement, MediaStream, MediaStreamConstraints, MediaStreamTrack};
 
 /// 格式化时间
 pub fn format_milliseconds(millis: i64) -> String {
@@ -114,5 +114,16 @@ pub fn set_theme(theme: &str) {
         .document_element()
         .unwrap()
         .set_attribute("theme", theme)
+        .unwrap()
+}
+
+pub fn set_font_size(size: &str) {
+    document()
+        .document_element()
+        .unwrap()
+        .dyn_into::<HtmlElement>()
+        .unwrap()
+        .style()
+        .set_property("font-size", size)
         .unwrap()
 }

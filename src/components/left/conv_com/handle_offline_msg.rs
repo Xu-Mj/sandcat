@@ -66,6 +66,9 @@ impl Chats {
 
     // tod handle the friend request and send the group create message to contact
     pub fn handle_offline_messages(&mut self, ctx: &Context<Self>, messages: Vec<PbMsg>) {
+        if messages.is_empty() {
+            return;
+        }
         let mut map: HashMap<AttrValue, Conversation> = HashMap::with_capacity(messages.len());
 
         for item in messages.into_iter() {

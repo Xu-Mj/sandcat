@@ -7,6 +7,7 @@ pub mod postcard;
 pub mod sender;
 pub mod set_drawer;
 pub mod set_window;
+pub mod setting;
 
 use std::rc::Rc;
 
@@ -17,6 +18,7 @@ use yewdux::Dispatch;
 
 use crate::components::right::friendship_list::FriendShipList;
 use crate::components::right::set_window::SetWindow;
+use crate::components::right::setting::Setting;
 use crate::components::select_friends::SelectFriendList;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CatHeadIcon, CloseIcon, MaxIcon};
@@ -181,6 +183,12 @@ impl Component for Right {
             }
             RightMsg::SwitchLang(state) => {
                 self.lang_state = state;
+                let res = match self.lang_state.lang {
+                    LanguageType::ZhCN => zh_cn::RIGHT_PANEL,
+                    LanguageType::EnUS => en_us::RIGHT_PANEL,
+                };
+                let i18n = utils::create_bundle(res);
+                self.i18n = i18n;
                 true
             }
             RightMsg::ComStateChanged(state) => {
@@ -259,7 +267,6 @@ impl Component for Right {
                         }
                     }
                     RightContentType::FriendShipList => {
-                        log::debug!("right msg container");
                         html! {
                             <FriendShipList user_id={&self.state.login_user.id} lang={self.lang_state.lang}/>
                         }
@@ -269,7 +276,8 @@ impl Component for Right {
                     }
                 }
             }
-            ComponentType::Setting => html! {},
+            ComponentType::Setting => html! {<Setting lang={self.lang_state.lang} />},
+            ComponentType::Default => html!(),
         };
         html! {
             <div class="right-container">

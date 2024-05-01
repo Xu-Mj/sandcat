@@ -207,7 +207,7 @@ impl Component for Login {
             }
             LoginMsg::SwitchTheme(state) => {
                 utils::set_theme(&state.to_string());
-                true
+                false
             }
         }
     }

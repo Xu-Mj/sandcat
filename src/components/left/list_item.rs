@@ -70,6 +70,7 @@ impl Component for ListItem {
                 // set message is_read to true
                 let friend_id = ctx.props().props.id.clone();
                 let unread_count = self.unread_count;
+                log::debug!("clean unread count");
                 spawn_local(async move {
                     if db::messages()
                         .await
@@ -181,6 +182,9 @@ impl Component for ListItem {
             ComponentType::Setting => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::GoToSetting)
             }
+            ComponentType::Default => {
+                onclick = ctx.link().callback(move |_| ListItemMsg::GoToSetting)
+            }
         };
 
         // 判断距离现在多久
@@ -227,6 +231,7 @@ impl Component for ListItem {
                 }
             }
             ComponentType::Setting => {}
+            ComponentType::Default => {}
         }
         let oncontextmenu = ctx.link().callback(ListItemMsg::OnContextMenu);
         html! {

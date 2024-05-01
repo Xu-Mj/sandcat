@@ -98,8 +98,9 @@ impl Chats {
             let seq_repo = db::seq().await;
             let mut local_seq = seq_repo.get().await.unwrap_or_default();
             let mut messages = Vec::new();
-            log::debug!("seq: {:?}", local_seq);
+            log::debug!("local seq: {:?}; server seq:{:?}", local_seq, server_seq);
             if local_seq.local_seq < server_seq.seq {
+                log::debug!("pull offline messages");
                 // request offline messages
                 messages = api::messages()
                     .pull_offline_msg(user_id.as_str(), local_seq.local_seq, server_seq.seq)
@@ -218,7 +219,7 @@ impl Chats {
                     .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(conv.unread_count));
             } else {
                 Dispatch::<UnreadState>::global()
-                    .reduce_mut(|s| s.msg_count.saturating_sub(conv.unread_count));
+                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(conv.unread_count));
             }
 
             conv.mute = !conv.mute;
@@ -303,7 +304,7 @@ impl Chats {
             // self.list.shift_insert(index, cur_conv_id, conv.clone());
             let conv = conv.clone();
             spawn_local(async move {
-                db::convs().await.put_conv(&conv, true).await.unwrap();
+                db::convs().await.put_conv(&conv).await.unwrap();
             });
             need_rerender
         } else {
@@ -380,7 +381,7 @@ impl Chats {
                     }
                 };
 
-                db::convs().await.put_conv(&conv, true).await.unwrap();
+                db::convs().await.put_conv(&conv).await.unwrap();
                 log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
                 if need_rerender {
                     ChatsMsg::InsertConv(conv)

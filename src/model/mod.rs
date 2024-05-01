@@ -147,6 +147,7 @@ pub enum FriendShipStateType {
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ComponentType {
+    Default,
     Contacts,
     #[default]
     Messages,
