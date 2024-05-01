@@ -6,7 +6,6 @@ use yewdux::Dispatch;
 
 use crate::{
     components::self_info::SelfInfo,
-    db,
     icons::{ContactsIcon, MessagesIcon, SettingIcon},
     model::{user::User, ComponentType},
     state::{AppState, ComponentTypeState, UnreadState},
@@ -20,7 +19,7 @@ pub struct Top {
     app_s_dis: Dispatch<AppState>,
     com_state: Rc<ComponentTypeState>,
     com_s_dis: Dispatch<ComponentTypeState>,
-    unread_count: usize,
+    unread_state: Rc<UnreadState>,
     _unread_dis: Dispatch<UnreadState>,
 }
 
@@ -28,13 +27,12 @@ pub struct Top {
 pub struct TopProps {}
 
 pub enum TopMsg {
-    UnreadStateChanged,
+    UnreadStateChanged(Rc<UnreadState>),
     EmptyCallback,
     ShowInfoPanel,
     SubmitInfo(Box<User>),
     AppStateChanged(Rc<AppState>),
     ComStateChanged(Rc<ComponentTypeState>),
-    RenderUnreadCount(usize),
 }
 
 impl Component for Top {
@@ -46,59 +44,36 @@ impl Component for Top {
         let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
         let com_s_dis = Dispatch::global().subscribe(ctx.link().callback(TopMsg::ComStateChanged));
         let unread_dis =
-            Dispatch::global().subscribe(ctx.link().callback(|_| TopMsg::UnreadStateChanged));
-        ctx.link().send_future(async {
-            let count = db::messages().await.unread_count().await;
-            TopMsg::RenderUnreadCount(count)
-        });
+            Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
         Self {
             node: NodeRef::default(),
             show_info: false,
             app_state: dispatch.get(),
             app_s_dis: dispatch,
-            unread_count: 0,
+            unread_state: unread_dis.get(),
             _unread_dis: unread_dis,
             com_state: com_s_dis.get(),
             com_s_dis,
         }
     }
 
-    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            TopMsg::EmptyCallback => false,
-            TopMsg::UnreadStateChanged => {
-                // query unread count from db
-                ctx.link().send_future(async {
-                    let count = db::messages().await.unread_count().await;
-                    TopMsg::RenderUnreadCount(count)
-                });
-                false
-            }
-            TopMsg::ShowInfoPanel => {
-                self.show_info = !self.show_info;
-                true
-            }
+            TopMsg::EmptyCallback => return false,
+            TopMsg::UnreadStateChanged(state) => self.unread_state = state,
+            TopMsg::ShowInfoPanel => self.show_info = !self.show_info,
+            TopMsg::AppStateChanged(state) => self.app_state = state,
+            TopMsg::ComStateChanged(state) => self.com_state = state,
             TopMsg::SubmitInfo(user) => {
                 self.show_info = !self.show_info;
                 self.app_s_dis.reduce_mut(|s| s.login_user = *user);
-                true
-            }
-            TopMsg::AppStateChanged(state) => {
-                self.app_state = state;
-                true
-            }
-            TopMsg::ComStateChanged(state) => {
-                self.com_state = state;
-                true
-            }
-            TopMsg::RenderUnreadCount(count) => {
-                self.unread_count = count;
-                true
             }
         }
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        log::debug!("top view:{:?}", self.unread_state);
         let mut msg_class = "top-icon-selected";
         let msg_onclick = if self.com_state.component_type != ComponentType::Messages {
             msg_class = "hover";
@@ -125,11 +100,20 @@ impl Component for Top {
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
-        let mut count = html!();
-        if self.unread_count > 0 {
-            count = html! {
+        let mut msg_count = html!();
+        if self.unread_state.msg_count > 0 {
+            msg_count = html! {
                 <span class="unread-count">
-                    {self.unread_count}
+                    {self.unread_state.msg_count}
+                </span>
+            };
+        }
+
+        let mut contact_count = html!();
+        if self.unread_state.contacts_count > 0 {
+            contact_count = html! {
+                <span class="unread-count">
+                    {self.unread_state.contacts_count}
                 </span>
             };
         }
@@ -151,10 +135,11 @@ impl Component for Top {
                 <div class="top-right">
                     <span class={msg_class} onclick={msg_onclick}>
                         <MessagesIcon />
-                        {count}
+                        {msg_count}
                     </span>
                     <span class={contact_class} onclick={contact_onclick}>
                         <ContactsIcon/>
+                        {contact_count}
                     </span>
                     <span class={setting_class} onclick={setting_onclick}>
                         <SettingIcon />
