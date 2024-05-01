@@ -4,3 +4,5 @@
 - add friend unread message count: global is correct, but conversation is not
 - unread message count in message list component is not correct
 - message item show send time while hover it
+- modify the friend remark
+- modify the group info
