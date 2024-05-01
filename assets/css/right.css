@@ -766,9 +766,10 @@
                     width: 100%;
 
                     input {
-                        /* border-radius: .3rem; */
+                        border: none;
                         outline: none;
                         padding: 0 .3rem;
+                        background-color: var(--color-background-input);
                     }
                 }
 
@@ -781,6 +782,7 @@
                     button {
                         border: none;
                         background-color: var(--color-background-btn);
+                        color: var(--color-text);
                         width: 6rem;
                         height: 2rem;
                         padding: auto;
