@@ -7,6 +7,7 @@
     width: 70%;
     height: 100%;
     position: relative;
+    transition: background-color 0.5s;
 
     .choose-conv {
         margin: auto;
@@ -19,7 +20,6 @@
         flex-direction: column;
         top: 0;
         position: absolute;
-        background-color: var(--color-background);
         z-index: 2;
 
         .close-bar {
@@ -789,6 +789,13 @@
                 }
 
             }
+        }
+
+        .setting {
+            width: 100%;
+            height: 100%;
+            margin-top: 3rem;
+
         }
     }
 

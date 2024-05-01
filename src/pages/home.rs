@@ -7,10 +7,10 @@ use yewdux::Dispatch;
 
 use crate::components::left::Left;
 use crate::components::right::Right;
-use crate::db;
 use crate::icons::CloseIcon;
 use crate::model::user::User;
-use crate::state::{AppState, NotificationState};
+use crate::state::{AppState, NotificationState, ThemeState};
+use crate::{db, utils};
 use crate::{
     db::{QueryError, QueryStatus, DB_NAME},
     model::notification::{Notification, NotificationType},
@@ -21,6 +21,7 @@ pub struct Home {
     notification_interval: Option<Interval>,
     notifications: Vec<Notification>,
     _noti_dis: Dispatch<NotificationState>,
+    _theme_dis: Dispatch<ThemeState>,
 }
 
 #[derive(Debug)]
@@ -28,6 +29,7 @@ pub enum HomeMsg {
     // 查询数据库
     Query(Box<QueryStatus<User>>),
     NotificationStateChanged(Rc<NotificationState>),
+    SwitchTheme(Rc<ThemeState>),
     CleanNotification,
     CloseNotificationByIndex(usize),
 }
@@ -63,6 +65,7 @@ impl Component for Home {
                 true
             }
             HomeMsg::CleanNotification => {
+                log::debug!("clean notification, {:?}", self.notifications);
                 if !self.notifications.is_empty() {
                     self.notifications.remove(0);
                 } else {
@@ -86,6 +89,10 @@ impl Component for Home {
                     }));
                 }
                 true
+            }
+            HomeMsg::SwitchTheme(state) => {
+                utils::set_theme(&state.to_string());
+                false
             }
         }
     }
@@ -169,13 +176,15 @@ impl Home {
         ctx.link()
             .send_message(HomeMsg::Query(Box::new(QueryStatus::Querying)));
 
-        let noti_dis =
-            Dispatch::global().subscribe(ctx.link().callback(HomeMsg::NotificationStateChanged));
+        let noti_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(HomeMsg::NotificationStateChanged));
+        let _theme_dis = Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchTheme));
         Self {
             notifications: vec![],
             _noti_dis: noti_dis,
             notification_node: NodeRef::default(),
             notification_interval: None,
+            _theme_dis,
         }
     }
 

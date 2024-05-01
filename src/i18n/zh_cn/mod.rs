@@ -101,6 +101,14 @@ accept = 通过申请
 cancel = 取消
 "#;
 
+pub const SETTING: &str = r#"
+setting = 设置
+language = 语言
+theme = 主题
+light = 浅色
+dark = 暗黑
+"#;
+
 pub const POSTCARD: &str = r#"
 account = 账号:
 remark = 备注:

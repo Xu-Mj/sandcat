@@ -192,3 +192,13 @@ impl Display for ThemeState {
         }
     }
 }
+
+impl From<&str> for ThemeState {
+    fn from(value: &str) -> Self {
+        match value {
+            "light" => ThemeState::Light,
+            "dark" => ThemeState::Dark,
+            _ => ThemeState::Light,
+        }
+    }
+}

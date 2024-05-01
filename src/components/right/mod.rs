@@ -7,6 +7,7 @@ pub mod postcard;
 pub mod sender;
 pub mod set_drawer;
 pub mod set_window;
+pub mod setting;
 
 use std::rc::Rc;
 
@@ -17,6 +18,7 @@ use yewdux::Dispatch;
 
 use crate::components::right::friendship_list::FriendShipList;
 use crate::components::right::set_window::SetWindow;
+use crate::components::right::setting::Setting;
 use crate::components::select_friends::SelectFriendList;
 use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::icons::{CatHeadIcon, CloseIcon, MaxIcon};
@@ -269,7 +271,7 @@ impl Component for Right {
                     }
                 }
             }
-            ComponentType::Setting => html! {},
+            ComponentType::Setting => html! {<Setting lang={self.lang_state.lang} />},
             ComponentType::Default => html!(),
         };
         html! {

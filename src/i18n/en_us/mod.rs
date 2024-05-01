@@ -106,6 +106,14 @@ accept = Accept
 cancel = Cancel
 "#;
 
+pub const SETTING: &str = r#"
+setting = Setting
+language = Language
+theme = Theme
+light = Light
+dark = Dark
+"#;
+
 pub const POSTCARD: &str = r#"
 account = account:
 remark = remark:

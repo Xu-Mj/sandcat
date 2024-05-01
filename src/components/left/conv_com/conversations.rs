@@ -21,6 +21,7 @@ use crate::state::{
 };
 use crate::state::{ConvState, UnreadState};
 use crate::ws::WebSocketManager;
+use crate::{i18n, utils};
 
 #[derive(Debug)]
 pub enum ChatsMsg {
@@ -227,6 +228,11 @@ impl Component for Chats {
             }
             ChatsMsg::SwitchLanguage(state) => {
                 self.lang_state = state;
+                let content = match self.lang_state.lang {
+                    crate::i18n::LanguageType::ZhCN => i18n::zh_cn::CONVERSATION,
+                    crate::i18n::LanguageType::EnUS => i18n::en_us::CONVERSATION,
+                };
+                self.i18n = utils::create_bundle(content);
                 true
             }
         }
