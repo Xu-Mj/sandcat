@@ -800,11 +800,21 @@
             align-items: center;
 
             .rect {
-                width: 18rem;
+                width: 30rem;
                 height: 15rem;
 
                 h2 {
                     margin-bottom: 2rem;
+                }
+
+                b {
+                    font-weight: bold;
+                }
+
+                .font-size {
+                    display: grid;
+                    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+                    align-items: center;
                 }
 
                 .setting-theme,
@@ -815,9 +825,6 @@
                     grid-template-columns: 2fr 2fr 2fr;
                     align-items: center;
 
-                    b{
-                        font-weight: bold;
-                    }
                 }
             }
         }

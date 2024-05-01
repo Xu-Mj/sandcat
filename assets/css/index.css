@@ -97,6 +97,7 @@ html {
     background-size: cover;
     transition: color 0.5s;
     line-height: 1.6;
+    font-size: medium;
     font-family: Inter,
         -apple-system,
         BlinkMacSystemFont,

@@ -107,6 +107,11 @@ language = 语言:
 theme = 主题:
 light = 浅色
 dark = 暗黑
+font_size = 字体大小:
+small = 小
+medium = 中
+large = 大
+larger = 更大
 "#;
 
 pub const POSTCARD: &str = r#"

@@ -9,7 +9,7 @@ use crate::components::left::Left;
 use crate::components::right::Right;
 use crate::icons::CloseIcon;
 use crate::model::user::User;
-use crate::state::{AppState, NotificationState, ThemeState};
+use crate::state::{AppState, FontSizeState, NotificationState, ThemeState};
 use crate::{db, utils};
 use crate::{
     db::{QueryError, QueryStatus, DB_NAME},
@@ -22,6 +22,7 @@ pub struct Home {
     notifications: Vec<Notification>,
     _noti_dis: Dispatch<NotificationState>,
     _theme_dis: Dispatch<ThemeState>,
+    _font_size_dis: Dispatch<FontSizeState>,
 }
 
 #[derive(Debug)]
@@ -30,6 +31,7 @@ pub enum HomeMsg {
     Query(Box<QueryStatus<User>>),
     NotificationStateChanged(Rc<NotificationState>),
     SwitchTheme(Rc<ThemeState>),
+    SwitchFontSize(Rc<FontSizeState>),
     CleanNotification,
     CloseNotificationByIndex(usize),
 }
@@ -92,6 +94,11 @@ impl Component for Home {
             }
             HomeMsg::SwitchTheme(state) => {
                 utils::set_theme(&state.to_string());
+                false
+            }
+            HomeMsg::SwitchFontSize(state) => {
+                log::debug!("switch font size: {:?}", state);
+                utils::set_font_size(&state.to_string());
                 false
             }
         }
@@ -179,12 +186,15 @@ impl Home {
         let noti_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(HomeMsg::NotificationStateChanged));
         let _theme_dis = Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchTheme));
+        let _font_size_dis =
+            Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchFontSize));
         Self {
             notifications: vec![],
             _noti_dis: noti_dis,
             notification_node: NodeRef::default(),
             notification_interval: None,
             _theme_dis,
+            _font_size_dis,
         }
     }
 
