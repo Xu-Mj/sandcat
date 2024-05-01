@@ -803,6 +803,10 @@
                 width: 15rem;
                 height: 15rem;
 
+                h2 {
+                    margin-bottom: 2rem;
+                }
+
                 .setting-theme,
                 .language {
                     width: 100%;

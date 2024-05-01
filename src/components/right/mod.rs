@@ -183,6 +183,12 @@ impl Component for Right {
             }
             RightMsg::SwitchLang(state) => {
                 self.lang_state = state;
+                let res = match self.lang_state.lang {
+                    LanguageType::ZhCN => zh_cn::RIGHT_PANEL,
+                    LanguageType::EnUS => en_us::RIGHT_PANEL,
+                };
+                let i18n = utils::create_bundle(res);
+                self.i18n = i18n;
                 true
             }
             RightMsg::ComStateChanged(state) => {
@@ -261,7 +267,6 @@ impl Component for Right {
                         }
                     }
                     RightContentType::FriendShipList => {
-                        log::debug!("right msg container");
                         html! {
                             <FriendShipList user_id={&self.state.login_user.id} lang={self.lang_state.lang}/>
                         }

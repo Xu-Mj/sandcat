@@ -97,25 +97,27 @@ impl Component for Setting {
         html! {
             <div class="setting">
                 <div class="rect">
-                <div class="language">
-                    {tr!(self.i18n, "language")}
-                    <label for="en_us">
-                        <input type="radio" name="language" id="en_us" value="en_us" onchange={onchange.clone()} checked={self.lang==LanguageType::EnUS}/>{"\tENG"}
-                    </label>
-                    <label for="zh_cn">
-                        <input type="radio" name="language" id="zh_cn" value="zh_cn" {onchange} checked={self.lang==LanguageType::ZhCN}/>{"\t中文"}
-                    </label>
-                </div>
+                   <h2> { tr!(self.i18n, "setting") }</h2>
 
-                <div class="setting-theme">
-                    <b>{tr!(self.i18n, "theme")}</b>
-                    <label for="light">
-                        <input type="radio" name="theme" id="light" value="light" onchange={on_theme_change.clone()} checked={*self.theme==ThemeState::Light}/>{format!("\t{}", tr!(self.i18n, "light"))}
-                    </label>
-                    <label for="dark">
-                        <input type="radio" name="theme" id="dark" value="dark" onchange={on_theme_change} checked={*self.theme==ThemeState::Dark}/>{format!("\t{}", tr!(self.i18n, "dark"))}
-                    </label>
-                </div>
+                    <div class="language">
+                        {tr!(self.i18n, "language")}
+                        <label for="en_us">
+                            <input type="radio" name="language" id="en_us" value="en_us" onchange={onchange.clone()} checked={self.lang==LanguageType::EnUS}/>{"\tENG"}
+                        </label>
+                        <label for="zh_cn">
+                            <input type="radio" name="language" id="zh_cn" value="zh_cn" {onchange} checked={self.lang==LanguageType::ZhCN}/>{"\t中文"}
+                        </label>
+                    </div>
+
+                    <div class="setting-theme">
+                        <b>{tr!(self.i18n, "theme")}</b>
+                        <label for="light">
+                            <input type="radio" name="theme" id="light" value="light" onchange={on_theme_change.clone()} checked={*self.theme==ThemeState::Light}/>{format!("\t{}", tr!(self.i18n, "light"))}
+                        </label>
+                        <label for="dark">
+                            <input type="radio" name="theme" id="dark" value="dark" onchange={on_theme_change} checked={*self.theme==ThemeState::Dark}/>{format!("\t{}", tr!(self.i18n, "dark"))}
+                        </label>
+                    </div>
                 </div>
             </div>
         }
