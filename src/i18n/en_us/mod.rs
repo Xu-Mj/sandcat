@@ -108,8 +108,8 @@ cancel = Cancel
 
 pub const SETTING: &str = r#"
 setting = Setting
-language = Language
-theme = Theme
+language = Language:
+theme = Theme:
 light = Light
 dark = Dark
 "#;

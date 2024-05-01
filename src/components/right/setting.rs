@@ -100,7 +100,7 @@ impl Component for Setting {
                    <h2> { tr!(self.i18n, "setting") }</h2>
 
                     <div class="language">
-                        {tr!(self.i18n, "language")}
+                        <b>{tr!(self.i18n, "language")}</b>
                         <label for="en_us">
                             <input type="radio" name="language" id="en_us" value="en_us" onchange={onchange.clone()} checked={self.lang==LanguageType::EnUS}/>{"\tENG"}
                         </label>

@@ -103,8 +103,8 @@ cancel = 取消
 
 pub const SETTING: &str = r#"
 setting = 设置
-language = 语言
-theme = 主题
+language = 语言:
+theme = 主题:
 light = 浅色
 dark = 暗黑
 "#;

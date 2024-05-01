@@ -800,7 +800,7 @@
             align-items: center;
 
             .rect {
-                width: 15rem;
+                width: 18rem;
                 height: 15rem;
 
                 h2 {
@@ -814,6 +814,10 @@
                     display: grid;
                     grid-template-columns: 2fr 2fr 2fr;
                     align-items: center;
+
+                    b{
+                        font-weight: bold;
+                    }
                 }
             }
         }
