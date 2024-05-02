@@ -498,10 +498,9 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             // decode content
             let info: FriendshipWithUser4Response =
                 bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
-            Ok(Msg::RecRelationship((
-                FriendShipWithUser::from(info),
-                msg.seq,
-            )))
+            let mut friend = FriendShipWithUser::from(info);
+            friend.msg_id = msg.server_id.into();
+            Ok(Msg::RecRelationship((friend, msg.seq)))
         }
         MsgType::FriendApplyResp => {
             // decode content

@@ -112,6 +112,7 @@ pub struct FriendShipWithUser {
     #[serde(default)]
     pub is_operated: bool,
     pub email: Option<AttrValue>,
+    pub msg_id: AttrValue,
 }
 
 /// we must guarantee the order of the fields and the count of the fields
@@ -155,6 +156,7 @@ impl From<FriendshipWithUser4Response> for FriendShipWithUser {
             remark: value.remark,
             is_operated: false,
             email: value.email,
+            msg_id: AttrValue::default(),
         }
     }
 }

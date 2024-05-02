@@ -164,7 +164,8 @@ impl Friendships for FriendShipRepo {
         rx.await.unwrap()
     }
 
-    async fn clean_unread_count(&self) -> Result<(), JsValue> {
+    async fn clean_unread_count(&self) -> Result<Vec<String>, JsValue> {
+        let (tx, rx) = oneshot::channel::<Vec<String>>();
         let store = self
             .store(&String::from(FRIENDSHIP_TABLE_NAME))
             .await
@@ -176,6 +177,8 @@ impl Friendships for FriendShipRepo {
         let request = index
             .open_cursor_with_range(&unread)
             .expect("friend select get error");
+        let mut tx = Some(tx);
+        let mut ids = Vec::new();
         let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
             let result = event.target().unwrap().dyn_into::<IdbRequest>().unwrap();
             let result = result.result().unwrap_or(JsValue::NULL);
@@ -188,12 +191,15 @@ impl Friendships for FriendShipRepo {
                 res.read = ReadStatus::True;
                 match cursor.update(&serde_wasm_bindgen::to_value(&res).unwrap()) {
                     Ok(_) => {
+                        ids.push(res.msg_id.to_string());
                         let _ = cursor.continue_();
                     }
                     Err(err) => {
                         log::error!("更新好友请求错误: {:?}", err);
                     }
                 };
+            } else {
+                tx.take().unwrap().send(ids.to_owned()).unwrap();
             }
         }) as Box<dyn FnMut(&Event)>);
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
@@ -203,7 +209,7 @@ impl Friendships for FriendShipRepo {
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         onsuccess.forget();
         on_add_error.forget();
-        Ok(())
+        Ok(rx.await.unwrap())
     }
 
     // async fn update_status(&self, fs: &str) -> Result<(), JsValue> {

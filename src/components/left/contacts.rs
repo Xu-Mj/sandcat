@@ -12,15 +12,15 @@ use crate::i18n::{en_us, zh_cn, LanguageType};
 use crate::model::group::Group;
 use crate::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
 use crate::state::{
-    AddFriendState, FriendListState, FriendShipState, I18nState, ItemType, RemoveFriendState,
-    UnreadState,
+    AddFriendState, AppState, FriendListState, FriendShipState, I18nState, ItemType,
+    RemoveFriendState, UnreadState,
 };
+use crate::{api, db, tr, utils};
 use crate::{
     components::{left::list_item::ListItem, top_bar::TopBar},
     model::friend::Friend,
     model::{CommonProps, ComponentType},
 };
-use crate::{db, tr, utils};
 
 #[derive(Properties, PartialEq, Debug)]
 pub struct ContactsProps {
@@ -205,8 +205,16 @@ impl Component for Contacts {
                 });
                 // clean unread count
                 spawn_local(async {
-                    if db::friendships().await.clean_unread_count().await.is_ok() {
-                        Dispatch::<UnreadState>::global().reduce_mut(|s| s.contacts_count = 0);
+                    if let Ok(msg_id) = db::friendships().await.clean_unread_count().await {
+                        if !msg_id.is_empty() {
+                            Dispatch::<UnreadState>::global().reduce_mut(|s| s.contacts_count = 0);
+                            // send read request
+                            let user = Dispatch::<AppState>::global().get();
+                            let user_id = user.login_user.id.as_str();
+                            if let Err(err) = api::messages().del_msg(user_id, msg_id).await {
+                                log::error!("{:?}", err);
+                            }
+                        }
                     }
                 });
                 true
