@@ -12,13 +12,6 @@ use super::message::InviteMsg;
 use super::message::InviteNotAnswerMsg;
 use super::message::InviteType;
 
-fn is_zero(id: &i32) -> bool {
-    *id == 0
-}
-
-// 数据结构
-// 表
-
 pub fn attr_value_is_empty(value: &AttrValue) -> bool {
     value.is_empty()
 }
@@ -27,10 +20,7 @@ pub fn attr_value_is_empty(value: &AttrValue) -> bool {
 ///
 #[derive(Debug, Deserialize, Serialize, Clone, Default, PartialEq)]
 pub struct Conversation {
-    #[serde(skip_serializing_if = "is_zero")]
-    pub id: i32,
     pub conv_type: RightContentType,
-    // pub user_id: i32,
     pub friend_id: AttrValue,
     #[serde(skip_serializing_if = "attr_value_is_empty")]
     pub name: AttrValue,
@@ -42,7 +32,6 @@ pub struct Conversation {
     pub last_msg_type: ContentType,
     pub unread_count: usize,
     pub mute: bool,
-    // pub file:
 }
 
 impl From<Hangup> for Conversation {

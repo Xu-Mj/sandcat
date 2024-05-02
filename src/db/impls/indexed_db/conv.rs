@@ -6,10 +6,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
 
-use super::{
-    repository::Repository, CONVERSATION_FRIEND_ID_INDEX, CONVERSATION_LAST_MSG_TIME_INDEX,
-    CONVERSATION_TABLE_NAME,
-};
+use super::{repository::Repository, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME};
 use crate::{db::conversations::Conversations, model::conversation::Conversation};
 
 pub struct ConvRepo(Repository);
@@ -39,7 +36,6 @@ impl Conversations for ConvRepo {
     async fn put_conv(&self, conv: &Conversation) -> Result<(), JsValue> {
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         let value = serde_wasm_bindgen::to_value(&conv).unwrap();
-        // 添加成功失败回调
         let request = store.put(&value).unwrap();
         let on_add_error = Closure::once(move |event: &Event| {
             web_sys::console::log_1(&String::from("put conv失败").into());
@@ -50,7 +46,42 @@ impl Conversations for ConvRepo {
         Ok(())
     }
 
-    async fn get_convs2(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue> {
+    async fn self_update_conv(&self, mut conv: Conversation) -> Result<Conversation, JsValue> {
+        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
+        let request = store
+            .get(&JsValue::from(conv.friend_id.as_str()))
+            .expect("friend select get error");
+        let store = store.clone();
+
+        let (tx, rx) = oneshot::channel::<Conversation>();
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            if !result.is_undefined() && !result.is_null() {
+                let conv1: Conversation = serde_wasm_bindgen::from_value(result).unwrap();
+                conv.unread_count = conv1.unread_count;
+            }
+            let value = serde_wasm_bindgen::to_value(&conv).unwrap();
+            store.put(&value).unwrap();
+            tx.send(conv).unwrap();
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        onsuccess.forget();
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("put conv失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        on_add_error.forget();
+        Ok(rx.await.unwrap())
+    }
+
+    async fn get_convs(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Conversation>>();
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         let index = store.index(CONVERSATION_LAST_MSG_TIME_INDEX).unwrap();
@@ -106,11 +137,8 @@ impl Conversations for ConvRepo {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Conversation>();
         let store = self.store(CONVERSATION_TABLE_NAME).await.unwrap();
-        let index = store
-            .index(CONVERSATION_FRIEND_ID_INDEX)
-            .expect("friend select index error");
-        // let key = IdbKeyRange::only(&JsValue::from(friend_id.as_str())).unwrap();
-        let request = index
+
+        let request = store
             // .open_cursor_with_range(&key)
             .get(&JsValue::from(friend_id))
             .expect("friend select get error");
@@ -138,11 +166,8 @@ impl Conversations for ConvRepo {
     }
 
     async fn delete(&self, friend_id: &str) -> Result<(), JsValue> {
-        let conv = self.get_by_frined_id(friend_id).await;
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
-        if conv.id > 0 {
-            store.delete(&JsValue::from(conv.id))?;
-        }
+        store.delete(&JsValue::from(friend_id))?;
         Ok(())
     }
 }

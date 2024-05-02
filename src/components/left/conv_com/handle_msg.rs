@@ -19,6 +19,7 @@ use super::Chats;
 
 impl Chats {
     pub fn handle_sent_msg(&mut self, ctx: &Context<Self>, msg: Msg) -> bool {
+        log::debug!("handle_sent_msg:{:?}", msg);
         let conv_type = match msg {
             Msg::Group(_) => RightContentType::Group,
             Msg::Single(_) | Msg::SingleCall(_) => RightContentType::Friend,
@@ -110,40 +111,9 @@ impl Chats {
         mut conv: Conversation,
         is_self: bool,
     ) -> bool {
-        log::debug!("operate msg, conv:{:?}", conv);
         let friend_id = conv.friend_id.clone();
         let mut clean = false;
         let unread_count = conv.unread_count;
-        /* // judge the conversation is already the first one
-        let is_first = self
-            .list
-            .first()
-            .map_or(false, |first| *first.0 == friend_id);
-        if is_first {
-            let mut old = self.list.get_mut(&friend_id).unwrap();
-            if !old.mute && !is_self && self.conv_state.conv.item_id != friend_id {
-                self.unread_state.add_msg_count.emit(unread_count);
-            }
-            // 这里是因为要直接更新面板上的数据，所以需要处理未读数量
-            if friend_id != self.conv_state.conv.item_id {
-                old.unread_count += unread_count;
-            } else {
-                old.unread_count = 0;
-                clean = true;
-            }
-            conv.name = old.name.clone();
-            conv.avatar = old.avatar.clone();
-            conv.id = old.id;
-            conv.unread_count = old.unread_count;
-            conv.mute = old.mute;
-            // self.list.shift_insert(0, friend_id, conv.clone());
-            spawn_local(async move {
-                db::convs().await.put_conv(&conv, clean).await.unwrap();
-            });
-            return true;
-        } */
-
-        // not the first one
         let dest = self.list.shift_remove(&friend_id);
         if dest.is_some() {
             let mut old = dest.unwrap();
@@ -161,7 +131,7 @@ impl Chats {
             }
             conv.name = old.name;
             conv.avatar = old.avatar;
-            conv.id = old.id;
+            // conv.id = old.id;
             conv.unread_count = old.unread_count;
             conv.mute = old.mute;
             self.list.shift_insert(0, friend_id, conv.clone());
@@ -187,14 +157,19 @@ impl Chats {
                 } else {
                     conv.name = friend.name;
                 }
-                db::convs().await.put_conv(&conv).await.unwrap();
+                if is_self {
+                    // we don't need to set the unread count if it is self message
+                    conv = db::convs().await.self_update_conv(conv).await.unwrap();
+                } else {
+                    db::convs().await.put_conv(&conv).await.unwrap();
+                    conv.unread_count = unread_count;
+                }
 
                 // add global unread
                 if !is_self && current_id != friend_id {
                     Dispatch::<UnreadState>::global()
                         .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(unread_count));
                 }
-                conv.unread_count = unread_count;
                 log::debug!("create conversation: {:?}", &conv);
                 ChatsMsg::InsertConv(conv)
             });

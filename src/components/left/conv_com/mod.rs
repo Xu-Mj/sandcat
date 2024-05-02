@@ -90,7 +90,7 @@ impl Chats {
         // query conversation list
         let user_id = id.clone();
         ctx.link().send_future(async move {
-            let convs = db::convs().await.get_convs2().await.unwrap_or_default();
+            let convs = db::convs().await.get_convs().await.unwrap_or_default();
             // pull offline messages
             // get the seq
             // todo handle the error
@@ -332,7 +332,7 @@ impl Chats {
                             AttrValue::default()
                         };
                         Conversation {
-                            id: 0,
+                            // id: 0,
                             name: friend.name,
                             avatar: friend.avatar,
                             last_msg: content,
@@ -363,7 +363,7 @@ impl Chats {
                             AttrValue::default()
                         };
                         Conversation {
-                            id: 0,
+                            // id: 0,
                             name: group.name,
                             avatar: group.avatar,
                             last_msg: content,

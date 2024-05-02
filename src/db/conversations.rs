@@ -17,7 +17,9 @@ pub trait Conversations {
 
     async fn put_conv(&self, conv: &Conversation) -> Result<(), JsValue>;
 
-    async fn get_convs2(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue>;
+    async fn self_update_conv(&self, conv: Conversation) -> Result<Conversation, JsValue>;
+
+    async fn get_convs(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue>;
 
     async fn get_by_frined_id(&self, friend_id: &str) -> Conversation;
 
