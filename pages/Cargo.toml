@@ -1,0 +1,36 @@
+[package]
+name = "pages"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+base64 = "0.22.0"
+fluent = "0.16.0"
+gloo = "0.11.0"
+log = "0.4.6"
+regex = "1"
+reqwasm = "0.5"
+serde = "1"
+serde_json = "1"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-logger = "0.2.0"
+yewdux = {version = "0.10.0", features = ["doctests"]}
+yew = { version = "0.21", features = ["csr"] }
+yew-router = "0.18"
+# password strong level
+zxcvbn = "2"
+
+abi = { path = "../abi" }
+api = { path = "../api" }
+db = { path = "../db" }
+components = { path = "../components" }
+i18n = { path = "../i18n" }
+icons = { path = "../icons" }
+utils ={ path = "../utils" }
+
+[dependencies.web-sys]
+version = "0.3"
+# We need to enable all the web-sys features we want to use!
+features = ["HtmlInputElement"]

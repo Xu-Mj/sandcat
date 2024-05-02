@@ -1,125 +1,140 @@
-[package]
-name = "im"
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-yew = { version = "0.21", features = ["csr"] }
-implicit-clone = { version = "0.4.8", features = ["serde"] }
-gloo = "0.11.0"
-futures-channel = "0.3.29"
-js-sys = { version = "0.3" }
-wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
-serde-wasm-bindgen = "0.6"
-serde = "1"
-serde_json = "1"
-thiserror = "1"
-nanoid = "0.4.0"
-yew-router = "0.18"
-reqwasm = "0.5"
-wasm-bindgen-futures = "0.4.39"
-futures = "0.3.29"
-wasm-logger = "0.2.0"
-log = "0.4.6"
-gloo-net = "0.5.0"
-regex = "1"
-# password strong level
-zxcvbn = "2"
-# conversation list and friend list
-indexmap = { version = "2.2.3" }
-anyhow = "1.0.81"
-async-trait = "0.1.77"
-prost = "0.12.3"
-prost-types = "0.12.3"
-bincode = "1.3.3"
-base64 = "0.22.0"
-fluent = "0.16.0"
-unic-langid = {version = "0.9.4", features = ["unic-langid-macros"]}
-yewdux = {version = "0.10.0", features = ["doctests"]}
-[dependencies.chrono]
-version = "0.4"
-features = ["wasmbind", "js-sys", "serde"]
-
-[dependencies.web-sys]
-version = "0.3"
-# We need to enable all the web-sys features we want to use!
-features = [
-    "Document",
-    "DataTransfer",
-    "Element",
-    "DomRect",
-    "Navigator",
-    "HtmlAnchorElement",
-    "HtmlButtonElement",
-    "HtmlDialogElement",
-    "Clipboard",
-    "HtmlDivElement",
-    "HtmlFormElement",
-    "HtmlDocument",
-    "HtmlInputElement",
-    "HtmlLabelElement",
-    "HtmlTextAreaElement",
-    "HtmlParagraphElement",
-    "HtmlImageElement",
-    "HtmlVideoElement",
-    "HtmlAudioElement",
-    "MediaDevices",
-    "MediaStreamConstraints",
-    "DomRectList",
-    "DomRect",
-    "MediaStream",
-    "Event",
-    "EventTarget",
-    "MouseEvent",
-    "InputEvent",
-    "SubmitEvent",
-    "KeyEvent",
-    "KeyboardEvent",
-    "KeyboardEventInit",
-    "ClipboardEvent",
-    "DataTransferItem",
-    "DataTransferItemList",
-    "Text",
-    "Range",
-    "TouchEvent",
-    "TouchList",
-    "Touch",
-    "DomTokenList",
-    "CssStyleDeclaration",
-    "IdbFactory",
-    "IdbOpenDbRequest",
-    "IdbRequest",
-    "IdbTransaction",
-    "IdbDatabase",
-    "IdbObjectStore",
-    "IdbIndex",
-    "IdbTransactionMode",
-    "IdbObjectStoreParameters",
-    "IdbCursorWithValue",
-    "IdbCursorDirection",
-    "IdbKeyRange",
-    "IdbIndexParameters",
-    "Selection",
-    "RtcConfiguration",
-    "RtcPeerConnection",
-    "RtcPeerConnectionIceEvent",
-    "RtcSdpType",
-    "RtcIceServer",
-    "RtcSessionDescription",
-    "RtcSessionDescriptionInit",
-    "RtcTrackEvent",
-    "RtcRtpTransceiver",
-    "MediaStreamTrack",
-    "RtcSignalingState",
-    "RtcIceCandidate",
-    "RtcIceCandidateInit",
-    "RtcIceCandidateStats",
-    "RtcIceGatheringState",
-    "RtcIceConnectionState",
-    "RtcRtpSender",
-    "Notification",
-    "NotificationOptions",
-    "NotificationPermission",
+[workspace]
+members = [
+    "abi",
+    "api",
+    "components",
+    "db",
+    "i18n",
+    "icons",
+    "pages",
+    "utils",
+    "web_rtc",
+    "ws",
 ]
+resolver = "2"
+default-members = ["pages"]
+# [package]
+# name = "im"
+# version = "0.1.0"
+# edition = "2021"
+
+# # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+# [dependencies]
+# yew = { version = "0.21", features = ["csr"] }
+# implicit-clone = { version = "0.4.8", features = ["serde"] }
+# gloo = "0.11.0"
+# futures-channel = "0.3.29"
+# js-sys = { version = "0.3" }
+# wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+# serde-wasm-bindgen = "0.6"
+# serde = "1"
+# serde_json = "1"
+# thiserror = "1"
+# nanoid = "0.4.0"
+# yew-router = "0.18"
+# reqwasm = "0.5"
+# wasm-bindgen-futures = "0.4.39"
+# futures = "0.3.29"
+# wasm-logger = "0.2.0"
+# log = "0.4.6"
+# gloo-net = "0.5.0"
+# regex = "1"
+# # password strong level
+# zxcvbn = "2"
+# # conversation list and friend list
+# indexmap = { version = "2.2.3" }
+# anyhow = "1.0.81"
+# async-trait = "0.1.77"
+# prost = "0.12.3"
+# prost-types = "0.12.3"
+# bincode = "1.3.3"
+# base64 = "0.22.0"
+# fluent = "0.16.0"
+# unic-langid = {version = "0.9.4", features = ["unic-langid-macros"]}
+# yewdux = {version = "0.10.0", features = ["doctests"]}
+# [dependencies.chrono]
+# version = "0.4"
+# features = ["wasmbind", "js-sys", "serde"]
+
+# [dependencies.web-sys]
+# version = "0.3"
+# # We need to enable all the web-sys features we want to use!
+# features = [
+#     "Document",
+#     "DataTransfer",
+#     "Element",
+#     "DomRect",
+#     "Navigator",
+#     "HtmlAnchorElement",
+#     "HtmlButtonElement",
+#     "HtmlDialogElement",
+#     "Clipboard",
+#     "HtmlDivElement",
+#     "HtmlFormElement",
+#     "HtmlDocument",
+#     "HtmlInputElement",
+#     "HtmlLabelElement",
+#     "HtmlTextAreaElement",
+#     "HtmlParagraphElement",
+#     "HtmlImageElement",
+#     "HtmlVideoElement",
+#     "HtmlAudioElement",
+#     "MediaDevices",
+#     "MediaStreamConstraints",
+#     "DomRectList",
+#     "DomRect",
+#     "MediaStream",
+#     "Event",
+#     "EventTarget",
+#     "MouseEvent",
+#     "InputEvent",
+#     "SubmitEvent",
+#     "KeyEvent",
+#     "KeyboardEvent",
+#     "KeyboardEventInit",
+#     "ClipboardEvent",
+#     "DataTransferItem",
+#     "DataTransferItemList",
+#     "Text",
+#     "Range",
+#     "TouchEvent",
+#     "TouchList",
+#     "Touch",
+#     "DomTokenList",
+#     "CssStyleDeclaration",
+#     "IdbFactory",
+#     "IdbOpenDbRequest",
+#     "IdbRequest",
+#     "IdbTransaction",
+#     "IdbDatabase",
+#     "IdbObjectStore",
+#     "IdbIndex",
+#     "IdbTransactionMode",
+#     "IdbObjectStoreParameters",
+#     "IdbCursorWithValue",
+#     "IdbCursorDirection",
+#     "IdbKeyRange",
+#     "IdbIndexParameters",
+#     "Selection",
+#     "RtcConfiguration",
+#     "RtcPeerConnection",
+#     "RtcPeerConnectionIceEvent",
+#     "RtcSdpType",
+#     "RtcIceServer",
+#     "RtcSessionDescription",
+#     "RtcSessionDescriptionInit",
+#     "RtcTrackEvent",
+#     "RtcRtpTransceiver",
+#     "MediaStreamTrack",
+#     "RtcSignalingState",
+#     "RtcIceCandidate",
+#     "RtcIceCandidateInit",
+#     "RtcIceCandidateStats",
+#     "RtcIceGatheringState",
+#     "RtcIceConnectionState",
+#     "RtcRtpSender",
+#     "Notification",
+#     "NotificationOptions",
+#     "NotificationPermission",
+# ]
