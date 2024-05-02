@@ -33,7 +33,6 @@
     --vt-c-text-dark-1: var(--vt-c-white);
     --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
 
-    --hover-color: #e4e9ec;
 }
 
 /* semantic color variables for this project */
@@ -55,7 +54,7 @@
     --sender-btn-color-text: #2CFF38;
 
     --section-gap: 160px;
-
+    --hover-color: #e4e9ec;
 
 }
 
@@ -76,6 +75,7 @@
     --color-heading: var(--vt-c-text-dark-1);
     --color-text: var(--vt-c-text-dark-1);
     --sender-btn-color-text: #fff;
+    --hover-color: #3d3d3d;
 }
 
 *,
