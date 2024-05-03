@@ -10,6 +10,7 @@ members = [
     "utils",
     "web_rtc",
     "ws",
+    "src-tauri"
 ]
 resolver = "2"
 default-members = ["pages"]
