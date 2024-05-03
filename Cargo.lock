@@ -3,6 +3,23 @@
 version = 3
 
 [[package]]
+name = "abi"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "chrono",
+ "i18n",
+ "log",
+ "prost",
+ "prost-types",
+ "serde",
+ "utils",
+ "yew",
+ "yew-router",
+ "yewdux",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -58,6 +75,21 @@ name = "anymap2"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d301b3b94cb4b2f23d7917810addbbaff90738e0ca2be692bd027e70d7e0330c"
+
+[[package]]
+name = "api"
+version = "0.1.0"
+dependencies = [
+ "abi",
+ "async-trait",
+ "gloo 0.11.0",
+ "gloo-net 0.5.0",
+ "log",
+ "serde",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
 
 [[package]]
 name = "async-trait"
@@ -167,6 +199,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "components"
+version = "0.1.0"
+dependencies = [
+ "abi",
+ "api",
+ "chrono",
+ "db",
+ "fluent",
+ "futures-channel",
+ "gloo 0.11.0",
+ "gloo-net 0.5.0",
+ "i18n",
+ "icons",
+ "indexmap",
+ "log",
+ "nanoid",
+ "utils",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "web_rtc",
+ "ws",
+ "yew",
+ "yew-router",
+ "yewdux",
+]
+
+[[package]]
 name = "console_error_panic_hook"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -250,6 +310,23 @@ dependencies = [
  "darling_core 0.20.8",
  "quote",
  "syn 2.0.52",
+]
+
+[[package]]
+name = "db"
+version = "0.1.0"
+dependencies = [
+ "abi",
+ "async-trait",
+ "futures-channel",
+ "indexmap",
+ "js-sys",
+ "log",
+ "serde",
+ "serde-wasm-bindgen 0.6.5",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
 ]
 
 [[package]]
@@ -392,7 +469,6 @@ checksum = "645c6916888f6cb6350d2550b80fb63e734897a8498abe35cfb732b6487804b0"
 dependencies = [
  "futures-channel",
  "futures-core",
- "futures-executor",
  "futures-io",
  "futures-sink",
  "futures-task",
@@ -414,17 +490,6 @@ name = "futures-core"
 version = "0.3.30"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfc6580bb841c5a68e9ef15c77ccc837b40a7504914d52e47b8b0e9bbda25a1d"
-
-[[package]]
-name = "futures-executor"
-version = "0.3.30"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a576fc72ae164fca6b9db127eaa9a9dda0d61316034f33a0a0d4eda41f02b01d"
-dependencies = [
- "futures-core",
- "futures-task",
- "futures-util",
-]
 
 [[package]]
 name = "futures-io"
@@ -945,6 +1010,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "i18n"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "iana-time-zone"
 version = "0.1.60"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -968,48 +1040,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "icons"
+version = "0.1.0"
+dependencies = [
+ "yew",
+]
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
-
-[[package]]
-name = "im"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "async-trait",
- "base64",
- "bincode",
- "chrono",
- "fluent",
- "futures",
- "futures-channel",
- "gloo 0.11.0",
- "gloo-net 0.5.0",
- "implicit-clone",
- "indexmap",
- "js-sys",
- "log",
- "nanoid",
- "prost",
- "prost-types",
- "regex",
- "reqwasm",
- "serde",
- "serde-wasm-bindgen 0.6.5",
- "serde_json",
- "thiserror",
- "unic-langid",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "wasm-logger",
- "web-sys",
- "yew",
- "yew-router",
- "yewdux",
- "zxcvbn",
-]
 
 [[package]]
 name = "implicit-clone"
@@ -1167,6 +1208,34 @@ name = "once_cell"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3fdb12b2476b595f9358c5161aa467c2438859caa136dec86c26fdd2efe17b92"
+
+[[package]]
+name = "pages"
+version = "0.1.0"
+dependencies = [
+ "abi",
+ "api",
+ "base64",
+ "components",
+ "db",
+ "fluent",
+ "gloo 0.11.0",
+ "i18n",
+ "icons",
+ "log",
+ "regex",
+ "reqwasm",
+ "serde",
+ "serde_json",
+ "utils",
+ "wasm-bindgen",
+ "wasm-logger",
+ "web-sys",
+ "yew",
+ "yew-router",
+ "yewdux",
+ "zxcvbn",
+]
 
 [[package]]
 name = "percent-encoding"
@@ -1755,6 +1824,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
+name = "utils"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "fluent",
+ "gloo 0.11.0",
+ "log",
+ "unic-langid",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "version_check"
 version = "0.9.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1856,6 +1939,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "web_rtc"
+version = "0.1.0"
+dependencies = [
+ "abi",
+ "chrono",
+ "js-sys",
+ "log",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "ws",
+ "yew",
+]
+
+[[package]]
 name = "windows-core"
 version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1928,6 +2026,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f593a95398737aeed53e489c785df13f3618e41dbcd6718c6addbf1395aa6876"
 dependencies = [
  "memchr",
+]
+
+[[package]]
+name = "ws"
+version = "0.1.0"
+dependencies = [
+ "abi",
+ "bincode",
+ "implicit-clone",
+ "js-sys",
+ "log",
+ "wasm-bindgen",
+ "web-sys",
+ "yew",
 ]
 
 [[package]]

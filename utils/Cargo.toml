@@ -1,0 +1,28 @@
+[package]
+name = "utils"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+gloo = "0.11.0"
+fluent = "0.16.0"
+unic-langid = { version = "0.9.4", features = ["unic-langid-macros"] }
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4.39"
+log = "0.4.6"
+[dependencies.chrono]
+version = "0.4"
+features = ["wasmbind", "js-sys", "serde"]
+[dependencies.web-sys]
+version = "0.3"
+features = [
+    "HtmlElement",
+    "MediaStream",
+    "MediaStreamConstraints",
+    "MediaStreamTrack",
+    "Navigator",
+    "MediaDevices",
+    "CssStyleDeclaration",
+]

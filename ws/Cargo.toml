@@ -1,0 +1,21 @@
+[package]
+name = "ws"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+bincode = "1.3.3"
+implicit-clone = { version = "0.4.8", features = ["serde"] }
+js-sys = { version = "0.3" }
+log = "0.4.6"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+yew = { version = "0.21", features = ["csr"] }
+
+abi = { path = "../abi" }
+
+[dependencies.web-sys]
+version = "0.3"
+# We need to enable all the web-sys features we want to use!
+features = ["CloseEvent", "ErrorEvent", "MessageEvent", "WebSocket"]
