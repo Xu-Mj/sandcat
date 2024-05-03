@@ -98,7 +98,7 @@ impl Component for SelfInfo {
                 spawn_local(async move {
                     match api::users().update(user).await {
                         Ok(user) => {
-                            db::users().await.add(&user).await;
+                            db::db_ins().users.add(&user).await;
                             submit.emit(Box::new(user));
                         }
                         Err(e) => {

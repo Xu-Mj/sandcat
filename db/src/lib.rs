@@ -1,4 +1,6 @@
+use impls::indexed_db;
 pub use impls::indexed_db::*;
+use once_cell::sync::OnceCell;
 
 use self::{
     conv::ConvRepo,
@@ -30,6 +32,49 @@ pub mod messages;
 pub mod seq;
 pub mod users;
 
+static DB_INSTANCE: OnceCell<Db> = OnceCell::new();
+
+pub fn db_ins() -> &'static Db {
+    DB_INSTANCE.get().unwrap()
+}
+
+pub async fn init_db() {
+    let db = Db::new().await;
+    DB_INSTANCE.set(db).unwrap();
+}
+
+unsafe impl Sync for Db {}
+unsafe impl Send for Db {}
+#[derive(Debug)]
+pub struct Db {
+    pub convs: Box<dyn Conversations>,
+    pub groups: Box<dyn GroupInterface>,
+    pub friends: Box<dyn Friends>,
+    pub friendships: Box<dyn Friendships>,
+    pub group_members: Box<dyn GroupMembers>,
+    pub messages: Box<dyn Messages>,
+    pub group_msgs: Box<dyn GroupMessages>,
+    pub users: Box<dyn Users>,
+    pub seq: Box<dyn SeqInterface>,
+}
+
+impl Db {
+    pub async fn new() -> Self {
+        let repo = indexed_db::repository::Repository::new().await;
+        Self {
+            convs: Box::new(ConvRepo::new(repo.clone())),
+            groups: Box::new(GroupRepo::new(repo.clone())),
+            friends: Box::new(FriendRepo::new(repo.clone())),
+            friendships: Box::new(FriendShipRepo::new(repo.clone())),
+            group_members: Box::new(GroupMembersRepo::new(repo.clone())),
+            messages: Box::new(MessageRepo::new(repo.clone())),
+            group_msgs: Box::new(GroupMsgRepo::new(repo.clone())),
+            users: Box::new(UserRepo::new(repo.clone())),
+            seq: Box::new(SeqRepo::new(repo)),
+        }
+    }
+}
+/*
 pub async fn convs() -> Box<dyn Conversations> {
     Box::new(ConvRepo::new().await)
 }
@@ -65,3 +110,4 @@ pub async fn users() -> Box<dyn Users> {
 pub async fn seq() -> Box<dyn SeqInterface> {
     Box::new(SeqRepo::new().await)
 }
+ */

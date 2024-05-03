@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use indexmap::IndexMap;
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
@@ -5,7 +7,7 @@ use yew::AttrValue;
 use abi::model::message::{Message, ServerResponse};
 
 #[async_trait::async_trait(?Send)]
-pub trait Messages {
+pub trait Messages: Debug {
     async fn get_last_msg(&self, friend_id: &str) -> Result<Message, JsValue>;
 
     async fn get_messages(

@@ -11,6 +11,7 @@ use crate::users::Users;
 
 const USER_STORE_NAME: &str = "users";
 // 用户仓库，增删改查
+#[derive(Debug, Clone)]
 pub struct UserRepo(Repository);
 
 impl Deref for UserRepo {
@@ -23,8 +24,8 @@ impl Deref for UserRepo {
 
 // 增删查改
 impl UserRepo {
-    pub async fn new() -> Self {
-        UserRepo(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        UserRepo(repo)
     }
 }
 #[async_trait::async_trait(?Send)]

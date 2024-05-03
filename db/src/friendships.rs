@@ -1,9 +1,11 @@
+use std::fmt::Debug;
+
 use wasm_bindgen::JsValue;
 
 use abi::model::friend::FriendShipWithUser;
 
 #[async_trait::async_trait(?Send)]
-pub trait Friendships {
+pub trait Friendships: Debug {
     async fn agree(&self, friendship_id: &str);
     async fn agree_by_friend_id(&self, friend_id: &str);
     async fn put_friendship(&self, friendship: &FriendShipWithUser);

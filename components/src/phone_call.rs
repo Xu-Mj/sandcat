@@ -170,7 +170,7 @@ impl Component for PhoneCall {
                 log::debug!("invite_info: {:?}", self.invite_info);
                 ctx.link().send_future(async move {
                     // 查询好友数据
-                    let friend = db::friends().await.get(friend_id.as_str()).await;
+                    let friend = db::db_ins().friends.get(friend_id.as_str()).await;
                     log::debug!("收到邀请: {:?}", friend);
                     PhoneCallMsg::ShowCallNotify(Box::new(friend))
                 });
@@ -372,7 +372,7 @@ impl Component for PhoneCall {
                 // send invite message; no necessary to notify other components
                 let ws = ctx.props().ws.clone();
                 ctx.link().send_future(async move {
-                    let friend = db::friends().await.get(friend_id.as_str()).await;
+                    let friend = db::db_ins().friends.get(friend_id.as_str()).await;
 
                     match call_type {
                         InviteType::Video => match utils::get_video_stream().await {
@@ -465,8 +465,8 @@ impl Component for PhoneCall {
                 };
                 let invite_type = info.invite_type.clone();
                 ctx.link().send_future(async move {
-                    let _ = db::messages()
-                        .await
+                    let _ = db::db_ins()
+                        .messages
                         .add_message(&mut Message {
                             local_id: local_id.clone(),
                             send_id: send_id.clone(),
@@ -542,8 +542,8 @@ impl Component for PhoneCall {
 
                 // save message to db
                 ctx.link().send_future(async move {
-                    db::messages()
-                        .await
+                    db::db_ins()
+                        .messages
                         .add_message(&mut Message {
                             local_id: local_id.clone(),
                             send_id: send_id.clone(),
@@ -674,8 +674,8 @@ impl Component for PhoneCall {
                 self.invite_info = None;
                 self.invited = false;
                 ctx.link().send_future(async move {
-                    let _ = db::messages()
-                        .await
+                    let _ = db::db_ins()
+                        .messages
                         .add_message(&mut Message {
                             local_id: local_id.clone(),
                             server_id: AttrValue::default(),
@@ -744,8 +744,8 @@ impl Component for PhoneCall {
                     };
                     let invite_type = info.invite_type.clone();
                     ctx.link().send_future(async move {
-                        let _ = db::messages()
-                            .await
+                        let _ = db::db_ins()
+                            .messages
                             .add_message(&mut Message {
                                 local_id: local_id.clone(),
                                 send_id: send_id.clone(),
@@ -1160,8 +1160,8 @@ impl PhoneCall {
 
     fn save_call_msg(&self, mut msg: Message) {
         spawn_local(async move {
-            db::messages()
-                .await
+            db::db_ins()
+                .messages
                 .add_message(&mut msg)
                 .await
                 .map_err(|err| log::error!("消息入库失败:{:?}", err))

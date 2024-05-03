@@ -52,7 +52,7 @@ impl Component for FriendShipList {
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async {
-            FriendShipListMsg::QueryFriendships(db::friendships().await.get_list().await)
+            FriendShipListMsg::QueryFriendships(db::db_ins().friendships.get_list().await)
         });
         let fs_dis = Dispatch::global().subscribe_silent(
             ctx.link()
@@ -153,8 +153,8 @@ impl Component for FriendShipList {
                         let send_id = ctx.props().user_id.clone();
                         // update the is_operated field
                         spawn_local(async move {
-                            db::friendships().await.agree(friendship_id.as_str()).await;
-                            db::friends().await.put_friend(&friend).await;
+                            db::db_ins().friendships.agree(friendship_id.as_str()).await;
+                            db::db_ins().friends.put_friend(&friend).await;
                             let mut msg = Message {
                                 local_id: nanoid::nanoid!().into(),
                                 send_id,
@@ -170,8 +170,8 @@ impl Component for FriendShipList {
                                 send_status: SendStatus::Sending,
                                 ..Default::default()
                             };
-                            let _ = db::messages()
-                                .await
+                            let _ = db::db_ins()
+                                .messages
                                 .add_message(&mut msg)
                                 .await
                                 .map_err(|err| log::error!("添加好友打招呼消息入库失败:{:?}", err));

@@ -89,10 +89,10 @@ impl Sender {
         spawn_local(async move {
             match conv_type {
                 RightContentType::Friend => {
-                    db::messages().await.add_message(&mut msg).await.unwrap();
+                    db::db_ins().messages.add_message(&mut msg).await.unwrap();
                 }
                 RightContentType::Group => {
-                    db::group_msgs().await.put(&msg).await.unwrap();
+                    db::db_ins().group_msgs.put(&msg).await.unwrap();
                 }
                 _ => {}
             }

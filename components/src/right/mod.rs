@@ -77,14 +77,14 @@ impl Right {
                     RightContentType::Default => {}
                     RightContentType::Friend => {
                         ctx.link().send_future(async move {
-                            let friend = db::friends().await.get(id.as_str()).await;
+                            let friend = db::db_ins().friends.get(id.as_str()).await;
                             RightMsg::ContentChange(Some(Box::new(friend)))
                         });
                     }
                     RightContentType::Group => {
                         let ctx = ctx.link().clone();
                         spawn_local(async move {
-                            if let Ok(Some(group)) = db::groups().await.get(id.as_str()).await {
+                            if let Ok(Some(group)) = db::db_ins().groups.get(id.as_str()).await {
                                 ctx.send_message(RightMsg::ContentChange(Some(Box::new(group))));
                             }
                         });
@@ -203,7 +203,10 @@ impl Component for Right {
         let mut setting = html!();
         let mut friend_list = html!();
         if let Some(info) = &self.cur_conv_info {
-            let onclick = ctx.link().callback(|_| RightMsg::ShowSetting);
+            let onclick = ctx.link().callback(|event: MouseEvent| {
+                event.stop_propagation();
+                RightMsg::ShowSetting
+            });
             let close = ctx.link().callback(|_| RightMsg::ShowSelectFriendList);
             let submit_back = ctx.link().callback(RightMsg::CreateGroup);
 

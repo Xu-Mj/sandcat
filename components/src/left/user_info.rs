@@ -99,7 +99,7 @@ impl Component for UserInfoCom {
                             friendship.is_self = true;
                             friendship.read = ReadStatus::True;
                             // 数据入库
-                            db::friendships().await.put_friendship(&friendship).await;
+                            db::db_ins().friendships.put_friendship(&friendship).await;
                             UserInfoComMsg::ApplyFriendResult(FriendShipRequestState::Success)
                         }
                     }

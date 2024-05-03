@@ -23,7 +23,7 @@ use super::DB_NAME;
 
 // const DATE_FORMAT_STR: &str = "%Y-%m-%d %H:%M:%S";
 const DB_VERSION: u32 = 1;
-
+#[derive(Debug, Clone)]
 pub struct Repository {
     db: IdbDatabase,
 }

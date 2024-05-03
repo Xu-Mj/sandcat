@@ -66,7 +66,7 @@ impl Component for AddFriend {
                     )));
                 ctx.link().send_future(async move {
                     // select local friend first
-                    let friend = db::friends().await.get(&pattern).await;
+                    let friend = db::db_ins().friends.get(&pattern).await;
                     if !friend.friend_id.is_empty() {
                         return AddFriendMsg::SearchFriends(Box::new(SearchState::Success(Some(
                             UserWithMatchType::from(friend),
@@ -80,7 +80,7 @@ impl Component for AddFriend {
                             // check if user is already in friends
                             let user = match user {
                                 Some(ref mut u) => {
-                                    let friend = db::friends().await.get(&u.id).await;
+                                    let friend = db::db_ins().friends.get(&u.id).await;
                                     if !friend.friend_id.is_empty() {
                                         u.is_friend = true;
                                     }

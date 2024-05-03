@@ -12,6 +12,7 @@ use crate::group_members::GroupMembers;
 
 use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
 
+#[derive(Debug, Clone)]
 pub struct GroupMembersRepo(Repository);
 
 impl Deref for GroupMembersRepo {
@@ -22,10 +23,9 @@ impl Deref for GroupMembersRepo {
     }
 }
 
-#[allow(dead_code)]
 impl GroupMembersRepo {
-    pub async fn new() -> Self {
-        Self(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        Self(repo)
     }
 }
 

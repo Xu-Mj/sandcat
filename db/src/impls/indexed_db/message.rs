@@ -15,6 +15,7 @@ use super::{
     MESSAGE_TABLE_NAME,
 };
 
+#[derive(Debug, Clone)]
 pub struct MessageRepo(Repository);
 
 impl Deref for MessageRepo {
@@ -26,8 +27,8 @@ impl Deref for MessageRepo {
 }
 
 impl MessageRepo {
-    pub async fn new() -> Self {
-        MessageRepo(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        MessageRepo(repo)
     }
 }
 

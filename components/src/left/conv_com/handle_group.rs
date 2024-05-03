@@ -19,15 +19,15 @@ impl Chats {
             let mut conv = Conversation::from(info.clone());
             conv.unread_count = 0;
 
-            db::convs().await.put_conv(&conv).await.unwrap();
+            db::db_ins().convs.put_conv(&conv).await.unwrap();
 
             // store group information
-            if let Err(err) = db::groups().await.put(&info).await {
+            if let Err(err) = db::db_ins().groups.put(&info).await {
                 log::error!("store group error : {:?}", err);
             };
 
             // store group members
-            if let Err(e) = db::group_members().await.put_list(msg.members).await {
+            if let Err(e) = db::db_ins().group_members.put_list(msg.members).await {
                 log::error!("save group member error: {:?}", e);
             }
 
@@ -59,7 +59,7 @@ impl Chats {
             avatar.push(self_avatar.to_string());
             let mut group_name = String::new();
             for (i, node) in nodes.iter().enumerate() {
-                let friend = db::friends().await.get(node).await;
+                let friend = db::db_ins().friends.get(node).await;
                 if !friend.fs_id.is_empty() {
                     let mut name = friend.name.clone();
                     if friend.remark.is_some() {
@@ -83,7 +83,7 @@ impl Chats {
             };
             // push self
             values.push(GroupMember::from(
-                db::users().await.get(user_id.as_str()).await.unwrap(),
+                db::db_ins().users.get(user_id.as_str()).await.unwrap(),
             ));
             // send create request
             match api::groups()
@@ -94,7 +94,7 @@ impl Chats {
                     log::debug!("group created: {:?}", g);
 
                     // sotre the group info to database
-                    if let Err(err) = db::groups().await.put(&g).await {
+                    if let Err(err) = db::db_ins().groups.put(&g).await {
                         log::error!("create group error: {:?}", err);
                         return ChatsMsg::None;
                     }
@@ -102,7 +102,7 @@ impl Chats {
                     // store group members to db
                     for v in values.iter_mut() {
                         v.group_id = g.id.clone();
-                        if let Err(e) = db::group_members().await.put(v).await {
+                        if let Err(e) = db::db_ins().group_members.put(v).await {
                             log::error!("save group member error: {:?}", e);
                             continue;
                         }
@@ -114,7 +114,7 @@ impl Chats {
                     // store conversation info to db
                     let mut conv = Conversation::from(g);
                     conv.unread_count = 0;
-                    db::convs().await.put_conv(&conv).await.unwrap();
+                    db::db_ins().convs.put_conv(&conv).await.unwrap();
 
                     // insert conversation to ui list
                     ChatsMsg::InsertConv(conv)
@@ -134,9 +134,9 @@ impl Chats {
             let mut conv = conv.clone();
             ctx.link().send_future(async move {
                 // query group information and owner info
-                if let Ok(Some(group)) = db::groups().await.get(&group_id).await {
-                    if let Ok(Some(mem)) = db::group_members()
-                        .await
+                if let Ok(Some(group)) = db::db_ins().groups.get(&group_id).await {
+                    if let Ok(Some(mem)) = db::db_ins()
+                        .group_members
                         .get_by_group_id_and_friend_id(&group_id, group.owner.as_str())
                         .await
                     {
@@ -144,7 +144,7 @@ impl Chats {
                         conv.last_msg = message.clone().into();
                         conv.unread_count = 0;
 
-                        if let Err(e) = db::convs().await.put_conv(&conv).await {
+                        if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                             log::error!("dismiss group error: {:?}", e);
                         } else {
                             return ChatsMsg::DismissGroup(key, message);

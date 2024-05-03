@@ -1,4 +1,6 @@
 use fluent::{FluentBundle, FluentResource};
+use gloo::utils::document;
+use wasm_bindgen::{closure::Closure, JsCast};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
@@ -8,7 +10,6 @@ use abi::{
     model::{conversation::Conversation, ItemInfo, RightContentType},
     state::MuteState,
 };
-use db::{self, conv::ConvRepo, conversations::Conversations};
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::PlusRectIcon;
 use utils::tr;
@@ -20,6 +21,7 @@ pub struct SetWindow {
     node: NodeRef,
     i18n: FluentBundle<FluentResource>,
     mute_dispatch: Dispatch<MuteState>,
+    click_closure: Option<Closure<dyn FnMut(web_sys::MouseEvent)>>,
 }
 
 pub enum SetWindowMsg {
@@ -56,23 +58,21 @@ impl Component for SetWindow {
         let conv_type = ctx.props().conv_type.clone();
         ctx.link().send_future(async move {
             // init interfaces
-            let group_db = db::groups().await;
-            let friend_db = db::friends().await;
             let mut list: Vec<Box<dyn ItemInfo>> = vec![];
             let mut info: Option<Box<dyn ItemInfo>> = None;
             match conv_type {
                 RightContentType::Friend => {
-                    let friend = friend_db.get(id.as_str()).await;
+                    let friend = db::db_ins().friends.get(id.as_str()).await;
                     info = Some(Box::new(friend.clone()));
                     list.push(Box::new(friend));
                 }
                 RightContentType::Group => {
                     // query group information
-                    let group = group_db.get(id.as_str()).await.unwrap().unwrap();
+                    let group = db::db_ins().groups.get(id.as_str()).await.unwrap().unwrap();
                     info = Some(Box::new(group.clone()));
                     // query members by group id
-                    if let Ok(members) = db::group_members()
-                        .await
+                    if let Ok(members) = db::db_ins()
+                        .group_members
                         .get_list_by_group_id(id.as_str())
                         .await
                     {
@@ -84,7 +84,7 @@ impl Component for SetWindow {
                 _ => {}
             }
             // qeury conversation is mute
-            let conv = ConvRepo::new().await.get_by_frined_id(id.as_str()).await;
+            let conv = db::db_ins().convs.get_by_frined_id(id.as_str()).await;
             SetWindowMsg::QueryInfo(info, list, conv)
         });
         let res = match ctx.props().lang {
@@ -101,14 +101,33 @@ impl Component for SetWindow {
             info: None,
             conv: Conversation::default(),
             node: NodeRef::default(),
+            click_closure: None,
         }
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        if let Some(node) = self.node.cast::<HtmlDivElement>() {
-            node.focus().unwrap();
+    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
+        if first_render {
+            if let Some(node) = self.node.cast::<HtmlDivElement>() {
+                node.focus().unwrap();
+                let onclose = _ctx.props().close.clone();
+                // register click event to document
+                let func = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                    if let Some(target) = event.target() {
+                        let target_node = target.dyn_into::<web_sys::Node>().unwrap();
+                        let node = document().get_element_by_id("setting-window").unwrap();
+                        if !node.contains(Some(&target_node)) {
+                            onclose.emit(());
+                            // 卸载这个onclick 事件
+                            document().set_onclick(None);
+                        }
+                    }
+                }) as Box<dyn FnMut(web_sys::MouseEvent)>);
+                document().set_onclick(Some(func.as_ref().unchecked_ref()));
+                self.click_closure = Some(func);
+            }
         }
     }
+
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             SetWindowMsg::QueryInfo(info, list, mute) => {
@@ -122,7 +141,7 @@ impl Component for SetWindow {
                 let conv = self.conv.clone();
                 // update conversation
                 spawn_local(async move {
-                    ConvRepo::new().await.mute(&conv).await.unwrap();
+                    db::db_ins().convs.mute(&conv).await.unwrap();
                 });
                 // todo send mute message to conversation component
                 if let Some(info) = self.info.as_ref() {
@@ -197,9 +216,9 @@ impl Component for SetWindow {
             </span>
             </div>
         };
-        let onblur = ctx.props().close.reform(|_| ());
+        // let onblur = ctx.props().close.reform(|_| ());
         html! {
-            <div ref={self.node.clone()} tabindex="0"  {onblur} class="set-window box-shadow">
+            <div ref={self.node.clone()} tabindex="1" id="setting-window" /* {onblur} */ class="set-window box-shadow">
                 <div class="people">
                     {avatars}
                     {add_friend}

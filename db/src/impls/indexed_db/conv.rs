@@ -10,7 +10,7 @@ use abi::model::conversation::Conversation;
 
 use super::{repository::Repository, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME};
 use crate::conversations::Conversations;
-
+#[derive(Debug, Clone)]
 pub struct ConvRepo(Repository);
 
 impl Deref for ConvRepo {
@@ -22,8 +22,8 @@ impl Deref for ConvRepo {
 }
 
 impl ConvRepo {
-    pub async fn new() -> Self {
-        ConvRepo(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        ConvRepo(repo)
     }
 }
 

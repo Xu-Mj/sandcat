@@ -100,11 +100,12 @@ impl Component for PostCard {
                             match api::friends().delete_friend(user_id, id.to_string()).await {
                                 Ok(_) => {
                                     // delete data from local storage
-                                    if let Err(err) = db::friends().await.delete_friend(&id).await {
+                                    if let Err(err) = db::db_ins().friends.delete_friend(&id).await
+                                    {
                                         log::error!("delete friend failed: {:?}", err);
                                     } else {
                                         // delete conversation
-                                        if let Err(e) = db::convs().await.delete(id.as_str()).await
+                                        if let Err(e) = db::db_ins().convs.delete(id.as_str()).await
                                         {
                                             log::error!("delete conversation failed: {:?}", e);
                                         }
@@ -133,13 +134,13 @@ impl Component for PostCard {
                             if !is_dismiss {
                                 log::debug!("group is dismissed already, only delete local data");
                                 // check the group is dismissed already
-                                let group = db::groups().await.get(&id).await.unwrap().unwrap();
+                                let group = db::db_ins().groups.get(&id).await.unwrap().unwrap();
                                 if group.deleted {
-                                    if let Err(e) = db::groups().await.delete(id.as_str()).await {
+                                    if let Err(e) = db::db_ins().groups.delete(id.as_str()).await {
                                         log::error!("delete group failed: {:?}", e);
                                     }
                                     // delete conversation
-                                    if let Err(e) = db::convs().await.delete(id.as_str()).await {
+                                    if let Err(e) = db::db_ins().convs.delete(id.as_str()).await {
                                         log::error!("delete conversation failed: {:?}", e);
                                     }
                                     // send state message to remove conversation from conversation lis
@@ -164,11 +165,11 @@ impl Component for PostCard {
                             {
                                 Ok(_) => {
                                     log::debug!("send delete group request success");
-                                    if let Err(e) = db::groups().await.delete(&id).await {
+                                    if let Err(e) = db::db_ins().groups.delete(&id).await {
                                         log::error!("delete group failed: {:?}", e);
                                     }
                                     // delete conversation
-                                    if let Err(e) = db::convs().await.delete(&id).await {
+                                    if let Err(e) = db::db_ins().convs.delete(&id).await {
                                         log::error!("delete conversation failed: {:?}", e);
                                     }
                                     // send state message to remove conversation from conversation lis
@@ -295,7 +296,7 @@ impl PostCard {
             match ctx.props().conv_type {
                 RightContentType::Friend => {
                     ctx.link().send_future(async move {
-                        let user_info = db::friends().await.get(id.as_str()).await;
+                        let user_info = db::db_ins().friends.get(id.as_str()).await;
                         log::debug!("user info :{:?}", user_info);
                         PostCardMsg::QueryInformation(QueryState::Success(Some(Box::new(
                             user_info,
@@ -303,7 +304,7 @@ impl PostCard {
                     });
                 }
                 RightContentType::Group => ctx.link().send_future(async move {
-                    match db::groups().await.get(id.as_str()).await {
+                    match db::db_ins().groups.get(id.as_str()).await {
                         Ok(Some(group)) => PostCardMsg::QueryInformation(QueryState::Success(
                             Some(Box::new(group)),
                         )),

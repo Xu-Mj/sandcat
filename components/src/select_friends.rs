@@ -54,7 +54,7 @@ impl Component for SelectFriendList {
         ctx.link()
             .send_message(AddConvMsg::QueryFriends(QueryStatus::Querying));
         ctx.link().send_future(async {
-            match db::friends().await.get_list().await {
+            match db::db_ins().friends.get_list().await {
                 Ok(friends) => AddConvMsg::QueryFriends(QueryStatus::Success(friends)),
                 Err(err) => AddConvMsg::QueryFriends(QueryStatus::Fail(err)),
             }

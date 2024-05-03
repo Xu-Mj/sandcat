@@ -12,6 +12,7 @@ use crate::seq::SeqInterface;
 
 use super::{repository::Repository, SEQ_TABLE_NAME};
 
+#[derive(Debug, Clone)]
 pub struct SeqRepo(Repository);
 impl Deref for SeqRepo {
     type Target = Repository;
@@ -22,8 +23,8 @@ impl Deref for SeqRepo {
 }
 
 impl SeqRepo {
-    pub async fn new() -> Self {
-        Self(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        Self(repo)
     }
 }
 

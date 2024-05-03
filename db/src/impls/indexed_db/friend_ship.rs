@@ -11,6 +11,7 @@ use super::{
     repository::Repository, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_USER_ID_INDEX,
 };
 
+#[derive(Debug, Clone)]
 pub struct FriendShipRepo(Repository);
 
 impl Deref for FriendShipRepo {
@@ -22,8 +23,8 @@ impl Deref for FriendShipRepo {
 }
 
 impl FriendShipRepo {
-    pub async fn new() -> Self {
-        Self(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        Self(repo)
     }
 }
 #[async_trait::async_trait(?Send)]

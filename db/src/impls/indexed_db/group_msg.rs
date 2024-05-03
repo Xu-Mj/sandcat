@@ -14,6 +14,7 @@ use super::{
     repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
 };
 
+#[derive(Debug, Clone)]
 pub struct GroupMsgRepo(Repository);
 impl Deref for GroupMsgRepo {
     type Target = Repository;
@@ -23,8 +24,8 @@ impl Deref for GroupMsgRepo {
     }
 }
 impl GroupMsgRepo {
-    pub async fn new() -> Self {
-        Self(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        Self(repo)
     }
 }
 #[async_trait::async_trait(?Send)]

@@ -39,7 +39,7 @@ impl Chats {
                 };
                 let is_self = msg.is_self;
                 spawn_local(async move {
-                    if let Err(err) = db::messages().await.add_message(&mut msg).await {
+                    if let Err(err) = db::db_ins().messages.add_message(&mut msg).await {
                         log::error!("{:?}", err);
                     }
                 });
@@ -139,14 +139,14 @@ impl Chats {
                 if clean {
                     conv.unread_count = 0;
                 }
-                db::convs().await.put_conv(&conv).await.unwrap();
+                db::db_ins().convs.put_conv(&conv).await.unwrap();
             });
             true
         } else {
             let current_id = self.conv_state.conv.item_id.clone();
             // 如果会话列表中不存在那么需要新建
             ctx.link().send_future(async move {
-                let friend = db::friends().await.get(friend_id.as_str()).await;
+                let friend = db::db_ins().friends.get(friend_id.as_str()).await;
                 if friend.friend_id.is_empty() {
                     return ChatsMsg::None;
                 }
@@ -158,9 +158,9 @@ impl Chats {
                 }
                 if is_self {
                     // we don't need to set the unread count if it is self message
-                    conv = db::convs().await.self_update_conv(conv).await.unwrap();
+                    conv = db::db_ins().convs.self_update_conv(conv).await.unwrap();
                 } else {
-                    db::convs().await.put_conv(&conv).await.unwrap();
+                    db::db_ins().convs.put_conv(&conv).await.unwrap();
                     conv.unread_count = unread_count;
                 }
 
@@ -247,7 +247,7 @@ impl Chats {
         let seq = self.seq.clone();
 
         ctx.link().send_future(async move {
-            db::seq().await.put(&seq).await.unwrap();
+            db::db_ins().seq.put(&seq).await.unwrap();
             if need_repull {
                 let messages = api::messages()
                     .pull_offline_msg(user_id.as_str(), start, end)
@@ -298,7 +298,7 @@ impl Chats {
                 spawn_local(async move {
                     // ctx.link().send_future(async move {
                     // save to db
-                    db::messages().await.add_message(&mut msg).await.unwrap();
+                    db::db_ins().messages.add_message(&mut msg).await.unwrap();
                     // ChatsMsg::None
                     // if let Err(err) = db::messages().await.add_message(&mut msg).await {
                     //     HomeMsg::Notification(Notification::error_from_content(
@@ -344,7 +344,7 @@ impl Chats {
                         self.handle_lack_msg(ctx, msg.seq);
                         ctx.link().send_future(async move {
                             // 数据入库
-                            db::group_msgs().await.put(&msg).await.unwrap();
+                            db::db_ins().group_msgs.put(&msg).await.unwrap();
                             ChatsMsg::None
                             // if let Err(err) = db::group_msgs().await.put(&msg).await {
                             //     HomeMsg::Notification(Notification::error_from_content(
@@ -372,8 +372,8 @@ impl Chats {
                             log::debug!(
                                 "received group member exits message {group_id} --> {mem_id}, delete member from group"
                             );
-                            db::group_members()
-                                .await
+                            db::db_ins()
+                                .group_members
                                 .delete(&group_id, &mem_id)
                                 .await
                                 .unwrap();
@@ -404,7 +404,7 @@ impl Chats {
                             || self.conv_state.conv.content_type == RightContentType::Group)
                             && self.conv_state.conv.item_id == group_id;
                         spawn_local(async move {
-                            if let Err(err) = db::groups().await.dismiss(&cloned_group_id).await {
+                            if let Err(err) = db::db_ins().groups.dismiss(&cloned_group_id).await {
                                 log::error!("remove group fail:{:?}", err);
                             } else {
                                 //     // send message to other component
@@ -434,7 +434,7 @@ impl Chats {
 
                 // save friendship
                 spawn_local(async move {
-                    db::friendships().await.put_friendship(&friendship).await;
+                    db::db_ins().friendships.put_friendship(&friendship).await;
                     // notify
                     Dispatch::<FriendShipState>::global().reduce_mut(|s| {
                         s.ship = Some(friendship);
@@ -464,11 +464,11 @@ impl Chats {
                 // 需要通知联系人列表更新
                 // 数据入库
                 ctx.link().send_future(async move {
-                    db::friendships()
-                        .await
+                    db::db_ins()
+                        .friendships
                         .agree_by_friend_id(friend.friend_id.as_str())
                         .await;
-                    db::friends().await.put_friend(&friend).await;
+                    db::db_ins().friends.put_friend(&friend).await;
                     // send hello message
                     let mut msg = Message {
                         local_id: nanoid::nanoid!().into(),
@@ -484,8 +484,8 @@ impl Chats {
                         is_self: true,
                         ..Default::default()
                     };
-                    db::messages()
-                        .await
+                    db::db_ins()
+                        .messages
                         .add_message(&mut msg)
                         .await
                         .map_err(|err| log::error!("save message fail:{:?}", err))
@@ -508,12 +508,13 @@ impl Chats {
                 spawn_local(async move {
                     match msg.resp_msg_type {
                         RespMsgType::Single => {
-                            if let Err(err) = db::messages().await.update_msg_status(&msg).await {
+                            if let Err(err) = db::db_ins().messages.update_msg_status(&msg).await {
                                 log::error!("update message fail:{:?}", err);
                             }
                         }
                         RespMsgType::Group => {
-                            if let Err(err) = db::group_msgs().await.update_msg_status(&msg).await {
+                            if let Err(err) = db::db_ins().group_msgs.update_msg_status(&msg).await
+                            {
                                 log::error!("update message fail:{:?}", err);
                             }
                         }
@@ -524,10 +525,10 @@ impl Chats {
             Msg::RecRelationshipDel((friend_id, seq)) => {
                 // update database
                 spawn_local(async move {
-                    let mut friend = db::friends().await.get(&friend_id).await;
+                    let mut friend = db::db_ins().friends.get(&friend_id).await;
                     if !friend.friend_id.is_empty() {
                         friend.status = FriendStatus::Delete as i32;
-                        db::friends().await.put_friend(&friend).await;
+                        db::db_ins().friends.put_friend(&friend).await;
                     }
                 });
                 self.handle_lack_msg(ctx, seq);
