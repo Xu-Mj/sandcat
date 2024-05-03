@@ -46,6 +46,23 @@ impl From<i32> for ContentType {
         }
     }
 }
+
+impl From<u8> for ContentType {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => ContentType::Text,
+            2 => ContentType::Image,
+            3 => ContentType::Video,
+            4 => ContentType::Audio,
+            5 => ContentType::File,
+            6 => ContentType::Emoji,
+            7 => ContentType::VideoCall,
+            8 => ContentType::AudioCall,
+            9 => ContentType::Error,
+            _ => ContentType::Default,
+        }
+    }
+}
 pub trait ItemInfo: Debug {
     fn name(&self) -> AttrValue;
 

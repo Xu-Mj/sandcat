@@ -60,6 +60,16 @@ pub enum SendStatus {
     Failed,
 }
 
+impl From<u8> for SendStatus {
+    fn from(value: u8) -> Self {
+        match value {
+            0 => SendStatus::Sending,
+            1 => SendStatus::Success,
+            _ => SendStatus::Failed,
+        }
+    }
+}
+
 impl From<InviteCancelMsg> for Message {
     fn from(value: InviteCancelMsg) -> Self {
         let content_type = match value.invite_type {
