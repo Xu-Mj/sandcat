@@ -39,6 +39,7 @@ pub enum SetWindowMsg {
         Conversation,
     ),
     MuteClicked,
+    OnFriendNameChange(Event),
     OnGroupNameChange(Event),
     OnGroupAnnoChange(Event),
     OnGroupDescChange(Event),
@@ -245,6 +246,30 @@ impl Component for SetWindow {
                 }
                 false
             }
+            SetWindowMsg::OnFriendNameChange(event) => {
+                if let Some(friend) = self.friend.as_mut() {
+                    let r = event
+                        .target_unchecked_into::<web_sys::HtmlInputElement>()
+                        .value();
+                    if let Some(remark) = friend.remark.as_ref() {
+                        if *remark != r {
+                            friend.remark = Some(r.into());
+                            // update friend remark
+                            let user_id = ctx.props().user_id.clone().to_string();
+                            let friend = friend.clone();
+                            self.update_friend_remark(user_id, friend);
+                        }
+                    } else {
+                        friend.remark = Some(r.clone().into());
+
+                        let friend = friend.clone();
+                        let user_id = ctx.props().user_id.clone().to_string();
+                        let friend = friend.clone();
+                        self.update_friend_remark(user_id, friend);
+                    }
+                }
+                false
+            }
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -258,7 +283,16 @@ impl Component for SetWindow {
                             <img src={friend.avatar.clone()} />
                             <span>{friend.name.clone()}</span>
                         </div>
-                    }
+                    };
+                    let on_name_change = ctx.link().callback(SetWindowMsg::OnFriendNameChange);
+                    info = html! {
+                        <div class="group-name">
+                            <div>
+                                {tr!(self.i18n, "remark")}
+                            </div>
+                            <input type="text" value={friend.remark.clone()} onchange={on_name_change} />
+                        </div>
+                    };
                 }
             }
             RightContentType::Group => {
@@ -279,7 +313,7 @@ impl Component for SetWindow {
                     let on_group_anno_change = ctx.link().callback(SetWindowMsg::OnGroupAnnoChange);
                     let on_group_desc_change = ctx.link().callback(SetWindowMsg::OnGroupDescChange);
                     info = html! {
-                        <div class="info">
+                        <>
                             <div class="group-name">
                                 <div>
                                     {tr!(self.i18n, "group_name")}
@@ -298,7 +332,7 @@ impl Component for SetWindow {
                                 </div>
                                 <input type="text" value={v.description.clone()} onchange={on_group_desc_change} />
                             </div>
-                        </div>
+                        </>
                     }
                 }
             }
@@ -336,7 +370,9 @@ impl Component for SetWindow {
                     {avatars}
                     {add_friend}
                 </div>
+                <div class="info">
                 {info}
+                </div>
                 <div class="setting">
                     {setting}
                 </div>
@@ -370,6 +406,27 @@ impl SetWindow {
                     log::error!("update group name error: {:?}", e)
                 }
             };
+        });
+    }
+
+    fn update_friend_remark(&self, user_id: String, friend: Friend) {
+        spawn_local(async move {
+            let remark = friend.remark.as_ref().unwrap();
+            if api::friends()
+                .update_remark(
+                    user_id,
+                    friend.friend_id.clone().to_string(),
+                    remark.to_string(),
+                )
+                .await
+                .is_ok()
+            {
+                db::db_ins().friends.put_friend(&friend).await;
+                Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
+                    s.id = friend.friend_id;
+                    s.name = Some(friend.remark.unwrap())
+                });
+            }
         });
     }
 }

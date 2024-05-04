@@ -180,6 +180,7 @@ pub const SET_WINDOW: &str = r#"
 add = Add
 delete = CleanChatHistory
 mute = Mute
+remark = Remark
 group_desc = GroupDesc
 group_name = GroupName
 group_announcement = GroupAnno

@@ -174,6 +174,7 @@ pub const SET_WINDOW: &str = r#"
 add = 添加
 delete = 清空聊天记录
 mute = 消息免打扰
+remark = 备注
 group_desc = 群描述
 group_name = 群名称
 group_announcement = 群公告
