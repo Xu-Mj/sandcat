@@ -100,6 +100,11 @@ impl Chats {
                                 .unwrap();
                         });
                     }
+                    GroupMsg::Update((group, _)) => {
+                        self.handle_group_update(group);
+
+                        // todo send message received
+                    }
                     GroupMsg::DismissOrExitReceived(_) | GroupMsg::InvitationReceived(_) => {}
                 },
                 Msg::SingleCall(call_msg) => match call_msg {

@@ -18,6 +18,7 @@ pub struct GroupFromServer {
     pub create_time: i64,
     pub update_time: i64,
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq)]
 pub struct Group {
     pub id: AttrValue,

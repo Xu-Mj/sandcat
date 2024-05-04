@@ -34,7 +34,6 @@ impl GroupRepo {
     }
 }
 
-#[allow(dead_code)]
 #[async_trait::async_trait(?Send)]
 impl GroupInterface for GroupRepo {
     async fn put(&self, group: &Group) -> Result<(), JsValue> {

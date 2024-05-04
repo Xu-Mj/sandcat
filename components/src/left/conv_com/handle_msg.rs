@@ -424,6 +424,13 @@ impl Chats {
                             ctx.link().send_message(ChatsMsg::RecMsgNotify(message));
                         }
                     }
+                    GroupMsg::Update((group, seq)) => {
+                        self.handle_group_update(group.clone());
+
+                        self.handle_lack_msg(ctx, *seq);
+
+                        // todo send message received
+                    }
                     GroupMsg::DismissOrExitReceived(_) | GroupMsg::InvitationReceived(_) => {}
                 }
             }

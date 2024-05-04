@@ -1,11 +1,16 @@
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
-use abi::model::{
-    conversation::Conversation,
-    group::{Group, GroupMember, GroupRequest},
-    message::GroupInvitation,
-    ContentType,
+use abi::{
+    model::{
+        conversation::Conversation,
+        group::{Group, GroupMember, GroupRequest},
+        message::GroupInvitation,
+        ContentType,
+    },
+    state::UpdateConvState,
 };
+use yewdux::Dispatch;
 
 use super::{conversations::ChatsMsg, Chats};
 
@@ -151,5 +156,21 @@ impl Chats {
                 ChatsMsg::None
             })
         }
+    }
+
+    pub fn handle_group_update(&mut self, group: Group) {
+        // update conversation
+        Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
+            s.id = group.id.clone();
+            s.name = Some(group.name.clone());
+            s.avatar = Some(group.avatar.clone());
+        });
+
+        // update group information
+        spawn_local(async move {
+            if let Err(err) = db::db_ins().groups.put(&group).await {
+                log::error!("update group fail:{:?}", err);
+            }
+        });
     }
 }
