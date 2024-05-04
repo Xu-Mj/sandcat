@@ -21,7 +21,7 @@ use abi::{
     },
     state::{
         ConvState, CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState,
-        SendMessageState, UnreadState,
+        SendMessageState, UnreadState, UpdateConvState,
     },
 };
 use db::{self, TOKEN, WS_ADDR};
@@ -81,6 +81,7 @@ pub struct Chats {
     rec_msg_dis: Dispatch<RecMessageState>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
+    _update_dis: Dispatch<UpdateConvState>,
 }
 
 impl Chats {
@@ -149,6 +150,9 @@ impl Chats {
             LanguageType::EnUS => en_us::CONVERSATION,
         };
         let i18n = utils::create_bundle(res);
+
+        let _update_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(ChatsMsg::UpdateConvStateChanged));
         Self {
             call_msg: SingleCall::default(),
             ws,
@@ -170,6 +174,7 @@ impl Chats {
             _lang_dispatch: lang_dispatch,
             conv_state: conv_dispatch.get(),
             conv_dispatch,
+            _update_dis,
         }
     }
 

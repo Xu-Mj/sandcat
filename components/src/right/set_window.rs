@@ -14,7 +14,7 @@ use abi::{
         ItemInfo, RightContentType,
     },
     pb::message::GroupUpdate,
-    state::MuteState,
+    state::{MuteState, UpdateConvState},
 };
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::PlusRectIcon;
@@ -42,6 +42,7 @@ pub enum SetWindowMsg {
     OnGroupNameChange(Event),
     OnGroupAnnoChange(Event),
     OnGroupDescChange(Event),
+    DeleteClicked,
     None,
 }
 
@@ -169,8 +170,14 @@ impl Component for SetWindow {
                         .value();
                     if info.name != name {
                         info.name = name.into();
+                        let name = info.name.clone();
+                        let id = info.id.clone();
                         // update group name
                         self.update_group(ctx.props().user_id.clone());
+                        Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
+                            s.id = id;
+                            s.name = Some(name)
+                        });
                         return true;
                     }
                 }
@@ -199,6 +206,22 @@ impl Component for SetWindow {
                         self.update_group(ctx.props().user_id.clone());
                         return true;
                     }
+                }
+                false
+            }
+            SetWindowMsg::DeleteClicked => {
+                match ctx.props().conv_type {
+                    RightContentType::Friend => todo!(),
+                    RightContentType::Group => {
+                        if let Some(_group) = self.group.as_ref() {
+                            // let id = group.id.clone();
+                            spawn_local(async move {
+                                // clean group messages
+                                // db::db_ins().group_msgs
+                            })
+                        }
+                    }
+                    _ => {}
                 }
                 false
             }
@@ -297,7 +320,7 @@ impl Component for SetWindow {
                 <div class="setting">
                     {setting}
                 </div>
-                <div class="bottom" >
+                <div class="bottom pointer" onclick={ctx.link().callback(|_| SetWindowMsg::DeleteClicked)} >
                     {tr!(self.i18n, "delete")}
                 </div>
             </div>

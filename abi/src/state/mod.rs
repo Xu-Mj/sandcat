@@ -130,6 +130,13 @@ pub struct AddFriendState {
     pub item: AddFriendStateItem,
 }
 
+#[derive(Debug, Default, Clone, PartialEq, Store)]
+pub struct UpdateConvState {
+    pub id: AttrValue,
+    pub name: Option<AttrValue>,
+    pub avatar: Option<AttrValue>,
+}
+
 /// 记录当前朋友列表状态
 #[derive(Default, Clone, PartialEq)]
 pub struct AddFriendStateItem {
