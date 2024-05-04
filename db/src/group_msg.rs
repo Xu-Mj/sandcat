@@ -20,4 +20,6 @@ pub trait GroupMessages: Debug {
     async fn get_last_msg(&self, group_id: &str) -> Result<Message, JsValue>;
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<(), JsValue>;
+
+    async fn delete(&self, group_id: &str) -> Result<(), JsValue>;
 }

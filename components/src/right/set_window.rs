@@ -213,11 +213,14 @@ impl Component for SetWindow {
                 match ctx.props().conv_type {
                     RightContentType::Friend => todo!(),
                     RightContentType::Group => {
-                        if let Some(_group) = self.group.as_ref() {
-                            // let id = group.id.clone();
+                        if let Some(group) = self.group.as_ref() {
+                            let id = group.id.clone();
                             spawn_local(async move {
                                 // clean group messages
-                                // db::db_ins().group_msgs
+                                if let Err(err) = db::db_ins().group_msgs.delete(id.as_str()).await
+                                {
+                                    log::error!("clean group messages error: {:?}", err);
+                                }
                             })
                         }
                     }

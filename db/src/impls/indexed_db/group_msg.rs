@@ -193,4 +193,34 @@ impl GroupMessages for GroupMsgRepo {
         on_add_error.forget();
         Ok(())
     }
+
+    async fn delete(&self, group_id: &str) -> Result<(), JsValue> {
+        let store = self.store(GROUP_MSG_TABLE_NAME).await?;
+        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
+        let range = IdbKeyRange::only(&JsValue::from(group_id))?;
+        let request = index.open_cursor_with_range(&range)?;
+        let store = store.clone();
+        let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = req.result().unwrap_or_else(|_err| JsValue::null());
+
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+                let value = cursor.value().unwrap();
+                // 反序列化
+                if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
+                    store.delete(&JsValue::from(msg.id)).unwrap();
+                }
+                let _ = cursor.continue_();
+            }
+        }) as Box<dyn FnMut(&Event)>);
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        onsuccess.forget();
+        Ok(())
+    }
 }
