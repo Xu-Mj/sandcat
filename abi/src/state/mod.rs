@@ -17,8 +17,8 @@ use crate::model::{
 
 /// offline message. notify other components after offline handled complete
 #[derive(Store, Debug, Default, Clone, PartialEq)]
-pub struct OfflineMsgState {
-    pub complete: (),
+pub struct RefreshMsgListState {
+    pub refresh: bool,
 }
 
 /// language type

@@ -14,7 +14,7 @@ use abi::{
         ContentType, RightContentType,
     },
     pb::message::Msg as PbMsg,
-    state::OfflineMsgState,
+    state::RefreshMsgListState,
 };
 
 use super::{conversations::ChatsMsg, Chats};
@@ -201,6 +201,6 @@ impl Chats {
         }
 
         // send sync offline message complete message to msg_list component
-        Dispatch::<OfflineMsgState>::global().reduce_mut(|s| s.complete = ());
+        Dispatch::<RefreshMsgListState>::global().reduce_mut(|s| s.refresh = !s.refresh);
     }
 }

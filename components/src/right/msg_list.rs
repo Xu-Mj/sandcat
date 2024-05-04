@@ -13,8 +13,8 @@ use abi::model::message::Msg;
 use abi::model::message::SingleCall;
 use abi::model::ItemInfo;
 use abi::model::RightContentType;
-use abi::state::OfflineMsgState;
 use abi::state::RecMessageState;
+use abi::state::RefreshMsgListState;
 use abi::state::SendResultState;
 use i18n::LanguageType;
 
@@ -32,7 +32,7 @@ pub struct MessageList {
     is_black: bool,
 
     // listen sync offline message, query message list
-    _sync_msg_dis: Dispatch<OfflineMsgState>,
+    _sync_msg_dis: Dispatch<RefreshMsgListState>,
     // listen rec message, update message list
     _rec_msg_dis: Dispatch<RecMessageState>,
     // listen send result, update message item status

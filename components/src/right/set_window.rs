@@ -14,7 +14,7 @@ use abi::{
         ItemInfo, RightContentType,
     },
     pb::message::GroupUpdate,
-    state::{MuteState, UpdateConvState},
+    state::{MuteState, RefreshMsgListState, UpdateConvState},
 };
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::PlusRectIcon;
@@ -211,7 +211,21 @@ impl Component for SetWindow {
             }
             SetWindowMsg::DeleteClicked => {
                 match ctx.props().conv_type {
-                    RightContentType::Friend => todo!(),
+                    RightContentType::Friend => {
+                        if let Some(friend) = self.friend.as_ref() {
+                            let id = friend.friend_id.clone();
+                            spawn_local(async move {
+                                // clean group messages
+                                if let Err(err) =
+                                    db::db_ins().messages.batch_delete(id.as_str()).await
+                                {
+                                    log::error!("clean group messages error: {:?}", err);
+                                }
+                                Dispatch::<RefreshMsgListState>::global()
+                                    .reduce_mut(|s| s.refresh = !s.refresh);
+                            })
+                        }
+                    }
                     RightContentType::Group => {
                         if let Some(group) = self.group.as_ref() {
                             let id = group.id.clone();
@@ -221,6 +235,8 @@ impl Component for SetWindow {
                                 {
                                     log::error!("clean group messages error: {:?}", err);
                                 }
+                                Dispatch::<RefreshMsgListState>::global()
+                                    .reduce_mut(|s| s.refresh = !s.refresh);
                             })
                         }
                     }
