@@ -99,7 +99,7 @@
             >div>input {
                 width: 100%;
                 height: 1.3rem;
-                padding: auto;
+                padding: .3rem;
                 outline: none;
                 background-color: var(--color-background-input);
                 border: none;

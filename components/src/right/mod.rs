@@ -214,6 +214,7 @@ impl Component for Right {
                 setting = html! (
                     <SetWindow
                         id={info.id()}
+                        user_id={self.state.login_user.id.clone()}
                         conv_type={info.get_type()}
                         close={ctx.link().callback(|_| RightMsg::ShowSetting)}
                         plus_click={close.clone()}

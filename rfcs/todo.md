@@ -4,3 +4,4 @@
 - modify the friend remark
 - modify the group info
 - to sync the contacts list and apply list and apply response list
+- delete message after handled group operation

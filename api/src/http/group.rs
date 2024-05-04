@@ -2,9 +2,12 @@ use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
 
 use crate::group::GroupApi;
-use abi::model::{
-    group::{Group, GroupDelete, GroupRequest},
-    message::GroupInvitation,
+use abi::{
+    model::{
+        group::{Group, GroupDelete, GroupRequest},
+        message::GroupInvitation,
+    },
+    pb::message::GroupUpdate,
 };
 
 use super::RespStatus;
@@ -22,7 +25,7 @@ impl GroupHttp {
 
 #[async_trait::async_trait(?Send)]
 impl GroupApi for GroupHttp {
-    async fn create_group(&self, data: GroupRequest, user_id: &str) -> Result<Group, JsValue> {
+    async fn create(&self, data: GroupRequest, user_id: &str) -> Result<Group, JsValue> {
         let response: GroupInvitation = Request::post(format!("/api/group/{}", user_id).as_str())
             .header(&self.auth_header, &self.token)
             .json(&data)
@@ -38,7 +41,7 @@ impl GroupApi for GroupHttp {
         Ok(Group::from(response.info.unwrap()))
     }
 
-    async fn delete_group(&self, data: GroupDelete) -> Result<(), JsValue> {
+    async fn delete(&self, data: GroupDelete) -> Result<(), JsValue> {
         Request::delete("/api/group")
             .header(&self.auth_header, &self.token)
             .json(&data)
@@ -49,5 +52,21 @@ impl GroupApi for GroupHttp {
             .success()?;
 
         Ok(())
+    }
+
+    async fn update(&self, user_id: &str, data: GroupUpdate) -> Result<Group, JsValue> {
+        let group = Request::put(format!("/api/group/{}", user_id).as_str())
+            .header(&self.auth_header, &self.token)
+            .json(&data)
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
+            .json()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?;
+
+        Ok(group)
     }
 }

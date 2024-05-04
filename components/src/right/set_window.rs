@@ -7,7 +7,13 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use abi::{
-    model::{conversation::Conversation, ItemInfo, RightContentType},
+    model::{
+        conversation::Conversation,
+        friend::Friend,
+        group::{Group, GroupMember},
+        ItemInfo, RightContentType,
+    },
+    pb::message::GroupUpdate,
     state::MuteState,
 };
 use i18n::{en_us, zh_cn, LanguageType};
@@ -15,28 +21,34 @@ use icons::PlusRectIcon;
 use utils::tr;
 
 pub struct SetWindow {
-    list: Vec<Box<dyn ItemInfo>>,
+    members: Vec<GroupMember>,
     info: Option<Box<dyn ItemInfo>>,
+    group: Option<Group>,
+    friend: Option<Friend>,
     conv: Conversation,
     node: NodeRef,
     i18n: FluentBundle<FluentResource>,
-    mute_dispatch: Dispatch<MuteState>,
     click_closure: Option<Closure<dyn FnMut(web_sys::MouseEvent)>>,
 }
 
 pub enum SetWindowMsg {
     QueryInfo(
-        Option<Box<dyn ItemInfo>>,
-        Vec<Box<dyn ItemInfo>>,
+        Box<Option<Group>>,
+        Box<Option<Friend>>,
+        Vec<GroupMember>,
         Conversation,
     ),
     MuteClicked,
+    OnGroupNameChange(Event),
+    OnGroupAnnoChange(Event),
+    OnGroupDescChange(Event),
     None,
 }
 
 #[derive(Properties, PartialEq)]
 pub struct SetWindowProps {
     pub conv_type: RightContentType,
+    pub user_id: AttrValue,
     pub id: AttrValue,
     pub close: Callback<()>,
     pub plus_click: Callback<()>,
@@ -58,26 +70,26 @@ impl Component for SetWindow {
         let conv_type = ctx.props().conv_type.clone();
         ctx.link().send_future(async move {
             // init interfaces
-            let mut list: Vec<Box<dyn ItemInfo>> = vec![];
-            let mut info: Option<Box<dyn ItemInfo>> = None;
+            let mut members: Vec<GroupMember> = vec![];
+            let mut friend: Option<Friend> = None;
+            let mut group: Option<Group> = None;
             match conv_type {
                 RightContentType::Friend => {
-                    let friend = db::db_ins().friends.get(id.as_str()).await;
-                    info = Some(Box::new(friend.clone()));
-                    list.push(Box::new(friend));
+                    let f = db::db_ins().friends.get(id.as_str()).await;
+                    friend = Some(f);
                 }
                 RightContentType::Group => {
                     // query group information
-                    let group = db::db_ins().groups.get(id.as_str()).await.unwrap().unwrap();
-                    info = Some(Box::new(group.clone()));
+                    let g = db::db_ins().groups.get(id.as_str()).await.unwrap().unwrap();
+                    group = Some(g);
                     // query members by group id
-                    if let Ok(members) = db::db_ins()
+                    if let Ok(m) = db::db_ins()
                         .group_members
                         .get_list_by_group_id(id.as_str())
                         .await
                     {
-                        for v in members.into_iter() {
-                            list.push(Box::new(v));
+                        for v in m.into_iter() {
+                            members.push(v);
                         }
                     }
                 }
@@ -85,31 +97,30 @@ impl Component for SetWindow {
             }
             // qeury conversation is mute
             let conv = db::db_ins().convs.get_by_frined_id(id.as_str()).await;
-            SetWindowMsg::QueryInfo(info, list, conv)
+            SetWindowMsg::QueryInfo(Box::new(group), Box::new(friend), members, conv)
         });
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::SET_WINDOW,
             LanguageType::EnUS => en_us::SET_WINDOW,
         };
         let i18n = utils::create_bundle(res);
-        let mute_dispatch =
-            Dispatch::global().subscribe(ctx.link().callback(|_| SetWindowMsg::None));
         Self {
             i18n,
-            mute_dispatch,
-            list: Vec::new(),
+            members: Vec::new(),
             info: None,
             conv: Conversation::default(),
             node: NodeRef::default(),
             click_closure: None,
+            group: None,
+            friend: None,
         }
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
+    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if first_render {
             if let Some(node) = self.node.cast::<HtmlDivElement>() {
                 node.focus().unwrap();
-                let onclose = _ctx.props().close.clone();
+                let onclose = ctx.props().close.clone();
                 // register click event to document
                 let func = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
                     if let Some(target) = event.target() {
@@ -128,11 +139,12 @@ impl Component for SetWindow {
         }
     }
 
-    fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
+    fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            SetWindowMsg::QueryInfo(info, list, mute) => {
-                self.list = list;
-                self.info = info;
+            SetWindowMsg::QueryInfo(group, friend, members, mute) => {
+                self.group = *group;
+                self.friend = *friend;
+                self.members = members;
                 self.conv = mute;
                 true
             }
@@ -145,26 +157,111 @@ impl Component for SetWindow {
                 });
                 // todo send mute message to conversation component
                 if let Some(info) = self.info.as_ref() {
-                    self.mute_dispatch.reduce_mut(|s| s.conv_id = info.id());
+                    Dispatch::<MuteState>::global().reduce_mut(|s| s.conv_id = info.id());
                 }
                 true
             }
             SetWindowMsg::None => false,
+            SetWindowMsg::OnGroupNameChange(event) => {
+                if let Some(info) = self.group.as_mut() {
+                    let name = event
+                        .target_unchecked_into::<web_sys::HtmlInputElement>()
+                        .value();
+                    if info.name != name {
+                        info.name = name.into();
+                        // update group name
+                        self.update_group(ctx.props().user_id.clone());
+                        return true;
+                    }
+                }
+                false
+            }
+            SetWindowMsg::OnGroupAnnoChange(event) => {
+                if let Some(info) = self.group.as_mut() {
+                    let anno = event
+                        .target_unchecked_into::<web_sys::HtmlInputElement>()
+                        .value();
+                    if info.announcement != anno {
+                        info.announcement = anno.into();
+                        self.update_group(ctx.props().user_id.clone());
+                        return true;
+                    }
+                }
+                false
+            }
+            SetWindowMsg::OnGroupDescChange(event) => {
+                if let Some(info) = self.group.as_mut() {
+                    let desc = event
+                        .target_unchecked_into::<web_sys::HtmlInputElement>()
+                        .value();
+                    if info.description != desc {
+                        info.description = desc.into();
+                        self.update_group(ctx.props().user_id.clone());
+                        return true;
+                    }
+                }
+                false
+            }
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let avatars = self
-            .list
-            .iter()
-            .map(|item| {
-                html! {
-                    <div class="avatar-name">
-                        <img src={item.avatar()} />
-                        <span>{item.name()}</span>
-                    </div>
+        let mut avatars = html!();
+        let mut info = html!();
+        match ctx.props().conv_type {
+            RightContentType::Friend => {
+                if let Some(friend) = self.friend.as_ref() {
+                    avatars = html! {
+                        <div class="avatar-name">
+                            <img src={friend.avatar.clone()} />
+                            <span>{friend.name.clone()}</span>
+                        </div>
+                    }
                 }
-            })
-            .collect::<Html>();
+            }
+            RightContentType::Group => {
+                avatars = self
+                    .members
+                    .iter()
+                    .map(|item| {
+                        html! {
+                            <div class="avatar-name">
+                                <img src={item.avatar()} />
+                                <span>{item.name()}</span>
+                            </div>
+                        }
+                    })
+                    .collect::<Html>();
+                if let Some(v) = self.group.as_ref() {
+                    let on_group_name_change = ctx.link().callback(SetWindowMsg::OnGroupNameChange);
+                    let on_group_anno_change = ctx.link().callback(SetWindowMsg::OnGroupAnnoChange);
+                    let on_group_desc_change = ctx.link().callback(SetWindowMsg::OnGroupDescChange);
+                    info = html! {
+                        <div class="info">
+                            <div class="group-name">
+                                <div>
+                                    {tr!(self.i18n, "group_name")}
+                                </div>
+                                <input type="text" value={v.name.clone()} onchange={on_group_name_change} />
+                            </div>
+                            <div class="group-announcement">
+                                <div>
+                                    {tr!(self.i18n, "group_announcement")}
+                                </div>
+                                <input type="text" value={v.announcement.clone()} onchange={on_group_anno_change} />
+                            </div>
+                            <div class="group-desc">
+                                <div>
+                                    {tr!(self.i18n, "group_desc")}
+                                </div>
+                                <input type="text" value={v.description.clone()} onchange={on_group_desc_change} />
+                            </div>
+                        </div>
+                    }
+                }
+            }
+            _ => {}
+        }
+
         let add_click = ctx.props().plus_click.reform(|_| ());
         let add_friend = html! {
             <div class="avatar-name pointer" onclick={add_click}>
@@ -181,33 +278,7 @@ impl Component for SetWindow {
         } else {
             slider.push("left");
         }
-        let mut info = html!();
-        if ctx.props().conv_type == RightContentType::Group {
-            if let Some(v) = self.info.as_ref() {
-                info = html! {
-                    <div class="info">
-                        <div class="group-name">
-                            <div>
-                                {tr!(self.i18n, "group_name")}
-                            </div>
-                            <input type="text" value={v.name()} />
-                        </div>
-                        <div class="group-announcement">
-                            <div>
-                                {tr!(self.i18n, "group_announcement")}
-                            </div>
-                            <input type="text" value={v.remark()} />
-                        </div>
-                        <div class="group-desc">
-                            <div>
-                                {tr!(self.i18n, "group_desc")}
-                            </div>
-                            <input type="text" value={v.signature()} />
-                        </div>
-                    </div>
-                }
-            }
-        }
+
         let setting = html! {
             <div class="setting-item">
             {tr!(self.i18n, "mute")}
@@ -216,9 +287,8 @@ impl Component for SetWindow {
             </span>
             </div>
         };
-        // let onblur = ctx.props().close.reform(|_| ());
         html! {
-            <div ref={self.node.clone()} tabindex="1" id="setting-window" /* {onblur} */ class="set-window box-shadow">
+            <div ref={self.node.clone()} id="setting-window" class="set-window box-shadow">
                 <div class="people">
                     {avatars}
                     {add_friend}
@@ -232,5 +302,31 @@ impl Component for SetWindow {
                 </div>
             </div>
         }
+    }
+}
+
+impl SetWindow {
+    fn update_group(&self, user_id: AttrValue) {
+        let group = self.group.as_ref().unwrap().clone();
+        spawn_local(async move {
+            let group = GroupUpdate {
+                id: group.id.to_string(),
+                name: group.name.to_string(),
+                announcement: group.announcement.to_string(),
+                description: group.description.to_string(),
+                avatar: String::new(),
+                update_time: 0,
+            };
+            match api::groups().update(user_id.as_str(), group).await {
+                Ok(group) => {
+                    if let Err(err) = db::db_ins().groups.put(&group).await {
+                        log::error!("update group name error: {:?}", err);
+                    };
+                }
+                Err(e) => {
+                    log::error!("update group name error: {:?}", e)
+                }
+            };
+        });
     }
 }

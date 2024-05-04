@@ -48,6 +48,7 @@ impl From<GroupFromServer> for Group {
         }
     }
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct GroupRequest {
     pub id: String,
@@ -56,6 +57,7 @@ pub struct GroupRequest {
     pub group_name: String,
     pub members_id: Vec<String>,
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct GroupDelete {
     pub user_id: String,

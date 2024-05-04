@@ -156,7 +156,7 @@ impl Component for PostCard {
                             }
                             // send leave group request
                             match api::groups()
-                                .delete_group(GroupDelete {
+                                .delete(GroupDelete {
                                     group_id: id.to_string(),
                                     user_id,
                                     is_dismiss,

@@ -86,10 +86,7 @@ impl Chats {
                 db::db_ins().users.get(user_id.as_str()).await.unwrap(),
             ));
             // send create request
-            match api::groups()
-                .create_group(group_req, user_id.as_str())
-                .await
-            {
+            match api::groups().create(group_req, user_id.as_str()).await {
                 Ok(g) => {
                     log::debug!("group created: {:?}", g);
 
