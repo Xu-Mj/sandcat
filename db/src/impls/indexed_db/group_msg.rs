@@ -194,7 +194,7 @@ impl GroupMessages for GroupMsgRepo {
         Ok(())
     }
 
-    async fn delete(&self, group_id: &str) -> Result<(), JsValue> {
+    async fn batch_delete(&self, group_id: &str) -> Result<(), JsValue> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
         let range = IdbKeyRange::only(&JsValue::from(group_id))?;

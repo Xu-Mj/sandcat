@@ -21,5 +21,5 @@ pub trait GroupMessages: Debug {
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<(), JsValue>;
 
-    async fn delete(&self, group_id: &str) -> Result<(), JsValue>;
+    async fn batch_delete(&self, group_id: &str) -> Result<(), JsValue>;
 }
