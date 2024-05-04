@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
@@ -246,6 +247,12 @@ impl Component for Chats {
                     if let Some(avatar) = state.avatar.clone() {
                         item.avatar = avatar;
                     }
+                    let conv = item.clone();
+                    spawn_local(async move {
+                        if let Err(err) = db::db_ins().convs.put_conv(&conv).await {
+                            log::error!("update conv error: {:?}", err);
+                        }
+                    });
                     return true;
                 }
                 false
