@@ -3,7 +3,10 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 
 use crate::friend::FriendApi;
-use abi::model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser};
+use abi::{
+    model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
+    pb::message::UpdateRemarkRequest,
+};
 
 use super::RespStatus;
 
@@ -73,6 +76,31 @@ impl FriendApi for FriendHttp {
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
         Ok(friends)
+    }
+
+    async fn update_remark(
+        &self,
+        user_id: String,
+        friend_id: String,
+        remark: String,
+    ) -> Result<(), JsValue> {
+        let data = UpdateRemarkRequest {
+            user_id,
+            friend_id,
+            remark,
+        };
+        Request::put("/api/friend/remark")
+            .header(&self.auth_header, &self.token)
+            .json(&data)
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .send()
+            .await
+            .map_err(|err| {
+                log::debug!("error: {:?}", &err);
+                JsValue::from(err.to_string())
+            })?
+            .success()?;
+        Ok(())
     }
 
     async fn delete_friend(&self, user_id: String, friend_id: String) -> Result<(), JsValue> {

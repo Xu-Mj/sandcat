@@ -71,8 +71,8 @@ impl Component for ListItem {
                 let unread_count = self.unread_count;
                 log::debug!("clean unread count");
                 spawn_local(async move {
-                    if db::messages()
-                        .await
+                    if db::db_ins()
+                        .messages
                         .update_read_status(&friend_id)
                         .await
                         .is_ok()

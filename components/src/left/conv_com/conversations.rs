@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
+use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
@@ -13,7 +14,7 @@ use abi::model::{ComponentType, CurrentItem, RightContentType};
 use abi::pb::message::Msg as PbMsg;
 use abi::state::{
     AddFriendState, AddFriendStateItem, CreateConvState, I18nState, MuteState, RemoveConvState,
-    SendMessageState,
+    SendMessageState, UpdateConvState,
 };
 use abi::state::{ConvState, UnreadState};
 
@@ -56,6 +57,7 @@ pub enum ChatsMsg {
     /// handle the lack messages
     HandleLackMessages(Vec<PbMsg>),
     SwitchLanguage(Rc<I18nState>),
+    UpdateConvStateChanged(Rc<UpdateConvState>),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -236,6 +238,24 @@ impl Component for Chats {
                 };
                 self.i18n = utils::create_bundle(content);
                 true
+            }
+            ChatsMsg::UpdateConvStateChanged(state) => {
+                if let Some(item) = self.list.get_mut(&state.id) {
+                    if let Some(name) = state.name.clone() {
+                        item.name = name;
+                    }
+                    if let Some(avatar) = state.avatar.clone() {
+                        item.avatar = avatar;
+                    }
+                    let conv = item.clone();
+                    spawn_local(async move {
+                        if let Err(err) = db::db_ins().convs.put_conv(&conv).await {
+                            log::error!("update conv error: {:?}", err);
+                        }
+                    });
+                    return true;
+                }
+                false
             }
         }
     }

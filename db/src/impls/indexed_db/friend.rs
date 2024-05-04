@@ -13,6 +13,7 @@ use crate::friends::Friends;
 use super::{repository::Repository, FRIEND_TABLE_NAME};
 use super::{MESSAGE_FRIEND_ID_INDEX, MESSAGE_TABLE_NAME};
 
+#[derive(Debug, Clone)]
 pub struct FriendRepo(Repository);
 
 impl Deref for FriendRepo {
@@ -24,8 +25,8 @@ impl Deref for FriendRepo {
 }
 
 impl FriendRepo {
-    pub async fn new() -> Self {
-        Self(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        Self(repo)
     }
 }
 #[async_trait::async_trait(?Send)]

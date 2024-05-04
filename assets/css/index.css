@@ -561,6 +561,7 @@ input {
     background-color: var(--color-background);
     position: relative;
     transition: .5s;
+    border: #181818 1px solid;
 
     .slider {
         display: inline-block;

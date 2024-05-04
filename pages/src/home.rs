@@ -20,6 +20,7 @@ pub struct Home {
     _noti_dis: Dispatch<NotificationState>,
     _theme_dis: Dispatch<ThemeState>,
     _font_size_dis: Dispatch<FontSizeState>,
+    db_inited: bool,
 }
 
 #[derive(Debug)]
@@ -55,6 +56,7 @@ impl Component for Home {
                         Dispatch::<AppState>::global().reduce_mut(|s| {
                             s.login_user = u;
                         });
+                        self.db_inited = true;
                     }
                     QueryStatus::QueryFail(_) => {
                         gloo::console::log!("query fail")
@@ -129,7 +131,9 @@ impl Component for Home {
                 }
             })
             .collect::<Html>();
-
+        if !self.db_inited {
+            return html! {};
+        }
         html! {
                 <div class="home" id="app">
                     <Left user_id={ctx.props().id.clone()}/>
@@ -154,8 +158,7 @@ impl Component for Home {
 }
 
 async fn query(id: &str) -> Result<User, QueryError> {
-    let user_repo = db::users().await;
-    let user = user_repo.get(id).await.unwrap();
+    let user = db::db_ins().users.get(id).await.unwrap();
 
     Ok(user)
 }
@@ -170,6 +173,7 @@ impl Home {
         DB_NAME.get_or_init(|| format!("im-{}", id));
         let clone_id = id.clone();
         ctx.link().send_future(async move {
+            db::init_db().await;
             match query(clone_id.as_str()).await {
                 Ok(data) => HomeMsg::Query(Box::new(QueryStatus::QuerySuccess(data))),
                 Err(err) => HomeMsg::Query(Box::new(QueryStatus::QueryFail(err))),
@@ -192,6 +196,7 @@ impl Home {
             notification_interval: None,
             _theme_dis,
             _font_size_dis,
+            db_inited: false,
         }
     }
 

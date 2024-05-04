@@ -772,7 +772,9 @@ dependencies = [
  "futures-channel",
  "indexmap 2.2.5",
  "js-sys",
+ "lazy_static",
  "log",
+ "once_cell",
  "serde",
  "serde-wasm-bindgen 0.6.5",
  "wasm-bindgen",
@@ -5228,6 +5230,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
+ "yew",
 ]
 
 [[package]]

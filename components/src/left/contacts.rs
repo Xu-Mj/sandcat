@@ -15,8 +15,6 @@ use abi::{
     model::friend::Friend,
     model::{CommonProps, ComponentType},
 };
-use db::group::GroupRepo;
-use db::groups::GroupInterface;
 use i18n::{en_us, zh_cn, LanguageType};
 use utils::tr;
 
@@ -81,17 +79,16 @@ impl Component for Contacts {
         ctx.link()
             .send_message(ContactsMsg::QueryFriends(QueryState::Querying));
         ctx.link().send_future(async {
-            let friends = db::friends().await.get_list().await.unwrap_or_default();
+            let friends = db::db_ins().friends.get_list().await.unwrap_or_default();
             ContactsMsg::QueryFriends(QueryState::Success(friends))
         });
         ctx.link().send_future(async {
-            let group_repo = GroupRepo::new().await;
-            let friends = group_repo.get_list().await.unwrap_or_default();
+            let friends = db::db_ins().groups.get_list().await.unwrap_or_default();
             ContactsMsg::QueryGroups(QueryState::Success(friends))
         });
         // 查询好友请求列表
         ctx.link().send_future(async {
-            let count = db::friendships().await.get_unread_count().await;
+            let count = db::db_ins().friendships.get_unread_count().await;
             ContactsMsg::QueryFriendship(count)
         });
         // register state
@@ -173,7 +170,7 @@ impl Component for Contacts {
                 match friendship.state_type {
                     FriendShipStateType::Req => {
                         ctx.link().send_future(async {
-                            let count = db::friendships().await.get_unread_count().await;
+                            let count = db::db_ins().friendships.get_unread_count().await;
                             Dispatch::<UnreadState>::global()
                                 .reduce_mut(|s| s.contacts_count = count);
                             ContactsMsg::QueryFriendship(count)
@@ -206,7 +203,7 @@ impl Component for Contacts {
                 });
                 // clean unread count
                 spawn_local(async {
-                    if let Ok(msg_id) = db::friendships().await.clean_unread_count().await {
+                    if let Ok(msg_id) = db::db_ins().friendships.clean_unread_count().await {
                         if !msg_id.is_empty() {
                             Dispatch::<UnreadState>::global().reduce_mut(|s| s.contacts_count = 0);
                             // send read request

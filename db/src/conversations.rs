@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
@@ -12,7 +14,7 @@ pub struct Test {
 }
 
 #[async_trait::async_trait(?Send)]
-pub trait Conversations {
+pub trait Conversations: Debug {
     async fn mute(&self, conv: &Conversation) -> Result<(), JsValue>;
 
     async fn put_conv(&self, conv: &Conversation) -> Result<(), JsValue>;

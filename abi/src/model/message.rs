@@ -8,7 +8,7 @@ use crate::pb;
 use crate::pb::message::{Msg as PbMsg, MsgType};
 
 use super::friend::Friend;
-use super::group::{GroupFromServer, GroupMemberFromServer};
+use super::group::{Group, GroupFromServer, GroupMemberFromServer};
 
 pub const DEFAULT_HELLO_MESSAGE: &str = "I've accepted your friend request. Now let's chat!";
 
@@ -282,6 +282,7 @@ pub type Sequence = i64;
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub enum GroupMsg {
     Message(Message),
+    Update((Group, Sequence)),
     Invitation((GroupInvitation, Sequence)),
     MemberExit((UserID, GroupID, Sequence)),
     Dismiss((GroupID, Sequence)),
@@ -503,7 +504,11 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         MsgType::GroupDismiss => Ok(Msg::Group(GroupMsg::Dismiss((msg.group_id, msg.seq)))),
         MsgType::GroupDismissOrExitReceived => todo!(),
         MsgType::GroupInvitationReceived => todo!(),
-        MsgType::GroupUpdate => todo!(),
+        MsgType::GroupUpdate => {
+            let info: GroupFromServer =
+                bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
+            Ok(Msg::Group(GroupMsg::Update((Group::from(info), msg.seq))))
+        }
         MsgType::FriendApplyReq => {
             // decode content
             let info: FriendshipWithUser4Response =
@@ -705,6 +710,7 @@ impl From<Msg> for PbMsg {
                     }
                     GroupMsg::DismissOrExitReceived(_) => {}
                     GroupMsg::InvitationReceived(_) => {}
+                    GroupMsg::Update(_) => { /* through http api */ }
                 }
                 pb_msg
             }

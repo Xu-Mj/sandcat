@@ -1,9 +1,11 @@
+use std::fmt::Debug;
+
 use wasm_bindgen::JsValue;
 
 use abi::model::group::{GroupMember, GroupMemberFromServer};
 
 #[async_trait::async_trait(?Send)]
-pub trait GroupMembers {
+pub trait GroupMembers: Debug {
     async fn put(&self, mem: &GroupMember) -> Result<(), JsValue>;
     async fn put_list(&self, members: Vec<GroupMemberFromServer>) -> Result<(), JsValue>;
     async fn get(&self, id: i64) -> Result<Option<GroupMember>, JsValue>;

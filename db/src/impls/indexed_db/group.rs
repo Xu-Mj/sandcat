@@ -18,6 +18,7 @@ use super::{
     GROUP_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX,
 };
 
+#[derive(Debug, Clone)]
 pub struct GroupRepo(Repository);
 impl Deref for GroupRepo {
     type Target = Repository;
@@ -28,12 +29,11 @@ impl Deref for GroupRepo {
 }
 
 impl GroupRepo {
-    pub async fn new() -> Self {
-        Self(Repository::new().await)
+    pub fn new(repo: Repository) -> Self {
+        Self(repo)
     }
 }
 
-#[allow(dead_code)]
 #[async_trait::async_trait(?Send)]
 impl GroupInterface for GroupRepo {
     async fn put(&self, group: &Group) -> Result<(), JsValue> {

@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use indexmap::IndexMap;
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
@@ -5,7 +7,7 @@ use yew::AttrValue;
 use abi::model::friend::Friend;
 
 #[async_trait::async_trait(?Send)]
-pub trait Friends {
+pub trait Friends: Debug {
     async fn put_friend(&self, friend: &Friend);
 
     async fn put_friend_list(&self, friends: &[Friend]);

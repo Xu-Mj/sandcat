@@ -21,7 +21,7 @@ use abi::{
     },
     state::{
         ConvState, CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState,
-        SendMessageState, UnreadState,
+        SendMessageState, UnreadState, UpdateConvState,
     },
 };
 use db::{self, TOKEN, WS_ADDR};
@@ -81,6 +81,7 @@ pub struct Chats {
     rec_msg_dis: Dispatch<RecMessageState>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
+    _update_dis: Dispatch<UpdateConvState>,
 }
 
 impl Chats {
@@ -89,13 +90,12 @@ impl Chats {
         // query conversation list
         let user_id = id.clone();
         ctx.link().send_future(async move {
-            let convs = db::convs().await.get_convs().await.unwrap_or_default();
+            let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
             // pull offline messages
             // get the seq
             // todo handle the error
             let server_seq = api::seq().get_seq(&user_id).await.unwrap_or_default();
-            let seq_repo = db::seq().await;
-            let mut local_seq = seq_repo.get().await.unwrap_or_default();
+            let mut local_seq = db::db_ins().seq.get().await.unwrap_or_default();
             let mut messages = Vec::new();
             log::debug!("local seq: {:?}; server seq:{:?}", local_seq, server_seq);
             if local_seq.local_seq < server_seq.seq {
@@ -106,7 +106,7 @@ impl Chats {
                     .await
                     .unwrap();
                 local_seq.local_seq = server_seq.seq;
-                seq_repo.put(&local_seq).await.unwrap();
+                db::db_ins().seq.put(&local_seq).await.unwrap();
             }
             ChatsMsg::QueryConvs((convs, messages, local_seq))
         });
@@ -150,6 +150,9 @@ impl Chats {
             LanguageType::EnUS => en_us::CONVERSATION,
         };
         let i18n = utils::create_bundle(res);
+
+        let _update_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(ChatsMsg::UpdateConvStateChanged));
         Self {
             call_msg: SingleCall::default(),
             ws,
@@ -171,6 +174,7 @@ impl Chats {
             _lang_dispatch: lang_dispatch,
             conv_state: conv_dispatch.get(),
             conv_dispatch,
+            _update_dis,
         }
     }
 
@@ -190,7 +194,7 @@ impl Chats {
         // delete database data
         let id = self.context_menu_pos.2.clone();
         spawn_local(async move {
-            if let Err(e) = db::convs().await.delete(id.as_str()).await {
+            if let Err(e) = db::db_ins().convs.delete(id.as_str()).await {
                 log::error!("delete conversation error: {:?}", e);
             }
         });
@@ -225,7 +229,7 @@ impl Chats {
             let conv = conv.clone();
 
             spawn_local(async move {
-                if let Err(e) = db::convs().await.mute(&conv).await {
+                if let Err(e) = db::db_ins().convs.mute(&conv).await {
                     log::error!("mute conversation err: {:?}", e);
                 }
             });
@@ -303,7 +307,7 @@ impl Chats {
             // self.list.shift_insert(index, cur_conv_id, conv.clone());
             let conv = conv.clone();
             spawn_local(async move {
-                db::convs().await.put_conv(&conv).await.unwrap();
+                db::db_ins().convs.put_conv(&conv).await.unwrap();
             });
             need_rerender
         } else {
@@ -318,10 +322,10 @@ impl Chats {
                 // query information by conv_type
                 let conv = match conv_type {
                     RightContentType::Friend => {
-                        let friend = db::friends().await.get(friend_id.as_str()).await;
+                        let friend = db::db_ins().friends.get(friend_id.as_str()).await;
                         // todo查询上一条消息
-                        let result = db::messages()
-                            .await
+                        let result = db::db_ins()
+                            .messages
                             .get_last_msg(friend_id.as_str())
                             .await
                             .unwrap_or_default();
@@ -344,15 +348,15 @@ impl Chats {
                         }
                     }
                     RightContentType::Group => {
-                        let group = db::groups()
-                            .await
+                        let group = db::db_ins()
+                            .groups
                             .get(friend_id.as_str())
                             .await
                             .unwrap()
                             .unwrap();
                         // todo查询上一条消息
-                        let result = db::group_msgs()
-                            .await
+                        let result = db::db_ins()
+                            .group_msgs
                             .get_last_msg(friend_id.as_str())
                             .await
                             .unwrap_or_default();
@@ -380,7 +384,7 @@ impl Chats {
                     }
                 };
 
-                db::convs().await.put_conv(&conv).await.unwrap();
+                db::db_ins().convs.put_conv(&conv).await.unwrap();
                 log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
                 if need_rerender {
                     ChatsMsg::InsertConv(conv)

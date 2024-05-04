@@ -8,10 +8,11 @@ edition = "2021"
 [dependencies]
 gloo = "0.11.0"
 fluent = "0.16.0"
+log = "0.4.6"
 unic-langid = { version = "0.9.4", features = ["unic-langid-macros"] }
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.39"
-log = "0.4.6"
+yew = { version = "0.21", features = ["csr"] }
 [dependencies.chrono]
 version = "0.4"
 features = ["wasmbind", "js-sys", "serde"]
@@ -22,6 +23,8 @@ features = [
     "MediaStream",
     "MediaStreamConstraints",
     "MediaStreamTrack",
+    "MouseEvent",
+    "Node",
     "Navigator",
     "MediaDevices",
     "CssStyleDeclaration",

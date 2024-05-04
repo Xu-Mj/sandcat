@@ -18,6 +18,7 @@ pub struct GroupFromServer {
     pub create_time: i64,
     pub update_time: i64,
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone, Default, PartialEq)]
 pub struct Group {
     pub id: AttrValue,
@@ -48,6 +49,7 @@ impl From<GroupFromServer> for Group {
         }
     }
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct GroupRequest {
     pub id: String,
@@ -56,6 +58,7 @@ pub struct GroupRequest {
     pub group_name: String,
     pub members_id: Vec<String>,
 }
+
 #[derive(Deserialize, Serialize, Debug, Clone, Default)]
 pub struct GroupDelete {
     pub user_id: String,

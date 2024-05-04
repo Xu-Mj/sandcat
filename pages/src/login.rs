@@ -83,7 +83,7 @@ async fn init_db(id: AttrValue) {
     match api::friends().get_friend_list_by_id(id.to_string()).await {
         Ok(res) => {
             // 写入数据库
-            db::friends().await.put_friend_list(&res).await;
+            db::db_ins().friends.put_friend_list(&res).await;
         }
         Err(e) => {
             log::error!("获取联系人列表错误: {:?}", e)
@@ -155,12 +155,12 @@ impl Component for Login {
                         .set(TOKEN, res.token.as_str())
                         .unwrap();
                     // 初始化数据库
+                    db::init_db().await;
                     init_db(id.clone()).await;
                     // 将用户信息存入数据库
                     // 先查询是否登录过
-                    let user_repo = db::users().await;
                     // let user_former = user_repo.get(id.clone()).await;
-                    user_repo.add(&user).await;
+                    db::db_ins().users.add(&user).await;
                     // if user_former.is_ok() && user_former.unwrap().id != AttrValue::default() {
                     //     // 已经存在，更新数据库
                     // } else {

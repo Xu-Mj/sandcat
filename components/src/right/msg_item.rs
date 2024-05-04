@@ -60,8 +60,8 @@ impl Component for MsgItem {
             let friend_id = ctx.props().msg.send_id.clone();
             let group_id = ctx.props().msg.friend_id.clone();
             ctx.link().send_future(async move {
-                let member = db::group_members()
-                    .await
+                let member = db::db_ins()
+                    .group_members
                     .get_by_group_id_and_friend_id(group_id.as_str(), friend_id.as_str())
                     .await
                     .unwrap();
@@ -126,18 +126,18 @@ impl Component for MsgItem {
                 ctx.link().send_future(async move {
                     // 查询好友信息
                     let user = if is_self {
-                        let user = db::users().await.get(user_id.as_str()).await.unwrap();
+                        let user = db::db_ins().users.get(user_id.as_str()).await.unwrap();
                         UserWithMatchType::from(user)
                     } else {
                         match conv_type {
                             RightContentType::Friend => {
-                                let friend = db::friends().await.get(friend_id.as_str()).await;
+                                let friend = db::db_ins().friends.get(friend_id.as_str()).await;
                                 UserWithMatchType::from(friend)
                             }
                             // query group member
                             RightContentType::Group => {
-                                let member = db::group_members()
-                                    .await
+                                let member = db::db_ins()
+                                    .group_members
                                     .get_by_group_id_and_friend_id(
                                         group_id.as_str(),
                                         send_id.as_str(),
@@ -212,11 +212,11 @@ impl Component for MsgItem {
                     };
                     match conv_type {
                         RightContentType::Friend => {
-                            db::messages().await.update_msg_status(&msg).await.unwrap();
+                            db::db_ins().messages.update_msg_status(&msg).await.unwrap();
                         }
                         RightContentType::Group => {
-                            db::group_msgs()
-                                .await
+                            db::db_ins()
+                                .group_msgs
                                 .update_msg_status(&msg)
                                 .await
                                 .unwrap();

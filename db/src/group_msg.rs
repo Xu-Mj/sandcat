@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use indexmap::IndexMap;
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
@@ -5,7 +7,7 @@ use yew::AttrValue;
 use abi::model::message::{Message, ServerResponse};
 
 #[async_trait::async_trait(?Send)]
-pub trait GroupMessages {
+pub trait GroupMessages: Debug {
     async fn put(&self, group: &Message) -> Result<(), JsValue>;
 
     async fn get_messages(
@@ -18,4 +20,6 @@ pub trait GroupMessages {
     async fn get_last_msg(&self, group_id: &str) -> Result<Message, JsValue>;
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<(), JsValue>;
+
+    async fn batch_delete(&self, group_id: &str) -> Result<(), JsValue>;
 }

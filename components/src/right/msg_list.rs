@@ -13,8 +13,8 @@ use abi::model::message::Msg;
 use abi::model::message::SingleCall;
 use abi::model::ItemInfo;
 use abi::model::RightContentType;
-use abi::state::OfflineMsgState;
 use abi::state::RecMessageState;
+use abi::state::RefreshMsgListState;
 use abi::state::SendResultState;
 use i18n::LanguageType;
 
@@ -32,7 +32,7 @@ pub struct MessageList {
     is_black: bool,
 
     // listen sync offline message, query message list
-    _sync_msg_dis: Dispatch<OfflineMsgState>,
+    _sync_msg_dis: Dispatch<RefreshMsgListState>,
     // listen rec message, update message list
     _rec_msg_dis: Dispatch<RecMessageState>,
     // listen send result, update message item status
@@ -88,16 +88,16 @@ impl MessageList {
             ctx.link().send_future(async move {
                 match conv_type {
                     RightContentType::Friend => {
-                        let list = db::messages()
-                            .await
+                        let list = db::db_ins()
+                            .messages
                             .get_messages(id.as_str(), page, page_size)
                             .await
                             .unwrap();
                         MessageListMsg::QueryMsgList(list)
                     }
                     RightContentType::Group => {
-                        let list = db::group_msgs()
-                            .await
+                        let list = db::db_ins()
+                            .group_msgs
                             .get_messages(id.as_str(), page, page_size)
                             .await
                             .unwrap();
@@ -123,11 +123,11 @@ impl MessageList {
                 let mut friend: Option<Box<dyn ItemInfo>> = None;
                 match conv_type {
                     RightContentType::Friend => {
-                        friend = Some(Box::new(db::friends().await.get(id.as_str()).await));
+                        friend = Some(Box::new(db::db_ins().friends.get(id.as_str()).await));
                     }
                     RightContentType::Group => {
                         friend = Some(Box::new(
-                            db::groups().await.get(id.as_str()).await.unwrap().unwrap(),
+                            db::db_ins().groups.get(id.as_str()).await.unwrap().unwrap(),
                         ));
                     }
                     _ => {}

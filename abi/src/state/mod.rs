@@ -17,8 +17,8 @@ use crate::model::{
 
 /// offline message. notify other components after offline handled complete
 #[derive(Store, Debug, Default, Clone, PartialEq)]
-pub struct OfflineMsgState {
-    pub complete: (),
+pub struct RefreshMsgListState {
+    pub refresh: bool,
 }
 
 /// language type
@@ -128,6 +128,13 @@ impl CreateConvState {
 #[derive(Default, Clone, PartialEq, Store)]
 pub struct AddFriendState {
     pub item: AddFriendStateItem,
+}
+
+#[derive(Debug, Default, Clone, PartialEq, Store)]
+pub struct UpdateConvState {
+    pub id: AttrValue,
+    pub name: Option<AttrValue>,
+    pub avatar: Option<AttrValue>,
 }
 
 /// 记录当前朋友列表状态

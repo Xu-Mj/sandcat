@@ -14,7 +14,7 @@ use abi::{
         ContentType, RightContentType,
     },
     pb::message::Msg as PbMsg,
-    state::OfflineMsgState,
+    state::RefreshMsgListState,
 };
 
 use super::{conversations::ChatsMsg, Chats};
@@ -43,7 +43,7 @@ impl Chats {
         };
 
         spawn_local(async move {
-            db::messages().await.add_message(&mut msg).await.unwrap();
+            db::db_ins().messages.add_message(&mut msg).await.unwrap();
         });
 
         if let Some(v) = map.get_mut(&conv.friend_id) {
@@ -87,18 +87,23 @@ impl Chats {
                     }
                     GroupMsg::Message(msg) => {
                         spawn_local(async move {
-                            db::group_msgs().await.put(&msg).await.unwrap();
+                            db::db_ins().group_msgs.put(&msg).await.unwrap();
                         });
                     }
                     GroupMsg::MemberExit((mem_id, group_id, _)) => {
                         // todo send a exit message to the group
                         spawn_local(async move {
-                            db::group_members()
-                                .await
+                            db::db_ins()
+                                .group_members
                                 .delete(&mem_id, &group_id)
                                 .await
                                 .unwrap();
                         });
+                    }
+                    GroupMsg::Update((group, _)) => {
+                        self.handle_group_update(group);
+
+                        // todo send message received
                     }
                     GroupMsg::DismissOrExitReceived(_) | GroupMsg::InvitationReceived(_) => {}
                 },
@@ -147,22 +152,22 @@ impl Chats {
                 Msg::RecRelationship((fs, _)) => {
                     // receive the friend request, ignore the sequence
                     spawn_local(async move {
-                        db::friendships().await.put_friendship(&fs).await;
+                        db::db_ins().friendships.put_friendship(&fs).await;
                     });
                 }
                 Msg::RelationshipRes((friend, _)) => {
                     let send_id = ctx.props().user_id.clone();
                     ctx.link().send_future(async move {
-                        db::friendships()
-                            .await
+                        db::db_ins()
+                            .friendships
                             .agree_by_friend_id(friend.friend_id.as_str())
                             .await;
                         // select friend if exist
-                        let f = db::friends().await.get(&friend.friend_id).await;
+                        let f = db::db_ins().friends.get(&friend.friend_id).await;
                         if !f.friend_id.is_empty() {
                             return ChatsMsg::None;
                         }
-                        db::friends().await.put_friend(&friend).await;
+                        db::db_ins().friends.put_friend(&friend).await;
                         // send hello message
                         let mut msg = Message {
                             local_id: nanoid::nanoid!().into(),
@@ -177,8 +182,8 @@ impl Chats {
                             is_self: true,
                             ..Default::default()
                         };
-                        db::messages()
-                            .await
+                        db::db_ins()
+                            .messages
                             .add_message(&mut msg)
                             .await
                             .map_err(|err| log::error!("save message fail:{:?}", err))
@@ -201,6 +206,6 @@ impl Chats {
         }
 
         // send sync offline message complete message to msg_list component
-        Dispatch::<OfflineMsgState>::global().reduce_mut(|s| s.complete = ());
+        Dispatch::<RefreshMsgListState>::global().reduce_mut(|s| s.refresh = !s.refresh);
     }
 }
