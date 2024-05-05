@@ -272,6 +272,7 @@ impl Component for SetWindow {
             }
         }
     }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         let mut avatars = html!();
         let mut info = html!();

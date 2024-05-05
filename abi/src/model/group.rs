@@ -29,6 +29,7 @@ pub struct Group {
     pub update_time: i64,
     pub description: AttrValue,
     pub announcement: AttrValue,
+    pub remark: AttrValue,
     // mark this group if deleted, local only
     #[serde(default)]
     pub deleted: bool,
@@ -45,6 +46,7 @@ impl From<GroupFromServer> for Group {
             update_time: value.update_time,
             description: value.description,
             announcement: value.announcement,
+            remark: AttrValue::default(),
             deleted: false,
         }
     }
@@ -228,10 +230,10 @@ impl ItemInfo for Group {
     }
 
     fn remark(&self) -> Option<AttrValue> {
-        if self.announcement.is_empty() {
+        if self.remark.is_empty() {
             None
         } else {
-            Some(self.announcement.clone())
+            Some(self.remark.clone())
         }
     }
 

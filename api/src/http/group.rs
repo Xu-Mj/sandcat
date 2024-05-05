@@ -4,7 +4,7 @@ use wasm_bindgen::JsValue;
 use crate::group::GroupApi;
 use abi::{
     model::{
-        group::{Group, GroupDelete, GroupRequest},
+        group::{Group, GroupDelete, GroupFromServer, GroupRequest},
         message::GroupInvitation,
     },
     pb::message::GroupUpdate,
@@ -55,7 +55,7 @@ impl GroupApi for GroupHttp {
     }
 
     async fn update(&self, user_id: &str, data: GroupUpdate) -> Result<Group, JsValue> {
-        let group = Request::put(format!("/api/group/{}", user_id).as_str())
+        let group: GroupFromServer = Request::put(format!("/api/group/{}", user_id).as_str())
             .header(&self.auth_header, &self.token)
             .json(&data)
             .map_err(|err| JsValue::from(err.to_string()))?
@@ -67,6 +67,6 @@ impl GroupApi for GroupHttp {
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
 
-        Ok(group)
+        Ok(Group::from(group))
     }
 }

@@ -39,8 +39,13 @@ pub fn db_ins() -> &'static Db {
 }
 
 pub async fn init_db() {
+    if DB_INSTANCE.get().is_some() {
+        return;
+    }
     let db = Db::new().await;
-    DB_INSTANCE.set(db).unwrap();
+    if let Err(err) = DB_INSTANCE.set(db) {
+        log::error!("{:?}", err);
+    }
 }
 
 unsafe impl Sync for Db {}
