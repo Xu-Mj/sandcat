@@ -96,7 +96,7 @@ impl From<User> for UserWithMatchType {
             age: value.age,
             email: value.email,
             region: value.address,
-            birthday: value.birthday.map(|x| x.timestamp_millis()),
+            birthday: value.birthday.map(|x| x.and_utc().timestamp_millis()),
             match_type: None,
             signature: value.signature,
             is_friend: false,
