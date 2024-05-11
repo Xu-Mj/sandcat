@@ -240,7 +240,7 @@ impl Component for Sender {
             SenderMsg::SendEmoji(emoji) => {
                 // 存储消息、发送消息
                 let friend_id = ctx.props().friend_id.clone();
-                let time = chrono::Local::now().timestamp_millis();
+                let time = chrono::Utc::now().timestamp_millis();
                 let send_id = ctx.props().cur_user_id.clone();
                 let msg = Message {
                     id: 0,
@@ -293,7 +293,7 @@ impl Component for Sender {
                 false
             }
             SenderMsg::FileOnload(file_name, content_type, file_content) => {
-                let time = chrono::Local::now().timestamp_millis();
+                let time = chrono::Utc::now().timestamp_millis();
                 let file_content = if let Some(file_content) = file_content.as_string() {
                     file_content.into()
                 } else {
@@ -417,7 +417,7 @@ impl Component for Sender {
                     s.msg = InviteMsg {
                         local_id: nanoid::nanoid!().into(),
                         server_id: AttrValue::default(),
-                        create_time: chrono::Local::now().timestamp_millis(),
+                        create_time: chrono::Utc::now().timestamp_millis(),
                         friend_id: ctx.props().friend_id.clone(),
                         send_id: ctx.props().cur_user_id.clone(),
                         invite_type: InviteType::Video,
@@ -430,7 +430,7 @@ impl Component for Sender {
                     s.msg = InviteMsg {
                         local_id: nanoid::nanoid!().into(),
                         server_id: AttrValue::default(),
-                        create_time: chrono::Local::now().timestamp_millis(),
+                        create_time: chrono::Utc::now().timestamp_millis(),
                         friend_id: ctx.props().friend_id.clone(),
                         send_id: ctx.props().cur_user_id.clone(),
                         invite_type: InviteType::Audio,

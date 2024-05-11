@@ -189,21 +189,21 @@ impl Component for ListItem {
         // 判断距离现在多久
         let mut time_str = String::new();
         if props.time > 0 {
-            let now = chrono::Local::now().timestamp_millis();
+            let now = chrono::Utc::now().timestamp_millis();
             let step = now - props.time;
             let time_flag = if step < 60 * 1000 * 24 {
-                "%T"
+                "%H:%M"
             } else if (60 * 1000 * 24..60 * 1000 * 48).contains(&step) {
-                "昨天 %T"
+                "昨天 %H:%M"
             } else {
-                "%a %b %e %T"
+                "%a %b %e %H:%M"
             };
             // a: week b: month e: day T: time Y: year
-            time_str = chrono::Local
+            let utc_date = chrono::Utc
                 .timestamp_millis_opt(props.time)
                 .unwrap()
-                .format(time_flag)
-                .to_string();
+                .with_timezone(&chrono::Local);
+            time_str = utc_date.format(time_flag).to_string();
         }
         let mut name = props.name.clone();
         if !props.remark.is_empty() {

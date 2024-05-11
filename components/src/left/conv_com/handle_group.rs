@@ -131,7 +131,7 @@ impl Chats {
     pub fn handle_group_dismiss(&mut self, ctx: &Context<Self>, group_id: String) {
         let key = AttrValue::from(group_id.clone());
         if let Some(conv) = self.list.get_mut(&key) {
-            conv.last_msg_time = chrono::Local::now().timestamp_millis();
+            conv.last_msg_time = chrono::Utc::now().timestamp_millis();
             conv.last_msg_type = ContentType::Text;
             let mut conv = conv.clone();
             ctx.link().send_future(async move {

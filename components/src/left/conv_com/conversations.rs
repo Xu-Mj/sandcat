@@ -199,7 +199,7 @@ impl Component for Chats {
             ChatsMsg::DismissGroup(group_id, msg) => {
                 if let Some(conv) = self.list.get_mut(&group_id) {
                     conv.last_msg = msg.into();
-                    conv.last_msg_time = chrono::Local::now().timestamp_millis();
+                    conv.last_msg_time = chrono::Utc::now().timestamp_millis();
                 }
                 true
             }

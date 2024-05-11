@@ -170,7 +170,7 @@ impl Component for MsgItem {
                         server_id: AttrValue::default(),
                         send_id: ctx.props().user_id.clone(),
                         friend_id: ctx.props().friend_id.clone(),
-                        create_time: chrono::Local::now().timestamp_millis(),
+                        create_time: chrono::Utc::now().timestamp_millis(),
                         invite_type: InviteType::Video,
                     }
                 });
@@ -183,7 +183,7 @@ impl Component for MsgItem {
                         server_id: AttrValue::default(),
                         send_id: ctx.props().user_id.clone(),
                         friend_id: ctx.props().friend_id.clone(),
-                        create_time: chrono::Local::now().timestamp_millis(),
+                        create_time: chrono::Utc::now().timestamp_millis(),
                         invite_type: InviteType::Audio,
                     }
                 });

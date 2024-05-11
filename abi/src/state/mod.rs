@@ -203,13 +203,13 @@ impl From<&str> for FontSizeState {
     }
 }
 
-impl ToString for FontSizeState {
-    fn to_string(&self) -> String {
+impl Display for FontSizeState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            FontSizeState::Small => "small".to_string(),
-            FontSizeState::Medium => "medium".to_string(),
-            FontSizeState::Large => "large".to_string(),
-            FontSizeState::Larger => "larger".to_string(),
+            FontSizeState::Small => write!(f, "small"),
+            FontSizeState::Medium => write!(f, "medium"),
+            FontSizeState::Large => write!(f, "large"),
+            FontSizeState::Larger => write!(f, "larger"),
         }
     }
 }

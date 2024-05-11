@@ -60,7 +60,7 @@ impl WebRTC {
                         sdp_m_index: candidate.sdp_m_line_index(),
                         send_id: send.clone(),
                         friend_id: friend.clone(),
-                        create_time: chrono::Local::now().timestamp_millis(),
+                        create_time: chrono::Utc::now().timestamp_millis(),
                     }));
                     // log::debug!("on ice candidate send message:candidate:{:?}, ", &msg_clone);
                     WebRTC::send_msg1(ws_clone.clone(), msg_clone)
@@ -132,7 +132,7 @@ impl WebRTC {
                     sdp: sdp.into(),
                     send_id,
                     friend_id,
-                    create_time: chrono::Local::now().timestamp_millis(),
+                    create_time: chrono::Utc::now().timestamp_millis(),
                 }));
                 // log::debug!("on negotiation needed send message: {:?}", &msg);
                 WebRTC::send_msg1(ws.clone(), msg);

@@ -177,7 +177,7 @@ impl Chats {
                             content: friend
                                 .hello
                                 .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
-                            create_time: chrono::Local::now().timestamp_millis(),
+                            create_time: chrono::Utc::now().timestamp_millis(),
                             is_read: 1,
                             is_self: true,
                             ..Default::default()

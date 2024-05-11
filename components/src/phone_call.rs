@@ -259,7 +259,7 @@ impl Component for PhoneCall {
                         log::debug!("请求被对方同意");
                         // todo需要在webrtc状态为Connected下进行回调修改
                         self.invite_info.as_mut().unwrap().start_time =
-                            chrono::Local::now().timestamp_millis();
+                            chrono::Utc::now().timestamp_millis();
                         self.invite_info.as_mut().unwrap().connected = true;
                         let mut description = RtcSessionDescriptionInit::new(RtcSdpType::Answer);
                         description.sdp(&msg.sdp.unwrap());
@@ -322,7 +322,7 @@ impl Component for PhoneCall {
                         msg.send_id = msg.friend_id.clone();
                         msg.friend_id = friend_id;
                         let info = self.invite_info.as_ref().unwrap();
-                        let create_time = chrono::Local::now().timestamp_millis();
+                        let create_time = chrono::Utc::now().timestamp_millis();
                         let sustain = create_time - info.start_time;
                         msg.sustain = sustain;
                         self.save_call_msg(msg.into());
@@ -354,7 +354,7 @@ impl Component for PhoneCall {
                     send_id: ctx.props().user_id.clone(),
                     friend_id: msg.friend_id.clone(),
                     invite_type: msg.invite_type.clone(),
-                    start_time: chrono::Local::now().timestamp_millis(),
+                    start_time: chrono::Utc::now().timestamp_millis(),
                     end_time: 0,
                     connected: false,
                 });
@@ -455,7 +455,7 @@ impl Component for PhoneCall {
                 let local_id = AttrValue::from(nanoid!());
                 let info = self.invite_info.as_ref().unwrap();
                 let friend_id = info.friend_id.clone();
-                let create_time = chrono::Local::now().timestamp_millis();
+                let create_time = chrono::Utc::now().timestamp_millis();
                 let send_id = ctx.props().user_id.clone();
 
                 // save data to db
@@ -525,7 +525,7 @@ impl Component for PhoneCall {
             PhoneCallMsg::HangUpCall => {
                 log::debug!("HangUpCall");
                 let info = self.invite_info.as_ref().unwrap();
-                let create_time = chrono::Local::now().timestamp_millis();
+                let create_time = chrono::Utc::now().timestamp_millis();
                 let sustain = create_time - info.start_time;
                 let local_id = AttrValue::from(nanoid!());
                 let friend_id = if self.invited {
@@ -584,7 +584,7 @@ impl Component for PhoneCall {
                     server_id: AttrValue::default(),
                     send_id: ctx.props().user_id.clone(),
                     friend_id: self.invite_info.as_ref().unwrap().send_id.clone(),
-                    create_time: chrono::Local::now().timestamp_millis(),
+                    create_time: chrono::Utc::now().timestamp_millis(),
                     agree: true,
                     is_self: true,
                     invite_type: info.invite_type.clone(),
@@ -653,7 +653,7 @@ impl Component for PhoneCall {
                 });
                 self.invite_info.as_mut().unwrap().connected = true;
                 self.invite_info.as_mut().unwrap().start_time =
-                    chrono::Local::now().timestamp_millis();
+                    chrono::Utc::now().timestamp_millis();
 
                 true
             }
@@ -667,7 +667,7 @@ impl Component for PhoneCall {
                     InviteType::Video => ContentType::VideoCall,
                     InviteType::Audio => ContentType::AudioCall,
                 };
-                let create_time = chrono::Local::now().timestamp_millis();
+                let create_time = chrono::Utc::now().timestamp_millis();
                 let invite_type = info.invite_type.clone();
                 self.show_notify = false;
                 // self.finish_call();
@@ -735,7 +735,7 @@ impl Component for PhoneCall {
                     }
                     let local_id = AttrValue::from(nanoid!());
                     let friend_id = info.friend_id.clone();
-                    let create_time = chrono::Local::now().timestamp_millis();
+                    let create_time = chrono::Utc::now().timestamp_millis();
                     let send_id = ctx.props().user_id.clone();
                     // 数据入库
                     let content_type = match info.invite_type {
