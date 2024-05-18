@@ -2,9 +2,9 @@ use gloo_net::http::Request;
 use serde::Serialize;
 use wasm_bindgen::JsValue;
 
-use sandcat_sdk::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
+use crate::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
 
-use crate::user::UserApi;
+use crate::api::user::UserApi;
 
 use super::RespStatus;
 pub struct UserHttp<'a> {

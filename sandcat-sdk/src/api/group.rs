@@ -1,6 +1,6 @@
 use wasm_bindgen::JsValue;
 
-use sandcat_sdk::{
+use crate::{
     model::group::{Group, GroupDelete, GroupRequest},
     pb::message::GroupUpdate,
 };

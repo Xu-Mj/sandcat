@@ -3,7 +3,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use sandcat_sdk::{
-    db,
+    api, db,
     model::{
         conversation::Conversation,
         friend::FriendStatus,

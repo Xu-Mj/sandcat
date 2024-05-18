@@ -15,6 +15,7 @@ use yewdux::Dispatch;
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{CloseIcon, ImageIcon};
 use icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon};
+use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
 use sandcat_sdk::model::RightContentType;

@@ -21,7 +21,6 @@ yew-router = "0.18"
 
 
 sandcat-sdk = { path = "../sandcat-sdk" }
-api = { path = "../api" }
 i18n = { path = "../i18n" }
 icons = { path = "../icons" }
 utils = { path = "../utils" }

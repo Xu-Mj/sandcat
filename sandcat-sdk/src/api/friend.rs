@@ -1,6 +1,6 @@
 use wasm_bindgen::JsValue;
 
-use sandcat_sdk::model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser};
+use crate::model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser};
 
 #[async_trait::async_trait(?Send)]
 pub trait FriendApi {

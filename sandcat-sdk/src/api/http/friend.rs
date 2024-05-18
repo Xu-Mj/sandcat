@@ -2,8 +2,8 @@ use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 
-use crate::friend::FriendApi;
-use sandcat_sdk::{
+use crate::api::friend::FriendApi;
+use crate::{
     model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
     pb::message::UpdateRemarkRequest,
 };

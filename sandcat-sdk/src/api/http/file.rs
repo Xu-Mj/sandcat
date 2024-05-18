@@ -3,7 +3,7 @@ use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{File, Response};
 
-use crate::file::FileApi;
+use crate::api::file::FileApi;
 
 #[allow(dead_code)]
 pub struct FileHttp {

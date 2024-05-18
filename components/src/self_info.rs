@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
+
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::Event;
@@ -11,6 +12,7 @@ use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::db::repository::Repository;
 use sandcat_sdk::model::page::Page;

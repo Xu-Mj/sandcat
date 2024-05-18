@@ -10,6 +10,7 @@ use yewdux::Dispatch;
 use zxcvbn::zxcvbn;
 
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::api;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::UserRegister;
 use sandcat_sdk::state::I18nState;

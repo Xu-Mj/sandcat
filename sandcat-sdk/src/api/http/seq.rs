@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
 
-use crate::seq::{Seq, SeqApi};
+use crate::api::seq::{Seq, SeqApi};
 
 use super::RespStatus;
 

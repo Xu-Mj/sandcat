@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "sandcat-sdk",
-    "api",
     "components",
     "i18n",
     "icons",

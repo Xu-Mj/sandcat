@@ -3,8 +3,8 @@ use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 
-use crate::message::MsgApi;
-use sandcat_sdk::pb::message::Msg;
+use crate::api::message::MsgApi;
+use crate::pb::message::Msg;
 
 use super::RespStatus;
 

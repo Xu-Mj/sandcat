@@ -9,6 +9,7 @@ use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::UpIcon;
+use sandcat_sdk::api;
 use sandcat_sdk::model::friend::{
     Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus,
 };

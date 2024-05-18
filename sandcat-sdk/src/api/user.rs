@@ -1,6 +1,6 @@
 use wasm_bindgen::JsValue;
 
-use sandcat_sdk::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
+use crate::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
 
 #[async_trait::async_trait(?Send)]
 pub trait UserApi {

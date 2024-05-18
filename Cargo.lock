@@ -94,21 +94,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d301b3b94cb4b2f23d7917810addbbaff90738e0ca2be692bd027e70d7e0330c"
 
 [[package]]
-name = "api"
-version = "0.1.0"
-dependencies = [
- "async-trait",
- "gloo 0.11.0",
- "gloo-net 0.5.0",
- "log",
- "sandcat-sdk",
- "serde",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
 name = "app"
 version = "0.1.0"
 dependencies = [
@@ -485,7 +470,6 @@ dependencies = [
 name = "components"
 version = "0.1.0"
 dependencies = [
- "api",
  "chrono",
  "fluent",
  "futures-channel",
@@ -2904,7 +2888,6 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 name = "pages"
 version = "0.1.0"
 dependencies = [
- "api",
  "base64 0.22.1",
  "components",
  "fluent",
@@ -3688,6 +3671,8 @@ dependencies = [
  "bincode",
  "chrono",
  "futures-channel",
+ "gloo 0.11.0",
+ "gloo-net 0.5.0",
  "i18n",
  "implicit-clone",
  "indexmap 2.2.6",
@@ -3700,6 +3685,7 @@ dependencies = [
  "serde-wasm-bindgen 0.6.5",
  "utils",
  "wasm-bindgen",
+ "wasm-bindgen-futures",
  "web-sys",
  "yew",
  "yew-router",
