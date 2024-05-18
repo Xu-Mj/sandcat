@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 
 use crate::message::MsgApi;
-use abi::pb::message::Msg;
+use sandcat_sdk::pb::message::Msg;
 
 use super::RespStatus;
 

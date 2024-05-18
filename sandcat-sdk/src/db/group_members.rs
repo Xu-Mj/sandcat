@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use wasm_bindgen::JsValue;
 
-use abi::model::group::{GroupMember, GroupMemberFromServer};
+use crate::model::group::{GroupMember, GroupMemberFromServer};
 
 #[async_trait::async_trait(?Send)]
 pub trait GroupMembers: Debug {

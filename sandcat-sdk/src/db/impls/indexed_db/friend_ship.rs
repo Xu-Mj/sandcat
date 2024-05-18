@@ -3,9 +3,9 @@ use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
 
-use abi::model::friend::{FriendShipWithUser, FriendStatus, ReadStatus};
+use crate::model::friend::{FriendShipWithUser, FriendStatus, ReadStatus};
 
-use crate::friendships::Friendships;
+use crate::db::friendships::Friendships;
 
 use super::{
     repository::Repository, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_USER_ID_INDEX,

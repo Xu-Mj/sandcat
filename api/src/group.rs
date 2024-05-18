@@ -1,6 +1,6 @@
 use wasm_bindgen::JsValue;
 
-use abi::{
+use sandcat_sdk::{
     model::group::{Group, GroupDelete, GroupRequest},
     pb::message::GroupUpdate,
 };

@@ -10,11 +10,12 @@ use yew::{html, Callback, Component, NodeRef, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
-use abi::model::page::Page;
-use abi::model::user::{User, UserUpdate};
-use abi::state::I18nState;
-use db::repository::Repository;
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::db;
+use sandcat_sdk::db::repository::Repository;
+use sandcat_sdk::model::page::Page;
+use sandcat_sdk::model::user::{User, UserUpdate};
+use sandcat_sdk::state::I18nState;
 use utils::tr;
 
 pub struct SelfInfo {

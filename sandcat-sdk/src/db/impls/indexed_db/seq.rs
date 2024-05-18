@@ -6,9 +6,9 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::IdbRequest;
 use yew::Event;
 
-use abi::model::seq::Seq;
+use crate::model::seq::Seq;
 
-use crate::seq::SeqInterface;
+use crate::db::seq::SeqInterface;
 
 use super::{repository::Repository, SEQ_TABLE_NAME};
 

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
 
-use abi::model::conversation::Conversation;
+use crate::model::conversation::Conversation;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Test {

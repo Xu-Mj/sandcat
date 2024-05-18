@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
 
-use abi::model::message::{Message, ServerResponse};
+use crate::model::message::{Message, ServerResponse};
 
 #[async_trait::async_trait(?Send)]
 pub trait GroupMessages: Debug {

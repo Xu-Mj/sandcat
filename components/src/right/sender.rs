@@ -12,13 +12,14 @@ use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use abi::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
-use abi::model::RightContentType;
-use abi::state::SendCallState;
-use abi::{model::message::Message, model::ContentType, state::SendMessageState};
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{CloseIcon, ImageIcon};
 use icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon};
+use sandcat_sdk::db;
+use sandcat_sdk::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
+use sandcat_sdk::model::RightContentType;
+use sandcat_sdk::state::SendCallState;
+use sandcat_sdk::{model::message::Message, model::ContentType, state::SendMessageState};
 use utils::tr;
 
 use super::emoji::{get_emojis, Emoji};
@@ -471,7 +472,7 @@ impl Component for Sender {
             let callback = &ctx.link().callback(SenderMsg::SendEmoji);
             let onblur = &ctx.link().callback(move |_| SenderMsg::ShowEmoji);
             emojis = html! {
-                <div class="emoji-wrapper" tabindex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
+                <div class="emoji-wrapper" tsandcat_sdkndex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
                     {
                         self.emoji_list.iter()
                         .map(|emoji| {html! (<EmojiSpan emoji={emoji.clone()} onclick={callback} />)})

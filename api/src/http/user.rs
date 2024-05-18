@@ -2,7 +2,7 @@ use gloo_net::http::Request;
 use serde::Serialize;
 use wasm_bindgen::JsValue;
 
-use abi::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
+use sandcat_sdk::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
 
 use crate::user::UserApi;
 

@@ -1,26 +1,32 @@
 [package]
-name = "db"
+name = "sandcat-sdk"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-trait = "0.1.77"
-futures-channel = "0.3.29"
-indexmap = { version = "2.2.3" }
-js-sys = { version = "0.3" }
+bincode = "1.3.3"
+implicit-clone = { version = "0.4.8", features = ["serde"] }
 log = "0.4.6"
-once_cell = "1"
-lazy_static = "1.4.0"
+prost = "0.12.3"
+prost-types = "0.12.3"
 serde = "1"
-serde-wasm-bindgen = "0.6"
-wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+yewdux = { version = "0.10.0", features = ["doctests"] }
 yew = { version = "0.21", features = ["csr"] }
-
-abi = { path = "../abi" }
-
-
+yew-router = "0.18"
+i18n = { path = "../i18n" }
+utils = { path = "../utils" }
+async-trait = "0.1.80"
+wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
+once_cell = "1"
+futures-channel = "0.3.29"
+indexmap = "2.2.3"
+js-sys = "0.3"
+serde-wasm-bindgen = "0.6"
+[dependencies.chrono]
+version = "0.4"
+features = ["wasmbind", "js-sys", "serde"]
 [dependencies.web-sys]
 version = "0.3"
 # We need to enable all the web-sys features we want to use!

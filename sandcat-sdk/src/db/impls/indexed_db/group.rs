@@ -6,12 +6,12 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
-use abi::model::{
+use crate::model::{
     group::{Group, GroupMember},
     message::Message,
 };
 
-use crate::groups::GroupInterface;
+use crate::db::groups::GroupInterface;
 
 use super::{
     repository::Repository, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,

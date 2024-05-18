@@ -4,10 +4,10 @@ use futures_channel::oneshot;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{console, Event, IdbRequest};
 
-use abi::model::user::User;
+use crate::model::user::User;
 
 use super::repository::Repository;
-use crate::users::Users;
+use crate::db::users::Users;
 
 const USER_STORE_NAME: &str = "users";
 // 用户仓库，增删改查

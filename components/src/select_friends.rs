@@ -7,10 +7,11 @@ use wasm_bindgen::JsValue;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use abi::model::friend::Friend;
 use i18n::en_us;
 use i18n::zh_cn;
 use i18n::LanguageType;
+use sandcat_sdk::db;
+use sandcat_sdk::model::friend::Friend;
 use utils::tr;
 
 pub struct SelectFriendList {

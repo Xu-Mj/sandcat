@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 
 use crate::friend::FriendApi;
-use abi::{
+use sandcat_sdk::{
     model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
     pb::message::UpdateRemarkRequest,
 };

@@ -11,11 +11,11 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
-use abi::model::page::Page;
-use abi::model::user::User;
-use abi::state::{I18nState, ThemeState};
-use db::{self, DB_NAME, TOKEN, WS_ADDR};
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::db::{self, DB_NAME, TOKEN, WS_ADDR};
+use sandcat_sdk::model::page::Page;
+use sandcat_sdk::model::user::User;
+use sandcat_sdk::state::{I18nState, ThemeState};
 use utils::tr;
 
 pub struct Login {

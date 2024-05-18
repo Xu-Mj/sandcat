@@ -1,16 +1,15 @@
 [workspace]
 members = [
-    "abi",
+    "sandcat-sdk",
     "api",
     "components",
-    "db",
     "i18n",
     "icons",
     "pages",
     "utils",
     "web_rtc",
     "ws",
-    "src-tauri"
+    "src-tauri",
 ]
 resolver = "2"
 default-members = ["pages"]

@@ -2,7 +2,8 @@ use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use abi::{
+use sandcat_sdk::{
+    db,
     model::{
         conversation::Conversation,
         friend::FriendStatus,

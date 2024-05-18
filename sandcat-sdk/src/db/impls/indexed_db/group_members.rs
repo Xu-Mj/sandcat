@@ -6,9 +6,9 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::Event;
 
-use abi::model::group::{GroupMember, GroupMemberFromServer};
+use crate::model::group::{GroupMember, GroupMemberFromServer};
 
-use crate::group_members::GroupMembers;
+use crate::db::group_members::GroupMembers;
 
 use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
 

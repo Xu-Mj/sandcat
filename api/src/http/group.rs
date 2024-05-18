@@ -2,7 +2,7 @@ use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
 
 use crate::group::GroupApi;
-use abi::{
+use sandcat_sdk::{
     model::{
         group::{Group, GroupDelete, GroupFromServer, GroupRequest},
         message::GroupInvitation,

@@ -6,8 +6,8 @@ use web_sys::HtmlInputElement;
 use yew::{html, Component, Event, Properties};
 use yewdux::Dispatch;
 
-use abi::state::{FontSizeState, I18nState, ThemeState};
 use i18n::{self, en_us, zh_cn, LanguageType};
+use sandcat_sdk::state::{FontSizeState, I18nState, ThemeState};
 use utils::tr;
 
 pub struct Setting {

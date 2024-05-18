@@ -5,10 +5,10 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbCursorWithValue, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
 
-use abi::model::friend::Friend;
-use abi::model::message::Message;
+use crate::model::friend::Friend;
+use crate::model::message::Message;
 
-use crate::friends::Friends;
+use crate::db::friends::Friends;
 
 use super::{repository::Repository, FRIEND_TABLE_NAME};
 use super::{MESSAGE_FRIEND_ID_INDEX, MESSAGE_TABLE_NAME};

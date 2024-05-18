@@ -12,16 +12,19 @@ pub mod setting;
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
+use sandcat_sdk::db;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use abi::model::RightContentType;
-use abi::model::{ComponentType, ItemInfo};
-use abi::state::AppState;
-use abi::state::{ComponentTypeState, ConvState, CreateConvState, FriendListState, I18nState};
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{CatHeadIcon, CloseIcon, MaxIcon};
+use sandcat_sdk::model::RightContentType;
+use sandcat_sdk::model::{ComponentType, ItemInfo};
+use sandcat_sdk::state::AppState;
+use sandcat_sdk::state::{
+    ComponentTypeState, ConvState, CreateConvState, FriendListState, I18nState,
+};
 use utils::tr;
 
 use crate::right::friendship_list::FriendShipList;

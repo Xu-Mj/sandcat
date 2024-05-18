@@ -1,6 +1,6 @@
 use wasm_bindgen::JsValue;
 
-use abi::pb::message::Msg;
+use sandcat_sdk::pb::message::Msg;
 
 #[async_trait::async_trait(?Send)]
 pub trait MsgApi {

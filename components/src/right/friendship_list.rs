@@ -1,17 +1,20 @@
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
+use sandcat_sdk::db;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{HtmlInputElement, MouseEvent};
 use yew::{html, AttrValue, Component, Context, Html, NodeRef, Properties};
 use yewdux::Dispatch;
 
-use abi::model::friend::{Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus};
-use abi::model::message::{Message, Msg, SendStatus, DEFAULT_HELLO_MESSAGE};
-use abi::model::{ContentType, FriendShipStateType};
-use abi::state::{FriendShipState, SendMessageState};
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::UpIcon;
+use sandcat_sdk::model::friend::{
+    Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus,
+};
+use sandcat_sdk::model::message::{Message, Msg, SendStatus, DEFAULT_HELLO_MESSAGE};
+use sandcat_sdk::model::{ContentType, FriendShipStateType};
+use sandcat_sdk::state::{FriendShipState, SendMessageState};
 use utils::tr;
 
 pub struct FriendShipList {

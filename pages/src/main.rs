@@ -2,7 +2,7 @@ pub mod home;
 pub mod login;
 pub mod register;
 
-use abi::model::page::Page;
+use sandcat_sdk::model::page::Page;
 use yew::prelude::*;
 use yew_router::{BrowserRouter, Switch};
 

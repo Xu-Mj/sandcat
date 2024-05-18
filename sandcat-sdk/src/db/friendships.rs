@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use wasm_bindgen::JsValue;
 
-use abi::model::friend::FriendShipWithUser;
+use crate::model::friend::FriendShipWithUser;
 
 #[async_trait::async_trait(?Send)]
 pub trait Friendships: Debug {

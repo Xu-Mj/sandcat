@@ -2,10 +2,11 @@ use fluent::{FluentBundle, FluentResource};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use abi::model::friend::{FriendShipRequest, ReadStatus};
-use abi::model::user::UserWithMatchType;
-use abi::model::RightContentType;
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::db;
+use sandcat_sdk::model::friend::{FriendShipRequest, ReadStatus};
+use sandcat_sdk::model::user::UserWithMatchType;
+use sandcat_sdk::model::RightContentType;
 use utils::tr;
 
 use crate::action::Action;

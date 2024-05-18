@@ -1,6 +1,6 @@
 use wasm_bindgen::JsValue;
 
-use abi::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
+use sandcat_sdk::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
 
 #[async_trait::async_trait(?Send)]
 pub trait UserApi {

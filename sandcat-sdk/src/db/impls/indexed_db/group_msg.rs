@@ -6,9 +6,9 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
-use abi::model::message::{Message, ServerResponse};
+use crate::model::message::{Message, ServerResponse};
 
-use crate::group_msg::GroupMessages;
+use crate::db::group_msg::GroupMessages;
 
 use super::{
     repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,

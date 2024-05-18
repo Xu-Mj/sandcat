@@ -2,7 +2,7 @@ use std::fmt::Debug;
 
 use wasm_bindgen::JsValue;
 
-use abi::model::user::User;
+use crate::model::user::User;
 
 #[async_trait::async_trait(?Send)]
 pub trait Users: Debug {

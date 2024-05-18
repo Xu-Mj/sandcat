@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
 
-use abi::model::friend::Friend;
+use crate::model::friend::Friend;
 
 #[async_trait::async_trait(?Send)]
 pub trait Friends: Debug {

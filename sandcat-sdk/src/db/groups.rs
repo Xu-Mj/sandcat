@@ -4,7 +4,7 @@ use indexmap::IndexMap;
 use wasm_bindgen::JsValue;
 use yew::AttrValue;
 
-use abi::model::group::Group;
+use crate::model::group::Group;
 #[async_trait::async_trait(?Send)]
 pub trait GroupInterface: Debug {
     async fn put(&self, group: &Group) -> Result<(), JsValue>;

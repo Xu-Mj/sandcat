@@ -6,10 +6,10 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
 
-use abi::model::conversation::Conversation;
+use crate::model::conversation::Conversation;
 
 use super::{repository::Repository, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME};
-use crate::conversations::Conversations;
+use crate::db::conversations::Conversations;
 #[derive(Debug, Clone)]
 pub struct ConvRepo(Repository);
 
