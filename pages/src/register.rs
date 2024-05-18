@@ -9,10 +9,11 @@ use yew_router::prelude::RouterScopeExt;
 use yewdux::Dispatch;
 use zxcvbn::zxcvbn;
 
-use abi::model::page::Page;
-use abi::model::user::UserRegister;
-use abi::state::I18nState;
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::api;
+use sandcat_sdk::model::page::Page;
+use sandcat_sdk::model::user::UserRegister;
+use sandcat_sdk::state::I18nState;
 use utils::tr;
 
 #[derive(Default)]

@@ -1,8 +1,8 @@
-use abi::model::{
+use indexmap::IndexMap;
+use sandcat_sdk::model::{
     message::{Message, SendStatus},
     ContentType,
 };
-use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 

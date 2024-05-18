@@ -3,13 +3,13 @@ use nanoid::nanoid;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use abi::model::message::{InviteMsg, InviteType};
-use abi::model::RightContentType;
-use abi::model::{ComponentType, CurrentItem};
-use abi::state::SendCallState;
-use abi::state::{ComponentTypeState, ConvState};
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{PhoneIcon, SendMsgIcon, VideoIcon};
+use sandcat_sdk::model::message::{InviteMsg, InviteType};
+use sandcat_sdk::model::RightContentType;
+use sandcat_sdk::model::{ComponentType, CurrentItem};
+use sandcat_sdk::state::SendCallState;
+use sandcat_sdk::state::{ComponentTypeState, ConvState};
 use utils::tr;
 
 // 联系人卡面上的动作组件：发消息、点电话、打视频

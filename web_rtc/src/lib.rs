@@ -10,7 +10,7 @@ use web_sys::{
 use yew::platform::spawn_local;
 use yew::{AttrValue, Callback, NodeRef};
 
-use abi::model::message::{Candidate, InviteType, Msg, Offer, SingleCall};
+use sandcat_sdk::model::message::{Candidate, InviteType, Msg, Offer, SingleCall};
 use ws::WebSocketManager;
 
 pub struct WebRTC;

@@ -11,8 +11,8 @@ use std::rc::Rc;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use abi::model::ComponentType;
-use abi::state::{AppState, ComponentTypeState};
+use sandcat_sdk::model::ComponentType;
+use sandcat_sdk::state::{AppState, ComponentTypeState};
 
 use crate::left::contacts::Contacts;
 use crate::left::conv_com::Chats;

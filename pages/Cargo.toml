@@ -22,9 +22,7 @@ yew-router = "0.18"
 # password strong level
 zxcvbn = "2"
 
-abi = { path = "../abi" }
-api = { path = "../api" }
-db = { path = "../db" }
+sandcat-sdk = { path = "../sandcat-sdk" }
 components = { path = "../components" }
 i18n = { path = "../i18n" }
 icons = { path = "../icons" }

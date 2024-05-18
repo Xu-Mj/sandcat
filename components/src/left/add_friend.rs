@@ -1,9 +1,11 @@
 use fluent::{FluentBundle, FluentResource};
 use yew::prelude::*;
 
-use abi::model::user::UserWithMatchType;
-use abi::model::ComponentType;
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::api;
+use sandcat_sdk::db;
+use sandcat_sdk::model::user::UserWithMatchType;
+use sandcat_sdk::model::ComponentType;
 use utils::tr;
 
 use crate::left::user_info::UserInfoCom;

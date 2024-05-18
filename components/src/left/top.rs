@@ -4,11 +4,11 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use abi::{
+use icons::{ContactsIcon, MessagesIcon, SettingIcon};
+use sandcat_sdk::{
     model::{user::User, ComponentType},
     state::{AppState, ComponentTypeState, UnreadState},
 };
-use icons::{ContactsIcon, MessagesIcon, SettingIcon};
 
 use crate::self_info::SelfInfo;
 

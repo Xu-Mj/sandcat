@@ -3,24 +3,6 @@
 version = 3
 
 [[package]]
-name = "abi"
-version = "0.1.0"
-dependencies = [
- "bincode",
- "chrono",
- "i18n",
- "implicit-clone",
- "log",
- "prost",
- "prost-types",
- "serde",
- "utils",
- "yew",
- "yew-router",
- "yewdux",
-]
-
-[[package]]
 name = "addr2line"
 version = "0.21.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -112,27 +94,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d301b3b94cb4b2f23d7917810addbbaff90738e0ca2be692bd027e70d7e0330c"
 
 [[package]]
-name = "api"
-version = "0.1.0"
-dependencies = [
- "abi",
- "async-trait",
- "gloo 0.11.0",
- "gloo-net 0.5.0",
- "log",
- "serde",
- "wasm-bindgen",
- "wasm-bindgen-futures",
- "web-sys",
-]
-
-[[package]]
 name = "app"
 version = "0.1.0"
 dependencies = [
- "abi",
  "dotenv",
  "indexmap 2.2.6",
+ "sandcat-sdk",
  "serde",
  "serde_json",
  "sqlx",
@@ -503,10 +470,7 @@ dependencies = [
 name = "components"
 version = "0.1.0"
 dependencies = [
- "abi",
- "api",
  "chrono",
- "db",
  "fluent",
  "futures-channel",
  "gloo 0.11.0",
@@ -516,6 +480,7 @@ dependencies = [
  "indexmap 2.2.6",
  "log",
  "nanoid",
+ "sandcat-sdk",
  "utils",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -761,25 +726,6 @@ dependencies = [
  "darling_core 0.20.8",
  "quote",
  "syn 2.0.61",
-]
-
-[[package]]
-name = "db"
-version = "0.1.0"
-dependencies = [
- "abi",
- "async-trait",
- "futures-channel",
- "indexmap 2.2.6",
- "js-sys",
- "lazy_static",
- "log",
- "once_cell",
- "serde",
- "serde-wasm-bindgen 0.6.5",
- "wasm-bindgen",
- "web-sys",
- "yew",
 ]
 
 [[package]]
@@ -2942,11 +2888,8 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 name = "pages"
 version = "0.1.0"
 dependencies = [
- "abi",
- "api",
  "base64 0.22.1",
  "components",
- "db",
  "fluent",
  "gloo 0.11.0",
  "i18n",
@@ -2954,6 +2897,7 @@ dependencies = [
  "log",
  "regex",
  "reqwasm",
+ "sandcat-sdk",
  "serde",
  "serde_json",
  "utils",
@@ -3717,6 +3661,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "93fc1dc3aaa9bfed95e02e6eadabb4baf7e3078b0bd1b4d7b6b0b68378900502"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "sandcat-sdk"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "bincode",
+ "chrono",
+ "futures-channel",
+ "gloo 0.11.0",
+ "gloo-net 0.5.0",
+ "i18n",
+ "implicit-clone",
+ "indexmap 2.2.6",
+ "js-sys",
+ "log",
+ "once_cell",
+ "prost",
+ "prost-types",
+ "serde",
+ "serde-wasm-bindgen 0.6.5",
+ "utils",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "yew",
+ "yew-router",
+ "yewdux",
 ]
 
 [[package]]
@@ -5429,10 +5402,10 @@ dependencies = [
 name = "web_rtc"
 version = "0.1.0"
 dependencies = [
- "abi",
  "chrono",
  "js-sys",
  "log",
+ "sandcat-sdk",
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
@@ -5924,11 +5897,11 @@ dependencies = [
 name = "ws"
 version = "0.1.0"
 dependencies = [
- "abi",
  "bincode",
  "implicit-clone",
  "js-sys",
  "log",
+ "sandcat-sdk",
  "wasm-bindgen",
  "web-sys",
  "yew",

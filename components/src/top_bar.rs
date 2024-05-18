@@ -2,9 +2,9 @@ use fluent::{FluentBundle, FluentResource};
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
-use abi::model::ComponentType;
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{PeoplePlusIcon, PlusIcon, SearchIcon};
+use sandcat_sdk::model::ComponentType;
 use utils::tr;
 /// 左侧组件顶部选项栏
 /// 包含搜索和设置按钮以及一个排序按钮

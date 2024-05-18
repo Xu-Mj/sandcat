@@ -27,4 +27,4 @@ sqlx = { version = "0.7.0", features = ["runtime-tokio", "sqlite"] }
 tokio = { version = "1.0", features = ["full"] }
 yew = { version = "0.21", features = ["csr"] }
 
-abi = { path = "../abi" }
+sandcat-sdk = { path = "../sandcat-sdk" }

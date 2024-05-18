@@ -3,8 +3,8 @@ use gloo::utils::window;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
-use abi::model::{user::UserWithMatchType, RightContentType};
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::model::{user::UserWithMatchType, RightContentType};
 use utils::tr;
 
 use crate::action::Action;
@@ -64,7 +64,7 @@ impl Component for FriendCard {
         html! {
             <div
                 class="friend-card box-shadow"
-                tabindex="-1"
+                tsandcat_sdkndex="-1"
                 ref={self.node_ref.clone()}
                 onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >

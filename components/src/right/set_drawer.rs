@@ -3,8 +3,8 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yew::{Component, Properties};
 
-use abi::model::RightContentType;
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::model::RightContentType;
 use utils::tr;
 pub struct SetDrawer {
     node: NodeRef,
@@ -58,7 +58,7 @@ impl Component for SetDrawer {
         };
         html! {
             <div ref={self.node.clone()}
-                class="set-drawer box-shadow" tabindex="0"
+                class="set-drawer box-shadow" tsandcat_sdkndex="0"
                 onblur={ctx.props().close.reform(|_|())}
                 >
                 <div class="set-drawer-item hover" onclick={ctx.props().delete.reform(|_|())}>

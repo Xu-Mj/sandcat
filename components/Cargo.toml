@@ -20,9 +20,7 @@ yew = { version = "0.21", features = ["csr"] }
 yew-router = "0.18"
 
 
-abi = { path = "../abi" }
-api = { path = "../api" }
-db = { path = "../db" }
+sandcat-sdk = { path = "../sandcat-sdk" }
 i18n = { path = "../i18n" }
 icons = { path = "../icons" }
 utils = { path = "../utils" }

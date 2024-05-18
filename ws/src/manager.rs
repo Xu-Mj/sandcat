@@ -6,9 +6,9 @@ use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 use yew::Callback;
 
-use abi::model::message::convert_server_msg;
-use abi::model::message::Msg;
-use abi::pb::message::Msg as PbMsg;
+use sandcat_sdk::model::message::convert_server_msg;
+use sandcat_sdk::model::message::Msg;
+use sandcat_sdk::pb::message::Msg as PbMsg;
 
 #[derive(Debug)]
 pub struct WebSocketManager {
