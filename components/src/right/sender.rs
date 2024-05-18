@@ -473,7 +473,7 @@ impl Component for Sender {
             let callback = &ctx.link().callback(SenderMsg::SendEmoji);
             let onblur = &ctx.link().callback(move |_| SenderMsg::ShowEmoji);
             emojis = html! {
-                <div class="emoji-wrapper" tsandcat_sdkndex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
+                <div class="emoji-wrapper" tabindex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
                     {
                         self.emoji_list.iter()
                         .map(|emoji| {html! (<EmojiSpan emoji={emoji.clone()} onclick={callback} />)})
