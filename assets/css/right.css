@@ -610,121 +610,6 @@
         text-align: center;
     }
 
-    .postcard {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        width: 100%;
-        height: 100%;
-
-        .pc-wrapper {
-            /* width: fit-content; */
-            /* width: 50%; */
-            /* height: 100%; */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-
-            &>*:not(:last-child, :first-child, :nth-child(2)) {
-                border-bottom: 1px solid gray;
-            }
-
-            .postcard-setting {
-                width: 2rem;
-                height: 2rem;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                position: absolute;
-                right: 0;
-                top: -1rem;
-                cursor: pointer;
-            }
-
-            .set-drawer {
-                position: absolute;
-                right: 0;
-                top: 1rem;
-                background-color: var(--color-background);
-
-                &[tabindex] {
-                    outline: none;
-                }
-
-                .set-drawer-item {
-                    width: 6rem;
-                    height: 2rem;
-                    line-height: 2rem;
-                    padding: 0 1rem;
-                    border: none;
-                    text-align: center;
-                }
-            }
-
-
-
-            .header {
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-
-                .header-info {
-                    display: flex;
-                    gap: 1rem;
-
-                    .postcard-avatar {
-                        width: 6rem;
-                        height: 6rem;
-                        border-radius: 1rem;
-                    }
-
-                    .item-avatar {
-                        width: 6rem;
-                        height: 6rem;
-                        background-color: azure;
-                        border-radius: .3rem;
-                        display: grid;
-                        grid-template-columns: repeat(var(--avatar-column), 1fr);
-                        gap: .2rem;
-
-                        .avatar {
-                            place-self: center;
-                            width: 100%;
-                            height: auto;
-                        }
-                    }
-
-                    .info {
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: center;
-                        align-items: flex-start;
-                        margin-left: 1rem;
-
-                        .name {
-                            font-size: 1.5rem;
-                            font-weight: 600;
-                        }
-                    }
-
-                }
-            }
-
-            .postcard-remark,
-            .sign {
-                width: 100%;
-                height: 3rem;
-                line-height: 3rem;
-            }
-
-            .sign {
-                width: 100%;
-            }
-        }
-    }
 
 
     .friendship-list {
@@ -856,17 +741,17 @@
 
             .font-size {
                 display: grid;
-                grid-template-columns: 2fr 4fr ;
+                grid-template-columns: 2fr 4fr;
                 align-items: center;
             }
 
-            .font-size-desktop > :last-child {
+            .font-size-desktop> :last-child {
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr 1fr;
                 align-items: center;
             }
 
-            .font-size-mobile > :last-child {
+            .font-size-mobile> :last-child {
                 display: grid;
                 grid-template-columns: 2fr 2fr;
                 align-items: center;
@@ -881,6 +766,124 @@
                 align-items: center;
 
             }
+        }
+    }
+}
+
+.postcard {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+
+    .pc-wrapper-size-mobile {
+        width: 100%;
+        height: 100%;
+        padding: 1rem;
+        padding-top: 2rem;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .pc-wrapper-size {
+        justify-content: center;
+        align-items: center;
+    }
+
+    .pc-wrapper {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+
+        &>*:not(:last-child, :first-child, :nth-child(2)) {
+            border-bottom: 1px solid gray;
+        }
+
+        .postcard-setting {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            right: 0;
+            top: -1rem;
+            cursor: pointer;
+        }
+
+        .set-drawer {
+            position: absolute;
+            right: 0;
+            top: 1rem;
+            background-color: var(--color-background);
+
+            &[tabindex] {
+                outline: none;
+            }
+
+            .set-drawer-item {
+                width: 6rem;
+                height: 2rem;
+                line-height: 2rem;
+                padding: 0 1rem;
+                border: none;
+                text-align: center;
+            }
+        }
+
+        .header-info {
+            display: flex;
+            gap: 1rem;
+
+            .postcard-avatar {
+                width: 6rem;
+                height: 6rem;
+                border-radius: 1rem;
+            }
+
+            .item-avatar {
+                width: 6rem;
+                height: 6rem;
+                background-color: azure;
+                border-radius: .3rem;
+                display: grid;
+                grid-template-columns: repeat(var(--avatar-column), 1fr);
+                gap: .2rem;
+
+                .avatar {
+                    place-self: center;
+                    width: 100%;
+                    height: auto;
+                }
+            }
+
+            .info {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: flex-start;
+                margin-left: 1rem;
+
+                .name {
+                    font-size: 1.5rem;
+                    font-weight: 600;
+                }
+            }
+
+        }
+
+        .postcard-remark,
+        .sign {
+            width: 100%;
+            height: 3rem;
+            line-height: 3rem;
+        }
+
+        .sign {
+            width: 100%;
         }
     }
 }
