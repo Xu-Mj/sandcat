@@ -160,18 +160,22 @@ impl Component for ListItem {
         match ctx.props().component_type {
             ComponentType::Contacts => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::FriendItemClicked);
-                if self.friend_state.friend.item_id == id {
-                    classes.push("selected");
-                } else {
-                    classes.push("hover")
+                if !self.is_mobile.is_mobile() {
+                    if self.conv_state.conv.item_id == id {
+                        classes.push("selected");
+                    } else {
+                        classes.push("hover")
+                    }
                 }
             }
             ComponentType::Messages => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::CleanUnreadCount);
-                if self.conv_state.conv.item_id == id {
-                    classes.push("selected");
-                } else {
-                    classes.push("hover")
+                if !self.is_mobile.is_mobile() {
+                    if self.conv_state.conv.item_id == id {
+                        classes.push("selected");
+                    } else {
+                        classes.push("hover")
+                    }
                 }
 
                 if self.unread_count > 0 {
