@@ -7,7 +7,7 @@ use yewdux::Dispatch;
 use sandcat_sdk::{
     db,
     model::{CommonProps, ComponentType, CurrentItem, RightContentType},
-    state::{ConvState, FriendListState, UnreadState},
+    state::{ConvState, FriendListState, MobileState, ShowRight, UnreadState},
 };
 
 pub struct ListItem {
@@ -84,7 +84,11 @@ impl Component for ListItem {
                     }
                 });
                 self.unread_count = 0;
-
+                // show right if mobile
+                log::debug!("show right{:?}", Dispatch::<MobileState>::global().get());
+                if Dispatch::<MobileState>::global().get().is_mobile() {
+                    Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::Show);
+                }
                 // do not update if current item is the same
                 if self.conv_state.conv.item_id == ctx.props().props.id {
                     return false;
@@ -95,6 +99,7 @@ impl Component for ListItem {
                         content_type: ctx.props().conv_type.clone(),
                     };
                 });
+
                 true
             }
             ListItemMsg::FriendStateChanged(state) => {

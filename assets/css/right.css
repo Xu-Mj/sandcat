@@ -8,725 +8,790 @@
     height: 100%;
     position: relative;
     transition: background-color 0.5s;
+}
+.right-container-mobile {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background-color: var(--color-background);
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transition: background-color 0.5s;
+}
 
-    .choose-conv {
-        margin: auto;
+.choose-conv {
+    margin: auto;
+}
+
+.right-top-bar {
+    width: 100%;
+    height: 3rem;
+    display: flex;
+    flex-direction: column;
+    top: 0;
+    position: absolute;
+    z-index: 2;
+
+    .close-bar {
+        height: 1rem;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-top: 0.5rem;
+        padding-right: 1rem;
+        gap: 1rem;
     }
 
-    .right-top-bar {
+    .right-top-bar-friend {
         width: 100%;
-        height: 3rem;
+        height: 2rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
         display: flex;
-        flex-direction: column;
-        top: 0;
-        position: absolute;
-        z-index: 2;
+        align-items: center;
+        justify-content: space-between;
+        font-size: larger;
+    }
 
-        .close-bar {
-            height: 1rem;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-top: 0.5rem;
-            padding-right: 1rem;
-            gap: 1rem;
+}
+
+.set-window {
+    width: 15rem;
+    height: 20rem;
+    padding: 1rem;
+    position: absolute;
+    right: 1rem;
+    top: 3rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .5rem;
+    background-color: var(--color-background);
+    z-index: 3;
+
+    .people {
+        width: 100%;
+        height: auto;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: .5rem;
+
+        .avatar-name {
+            width: 2rem;
+            overflow: hidden;
+
+            img {
+                width: 100%;
+                border-radius: .3rem;
+            }
+
+            span {
+                text-overflow: ellipsis;
+                word-break: keep-all;
+            }
+
+            svg {
+                width: 2rem;
+                height: 2rem;
+            }
         }
+    }
 
-        .right-top-bar-friend {
+    .info {
+        width: 100%;
+        border-top: var(--color-border) solid 1px;
+
+        >div>input {
             width: 100%;
-            height: 2rem;
-            padding-left: 1rem;
-            padding-right: 1rem;
+            height: 1.3rem;
+            padding: .3rem;
+            outline: none;
+            background-color: var(--color-background-input);
+            border: none;
+        }
+    }
+
+    .setting {
+        width: 100%;
+        font-size: small;
+
+        .setting-item {
+            width: 100%;
+            height: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            font-size: larger;
         }
-
     }
 
-    .set-window {
-        width: 15rem;
-        height: 20rem;
-        padding: 1rem;
-        position: absolute;
-        right: 1rem;
-        top: 3rem;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: .5rem;
-        background-color: var(--color-background);
-        z-index: 3;
-
-        .people {
-            width: 100%;
-            height: auto;
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: .5rem;
-
-            .avatar-name {
-                width: 2rem;
-                overflow: hidden;
-
-                img {
-                    width: 100%;
-                    border-radius: .3rem;
-                }
-
-                span {
-                    text-overflow: ellipsis;
-                    word-break: keep-all;
-                }
-
-                svg {
-                    width: 2rem;
-                    height: 2rem;
-                }
-            }
-        }
-
-        .info {
-            width: 100%;
-            border-top: var(--color-border) solid 1px;
-
-            >div>input {
-                width: 100%;
-                height: 1.3rem;
-                padding: .3rem;
-                outline: none;
-                background-color: var(--color-background-input);
-                border: none;
-            }
-        }
-
-        .setting {
-            width: 100%;
-            font-size: small;
-
-            .setting-item {
-                width: 100%;
-                height: 1.5rem;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-            }
-        }
-
-        .bottom {
-            margin-top: .5rem;
-            color: red;
-        }
-
+    .bottom {
+        margin-top: .5rem;
+        color: red;
     }
 
-    .msg-container {
+}
+
+.msg-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+
+    .cat-head-icon {
         width: 100%;
         height: 100%;
         display: flex;
+        justify-content: center;
+        align-items: center;
+
+        svg {
+            width: 5rem;
+            height: 5rem;
+        }
+    }
+
+    .file-sender {
+        position: absolute;
+        width: 15rem;
+        height: 20rem;
+        background-color: var(--color-background);
+        display: flex;
         flex-direction: column;
+        top: 50%;
+        left: 50%;
+        padding: 1rem 1rem 0 1rem;
+        transform: translate(-50%, -50%);
+        box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
+            10px 10px 10px rgba(60, 60, 60, 0.12),
+            -10px -10px 15px rgba(60, 60, 60, 0.12),
+            -10px -10px 15px rgba(60, 60, 60, 0.12);
+        z-index: 20;
+
+        .file-sender-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: .3rem;
+
+            .file-sender-item {
+                width: 100%;
+                height: 1.2rem;
+                padding: .1rem;
+                display: flex;
+                justify-content: flex-start;
+                align-items: center;
+
+
+                svg {
+                    height: .8rem;
+                }
+
+                .file-sender-name {
+                    flex-grow: 1;
+                    display: block;
+                    overflow-x: hidden;
+                    text-overflow: ellipsis;
+                    word-break: keep-all;
+                    white-space: nowrap;
+                }
+            }
+        }
+
+        .file-sender-footer {
+            width: 100%;
+            height: 2rem;
+            padding: .2rem;
+            display: flex;
+            justify-content: space-evenly;
+
+            button {
+                width: 4rem;
+                height: 1.2rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border: none;
+                cursor: pointer;
+            }
+        }
+    }
+
+    .resize {
+        width: 100%;
+        height: 100%;
+        min-height: 40%;
+        resize: vertical;
+        overflow: hidden;
+        padding-top: 3.8rem;
         position: relative;
 
-        .cat-head-icon {
-            width: 100%;
-            height: 100%;
+        .msg-list-new-msg-count {
+            position: absolute;
+            width: 4rem;
+            height: 2rem;
+            bottom: 1.4rem;
+            cursor: pointer;
+            left: 25%;
+            background-color: white;
+            border-radius: .4rem;
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 10;
+            filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
 
-            svg {
-                width: 5rem;
-                height: 5rem;
+            &::before {
+                content: '';
+                position: absolute;
+                width: 0;
+                height: 0;
+                border: 10px solid transparent;
+                border-top-color: #ffffff;
+                bottom: -1rem;
+                left: 1.5rem;
             }
         }
 
-        .file-sender {
-            position: absolute;
-            width: 15rem;
-            height: 20rem;
-            background-color: var(--color-background);
-            display: flex;
-            flex-direction: column;
-            top: 50%;
-            left: 50%;
-            padding: 1rem 1rem 0 1rem;
-            transform: translate(-50%, -50%);
-            box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
-                10px 10px 10px rgba(60, 60, 60, 0.12),
-                -10px -10px 15px rgba(60, 60, 60, 0.12),
-                -10px -10px 15px rgba(60, 60, 60, 0.12);
-            z-index: 20;
+    }
 
-            .file-sender-content {
-                flex-grow: 1;
-                overflow-y: auto;
+    /* 消息列表 */
+
+    .msg-list {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column-reverse;
+        overflow-y: auto;
+        gap: .8rem;
+        padding: .8rem .3rem;
+        position: relative;
+        scroll-behavior: smooth;
+
+        /* 消息组件,对方消息 */
+
+        .msg-item {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            gap: .3rem;
+
+            :hover .time-span {
+                display: block;
+            }
+
+            .content-wrapper {
+                max-width: 80%;
+                height: auto;
                 display: flex;
                 flex-direction: column;
-                gap: .3rem;
+                position: relative;
 
-                .file-sender-item {
-                    width: 100%;
-                    height: 1.2rem;
-                    padding: .1rem;
-                    display: flex;
-                    justify-content: flex-start;
-                    align-items: center;
+                svg {
+                    transform: translateY(12.5%);
+                }
 
+                /*&::before {*/
+                /*    content: '';*/
+                /*    position: absolute;*/
+                /*    width: 0;*/
+                /*    height: 0;*/
+                /*    border: .3rem solid transparent;*/
+                /*    border-left-color: #90CBFB;*/
+                /*    top: 1rem;*/
+                /*    right: -.5rem;*/
+                /*}*/
+            }
 
-                    svg {
-                        height: .8rem;
-                    }
+        }
 
-                    .file-sender-name {
-                        flex-grow: 1;
-                        display: block;
-                        overflow-x: hidden;
-                        text-overflow: ellipsis;
-                        word-break: keep-all;
-                        white-space: nowrap;
-                    }
+        /* 消息组件 */
+
+        .msg-item-reverse {
+            width: 100%;
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: flex-start;
+            gap: .3rem;
+
+            :hover .time-span {
+                display: block;
+            }
+
+            .content-wrapper {
+                max-width: 80%;
+                height: auto;
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+                position: relative;
+
+                svg {
+                    transform: translateY(12.5%);
                 }
             }
 
-            .file-sender-footer {
-                width: 100%;
-                height: 2rem;
-                padding: .2rem;
+            .msg-sending {
                 display: flex;
-                justify-content: space-evenly;
+                align-items: end;
+                padding-bottom: .3rem;
 
-                button {
-                    width: 4rem;
-                    height: 1.2rem;
+
+                svg {
+                    animation: msg-sending 1s linear infinite;
+                }
+            }
+
+            .msg-send-failed {
+                display: flex;
+                align-items: end;
+                padding-bottom: .3rem;
+
+                span {
+                    width: 1rem;
+                    height: 1rem;
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    border: none;
-                    cursor: pointer;
-                }
-            }
-        }
+                    border-radius: 50%;
+                    background-color: red;
+                    color: white;
+                    font-size: small;
+                    font-weight: bold;
 
-        .resize {
-            width: 100%;
-            height: 100%;
-            min-height: 40%;
-            resize: vertical;
-            overflow: hidden;
-            padding-top: 3.8rem;
-            position: relative;
-
-            .msg-list-new-msg-count {
-                position: absolute;
-                width: 4rem;
-                height: 2rem;
-                bottom: 1.4rem;
-                cursor: pointer;
-                left: 25%;
-                background-color: white;
-                border-radius: .4rem;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                z-index: 10;
-                filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
-
-                &::before {
-                    content: '';
-                    position: absolute;
-                    width: 0;
-                    height: 0;
-                    border: 10px solid transparent;
-                    border-top-color: #ffffff;
-                    bottom: -1rem;
-                    left: 1.5rem;
                 }
             }
 
         }
 
-        /* 消息列表 */
+        /* 消息头像wrapper */
 
-        .msg-list {
-            width: 100%;
-            height: 100%;
+        .msg-item-avatar {
+            width: auto;
+            height: auto;
             display: flex;
-            flex-direction: column-reverse;
-            overflow-y: auto;
-            gap: .8rem;
-            padding: .8rem .3rem;
-            position: relative;
-            scroll-behavior: smooth;
+            justify-content: flex-start;
+        }
 
-            /* 消息组件,对方消息 */
+        /* 消息wrapper */
 
-            .msg-item {
-                width: 100%;
-                display: flex;
-                justify-content: flex-start;
-                gap: .3rem;
+        /* 消息发送时间 */
 
-                :hover .time-span {
-                    display: block;
-                }
+        .msg-item-time {
+            height: 1rem;
+            font-size: .5rem;
+            color: #999;
 
-                .content-wrapper {
-                    max-width: 80%;
-                    height: auto;
-                    display: flex;
-                    flex-direction: column;
-                    position: relative;
-
-                    svg {
-                        transform: translateY(12.5%);
-                    }
-
-                    /*&::before {*/
-                    /*    content: '';*/
-                    /*    position: absolute;*/
-                    /*    width: 0;*/
-                    /*    height: 0;*/
-                    /*    border: .3rem solid transparent;*/
-                    /*    border-left-color: #90CBFB;*/
-                    /*    top: 1rem;*/
-                    /*    right: -.5rem;*/
-                    /*}*/
-                }
-
-            }
-
-            /* 消息组件 */
-
-            .msg-item-reverse {
-                width: 100%;
-                display: flex;
-                flex-direction: row-reverse;
-                justify-content: flex-start;
-                gap: .3rem;
-
-                :hover .time-span {
-                    display: block;
-                }
-
-                .content-wrapper {
-                    max-width: 80%;
-                    height: auto;
-                    display: flex;
-                    flex-direction: column;
-                    align-items: flex-end;
-                    position: relative;
-
-                    svg {
-                        transform: translateY(12.5%);
-                    }
-                }
-
-                .msg-sending {
-                    display: flex;
-                    align-items: end;
-                    padding-bottom: .3rem;
-
-
-                    svg {
-                        animation: msg-sending 1s linear infinite;
-                    }
-                }
-
-                .msg-send-failed {
-                    display: flex;
-                    align-items: end;
-                    padding-bottom: .3rem;
-
-                    span {
-                        width: 1rem;
-                        height: 1rem;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        border-radius: 50%;
-                        background-color: red;
-                        color: white;
-                        font-size: small;
-                        font-weight: bold;
-
-                    }
-                }
-
-            }
-
-            /* 消息头像wrapper */
-
-            .msg-item-avatar {
-                width: auto;
-                height: auto;
-                display: flex;
-                justify-content: flex-start;
-            }
-
-            /* 消息wrapper */
-
-            /* 消息发送时间 */
-
-            .msg-item-time {
-                height: 1rem;
-                font-size: .5rem;
-                color: #999;
-
-                .time-span {
-                    display: none;
-                }
-            }
-
-            /* 文件类型消息 */
-
-            .msg-item-file-name {
-                width: 8rem;
-                height: 10rem;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                background: url("/images/file-preview-icon.png") no-repeat center center;
-                background-size: cover;
-            }
-
-            /* 消息内容 */
-
-            .msg-item-content {
-                /* min-height: 1.6rem; */
-                border-radius: .3rem;
-                padding: .5rem;
-                /* user-select: all; */
-            }
-
-            .msg-item-emoji {
-                /* min-height: 1.6rem; */
-                border-radius: .3rem;
-                padding-left: .5rem;
-                padding-right: .5rem;
-            }
-
-            /* 表情消息大小 */
-
-            .emoji {
-                width: 4rem;
-                height: 4rem;
-            }
-
-            /* 图片消息尺寸 */
-
-            .msg-item-img {
-                max-width: 10rem;
-                height: auto;
-            }
-
-            /* 自己消息背景 */
-
-            .background-self {
-                background-color: #95EC69;
-            }
-
-            /* 对方消息背景 */
-
-            .background-other {
-                background-color: #90CBFB;
+            .time-span {
+                display: none;
             }
         }
 
-        .msg-list::-webkit-scrollbar-button {
-            display: none;
-        }
+        /* 文件类型消息 */
 
-        .emoji-wrapper {
-            width: 25rem;
-            height: 15rem;
-            display: grid;
-            grid-template-columns: repeat(5, minmax(0, 1fr));
-            grid-auto-rows: min-content;
-            /*将每行的高度设置为其内容的最小高度*/
+        .msg-item-file-name {
+            width: 8rem;
+            height: 10rem;
+            display: flex;
+            align-items: center;
             justify-content: center;
-            justify-items: center;
-            position: absolute;
-            bottom: 20%;
-            left: .5rem;
-            border-radius: .5rem;
-            overflow-y: auto;
-            background-color: var(--color-background);
+            background: url("/images/file-preview-icon.png") no-repeat center center;
+            background-size: cover;
+        }
+
+        /* 消息内容 */
+
+        .msg-item-content {
+            /* min-height: 1.6rem; */
+            border-radius: .3rem;
             padding: .5rem;
-            filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
-            /*box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),*/
-            /*10px 10px 10px rgba(60, 60, 60, 0.12),*/
-            /*-10px -10px 15px rgba(60, 60, 60, 0.12),*/
-            /*-10px -10px 15px rgba(60, 60, 60, 0.12);*/
-
-            .emoji {
-                width: 100%;
-                padding: .7rem;
-            }
-
-            .emoji img {
-                width: 100%;
-                height: auto;
-                object-fit: contain;
-                object-position: center;
-            }
-
+            /* user-select: all; */
         }
 
-        /* 隐藏聚焦时的外边框 */
-
-        .emoji-wrapper[tabindex] {
-            outline: none;
+        .msg-item-emoji {
+            /* min-height: 1.6rem; */
+            border-radius: .3rem;
+            padding-left: .5rem;
+            padding-right: .5rem;
         }
 
-        /* 右侧底部发送框 */
+        /* 表情消息大小 */
 
-        .sender {
+        .emoji {
+            width: 4rem;
+            height: 4rem;
+        }
+
+        /* 图片消息尺寸 */
+
+        .msg-item-img {
+            max-width: 10rem;
+            height: auto;
+        }
+
+        /* 自己消息背景 */
+
+        .background-self {
+            background-color: #95EC69;
+        }
+
+        /* 对方消息背景 */
+
+        .background-other {
+            background-color: #90CBFB;
+        }
+    }
+
+    .msg-list::-webkit-scrollbar-button {
+        display: none;
+    }
+
+    .emoji-wrapper {
+        width: 25rem;
+        height: 15rem;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        grid-auto-rows: min-content;
+        /*将每行的高度设置为其内容的最小高度*/
+        justify-content: center;
+        justify-items: center;
+        position: absolute;
+        bottom: 20%;
+        left: .5rem;
+        border-radius: .5rem;
+        overflow-y: auto;
+        background-color: var(--color-background);
+        padding: .5rem;
+        filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
+        /*box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),*/
+        /*10px 10px 10px rgba(60, 60, 60, 0.12),*/
+        /*-10px -10px 15px rgba(60, 60, 60, 0.12),*/
+        /*-10px -10px 15px rgba(60, 60, 60, 0.12);*/
+
+        .emoji {
             width: 100%;
-            height: 20%;
-            max-height: 60%;
-            min-height: 20%;
+            padding: .7rem;
+        }
+
+        .emoji img {
+            width: 100%;
+            height: auto;
+            object-fit: contain;
+            object-position: center;
+        }
+
+    }
+
+    /* 隐藏聚焦时的外边框 */
+
+    .emoji-wrapper[tabindex] {
+        outline: none;
+    }
+
+    /* 右侧底部发送框 */
+
+    .sender {
+        width: 100%;
+        height: 20%;
+        max-height: 60%;
+        min-height: 20%;
+        display: flex;
+        flex-direction: column;
+        /* flex: 1; */
+        flex-grow: 1;
+        padding: .3rem;
+        overflow: hidden;
+        position: relative;
+        border-top: 1px solid var(--color-border);
+
+        /* 发送框顶部的条 */
+
+        .send-bar {
+            width: 100%;
+            height: 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: .5rem;
+
+            &:hover svg {
+                cursor: pointer;
+            }
+
+            >div {
+                display: flex;
+                gap: 1rem;
+            }
+        }
+
+        .msg-input-wrapper {
+            width: 100%;
+            height: calc(100% - 2rem);
+            display: flex;
+            position: relative;
+            /* margin-top: 2rem; */
+
+            .msg-input {
+                width: 100%;
+                height: 100%;
+                outline: none;
+                overflow-y: auto;
+                border: none;
+                font-size: 1rem;
+                font-family: inherit;
+                resize: none;
+                background-color: transparent;
+                color: var(--color-text);
+            }
+
+            .empty-msg-tip {
+                /* width: 8rem; */
+                padding: .2rem .5rem;
+                border-radius: .2rem;
+                position: absolute;
+                right: 1rem;
+                bottom: 3rem;
+                font-size: .8rem;
+                background-color: var(--color-background);
+            }
+
+            .send-btn {
+                width: 6rem;
+                height: 2rem;
+                background-color: var(--color-background-btn);
+                color: var(--sender-btn-color-text);
+                border-radius: .2rem;
+                border: none;
+                cursor: pointer;
+                position: absolute;
+                right: 1rem;
+                bottom: .5rem;
+                font-size: large;
+            }
+
+            .send-btn:hover {
+                background-color: #999;
+            }
+        }
+    }
+
+    .sender-disabled {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background-color: rgba(255, 255, 255, .6);
+        padding: auto;
+        text-align: center;
+    }
+
+    .postcard {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+
+        .pc-wrapper {
+            /* width: fit-content; */
+            /* width: 50%; */
+            /* height: 100%; */
             display: flex;
             flex-direction: column;
-            /* flex: 1; */
-            flex-grow: 1;
-            padding: .3rem;
-            overflow: hidden;
+            justify-content: center;
+            align-items: center;
             position: relative;
-            border-top: 1px solid var(--color-border);
 
-            /* 发送框顶部的条 */
-
-            .send-bar {
-                width: 100%;
-                height: 2rem;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: .5rem;
-
-                &:hover svg {
-                    cursor: pointer;
-                }
-
-                >div {
-                    display: flex;
-                    gap: 1rem;
-                }
+            &>*:not(:last-child, :first-child, :nth-child(2)) {
+                border-bottom: 1px solid gray;
             }
 
-            .msg-input-wrapper {
-                width: 100%;
-                height: calc(100% - 2rem);
+            .postcard-setting {
+                width: 2rem;
+                height: 2rem;
                 display: flex;
-                position: relative;
-                /* margin-top: 2rem; */
+                justify-content: center;
+                align-items: center;
+                position: absolute;
+                right: 0;
+                top: -1rem;
+                cursor: pointer;
+            }
 
-                .msg-input {
-                    width: 100%;
-                    height: 100%;
+            .set-drawer {
+                position: absolute;
+                right: 0;
+                top: 1rem;
+                background-color: var(--color-background);
+
+                &[tabindex] {
                     outline: none;
-                    overflow-y: auto;
-                    border: none;
-                    font-size: 1rem;
-                    font-family: inherit;
-                    resize: none;
-                    background-color: transparent;
-                    color: var(--color-text);
                 }
 
-                .empty-msg-tip {
-                    /* width: 8rem; */
-                    padding: .2rem .5rem;
-                    border-radius: .2rem;
-                    position: absolute;
-                    right: 1rem;
-                    bottom: 3rem;
-                    font-size: .8rem;
-                    background-color: var(--color-background);
-                }
-
-                .send-btn {
+                .set-drawer-item {
                     width: 6rem;
                     height: 2rem;
-                    background-color: var(--color-background-btn);
-                    color: var(--sender-btn-color-text);
-                    border-radius: .2rem;
+                    line-height: 2rem;
+                    padding: 0 1rem;
                     border: none;
-                    cursor: pointer;
-                    position: absolute;
-                    right: 1rem;
-                    bottom: .5rem;
-                    font-size: large;
-                }
-
-                .send-btn:hover {
-                    background-color: #999;
+                    text-align: center;
                 }
             }
-        }
 
-        .sender-disabled {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            background-color: rgba(255, 255, 255, .6);
-            padding: auto;
-            text-align: center;
-        }
 
-        .postcard {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100%;
 
-            .pc-wrapper {
-                /* width: fit-content; */
-                /* width: 50%; */
-                /* height: 100%; */
+            .header {
                 display: flex;
                 flex-direction: column;
-                justify-content: center;
-                align-items: center;
-                position: relative;
+                gap: 1rem;
 
-                &>*:not(:last-child, :first-child, :nth-child(2)) {
-                    border-bottom: 1px solid gray;
-                }
-
-                .postcard-setting {
-                    width: 2rem;
-                    height: 2rem;
+                .header-info {
                     display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    position: absolute;
-                    right: 0;
-                    top: -1rem;
-                    cursor: pointer;
-                }
-
-                .set-drawer {
-                    position: absolute;
-                    right: 0;
-                    top: 1rem;
-                    background-color: var(--color-background);
-
-                    &[tabindex] {
-                        outline: none;
-                    }
-
-                    .set-drawer-item {
-                        width: 6rem;
-                        height: 2rem;
-                        line-height: 2rem;
-                        padding: 0 1rem;
-                        border: none;
-                        text-align: center;
-                    }
-                }
-
-
-
-                .header {
-                    display: flex;
-                    flex-direction: column;
                     gap: 1rem;
 
-                    .header-info {
+                    .postcard-avatar {
+                        width: 6rem;
+                        height: 6rem;
+                        border-radius: 1rem;
+                    }
+
+                    .item-avatar {
+                        width: 6rem;
+                        height: 6rem;
+                        background-color: azure;
+                        border-radius: .3rem;
+                        display: grid;
+                        grid-template-columns: repeat(var(--avatar-column), 1fr);
+                        gap: .2rem;
+
+                        .avatar {
+                            place-self: center;
+                            width: 100%;
+                            height: auto;
+                        }
+                    }
+
+                    .info {
                         display: flex;
-                        gap: 1rem;
+                        flex-direction: column;
+                        justify-content: center;
+                        align-items: flex-start;
+                        margin-left: 1rem;
 
-                        .postcard-avatar {
-                            width: 6rem;
-                            height: 6rem;
-                            border-radius: 1rem;
+                        .name {
+                            font-size: 1.5rem;
+                            font-weight: 600;
                         }
+                    }
 
-                        .item-avatar {
-                            width: 6rem;
-                            height: 6rem;
-                            background-color: azure;
-                            border-radius: .3rem;
-                            display: grid;
-                            grid-template-columns: repeat(var(--avatar-column), 1fr);
-                            gap: .2rem;
+                }
+            }
 
-                            .avatar {
-                                place-self: center;
-                                width: 100%;
-                                height: auto;
-                            }
-                        }
+            .postcard-remark,
+            .sign {
+                width: 100%;
+                height: 3rem;
+                line-height: 3rem;
+            }
 
-                        .info {
-                            display: flex;
-                            flex-direction: column;
-                            justify-content: center;
-                            align-items: flex-start;
-                            margin-left: 1rem;
+            .sign {
+                width: 100%;
+            }
+        }
+    }
 
-                            .name {
-                                font-size: 1.5rem;
-                                font-weight: 600;
-                            }
-                        }
 
+    .friendship-list {
+        width: 100%;
+        height: 100%;
+        margin-top: 3rem;
+        position: relative;
+
+        .friendship-item {
+            width: 100%;
+            height: 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+
+            .item-left {
+                display: flex;
+                gap: .4rem;
+                align-items: center;
+
+                .item-info {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: flex-start;
+
+
+                    .remark {
+                        font-size: small;
+                        color: gray;
                     }
                 }
+            }
 
-                .postcard-remark,
-                .sign {
-                    width: 100%;
-                    height: 3rem;
-                    line-height: 3rem;
-                }
-
-                .sign {
-                    width: 100%;
-                }
+            .friendship-action button {
+                border: none;
+                background-color: var(--color-background-btn);
+                color: var(--color-text);
+                width: 6rem;
+                height: 2rem;
+                padding: auto;
+                cursor: pointer;
             }
         }
 
+        /* 好友验证窗口 */
+        .friendship-detail {
+            width: 18rem;
+            height: 12rem;
+            padding: 1rem;
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 1rem;
+            background-color: var(--color-background);
+            left: 50%;
+            top: 10%;
+            transform: translateX(-50%);
 
-        .friendship-list {
-            width: 100%;
-            height: 100%;
-            margin-top: 3rem;
-            position: relative;
-
-            .friendship-item {
+            > :first-child {
                 width: 100%;
-                height: 3rem;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 1rem;
+                text-align: center;
+                font-size: large;
+                font-weight: bold;
+            }
 
-                .item-left {
-                    display: flex;
-                    gap: .4rem;
-                    align-items: center;
+            > :nth-child(2),
+            :nth-child(3) {
+                display: grid;
+                grid-template-columns: 1fr 2fr;
+                width: 100%;
 
-                    .item-info {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: flex-start;
-
-
-                        .remark {
-                            font-size: small;
-                            color: gray;
-                        }
-                    }
+                input {
+                    border: none;
+                    outline: none;
+                    padding: 0 .3rem;
+                    background-color: var(--color-background-input);
                 }
+            }
 
-                .friendship-action button {
+            > :last-child {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                justify-items: center;
+
+                button {
                     border: none;
                     background-color: var(--color-background-btn);
                     color: var(--color-text);
@@ -737,103 +802,49 @@
                 }
             }
 
-            /* 好友验证窗口 */
-            .friendship-detail {
-                width: 18rem;
-                height: 12rem;
-                padding: 1rem;
-                position: absolute;
-                display: flex;
-                flex-direction: column;
-                justify-content: flex-start;
-                align-items: center;
-                gap: 1rem;
-                background-color: var(--color-background);
-                left: 50%;
-                top: 10%;
-                transform: translateX(-50%);
-
-                > :first-child {
-                    width: 100%;
-                    text-align: center;
-                    font-size: large;
-                    font-weight: bold;
-                }
-
-                > :nth-child(2),
-                :nth-child(3) {
-                    display: grid;
-                    grid-template-columns: 1fr 2fr;
-                    width: 100%;
-
-                    input {
-                        border: none;
-                        outline: none;
-                        padding: 0 .3rem;
-                        background-color: var(--color-background-input);
-                    }
-                }
-
-                > :last-child {
-                    width: 100%;
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    justify-items: center;
-
-                    button {
-                        border: none;
-                        background-color: var(--color-background-btn);
-                        color: var(--color-text);
-                        width: 6rem;
-                        height: 2rem;
-                        padding: auto;
-                        cursor: pointer;
-                    }
-                }
-
-            }
-        }
-
-        .setting {
-            width: 100%;
-            height: 100%;
-            margin-top: 3rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-
-            .rect {
-                width: 30rem;
-                height: 15rem;
-
-                h2 {
-                    margin-bottom: 2rem;
-                }
-
-                b {
-                    font-weight: bold;
-                }
-
-                .font-size {
-                    display: grid;
-                    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
-                    align-items: center;
-                }
-
-                .setting-theme,
-                .language {
-                    width: 100%;
-                    height: 3rem;
-                    display: grid;
-                    grid-template-columns: 2fr 2fr 2fr;
-                    align-items: center;
-
-                }
-            }
         }
     }
 
+    .setting {
+        width: 100%;
+        height: 100%;
+        margin-top: 3rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+        .rect {
+            width: 30rem;
+            height: 15rem;
+
+            h2 {
+                margin-bottom: 2rem;
+            }
+
+            b {
+                font-weight: bold;
+            }
+
+            .font-size {
+                display: grid;
+                grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+                align-items: center;
+            }
+
+            .setting-theme,
+            .language {
+                width: 100%;
+                height: 3rem;
+                display: grid;
+                grid-template-columns: 2fr 2fr 2fr;
+                align-items: center;
+
+            }
+        }
+    }
 }
+
+
 
 /* 无限旋转 */
 @keyframes msg-sending {

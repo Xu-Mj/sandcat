@@ -11,7 +11,9 @@ use icons::CloseIcon;
 use sandcat_sdk::db::{self, QueryError, QueryStatus, DB_NAME};
 use sandcat_sdk::model::notification::{Notification, NotificationType};
 use sandcat_sdk::model::user::User;
-use sandcat_sdk::state::{AppState, FontSizeState, MobileState, NotificationState, ThemeState};
+use sandcat_sdk::state::{
+    AppState, FontSizeState, MobileState, NotificationState, ShowRight, ThemeState,
+};
 
 pub struct Home {
     notification_node: NodeRef,
@@ -19,6 +21,7 @@ pub struct Home {
     notifications: Vec<Notification>,
     _noti_dis: Dispatch<NotificationState>,
     _theme_dis: Dispatch<ThemeState>,
+    _right_dis: Dispatch<ShowRight>,
     _font_size_dis: Dispatch<FontSizeState>,
     db_inited: bool,
 }
@@ -29,6 +32,7 @@ pub enum HomeMsg {
     Query(Box<QueryStatus<User>>),
     NotificationStateChanged(Rc<NotificationState>),
     SwitchTheme(Rc<ThemeState>),
+    ShowRight,
     SwitchFontSize(Rc<FontSizeState>),
     CleanNotification,
     CloseNotificationByIndex(usize),
@@ -100,6 +104,7 @@ impl Component for Home {
                 utils::set_font_size(&state.to_string());
                 false
             }
+            HomeMsg::ShowRight => true,
         }
     }
 
@@ -136,7 +141,10 @@ impl Component for Home {
         }
         let right = match *Dispatch::<MobileState>::global().get() {
             MobileState::Desktop => html!(<Right />),
-            MobileState::Mobile => html!(),
+            MobileState::Mobile => match *Dispatch::<ShowRight>::global().get() {
+                ShowRight::None => html!(),
+                ShowRight::Show => html!(<Right />),
+            },
         };
         html! {
                 <div class="home-mobile" id="app">
@@ -191,6 +199,7 @@ impl Home {
         let noti_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(HomeMsg::NotificationStateChanged));
         let _theme_dis = Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchTheme));
+        let _right_dis = Dispatch::global().subscribe(ctx.link().callback(|_| HomeMsg::ShowRight));
         let _font_size_dis =
             Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchFontSize));
         Self {
@@ -201,6 +210,7 @@ impl Home {
             _theme_dis,
             _font_size_dis,
             db_inited: false,
+            _right_dis,
         }
     }
 

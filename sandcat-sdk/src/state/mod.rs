@@ -251,6 +251,14 @@ pub enum MobileState {
     Mobile,
 }
 
+impl MobileState {
+    pub fn is_mobile(&self) -> bool {
+        match self {
+            MobileState::Desktop => false,
+            MobileState::Mobile => true,
+        }
+    }
+}
 impl From<&str> for MobileState {
     fn from(value: &str) -> Self {
         match value {
@@ -266,6 +274,34 @@ impl Display for MobileState {
         match self {
             MobileState::Desktop => write!(f, "desktop"),
             MobileState::Mobile => write!(f, "mobile"),
+        }
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
+#[serde(rename_all = "lowercase")]
+pub enum ShowRight {
+    #[default]
+    None,
+    Show,
+}
+
+impl From<&str> for ShowRight {
+    fn from(value: &str) -> Self {
+        match value {
+            "none" => ShowRight::None,
+            "show" => ShowRight::Show,
+            _ => ShowRight::None,
+        }
+    }
+}
+
+impl Display for ShowRight {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ShowRight::None => write!(f, "none"),
+            ShowRight::Show => write!(f, "show"),
         }
     }
 }

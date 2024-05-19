@@ -21,7 +21,7 @@ use i18n::{en_us, zh_cn, LanguageType};
 use icons::{CatHeadIcon, CloseIcon, MaxIcon};
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
-use sandcat_sdk::state::AppState;
+use sandcat_sdk::state::{AppState, MobileState};
 use sandcat_sdk::state::{
     ComponentTypeState, ConvState, CreateConvState, FriendListState, I18nState,
 };
@@ -285,8 +285,12 @@ impl Component for Right {
             ComponentType::Setting => html! {<Setting lang={self.lang_state.lang} />},
             ComponentType::Default => html!(),
         };
+        let class = match *Dispatch::<MobileState>::global().get() {
+            MobileState::Desktop => "right-container",
+            MobileState::Mobile => "right-container-mobile",
+        };
         html! {
-            <div class="right-container">
+            <div {class}>
                 <div class="right-top-bar">
                     <div class="close-bar">
                         <span></span>
