@@ -11,7 +11,7 @@ use icons::CloseIcon;
 use sandcat_sdk::db::{self, QueryError, QueryStatus, DB_NAME};
 use sandcat_sdk::model::notification::{Notification, NotificationType};
 use sandcat_sdk::model::user::User;
-use sandcat_sdk::state::{AppState, FontSizeState, NotificationState, ThemeState};
+use sandcat_sdk::state::{AppState, FontSizeState, MobileState, NotificationState, ThemeState};
 
 pub struct Home {
     notification_node: NodeRef,
@@ -134,10 +134,14 @@ impl Component for Home {
         if !self.db_inited {
             return html! {};
         }
+        let right = match *Dispatch::<MobileState>::global().get() {
+            MobileState::Desktop => html!(<Right />),
+            MobileState::Mobile => html!(),
+        };
         html! {
-                <div class="home" id="app">
+                <div class="home-mobile" id="app">
                     <Left user_id={ctx.props().id.clone()}/>
-                    <Right />
+                    {right}
                     // 通知组件
 
                     <div class="notify" ref={self.notification_node.clone()}>

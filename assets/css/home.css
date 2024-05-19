@@ -17,6 +17,16 @@
     transition: background-color 0.5s;
 }
 
+.home-mobile {
+    height: 100vh;
+    width: 100vw;
+    border-radius: .5rem;
+    overflow: hidden;
+    color: var(--color-text);
+    background-color: var(--color-background);
+    transition: background-color 0.5s;
+}
+
 .video-or-audio-notify {
     position: fixed;
     width: 0;

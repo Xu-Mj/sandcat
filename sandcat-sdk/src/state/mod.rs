@@ -241,3 +241,31 @@ impl From<&str> for ThemeState {
         }
     }
 }
+
+#[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
+#[serde(rename_all = "lowercase")]
+pub enum MobileState {
+    Desktop,
+    #[default]
+    Mobile,
+}
+
+impl From<&str> for MobileState {
+    fn from(value: &str) -> Self {
+        match value {
+            "desktop" => MobileState::Desktop,
+            "mobile" => MobileState::Mobile,
+            _ => MobileState::Desktop,
+        }
+    }
+}
+
+impl Display for MobileState {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            MobileState::Desktop => write!(f, "desktop"),
+            MobileState::Mobile => write!(f, "mobile"),
+        }
+    }
+}
