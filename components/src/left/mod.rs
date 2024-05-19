@@ -12,7 +12,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use sandcat_sdk::model::ComponentType;
-use sandcat_sdk::state::{AppState, ComponentTypeState};
+use sandcat_sdk::state::{AppState, ComponentTypeState, MobileState};
 
 use crate::left::contacts::Contacts;
 use crate::left::conv_com::Chats;
@@ -77,8 +77,12 @@ impl Component for Left {
             ComponentType::Setting => {}
             ComponentType::Default => {}
         };
+        let class = match *Dispatch::<MobileState>::global().get() {
+            MobileState::Desktop => "left-container",
+            MobileState::Mobile => "left-container-mobile",
+        };
         html! {
-            <div class="left-container">
+            <div {class}>
                 // 左侧顶部组件：包含头像以及功能切换
                 <Top />
                 <div class="left-down">

@@ -1,5 +1,6 @@
 use fluent::{FluentBundle, FluentResource};
 use sandcat_sdk::model::friend::Friend;
+use sandcat_sdk::state::MobileState;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -310,13 +311,17 @@ impl PostCard {
 
     fn get_friend_html(&self, ctx: &Context<Self>, set_drawer: Html) -> Html {
         if let Some(friend) = self.friend.as_ref() {
+            let class = match *Dispatch::<MobileState>::global().get() {
+                MobileState::Desktop => "pc-wrapper pc-wrapper-size",
+                MobileState::Mobile => "pc-wrapper pc-wrapper-size-mobile",
+            };
             html! {
-                <div class="pc-wrapper">
+                <div {class}>
                     <span class="postcard-setting" onclick={ctx.link().callback(|_| PostCardMsg::ShowSetDrawer)}>
                         {"···"}
                     </span>
                     {set_drawer}
-                <div class="header">
+                // <div>
                     <div class="header-info">
                         // <div >
                         //     <img class="postcard-avatar" src={self.info.as_ref().unwrap().avatar()} />
@@ -335,7 +340,7 @@ impl PostCard {
                         </div>
                     </div>
 
-                </div>
+                // </div>
                 <div class="postcard-remark">
                     {tr!(self.i18n, "remark")}{friend.remark.clone()}
                 </div>

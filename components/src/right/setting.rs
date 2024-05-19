@@ -3,11 +3,11 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
-use yew::{html, Component, Event, Properties};
+use yew::{classes, html, Component, Event, Properties};
 use yewdux::Dispatch;
 
 use i18n::{self, en_us, zh_cn, LanguageType};
-use sandcat_sdk::state::{FontSizeState, I18nState, ThemeState};
+use sandcat_sdk::state::{FontSizeState, I18nState, MobileState, ThemeState};
 use utils::tr;
 
 pub struct Setting {
@@ -110,17 +110,30 @@ impl Component for Setting {
         let on_font_size_change = ctx.link().callback(SettingMsg::SwitchFontSize);
         let on_theme_change = ctx.link().callback(SettingMsg::SwitchTheme);
 
+        let mut class = classes!("rect");
+        let mut font_class = classes!("font-size");
+        match *Dispatch::<MobileState>::global().get() {
+            MobileState::Desktop => {
+                class.push("rect-size");
+                font_class.push("font-size-desktop");
+            }
+            MobileState::Mobile => {
+                class.push("rect-size-mobile");
+                font_class.push("font-size-mobile");
+            }
+        }
         html! {
             <div class="setting">
-                <div class="rect">
+                <div {class}>
                    <h2> { tr!(self.i18n, "setting") }</h2>
 
-                    <div class="font-size">
+                    <div class={font_class}>
                         <b>{tr!(self.i18n, "font_size")}</b>
+                        <div>
                         <label for="small">
                             <input type="radio"
                                 name="font_size"
-                                id="en_us"
+                                id="small"
                                 value="small"
                                 onchange={on_font_size_change.clone()}
                                 checked={*self.font_size==FontSizeState::Small}/>
@@ -153,6 +166,7 @@ impl Component for Setting {
                             checked={*self.font_size==FontSizeState::Larger}/>
                             {format!("\t{}", tr!(self.i18n, "larger"))}
                         </label>
+                        </div>
                     </div>
 
                     <div class="language">

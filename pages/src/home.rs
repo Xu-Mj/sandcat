@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use gloo::timers::callback::Interval;
+use gloo::utils::window;
 use web_sys::HtmlDivElement;
 use yew::{classes, html, AttrValue, Component, Context, Html, NodeRef, Properties};
 use yewdux::Dispatch;
@@ -11,7 +12,9 @@ use icons::CloseIcon;
 use sandcat_sdk::db::{self, QueryError, QueryStatus, DB_NAME};
 use sandcat_sdk::model::notification::{Notification, NotificationType};
 use sandcat_sdk::model::user::User;
-use sandcat_sdk::state::{AppState, FontSizeState, NotificationState, ThemeState};
+use sandcat_sdk::state::{
+    AppState, FontSizeState, MobileState, NotificationState, ShowRight, ThemeState,
+};
 
 pub struct Home {
     notification_node: NodeRef,
@@ -19,6 +22,7 @@ pub struct Home {
     notifications: Vec<Notification>,
     _noti_dis: Dispatch<NotificationState>,
     _theme_dis: Dispatch<ThemeState>,
+    _right_dis: Dispatch<ShowRight>,
     _font_size_dis: Dispatch<FontSizeState>,
     db_inited: bool,
 }
@@ -29,6 +33,7 @@ pub enum HomeMsg {
     Query(Box<QueryStatus<User>>),
     NotificationStateChanged(Rc<NotificationState>),
     SwitchTheme(Rc<ThemeState>),
+    ShowRight,
     SwitchFontSize(Rc<FontSizeState>),
     CleanNotification,
     CloseNotificationByIndex(usize),
@@ -100,6 +105,7 @@ impl Component for Home {
                 utils::set_font_size(&state.to_string());
                 false
             }
+            HomeMsg::ShowRight => true,
         }
     }
 
@@ -134,10 +140,18 @@ impl Component for Home {
         if !self.db_inited {
             return html! {};
         }
+        log::debug!("home view: {:?}", Dispatch::<ShowRight>::global().get());
+        let (right, class) = match *Dispatch::<MobileState>::global().get() {
+            MobileState::Desktop => (html!(<Right />), "home"),
+            MobileState::Mobile => match *Dispatch::<ShowRight>::global().get() {
+                ShowRight::None => (html!(), "home-mobile"),
+                ShowRight::Show => (html!(<Right />), "home-mobile"),
+            },
+        };
         html! {
-                <div class="home" id="app">
+                <div {class} id="app">
                     <Left user_id={ctx.props().id.clone()}/>
-                    <Right />
+                    {right}
                     // 通知组件
 
                     <div class="notify" ref={self.notification_node.clone()}>
@@ -180,6 +194,19 @@ impl Home {
             }
         });
 
+        // query device info
+        if let Ok(platform) = window().navigator().user_agent() {
+            log::debug!("platform: {:?}", platform);
+
+            if platform.contains("Mobile")
+                || platform.contains("Android")
+                || platform.contains("iPhone")
+            {
+                Dispatch::<MobileState>::global().set(MobileState::Mobile);
+            } else {
+                Dispatch::<MobileState>::global().set(MobileState::Desktop);
+            }
+        }
         // 使用ctx发送一个正在查询的状态
         ctx.link()
             .send_message(HomeMsg::Query(Box::new(QueryStatus::Querying)));
@@ -187,6 +214,7 @@ impl Home {
         let noti_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(HomeMsg::NotificationStateChanged));
         let _theme_dis = Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchTheme));
+        let _right_dis = Dispatch::global().subscribe(ctx.link().callback(|_| HomeMsg::ShowRight));
         let _font_size_dis =
             Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchFontSize));
         Self {
@@ -197,6 +225,7 @@ impl Home {
             _theme_dis,
             _font_size_dis,
             db_inited: false,
+            _right_dis,
         }
     }
 

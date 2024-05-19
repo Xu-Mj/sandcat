@@ -29,306 +29,319 @@
     user-select: none;
 
     border-right: 1px solid var(--color-border);
+}
 
-    /* 顶部导航栏 */
+.left-container-mobile {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    user-select: none;
 
-    .top {
+    border-right: 1px solid var(--color-border);
+}
+
+/* 顶部导航栏 */
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    height: 4.5rem;
+    padding: 1rem 1rem 0 1rem;
+    /* background-color: var(--hover-color); */
+
+    .top-right {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        width: 100%;
-        height: 4.5rem;
-        padding: 1rem 1rem 0 1rem;
-        /* background-color: var(--hover-color); */
+        gap: 1rem;
 
-        .top-right {
+        svg {
+            width: 1.5rem;
+            height: 1.5rem;
+        }
+
+        >span {
+            border-radius: .4rem;
             display: flex;
             align-items: center;
-            gap: 1rem;
+            justify-content: center;
+            position: relative;
 
-            svg {
-                width: 1.5rem;
-                height: 1.5rem;
-            }
-
-            >span {
-                border-radius: .4rem;
+            .unread-count {
+                width: 1rem;
+                height: 1rem;
+                position: absolute;
+                border-radius: 50%;
+                top: 0;
+                right: 0;
+                background-color: red;
                 display: flex;
-                align-items: center;
                 justify-content: center;
-                position: relative;
-
-                .unread-count {
-                    width: 1rem;
-                    height: 1rem;
-                    position: absolute;
-                    border-radius: 50%;
-                    top: 0;
-                    right: 0;
-                    background-color: red;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    color: white;
-                    font-size: small;
-                }
-            }
-
-            .icon {
-                cursor: pointer;
-            }
-
-            .top-icon-selected {
-                background-color: var(--hover-color);
-            }
-        }
-    }
-
-    /* 左侧列表，包含会话列表，联系人列表 */
-
-    .left-down {
-        width: 100%;
-        height: 100%;
-        /* overflow: hidden; */
-
-        .slider {
-            width: 200%;
-            height: 100%;
-            display: flex;
-            transition: all 0.2s ease-in-out;
-
-            .list-wrapper {
-                width: 50%;
-                position: relative;
-
-
+                align-items: center;
+                color: white;
+                font-size: small;
             }
         }
 
-    }
-
-    /* 列表 */
-
-    .contacts-list {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-start;
-        /* align-items: center; */
-        width: 100%;
-        height: calc(100% - 4rem);
-        padding-bottom: 1rem;
-        overflow-y: auto;
-
-        .no-result {
-            width: 100%;
-            height: 2rem;
-            line-height: 2rem;
-            text-align: center;
+        .icon {
+            cursor: pointer;
         }
 
-        .new-friends {
-            width: calc(100% - 2rem);
-            height: 2rem;
-            line-height: 2rem;
-            margin: 1rem;
-            margin-top: 0;
-            padding-left: 1rem;
-            border-top: 1px solid rgb(124, 124, 124);
-            border-bottom: 1px solid rgb(124, 124, 124);
-        }
-
-        .hover {
-            &:hover {
-                background-color: var(--hover-color);
-            }
-        }
-
-        .selected {
+        .top-icon-selected {
             background-color: var(--hover-color);
         }
+    }
+}
 
-        .item {
-            width: 100%;
-            height: 4rem;
+/* 左侧列表，包含会话列表，联系人列表 */
+
+.left-down {
+    width: 100%;
+    height: 100%;
+    /* overflow: hidden; */
+
+    .slider {
+        width: 200%;
+        height: 100%;
+        display: flex;
+        transition: all 0.2s ease-in-out;
+
+        .list-wrapper {
+            width: 50%;
+            position: relative;
+
+
+        }
+    }
+
+}
+
+/* 列表 */
+
+.contacts-list {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    /* align-items: center; */
+    width: 100%;
+    height: calc(100% - 4rem);
+    padding-bottom: 1rem;
+    overflow-y: auto;
+
+    .no-result {
+        width: 100%;
+        height: 2rem;
+        line-height: 2rem;
+        text-align: center;
+    }
+
+    .new-friends {
+        width: calc(100% - 2rem);
+        height: 2rem;
+        line-height: 2rem;
+        margin: 1rem;
+        margin-top: 0;
+        padding-left: 1rem;
+        border-top: 1px solid rgb(124, 124, 124);
+        border-bottom: 1px solid rgb(124, 124, 124);
+    }
+
+    .hover {
+        &:hover {
+            background-color: var(--hover-color);
+        }
+    }
+
+    .selected {
+        background-color: var(--hover-color);
+    }
+
+    .item {
+        width: 100%;
+        height: 4rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        /* border: black 1px solid; */
+
+        .item-avatar {
+            width: calc(4rem - 1rem);
+            height: calc(4rem - 1rem);
+            background-color: azure;
+            border-radius: .3rem;
+            display: grid;
+            grid-template-columns: repeat(var(--avatar-column), 1fr);
+            gap: .2rem;
+
+            .avatar {
+                place-self: center;
+                width: 100%;
+                height: auto;
+            }
+        }
+
+        .item-info {
+            width: calc(100% - 4rem);
             display: flex;
-            align-items: center;
-            gap: 1rem;
-            padding: 1rem;
-            /* border: black 1px solid; */
+            flex-direction: column;
+            position: relative;
 
-            .item-avatar {
-                width: calc(4rem - 1rem);
-                height: calc(4rem - 1rem);
-                background-color: azure;
-                border-radius: .3rem;
-                display: grid;
-                grid-template-columns: repeat(var(--avatar-column), 1fr);
-                gap: .2rem;
-
-                .avatar {
-                    place-self: center;
-                    width: 100%;
-                    height: auto;
-                }
+            .unread-count {
+                width: 1.2rem;
+                height: 1.2rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                background-color: red;
+                border-radius: 50%;
+                color: white;
+                font-size: .6rem;
+                font-weight: bold;
+                position: absolute;
+                top: 1.5rem;
+                right: .5rem;
             }
 
-            .item-info {
-                width: calc(100% - 4rem);
+            .unread-count-mute {
+                width: 3.2rem;
+                height: 1.2rem;
                 display: flex;
-                flex-direction: column;
-                position: relative;
+                justify-content: end;
+                align-items: center;
+                color: var(--color-text);
+                font-size: .6rem;
+                position: absolute;
+                top: 1.5rem;
+                right: .5rem;
+            }
 
-                .unread-count {
-                    width: 1.2rem;
-                    height: 1.2rem;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    background-color: red;
-                    border-radius: 50%;
-                    color: white;
-                    font-size: .6rem;
-                    font-weight: bold;
-                    position: absolute;
-                    top: 1.5rem;
-                    right: .5rem;
-                }
+            .name-time {
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                font-size: large;
 
-                .unread-count-mute {
-                    width: 3.2rem;
-                    height: 1.2rem;
-                    display: flex;
-                    justify-content: end;
-                    align-items: center;
-                    color: var(--color-text);
-                    font-size: .6rem;
-                    position: absolute;
-                    top: 1.5rem;
-                    right: .5rem;
-                }
-
-                .name-time {
-                    width: 100%;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;
-                    font-size: large;
-
-                    &:first-child {
-                        overflow: hidden;
-                        text-overflow: ellipsis;
-                        word-break: keep-all;
-                        white-space: nowrap;
-                    }
-
-                    .time {
-                        font-size: .5rem;
-                    }
-                }
-
-                .remark {
-                    width: 100%;
+                &:first-child {
                     overflow: hidden;
                     text-overflow: ellipsis;
                     word-break: keep-all;
-                    font-size: .8rem;
-                    color: var(--color-text);
                     white-space: nowrap;
                 }
+
+                .time {
+                    font-size: .5rem;
+                }
+            }
+
+            .remark {
+                width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                word-break: keep-all;
+                font-size: .8rem;
+                color: var(--color-text);
+                white-space: nowrap;
             }
         }
     }
+}
 
-    .user-info {
+.user-info {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 2rem;
+
+
+    .friend-card-header {
+        width: 100%;
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .friend-card-avatar {
+        width: 3rem;
+        height: 3rem;
+        border-radius: .3rem;
+    }
+
+    .friend-card-info {
         width: 100%;
         display: flex;
         flex-direction: column;
+        align-items: flex-start;
+        justify-content: flex-start;
+        word-wrap: break-word;
+        overflow: hidden;
+        white-space: pre-wrap;
 
+        &:not(:first-child) {
+            color: var(--color-text);
+        }
+    }
+
+    .friend-card-body {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
         align-items: center;
-        gap: 1rem;
-        padding: 1rem 2rem;
 
-
-        .friend-card-header {
-            width: 100%;
-            display: flex;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 1rem;
+        button {
+            border: none;
+            background-color: #e4e9ec;
+            width: 6rem;
+            height: 2rem;
+            padding: auto;
+            cursor: pointer;
         }
 
-        .friend-card-avatar {
-            width: 3rem;
-            height: 3rem;
-            border-radius: .3rem;
-        }
-
-        .friend-card-info {
+        .apply-detail {
             width: 100%;
+            height: auto;
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
-            justify-content: flex-start;
-            word-wrap: break-word;
-            overflow: hidden;
-            white-space: pre-wrap;
+            gap: 1rem;
 
-            &:not(:first-child) {
-                color: var(--color-text);
+            .apply-input {
+                /* border-radius: .3rem; */
+                outline: none;
+                padding: 0 .3rem;
+                /* font-size: 1rem; */
+            }
+
+            >:first-child,
+            >:nth-child(2) {
+                display: grid;
+                grid-template-columns: 1fr 2fr;
+            }
+
+            >:last-child {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                justify-items: center;
             }
         }
-
-        .friend-card-body {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-
-            button {
-                border: none;
-                background-color: #e4e9ec;
-                width: 6rem;
-                height: 2rem;
-                padding: auto;
-                cursor: pointer;
-            }
-
-            .apply-detail {
-                width: 100%;
-                height: auto;
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-
-                .apply-input {
-                    /* border-radius: .3rem; */
-                    outline: none;
-                    padding: 0 .3rem;
-                    /* font-size: 1rem; */
-                }
-
-                >:first-child,
-                >:nth-child(2) {
-                    display: grid;
-                    grid-template-columns: 1fr 2fr;
-                }
-
-                >:last-child {
-                    display: grid;
-                    grid-template-columns: 1fr 1fr;
-                    justify-items: center;
-                }
-            }
-        }
-    }
-
-    /* 隐藏滚动条 */
-
-    .contacts-list::-webkit-scrollbar {
-        display: none;
     }
 }
+
+/* 隐藏滚动条 */
+
+.contacts-list::-webkit-scrollbar {
+    display: none;
+}
+
 
 /* 控制联系人左移 */
 .move-left {

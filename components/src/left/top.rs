@@ -7,7 +7,7 @@ use yewdux::Dispatch;
 use icons::{ContactsIcon, MessagesIcon, SettingIcon};
 use sandcat_sdk::{
     model::{user::User, ComponentType},
-    state::{AppState, ComponentTypeState, UnreadState},
+    state::{AppState, ComponentTypeState, ShowRight, UnreadState},
 };
 
 use crate::self_info::SelfInfo;
@@ -96,8 +96,10 @@ impl Component for Top {
         let mut setting_class = "top-icon-selected";
         let setting_onclick = if self.com_state.component_type != ComponentType::Setting {
             setting_class = "hover";
-            self.com_s_dis
-                .reduce_mut_callback(|s| s.component_type = ComponentType::Setting)
+            self.com_s_dis.reduce_mut_callback(|s| {
+                Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::Show);
+                s.component_type = ComponentType::Setting;
+            })
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
