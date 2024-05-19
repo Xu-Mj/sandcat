@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use gloo::timers::callback::Interval;
+use gloo::utils::window;
 use web_sys::HtmlDivElement;
 use yew::{classes, html, AttrValue, Component, Context, Html, NodeRef, Properties};
 use yewdux::Dispatch;
@@ -193,6 +194,19 @@ impl Home {
             }
         });
 
+        // query device info
+        if let Ok(platform) = window().navigator().user_agent() {
+            log::debug!("platform: {:?}", platform);
+
+            if platform.contains("Mobile")
+                || platform.contains("Android")
+                || platform.contains("iPhone")
+            {
+                Dispatch::<MobileState>::global().set(MobileState::Mobile);
+            } else {
+                Dispatch::<MobileState>::global().set(MobileState::Desktop);
+            }
+        }
         // 使用ctx发送一个正在查询的状态
         ctx.link()
             .send_message(HomeMsg::Query(Box::new(QueryStatus::Querying)));
