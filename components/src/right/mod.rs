@@ -18,10 +18,10 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{CatHeadIcon, CloseIcon, MaxIcon};
+use icons::{BackIcon, CatHeadIcon, CloseIcon, MaxIcon};
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
-use sandcat_sdk::state::{AppState, MobileState};
+use sandcat_sdk::state::{AppState, MobileState, ShowRight};
 use sandcat_sdk::state::{
     ComponentTypeState, ConvState, CreateConvState, FriendListState, I18nState,
 };
@@ -61,6 +61,7 @@ pub enum RightMsg {
     ShowSelectFriendList,
     CreateGroup(Vec<String>),
     SwitchLang(Rc<I18nState>),
+    Close,
 }
 
 impl Right {
@@ -198,6 +199,10 @@ impl Component for Right {
                 self.match_content(ctx);
                 true
             }
+            RightMsg::Close => {
+                Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::None);
+                false
+            }
         }
     }
 
@@ -205,6 +210,27 @@ impl Component for Right {
         let mut top_bar_info = html!();
         let mut setting = html!();
         let mut friend_list = html!();
+        let (class, right_top_bar_class, back, operation_bar) =
+            match *Dispatch::<MobileState>::global().get() {
+                MobileState::Desktop => (
+                    "right-container",
+                    "right-top-bar-friend",
+                    html!(),
+                    html! {
+                        <div class="close-bar">
+                            <span></span>
+                            <MaxIcon/>
+                            <CloseIcon/>
+                        </div>
+                    },
+                ),
+                MobileState::Mobile => (
+                    "right-container-mobile",
+                    "right-top-bar-friend-mobile",
+                    html!(<span onclick={ctx.link().callback(|_| RightMsg::Close)}><BackIcon/></span>),
+                    html!(),
+                ),
+            };
         if let Some(info) = &self.cur_conv_info {
             let onclick = ctx.link().callback(|event: MouseEvent| {
                 event.stop_propagation();
@@ -231,7 +257,8 @@ impl Component for Right {
                             lang={self.lang_state.lang} />);
             }
             top_bar_info = html! {
-                <div class="right-top-bar-friend">
+                <div class={right_top_bar_class}>
+                    {back}
                     <span>
                         {info.name()}
                     </span>
@@ -285,18 +312,11 @@ impl Component for Right {
             ComponentType::Setting => html! {<Setting lang={self.lang_state.lang} />},
             ComponentType::Default => html!(),
         };
-        let class = match *Dispatch::<MobileState>::global().get() {
-            MobileState::Desktop => "right-container",
-            MobileState::Mobile => "right-container-mobile",
-        };
+
         html! {
             <div {class}>
                 <div class="right-top-bar">
-                    <div class="close-bar">
-                        <span></span>
-                        <MaxIcon/>
-                        <CloseIcon/>
-                    </div>
+                    {operation_bar}
                     {top_bar_info}
                 </div>
                     {setting}

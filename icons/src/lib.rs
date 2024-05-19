@@ -10,6 +10,15 @@ pub fn close_icon() -> Html {
     }
 }
 
+#[function_component(BackIcon)]
+pub fn back_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+            <path fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 6s-6 4.419-6 6s6 6 6 6" color="#000000"/>
+        </svg>
+    }
+}
+
 #[function_component(PlusRectIcon)]
 pub fn plus_rect_icon() -> Html {
     html! {
