@@ -22,7 +22,7 @@ use sandcat_sdk::state::SendResultState;
 use crate::right::{msg_item::MsgItem, sender::Sender};
 
 pub struct MessageList {
-    list2: IndexMap<AttrValue, Message>,
+    list: IndexMap<AttrValue, Message>,
     node_ref: NodeRef,
     page: u32,
     page_size: u32,
@@ -139,7 +139,7 @@ impl MessageList {
     }
 
     fn reset(&mut self) {
-        self.list2 = IndexMap::new();
+        self.list = IndexMap::new();
         self.page = 1;
         self.page_size = 20;
         self.new_msg_count = 0;
@@ -150,7 +150,7 @@ impl MessageList {
     fn insert_msg(&mut self, msg: Message, friend_id: AttrValue) -> bool {
         if msg.friend_id == friend_id {
             let is_self = msg.is_self;
-            self.list2.shift_insert(0, msg.local_id.clone(), msg);
+            self.list.shift_insert(0, msg.local_id.clone(), msg);
             if is_self || self.scroll_state == ScrollState::Bottom {
                 self.new_msg_count = 0;
                 self.scroll_state = ScrollState::Bottom;
@@ -249,7 +249,7 @@ impl Component for MessageList {
             _sync_msg_dis,
             _rec_msg_dis,
             _send_result_dis,
-            list2: IndexMap::new(),
+            list: IndexMap::new(),
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -282,7 +282,7 @@ impl Component for MessageList {
                 if list.len() < self.page_size as usize {
                     self.is_all = true;
                 }
-                self.list2.extend(list);
+                self.list.extend(list);
                 true
             }
             MessageListMsg::NextPage => {
@@ -294,7 +294,7 @@ impl Component for MessageList {
             }
             MessageListMsg::NextPageNone => false,
             MessageListMsg::SendFile(msg) => {
-                self.list2.insert(msg.local_id.clone(), msg);
+                self.list.insert(msg.local_id.clone(), msg);
                 self.scroll_state = ScrollState::Bottom;
                 true
             }
@@ -327,7 +327,7 @@ impl Component for MessageList {
                 result.next().map(|v| {
                     v.send_status = msg.send_status;
                 }); */
-                if let Some(v) = self.list2.get_mut(&msg.local_id) {
+                if let Some(v) = self.list.get_mut(&msg.local_id) {
                     v.send_status = msg.send_status;
                 }
                 true
@@ -366,7 +366,7 @@ impl Component for MessageList {
         if let Some(friend) = self.friend.as_ref() {
             let conv_type = props.conv_type.clone();
             list = self
-                .list2
+                .list
                 .iter()
                 .map(|(_, msg)| {
                     let mut avatar = friend.avatar().clone();
