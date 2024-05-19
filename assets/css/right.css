@@ -30,6 +30,7 @@
     }
 
 }
+
 .choose-conv {
     margin: auto;
 }
@@ -834,10 +835,17 @@
         justify-content: center;
         align-items: center;
 
-        .rect {
+        .rect-size {
             width: 30rem;
             height: 15rem;
+        }
 
+        .rect-size-mobile {
+            width: 100%;
+            padding: 1rem;
+        }
+
+        .rect {
             h2 {
                 margin-bottom: 2rem;
             }
@@ -848,7 +856,19 @@
 
             .font-size {
                 display: grid;
-                grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+                grid-template-columns: 2fr 4fr ;
+                align-items: center;
+            }
+
+            .font-size-desktop > :last-child {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr 1fr;
+                align-items: center;
+            }
+
+            .font-size-mobile > :last-child {
+                display: grid;
+                grid-template-columns: 2fr 2fr;
                 align-items: center;
             }
 

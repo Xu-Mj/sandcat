@@ -140,15 +140,15 @@ impl Component for Home {
             return html! {};
         }
         log::debug!("home view: {:?}", Dispatch::<ShowRight>::global().get());
-        let right = match *Dispatch::<MobileState>::global().get() {
-            MobileState::Desktop => html!(<Right />),
+        let (right, class) = match *Dispatch::<MobileState>::global().get() {
+            MobileState::Desktop => (html!(<Right />), "home"),
             MobileState::Mobile => match *Dispatch::<ShowRight>::global().get() {
-                ShowRight::None => html!(),
-                ShowRight::Show => html!(<Right />),
+                ShowRight::None => (html!(), "home-mobile"),
+                ShowRight::Show => (html!(<Right />), "home-mobile"),
             },
         };
         html! {
-                <div class="home-mobile" id="app">
+                <div {class} id="app">
                     <Left user_id={ctx.props().id.clone()}/>
                     {right}
                     // 通知组件

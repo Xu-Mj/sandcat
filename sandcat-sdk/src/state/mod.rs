@@ -246,8 +246,8 @@ impl From<&str> for ThemeState {
 #[store(storage = "local")]
 #[serde(rename_all = "lowercase")]
 pub enum MobileState {
-    Desktop,
     #[default]
+    Desktop,
     Mobile,
 }
 
