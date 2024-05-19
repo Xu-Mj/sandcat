@@ -16,6 +16,7 @@ pub struct ListItem {
     friend_state: Rc<FriendListState>,
     friend_dispatch: Dispatch<FriendListState>,
     unread_count: usize,
+    is_mobile: Rc<MobileState>,
 }
 
 #[derive(Properties, PartialEq)]
@@ -56,6 +57,7 @@ impl Component for ListItem {
             unread_count,
             conv_state: conv_dispatch.get(),
             conv_dispatch,
+            is_mobile: Dispatch::<MobileState>::global().get(),
         }
     }
 
@@ -86,8 +88,9 @@ impl Component for ListItem {
                 self.unread_count = 0;
                 // show right if mobile
                 log::debug!("show right{:?}", Dispatch::<MobileState>::global().get());
-                if Dispatch::<MobileState>::global().get().is_mobile() {
+                if self.is_mobile.is_mobile() {
                     Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::Show);
+                    // return false;
                 }
                 // do not update if current item is the same
                 if self.conv_state.conv.item_id == ctx.props().props.id {
@@ -112,8 +115,12 @@ impl Component for ListItem {
 
                     return false;
                 }
+                if self.is_mobile.is_mobile() {
+                    Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::Show);
+                    // return false;
+                }
                 if self.friend_state.friend.item_id == ctx.props().props.id {
-                    return false;
+                    // return false;
                 }
 
                 self.friend_dispatch.reduce_mut(|s| {

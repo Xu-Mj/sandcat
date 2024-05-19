@@ -139,6 +139,7 @@ impl Component for Home {
         if !self.db_inited {
             return html! {};
         }
+        log::debug!("home view: {:?}", Dispatch::<ShowRight>::global().get());
         let right = match *Dispatch::<MobileState>::global().get() {
             MobileState::Desktop => html!(<Right />),
             MobileState::Mobile => match *Dispatch::<ShowRight>::global().get() {

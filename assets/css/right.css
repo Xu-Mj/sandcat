@@ -15,12 +15,21 @@
     flex-direction: column;
     justify-content: center;
     background-color: var(--color-background);
-    width: 100%;
+    width: 0;
     height: 100%;
-    position: relative;
+    position: absolute;
+    top: 0;
+    right: 0;
     transition: background-color 0.5s;
+    animation: right-in .2s linear forwards;
 }
 
+@keyframes right-in {
+    to {
+        width: 100%;
+    }
+
+}
 .choose-conv {
     margin: auto;
 }

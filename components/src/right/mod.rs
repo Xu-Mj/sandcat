@@ -207,7 +207,6 @@ impl Component for Right {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let mut top_bar_info = html!();
         let mut setting = html!();
         let mut friend_list = html!();
         let (class, right_top_bar_class, back, operation_bar) =
@@ -231,6 +230,10 @@ impl Component for Right {
                     html!(),
                 ),
             };
+        let mut top_bar_info = html!(
+                <div class={right_top_bar_class}>
+                    {back.clone()}<span></span><span></span>
+                </div>);
         if let Some(info) = &self.cur_conv_info {
             let onclick = ctx.link().callback(|event: MouseEvent| {
                 event.stop_propagation();
