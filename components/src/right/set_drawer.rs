@@ -58,7 +58,7 @@ impl Component for SetDrawer {
         };
         html! {
             <div ref={self.node.clone()}
-                class="set-drawer box-shadow" tsandcat_sdkndex="0"
+                class="set-drawer box-shadow" tabindex="0"
                 onblur={ctx.props().close.reform(|_|())}
                 >
                 <div class="set-drawer-item hover" onclick={ctx.props().delete.reform(|_|())}>
