@@ -31,7 +31,8 @@ use crate::right::emoji::EmojiSpan;
 /// 第一排为表情、文件、音视频按钮
 /// 第二排为输入框
 pub struct Sender {
-    is_empty_warn_needed: bool,
+    is_warn_needed: bool,
+    warn_msg: String,
     timer: Option<Timeout>,
     emoji_list: Vec<Emoji>,
     show_emoji: bool,
@@ -41,11 +42,11 @@ pub struct Sender {
     emoji_wrapper_ref: NodeRef,
     show_file_sender: bool,
     i18n: FluentBundle<FluentResource>,
-    // send_msg: Rc<SendMessageState>,
-    // _send_msg_listener: ContextHandle<Rc<SendMessageState>>,
     file_list: Vec<FileListItem>,
+    input_len: usize,
 }
 
+const INPUT_MAX_LEN: usize = 5000;
 pub struct FileListItem {
     file: File,
     file_type: FileType,
@@ -72,6 +73,7 @@ pub enum SenderMsg {
     DeleteFileInFileSender(String),
     SendVideoCall,
     SendAudioCall,
+    OnInputChanged,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -171,7 +173,8 @@ impl Component for Sender {
         let i18n = utils::create_bundle(res);
         // 加载表情
         Self {
-            is_empty_warn_needed: false,
+            is_warn_needed: false,
+            warn_msg: String::new(),
             timer: None,
             emoji_list: get_emojis(),
             show_emoji: false,
@@ -182,6 +185,7 @@ impl Component for Sender {
             show_file_sender: false,
             i18n,
             file_list: vec![],
+            input_len: 0,
         }
     }
 
@@ -192,7 +196,21 @@ impl Component for Sender {
                 let content: AttrValue = input.value().into();
                 // 如果为空那么 提示不能发送空消息
                 if content.is_empty() {
-                    self.is_empty_warn_needed = true;
+                    self.is_warn_needed = true;
+                    self.warn_msg.clone_from(&"no_empty".to_string());
+                    // 输入框立即获取焦点
+                    input.focus().unwrap();
+                    // 给提示框添加一个定时器，1s后消失
+                    let ctx = ctx.link().clone();
+                    self.timer = Some(Timeout::new(1000, move || {
+                        ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
+                    }));
+                    return true;
+                }
+
+                if self.input_len > INPUT_MAX_LEN {
+                    self.is_warn_needed = true;
+                    self.warn_msg = "input_max_len".to_string();
                     // 输入框立即获取焦点
                     input.focus().unwrap();
                     // 给提示框添加一个定时器，1s后消失
@@ -230,7 +248,7 @@ impl Component for Sender {
                 true
             }
             SenderMsg::CleanEmptyMsgWarn => {
-                self.is_empty_warn_needed = false;
+                self.is_warn_needed = false;
                 self.timer = None;
                 true
             }
@@ -363,6 +381,7 @@ impl Component for Sender {
                 }
                 if event.key() == "Enter" {
                     event.prevent_default();
+
                     ctx.link().send_message(SenderMsg::SendText);
                 }
                 false
@@ -440,16 +459,23 @@ impl Component for Sender {
                 });
                 false
             }
+            SenderMsg::OnInputChanged => {
+                let textarea: HtmlInputElement = self.input_ref.cast().unwrap();
+                self.input_len = textarea.value().chars().count();
+                log::debug!("len: {}", self.input_len);
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let (sender_class, emoji_class, input_class, send_btn) =
+        let (sender_class, emoji_class, input_class, warn_class, send_btn) =
             match *Dispatch::<MobileState>::global().get() {
                 MobileState::Desktop => (
                     "sender sender-size",
                     "emoji-wrapper emoji-wrapper-size",
                     "msg-input-wrapper",
+                    "empty-msg-tip box-shadow",
                     html!(
                         <button class="send-btn"
                             onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
@@ -460,6 +486,7 @@ impl Component for Sender {
                     "sender",
                     "emoji-wrapper emoji-wrapper-size-mobile",
                     "msg-input-wrapper",
+                    "empty-msg-tip-mobile box-shadow",
                     html!(),
                 ),
             };
@@ -479,10 +506,15 @@ impl Component for Sender {
         }
         // spawn warn tip
         let mut warn = html!();
-        if self.is_empty_warn_needed {
+        if self.is_warn_needed {
+            let msg = if self.warn_msg == "input_max_len" {
+                format!("{} {}", tr!(self.i18n, &self.warn_msg), INPUT_MAX_LEN)
+            } else {
+                tr!(self.i18n, &self.warn_msg)
+            };
             warn = html! {
-                <span class="empty-msg-tip box-shadow">
-                    {tr!(self.i18n, "no_empty_warn")}
+                <span class={warn_class}>
+                    {msg}
                 </span>
             }
         }
@@ -605,7 +637,11 @@ impl Component for Sender {
                     </div>
                 </div>
                 <div class={input_class}>
-                    <textarea class="msg-input" ref={self.input_ref.clone()} {onpaste} {onkeydown}>
+                    <textarea class="msg-input"
+                        ref={self.input_ref.clone()}
+                        {onpaste}
+                        {onkeydown}
+                        oninput={ctx.link().callback(|_| SenderMsg::OnInputChanged)}>
                     </textarea>
                     {warn}
                     {send_btn}
