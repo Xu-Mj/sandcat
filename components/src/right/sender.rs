@@ -19,7 +19,7 @@ use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
 use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::SendCallState;
+use sandcat_sdk::state::{MobileState, SendCallState};
 use sandcat_sdk::{model::message::Message, model::ContentType, state::SendMessageState};
 use utils::tr;
 
@@ -319,41 +319,46 @@ impl Component for Sender {
                 true
             }
             SenderMsg::OnEnterKeyDown(event) => {
-                if event.shift_key() {
-                    if event.key() == "Enter" {
-                        event.prevent_default();
-                        // log::debug!("press key is :{:?}", event.key());
-                        let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
-                        let start = textarea.selection_start().unwrap().unwrap() as usize;
-                        let end = textarea.selection_end().unwrap().unwrap() as usize;
-                        let mut value = textarea.value();
-                        let v: Vec<(usize, char)> = value.char_indices().collect();
-                        let start_index = v[start].0;
-                        // log::debug!("v: {:?}; start: {}, end: {}", &v, start, end);
-                        match end.cmp(&value.chars().count()) {
-                            Ordering::Equal => value.push('\n'),
-                            Ordering::Less => {
-                                let end_index = v[end].0;
-                                // log::debug!("end index: {}",end_index);
-                                if end_index == start_index {
-                                    value.insert(start_index, '\n');
-                                } else {
-                                    let selected_text = &value[start_index..end_index];
-                                    let new_text = "\n";
-                                    value = value.replacen(selected_text, new_text, 1);
-                                }
-                            }
-                            Ordering::Greater => {}
-                        };
+                if event.shift_key() && event.key() == "Enter" {
+                    event.prevent_default();
+                    let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
+                    let mut value = textarea.value();
+                    let char_count = value.chars().count();
 
-                        textarea.set_value(&value);
-                        textarea
-                            .set_selection_start(Some((start + 1) as u32))
-                            .unwrap();
-                        textarea
-                            .set_selection_end(Some((start + 1) as u32))
-                            .unwrap();
+                    let start = textarea.selection_start().unwrap().unwrap() as usize;
+                    let end = textarea.selection_end().unwrap().unwrap() as usize;
+
+                    // 保护性检查以确保start和end不越界
+                    if start > char_count || end > char_count || start > end {
+                        return false; // 越界，直接返回
                     }
+
+                    let v: Vec<(usize, char)> = value.char_indices().collect();
+                    let start_index = v.get(start).map_or(start, |&(i, _)| i);
+
+                    match end.cmp(&char_count) {
+                        Ordering::Equal => value.push('\n'),
+                        Ordering::Less => {
+                            let end_index = v.get(end).map_or(end, |&(i, _)| i);
+                            if end_index == start_index {
+                                value.insert(start_index, '\n');
+                            } else {
+                                let selected_text = &value[start_index..end_index];
+                                let new_text = "\n";
+                                value = value.replacen(selected_text, new_text, 1);
+                            }
+                        }
+                        Ordering::Greater => {}
+                    };
+
+                    textarea.set_value(&value);
+                    textarea
+                        .set_selection_start(Some((start + 1) as u32))
+                        .unwrap();
+                    textarea
+                        .set_selection_end(Some((start + 1) as u32))
+                        .unwrap();
+                    textarea.set_scroll_top(textarea.scroll_height());
                     return false;
                 }
                 if event.key() == "Enter" {
@@ -439,6 +444,25 @@ impl Component for Sender {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let (sender_class, emoji_class, input_class, send_btn) =
+            match *Dispatch::<MobileState>::global().get() {
+                MobileState::Desktop => (
+                    "sender sender-size",
+                    "emoji-wrapper emoji-wrapper-size",
+                    "msg-input-wrapper",
+                    html!(
+                        <button class="send-btn"
+                            onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
+                            {tr!(self.i18n, "send")}
+                        </button>),
+                ),
+                MobileState::Mobile => (
+                    "sender",
+                    "emoji-wrapper emoji-wrapper-size-mobile",
+                    "msg-input-wrapper",
+                    html!(),
+                ),
+            };
         // spawn disable layer
         let mut disable = html!();
         if ctx.props().disable {
@@ -468,7 +492,7 @@ impl Component for Sender {
             let callback = &ctx.link().callback(SenderMsg::SendEmoji);
             let onblur = &ctx.link().callback(move |_| SenderMsg::ShowEmoji);
             emojis = html! {
-                <div class="emoji-wrapper" tabindex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
+                <div class={emoji_class} tabindex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
                     {
                         self.emoji_list.iter()
                         .map(|emoji| {html! (<EmojiSpan emoji={emoji.clone()} onclick={callback} />)})
@@ -560,7 +584,7 @@ impl Component for Sender {
             <>
             {emojis}
             {file_sender}
-            <div class="sender" ref={self.sender_ref.clone()}>
+            <div class={sender_class} ref={self.sender_ref.clone()}>
                 // 滑块
                 // <div class="sender-resizer" ref={self.resider_ref.clone()} ></div>
                 <div class="send-bar">
@@ -580,14 +604,11 @@ impl Component for Sender {
                         {phone_call}
                     </div>
                 </div>
-                <div class="msg-input-wrapper">
-                    <textarea class="msg-input" ref={self.input_ref.clone()} {onpaste} {onkeydown} /* contenteditable="true" */>
+                <div class={input_class}>
+                    <textarea class="msg-input" ref={self.input_ref.clone()} {onpaste} {onkeydown}>
                     </textarea>
                     {warn}
-                    <button class="send-btn"
-                        onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
-                        {tr!(self.i18n, "send")}
-                    </button>
+                    {send_btn}
                 </div>
                 {disable}
             </div>

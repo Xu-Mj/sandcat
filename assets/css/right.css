@@ -480,9 +480,17 @@
         display: none;
     }
 
-    .emoji-wrapper {
+    .emoji-wrapper-size {
         width: 25rem;
         height: 15rem;
+    }
+
+    .emoji-wrapper-size-mobile {
+        width: 100%;
+        height: 15rem;
+    }
+
+    .emoji-wrapper {
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
         grid-auto-rows: min-content;
@@ -524,15 +532,18 @@
 
     /* 右侧底部发送框 */
 
-    .sender {
-        width: 100%;
+    .sender-size{
         height: 20%;
         max-height: 60%;
         min-height: 20%;
+    }
+
+    .sender {
+        width: 100%;
         display: flex;
         flex-direction: column;
         /* flex: 1; */
-        flex-grow: 1;
+        /* flex-grow: 1; */
         padding: .3rem;
         overflow: hidden;
         position: relative;
