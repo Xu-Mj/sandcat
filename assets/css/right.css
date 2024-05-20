@@ -610,6 +610,18 @@
                 background-color: var(--color-background);
             }
 
+            .empty-msg-tip-mobile {
+                /* width: 8rem; */
+                padding: .2rem .5rem;
+                border-radius: .2rem;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                font-size: .8rem;
+                background-color: var(--color-background);
+            }
+
             .send-btn {
                 width: 6rem;
                 height: 2rem;
