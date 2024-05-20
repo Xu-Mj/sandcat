@@ -64,7 +64,7 @@ impl Component for FriendCard {
         html! {
             <div
                 class="friend-card box-shadow"
-                tabndex="-1"
+                tabindex="-1"
                 ref={self.node_ref.clone()}
                 onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >
