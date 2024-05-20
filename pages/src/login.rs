@@ -4,6 +4,7 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
+use icons::{MoonIcon, SunIcon};
 use serde::{Deserialize, Serialize};
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::HtmlInputElement;
@@ -206,7 +207,7 @@ impl Component for Login {
             }
             LoginMsg::SwitchTheme(state) => {
                 utils::set_theme(&state.to_string());
-                false
+                true
             }
         }
     }
@@ -225,28 +226,26 @@ impl Component for Login {
         let email = tr!(self.i18n, "email");
         let onchange = ctx.link().callback(LoginMsg::SwitchLanguage);
 
-        let mut switch = classes!("switch", "pointer");
-        let mut slider = classes!("slider");
-        if *self.theme.get() == ThemeState::Dark {
-            switch.push("background-change");
-            slider.push("right");
+        let (theme_icon, class) = if *self.theme.get() == ThemeState::Dark {
+            (html!(<SunIcon/>), "sun")
         } else {
-            slider.push("left");
-        }
+            (html!(<MoonIcon/>), "moon")
+        };
 
         let theme = html! {
-            <span class={switch} onclick={self.theme.reduce_mut_callback(|s| {if *s == ThemeState::Dark{
+            <span {class} onclick={self.theme.reduce_mut_callback(|s| {if *s == ThemeState::Dark{
                 *s = ThemeState::Light;
             } else {
                 *s = ThemeState::Dark;
             }})}>
-                <span class={slider}></span>
+                {theme_icon}
             </span>
         };
         html! {
             <div class="login-container">
                 {info}
                 <form class="login-wrapper" onsubmit={ctx.link().callback(LoginMsg::OnEnterKeyDown)}>
+                    {theme}
                     <div class="sign">
                         {login_title.clone()}
                     </div>
@@ -271,9 +270,6 @@ impl Component for Login {
                         <a href="/register">{tr!(self.i18n, "to_register")}</a>
                     </div>
                 </form>
-                <div class="theme-login">
-                    {theme}
-                </div>
             </div>
         }
     }

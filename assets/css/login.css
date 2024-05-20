@@ -84,10 +84,38 @@
         }
     }
 
-    .theme-login {
-        position: fixed;
+    .sun {
+        position: absolute;
         top: 1rem;
-        right: 3rem;
+        right: 1rem;
+        cursor: pointer;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        animation: sun-rotate 3s linear infinite;
+
+        svg{
+            path{
+                fill: white;
+            }
+        }
+    }
+
+    .moon {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        cursor: pointer;
+    }
+}
+
+@keyframes sun-rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
     }
 }
 
