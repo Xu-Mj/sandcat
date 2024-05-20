@@ -59,6 +59,7 @@ features = [
     "HtmlImageElement",
     "HtmlDialogElement",
     "Node",
+    "Selection",
     "DomRectList",
     "DomRect",
     "Event",

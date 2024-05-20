@@ -1,5 +1,7 @@
 use gloo::timers::callback::Timeout;
+use gloo::utils::{document, window};
 use nanoid::nanoid;
+use web_sys::Node;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -27,6 +29,7 @@ pub struct MsgItem {
     show_sending: bool,
     pointer: (i32, i32),
     friend_info: Option<UserWithMatchType>,
+    text_node: NodeRef,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -40,6 +43,7 @@ pub enum MsgItemMsg {
     ReSendMessage,
     QueryGroupMember(AttrValue),
     CloseFriendCard,
+    TextDoubleClick(MouseEvent),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -87,6 +91,7 @@ impl Component for MsgItem {
             show_sending: false,
             pointer: (0, 0),
             friend_info: None,
+            text_node: NodeRef::default(),
         }
     }
 
@@ -110,11 +115,6 @@ impl Component for MsgItem {
                 let x = event.x();
                 let y = event.y();
 
-                // let friend_id = if ctx.props().msg.is_self {
-                //     ctx.props().user_id.clone()
-                // } else {
-                //     ctx.props().friend_id.clone()
-                // };
                 log::debug!("friend id in msg item: {:?}", &ctx.props().msg);
                 let is_self = ctx.props().msg.is_self;
                 // the friend id is friend when msg type is single
@@ -262,6 +262,21 @@ impl Component for MsgItem {
                 self.friend_info = None;
                 true
             }
+            MsgItemMsg::TextDoubleClick(event) => {
+                event.prevent_default();
+                let div = self.text_node.cast::<Node>().unwrap();
+                if let Some(selection) = window().get_selection().ok().flatten() {
+                    if selection.range_count() > 0 {
+                        selection.remove_all_ranges().unwrap();
+                    }
+                    let range = document().create_range().unwrap();
+                    range.select_node_contents(&div).unwrap();
+                    selection.add_range(&range).unwrap();
+                } else {
+                    log::debug!("Could not obtain selection");
+                }
+                false
+            }
         }
     }
 
@@ -270,7 +285,7 @@ impl Component for MsgItem {
         let mut classes = Classes::from("msg-item");
         let msg_type = ctx.props().msg.content_type;
 
-        let mut msg_content_classes = Classes::from("msg-item-content");
+        let mut msg_content_classes = Classes::from("msg-item-text");
         if ctx.props().msg.is_self {
             msg_content_classes.push("background-self");
             classes = Classes::from("msg-item-reverse");
@@ -280,9 +295,28 @@ impl Component for MsgItem {
 
         let content = match msg_type {
             ContentType::Text => {
+                let content_lines: Vec<_> = ctx.props().msg.content.split('\n').collect();
+                let line_count = content_lines.len();
+
+                let html_content = content_lines
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, line)| {
+                        html! {
+                            <>
+                                <span>{ line }</span>
+                                { if index < line_count - 1 {
+                                    html! { <br/> }
+                                } else {
+                                    html! {}
+                                }}
+                            </>
+                        }
+                    })
+                    .collect::<Html>();
                 html! {
-                    <div class={msg_content_classes}>
-                        {ctx.props().msg.content.clone()}
+                    <div class={msg_content_classes} ref={self.text_node.clone()} ondblclick={ctx.link().callback(MsgItemMsg::TextDoubleClick)}>
+                        {html_content}
                     </div>
                 }
             }
