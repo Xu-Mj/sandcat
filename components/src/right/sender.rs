@@ -118,6 +118,7 @@ impl Sender {
         let mut content_type = ContentType::File;
 
         ctx.link().send_future(async move {
+            let file_name_src = file.name();
             let file_name = api::file()
                 .upload_file(file.clone())
                 .await
@@ -151,6 +152,7 @@ impl Sender {
                 onload.forget();
                 file_content = rx.await.expect("获取文件内容错误");
             }
+            let file_name = format!("{}||{}", file_name, file_name_src);
             SenderMsg::FileOnload(file_name, content_type, file_content)
         });
     }
@@ -162,11 +164,6 @@ impl Component for Sender {
     type Properties = SenderProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        // let (conv_state, _conv_listener) = ctx
-        //     .link()
-        //     .context(ctx.link().callback(|_| SenderMsg::None))
-        //     .expect("needed to get context");
-
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::SENDER,
             LanguageType::EnUS => en_us::SENDER,
@@ -184,8 +181,6 @@ impl Component for Sender {
             emoji_wrapper_ref: NodeRef::default(),
             show_file_sender: false,
             i18n,
-            // send_msg: conv_state,
-            // _send_msg_listener: _conv_listener,
             file_list: vec![],
         }
     }

@@ -418,15 +418,23 @@
         .msg-item-file-name {
             width: 8rem;
             height: 10rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             background: url("/images/file-preview-icon.png") no-repeat center center;
             background-size: cover;
+            display: flex;
+            align-items: flex-end;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-decoration: none;
+            color: inherit
+        }
+
+        .msg-item-file-name:hover {
+            white-space: normal;
+            overflow: visible;
         }
 
         /* 消息内容 */
-
         .msg-item-content {
             /* min-height: 1.6rem; */
             border-radius: .3rem;
