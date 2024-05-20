@@ -443,7 +443,7 @@
             /* min-height: 1.6rem; */
             border-radius: .3rem;
             padding: .5rem;
-            /* user-select: all; */
+            user-select: text;
         }
 
         .msg-item-emoji {

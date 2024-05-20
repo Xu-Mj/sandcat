@@ -1,5 +1,7 @@
 use gloo::timers::callback::Timeout;
+use gloo::utils::{document, window};
 use nanoid::nanoid;
+use web_sys::Node;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -27,6 +29,7 @@ pub struct MsgItem {
     show_sending: bool,
     pointer: (i32, i32),
     friend_info: Option<UserWithMatchType>,
+    text_node: NodeRef,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -40,6 +43,7 @@ pub enum MsgItemMsg {
     ReSendMessage,
     QueryGroupMember(AttrValue),
     CloseFriendCard,
+    TextDoubleClick(MouseEvent),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -87,6 +91,7 @@ impl Component for MsgItem {
             show_sending: false,
             pointer: (0, 0),
             friend_info: None,
+            text_node: NodeRef::default(),
         }
     }
 
@@ -257,6 +262,21 @@ impl Component for MsgItem {
                 self.friend_info = None;
                 true
             }
+            MsgItemMsg::TextDoubleClick(event) => {
+                event.prevent_default();
+                let div = self.text_node.cast::<Node>().unwrap();
+                if let Some(selection) = window().get_selection().ok().flatten() {
+                    if selection.range_count() > 0 {
+                        selection.remove_all_ranges().unwrap();
+                    }
+                    let range = document().create_range().unwrap();
+                    range.select_node_contents(&div).unwrap();
+                    selection.add_range(&range).unwrap();
+                } else {
+                    log::debug!("Could not obtain selection");
+                }
+                false
+            }
         }
     }
 
@@ -295,7 +315,7 @@ impl Component for MsgItem {
                     })
                     .collect::<Html>();
                 html! {
-                    <div class={msg_content_classes}>
+                    <div class={msg_content_classes} ref={self.text_node.clone()} ondblclick={ctx.link().callback(MsgItemMsg::TextDoubleClick)}>
                         {html_content}
                     </div>
                 }
