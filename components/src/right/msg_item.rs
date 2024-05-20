@@ -275,9 +275,28 @@ impl Component for MsgItem {
 
         let content = match msg_type {
             ContentType::Text => {
+                let content_lines: Vec<_> = ctx.props().msg.content.split('\n').collect();
+                let line_count = content_lines.len();
+
+                let html_content = content_lines
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, line)| {
+                        html! {
+                            <>
+                                <span>{ line }</span>
+                                { if index < line_count - 1 {
+                                    html! { <br/> }
+                                } else {
+                                    html! {}
+                                }}
+                            </>
+                        }
+                    })
+                    .collect::<Html>();
                 html! {
                     <div class={msg_content_classes}>
-                        {ctx.props().msg.content.clone()}
+                        {html_content}
                     </div>
                 }
             }

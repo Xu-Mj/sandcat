@@ -337,14 +337,14 @@ impl Component for Sender {
                     let start_index = v.get(start).map_or(start, |&(i, _)| i);
 
                     match end.cmp(&char_count) {
-                        Ordering::Equal => value.push('\n'),
+                        Ordering::Equal => value.push_str("  \n"),
                         Ordering::Less => {
                             let end_index = v.get(end).map_or(end, |&(i, _)| i);
                             if end_index == start_index {
-                                value.insert(start_index, '\n');
+                                value.insert_str(start_index, "  \n");
                             } else {
                                 let selected_text = &value[start_index..end_index];
-                                let new_text = "\n";
+                                let new_text = "  \n";
                                 value = value.replacen(selected_text, new_text, 1);
                             }
                         }
@@ -353,10 +353,10 @@ impl Component for Sender {
 
                     textarea.set_value(&value);
                     textarea
-                        .set_selection_start(Some((start + 1) as u32))
+                        .set_selection_start(Some((start + 3) as u32))
                         .unwrap();
                     textarea
-                        .set_selection_end(Some((start + 1) as u32))
+                        .set_selection_end(Some((start + 3) as u32))
                         .unwrap();
                     textarea.set_scroll_top(textarea.scroll_height());
                     return false;
