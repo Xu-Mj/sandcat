@@ -325,13 +325,20 @@ impl Component for MsgItem {
                 </div>
             },
             ContentType::File => {
-                let full = ctx.props().msg.content.clone();
-                let file_name = ctx.props().msg.content.split('-').last().unwrap_or(&full);
+                let full_original = ctx.props().msg.content.clone().to_string();
+                let full: Vec<&str> = full_original.split("||").collect();
+
+                let file_name = full.last().cloned().unwrap_or(full_original.as_str());
+
+                // 这里利用了map_or，它允许我们处理不匹配的类型
+                let file_name_prefix = full
+                    .first()
+                    .map_or(full_original.clone(), |&s| s.to_string());
                 html! {
                     <div class="msg-item-content">
-                        <span class="msg-item-file-name">
+                        <a href={file_name_prefix} download="" class="msg-item-file-name">
                             {file_name}
-                        </span>
+                        </a>
                     </div>
                 }
             }
