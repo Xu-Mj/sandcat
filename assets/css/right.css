@@ -289,7 +289,7 @@
         display: flex;
         flex-direction: column-reverse;
         overflow-y: auto;
-        gap: .8rem;
+        gap: 1rem;
         padding: .8rem .3rem;
         position: relative;
         scroll-behavior: smooth;
@@ -436,6 +436,10 @@
 
         /* 消息内容 */
         .msg-item-content {
+            border-radius: .3rem;
+        }
+
+        .msg-item-text {
             /* min-height: 1.6rem; */
             border-radius: .3rem;
             padding: .5rem;
@@ -532,7 +536,7 @@
 
     /* 右侧底部发送框 */
 
-    .sender-size{
+    .sender-size {
         height: 20%;
         max-height: 60%;
         min-height: 20%;

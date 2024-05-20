@@ -110,11 +110,6 @@ impl Component for MsgItem {
                 let x = event.x();
                 let y = event.y();
 
-                // let friend_id = if ctx.props().msg.is_self {
-                //     ctx.props().user_id.clone()
-                // } else {
-                //     ctx.props().friend_id.clone()
-                // };
                 log::debug!("friend id in msg item: {:?}", &ctx.props().msg);
                 let is_self = ctx.props().msg.is_self;
                 // the friend id is friend when msg type is single
@@ -270,7 +265,7 @@ impl Component for MsgItem {
         let mut classes = Classes::from("msg-item");
         let msg_type = ctx.props().msg.content_type;
 
-        let mut msg_content_classes = Classes::from("msg-item-content");
+        let mut msg_content_classes = Classes::from("msg-item-text");
         if ctx.props().msg.is_self {
             msg_content_classes.push("background-self");
             classes = Classes::from("msg-item-reverse");
