@@ -8,3 +8,4 @@
 - we need to update user information when we look up the friend info
 - we need to update user information when we click the conversation item
 - redesign the websocket reconnection logical,
+- textarea dynamic height under the mobile mode
