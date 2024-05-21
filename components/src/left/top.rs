@@ -1,5 +1,8 @@
 use std::rc::Rc;
 
+use fluent::{FluentBundle, FluentResource};
+use i18n::{en_us, zh_cn, LanguageType};
+use utils::tr;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -7,7 +10,10 @@ use yewdux::Dispatch;
 use icons::{ContactsIcon, MessagesIcon, SettingIcon};
 use sandcat_sdk::{
     model::{user::User, ComponentType},
-    state::{AppState, ComponentTypeState, ConvState, FriendListState, ShowRight, UnreadState},
+    state::{
+        AppState, ComponentTypeState, ConvState, FriendListState, I18nState, MobileState,
+        ShowRight, UnreadState,
+    },
 };
 
 use crate::self_info::SelfInfo;
@@ -22,6 +28,8 @@ pub struct Top {
     com_s_dis: Dispatch<ComponentTypeState>,
     unread_state: Rc<UnreadState>,
     _unread_dis: Dispatch<UnreadState>,
+    i18n: FluentBundle<FluentResource>,
+    is_mobile: bool,
 }
 
 #[derive(Properties, PartialEq)]
@@ -46,6 +54,11 @@ impl Component for Top {
         let com_s_dis = Dispatch::global().subscribe(ctx.link().callback(TopMsg::ComStateChanged));
         let unread_dis =
             Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
+        let res = match Dispatch::<I18nState>::global().get().lang {
+            LanguageType::ZhCN => zh_cn::TOP,
+            LanguageType::EnUS => en_us::TOP,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             node: NodeRef::default(),
             show_info: false,
@@ -55,6 +68,8 @@ impl Component for Top {
             _unread_dis: unread_dis,
             com_state: com_s_dis.get(),
             com_s_dis,
+            i18n,
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
 
@@ -77,17 +92,15 @@ impl Component for Top {
         log::debug!("top view:{:?}", self.unread_state);
         let mut msg_class = "top-icon-selected";
         let msg_onclick = if self.com_state.component_type != ComponentType::Messages {
-            msg_class = "hover";
+            msg_class = "hover top-icon";
             self.com_s_dis
                 .reduce_mut_callback(|s| s.component_type = ComponentType::Messages)
         } else {
             ctx.link().callback(move |_| TopMsg::EmptyCallback)
         };
-        let mut msg_class = classes!(msg_class);
-        msg_class.push("msg-icon");
         let mut contact_class = "top-icon-selected";
         let contact_onclick = if self.com_state.component_type != ComponentType::Contacts {
-            contact_class = "hover";
+            contact_class = "hover top-icon";
             self.com_s_dis
                 .reduce_mut_callback(|s| s.component_type = ComponentType::Contacts)
         } else {
@@ -131,13 +144,10 @@ impl Component for Top {
                 html!(<SelfInfo user={self.app_state.login_user.clone()} {close} {submit} />)
         }
         let onclick = ctx.link().callback(|_| TopMsg::ShowInfoPanel);
-        html! {
-            <div class="top" ref={self.node.clone()}>
-                {info_panel}
-                <div class="top-left pointer" {onclick}>
-                    <img class="avatar" title={self.app_state.login_user.name.clone()} src={self.app_state.login_user.avatar.clone()} />
-                    <span>{self.app_state.login_user.name.clone()}</span>
-                </div>
+        let mut top_right = html!();
+        let mut top_down = html!();
+        if !self.is_mobile {
+            top_right = html! {
                 <div class="top-right">
                     <span class={msg_class} onclick={msg_onclick}>
                         <MessagesIcon />
@@ -151,7 +161,36 @@ impl Component for Top {
                         <SettingIcon />
                     </span>
                 </div>
+            };
+        } else {
+            let mut msg_class = classes!(msg_class);
+            msg_class.push("top-down-style");
+            let mut contact_class = classes!(contact_class);
+            contact_class.push("top-down-style");
+            top_down = html! {
+                <div class="top-down">
+                    <div class={msg_class} onclick={msg_onclick}>
+                        {tr!(self.i18n, "msg")}
+                        {msg_count}
+                    </div>
+                    <div class={contact_class} onclick={contact_onclick}>
+                        {tr!(self.i18n, "contact")}
+                    </div>
+                </div>
+            };
+        }
+        html! {
 
+            <div class="top" ref={self.node.clone()}>
+                <div class="top-up">
+                    {info_panel}
+                    <div class="top-left pointer" {onclick}>
+                        <img class="avatar" title={self.app_state.login_user.name.clone()} src={self.app_state.login_user.avatar.clone()} />
+                        <span><b>{self.app_state.login_user.name.clone()}</b></span>
+                    </div>
+                    {top_right}
+                </div>
+                {top_down}
             </div>
         }
     }

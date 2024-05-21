@@ -46,12 +46,16 @@
 /* 顶部导航栏 */
 
 .top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
     width: 100%;
-    height: 4.5rem;
-    padding: 1rem 1rem 0 1rem;
+
+    .top-up {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        height: 4.5rem;
+        padding: 1rem 1rem 0 1rem;
+    }
 
     .top-left {
         display: flex;
@@ -96,9 +100,40 @@
             cursor: pointer;
         }
 
-        .top-icon-selected {
-            background-color: var(--hover-color);
+
+    }
+
+
+
+    .top-down {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        height: 2rem;
+        gap: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        margin-top: 1rem;
+
+        .top-down-style {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 1rem;
         }
+
+    }
+
+    .top-icon-selected {
+        color: white;
+        background-color: rgb(250, 92, 92);
+    }
+
+    .top-icon {
+        color: var(--color-text);
+        background-color: var(--hover-color);
     }
 }
 

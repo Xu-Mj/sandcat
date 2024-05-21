@@ -8,6 +8,11 @@ to_register_prefix = don't have an account?
 to_register = REGISTER NOW
 "#;
 
+pub const TOP: &str = r#"
+msg = Messages
+contact = Contacts
+"#;
+
 pub const SEARCH_DOCK: &str = r#"
 search = Search
 cancel = Cancel
