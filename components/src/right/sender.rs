@@ -43,7 +43,6 @@ pub struct Sender {
     show_file_sender: bool,
     i18n: FluentBundle<FluentResource>,
     file_list: Vec<FileListItem>,
-    input_len: usize,
 }
 
 const INPUT_MAX_LEN: usize = 5000;
@@ -73,7 +72,6 @@ pub enum SenderMsg {
     DeleteFileInFileSender(String),
     SendVideoCall,
     SendAudioCall,
-    OnInputChanged,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -185,7 +183,6 @@ impl Component for Sender {
             show_file_sender: false,
             i18n,
             file_list: vec![],
-            input_len: 0,
         }
     }
 
@@ -208,7 +205,7 @@ impl Component for Sender {
                     return true;
                 }
 
-                if self.input_len > INPUT_MAX_LEN {
+                if content.chars().count() > INPUT_MAX_LEN {
                     self.is_warn_needed = true;
                     self.warn_msg = "input_max_len".to_string();
                     // 输入框立即获取焦点
@@ -459,12 +456,6 @@ impl Component for Sender {
                 });
                 false
             }
-            SenderMsg::OnInputChanged => {
-                let textarea: HtmlInputElement = self.input_ref.cast().unwrap();
-                self.input_len = textarea.value().chars().count();
-                log::debug!("len: {}", self.input_len);
-                true
-            }
         }
     }
 
@@ -640,8 +631,7 @@ impl Component for Sender {
                     <textarea class="msg-input"
                         ref={self.input_ref.clone()}
                         {onpaste}
-                        {onkeydown}
-                        oninput={ctx.link().callback(|_| SenderMsg::OnInputChanged)}>
+                        {onkeydown}>
                     </textarea>
                     {warn}
                     {send_btn}
