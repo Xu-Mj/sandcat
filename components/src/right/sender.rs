@@ -73,6 +73,7 @@ pub enum SenderMsg {
     DeleteFileInFileSender(String),
     SendVideoCall,
     SendAudioCall,
+    OnTextInput,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -354,14 +355,14 @@ impl Component for Sender {
                     let start_index = v.get(start).map_or(start, |&(i, _)| i);
 
                     match end.cmp(&char_count) {
-                        Ordering::Equal => value.push_str("  \n"),
+                        Ordering::Equal => value.push('\n'),
                         Ordering::Less => {
                             let end_index = v.get(end).map_or(end, |&(i, _)| i);
                             if end_index == start_index {
-                                value.insert_str(start_index, "  \n");
+                                value.insert(start_index, '\n');
                             } else {
                                 let selected_text = &value[start_index..end_index];
-                                let new_text = "  \n";
+                                let new_text = "\n";
                                 value = value.replacen(selected_text, new_text, 1);
                             }
                         }
@@ -370,10 +371,10 @@ impl Component for Sender {
 
                     textarea.set_value(&value);
                     textarea
-                        .set_selection_start(Some((start + 3) as u32))
+                        .set_selection_start(Some((start + 1) as u32))
                         .unwrap();
                     textarea
-                        .set_selection_end(Some((start + 3) as u32))
+                        .set_selection_end(Some((start + 1) as u32))
                         .unwrap();
                     textarea.set_scroll_top(textarea.scroll_height());
                     return false;
@@ -458,6 +459,12 @@ impl Component for Sender {
                 });
                 false
             }
+            SenderMsg::OnTextInput => {
+                let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
+                textarea.style().set_property("height", "auto").unwrap();
+
+                true
+            }
         }
     }
 
@@ -467,7 +474,7 @@ impl Component for Sender {
                 MobileState::Desktop => (
                     "sender sender-size",
                     "emoji-wrapper emoji-wrapper-size",
-                    "msg-input-wrapper",
+                    "msg-input msg-input-size",
                     "empty-msg-tip box-shadow",
                     html!(
                         <button class="send-btn"
@@ -478,7 +485,7 @@ impl Component for Sender {
                 MobileState::Mobile => (
                     "sender",
                     "emoji-wrapper emoji-wrapper-size-mobile",
-                    "msg-input-wrapper",
+                    "msg-input msg-input-size-mobile",
                     "empty-msg-tip-mobile box-shadow",
                     html!(),
                 ),
@@ -629,8 +636,9 @@ impl Component for Sender {
                         {phone_call}
                     </div>
                 </div>
-                <div class={input_class}>
-                    <textarea class="msg-input"
+                <div class="msg-input-wrapper">
+                    <textarea class={input_class}
+                        // {rows}
                         ref={self.input_ref.clone()}
                         {onpaste}
                         {onkeydown}>
@@ -654,7 +662,7 @@ impl Component for Sender {
                 .unwrap();
             return;
         }
-        if !self.show_emoji && !ctx.props().disable && self.is_mobile {
+        if !self.show_emoji && !ctx.props().disable && !self.is_mobile {
             self.input_ref
                 .cast::<HtmlElement>()
                 .unwrap()
