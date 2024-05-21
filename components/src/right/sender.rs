@@ -377,7 +377,17 @@ impl Component for Sender {
                     textarea
                         .set_selection_end(Some((start + 1) as u32))
                         .unwrap();
-                    textarea.set_scroll_top(textarea.scroll_height());
+
+                    let style = window().get_computed_style(&textarea).unwrap().unwrap();
+                    let padding_bottom = style
+                        .get_property_value("padding-bottom")
+                        .unwrap_or_default();
+                    let padding_bottom = padding_bottom
+                        .trim_end_matches("px")
+                        .parse::<i32>()
+                        .unwrap_or(8);
+
+                    textarea.set_scroll_top(textarea.scroll_height() + padding_bottom);
                     return false;
                 }
                 if event.key() == "Enter" {
@@ -475,7 +485,6 @@ impl Component for Sender {
                 let font_size = html_style
                     .get_property_value("font-size")
                     .unwrap_or_default();
-                log::debug!("font-size: {}", font_size);
                 let font_size = font_size
                     .trim_end_matches("px")
                     .parse::<f64>()
