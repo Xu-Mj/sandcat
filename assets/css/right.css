@@ -8,6 +8,8 @@
     height: 100%;
     position: relative;
     transition: background-color 0.5s;
+    --avatar-width: 2.5rem;
+    --avatar-height: 2.5rem;
 }
 
 .right-container-mobile {
@@ -22,6 +24,8 @@
     right: 0;
     transition: background-color 0.5s;
     animation: right-in .2s linear forwards;
+    --avatar-width: 2.5rem;
+    --avatar-height: 2.5rem;
 }
 
 @keyframes right-in {
@@ -350,7 +354,7 @@
             }
 
             .content-wrapper {
-                max-width: 80%;
+                max-width: calc(100% - var(--avatar-width) * 2 - .6rem);
                 height: auto;
                 display: flex;
                 flex-direction: column;
@@ -397,8 +401,8 @@
         /* 消息头像wrapper */
 
         .msg-item-avatar {
-            width: auto;
-            height: auto;
+            width: var(--avatar-width);
+            height: var(--avatar-height);
             display: flex;
             justify-content: flex-start;
         }
