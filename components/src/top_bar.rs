@@ -125,7 +125,6 @@ impl Component for TopBar {
         };
         let click_plus = ctx.link().callback(|_| TopBarMsg::PlusButtonClicked);
         let onclick = ctx.link().callback(|_| TopBarMsg::SearchButtonClicked);
-        log::debug!("TopBar::view:{:?}", icon);
         let plus_class = if self.is_mobile && ctx.props().components_type == ComponentType::Messages
         {
             "plus-icon-mobile"
