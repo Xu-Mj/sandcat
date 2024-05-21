@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 use fluent::{FluentBundle, FluentResource};
 use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
+use gloo::utils::window;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{
     ClipboardEvent, DataTransferItem, DataTransferItemList, File, FileReader, HtmlElement,
@@ -73,6 +74,7 @@ pub enum SenderMsg {
     DeleteFileInFileSender(String),
     SendVideoCall,
     SendAudioCall,
+    OnTextInput,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -354,14 +356,14 @@ impl Component for Sender {
                     let start_index = v.get(start).map_or(start, |&(i, _)| i);
 
                     match end.cmp(&char_count) {
-                        Ordering::Equal => value.push_str("  \n"),
+                        Ordering::Equal => value.push('\n'),
                         Ordering::Less => {
                             let end_index = v.get(end).map_or(end, |&(i, _)| i);
                             if end_index == start_index {
-                                value.insert_str(start_index, "  \n");
+                                value.insert(start_index, '\n');
                             } else {
                                 let selected_text = &value[start_index..end_index];
-                                let new_text = "  \n";
+                                let new_text = "\n";
                                 value = value.replacen(selected_text, new_text, 1);
                             }
                         }
@@ -370,12 +372,22 @@ impl Component for Sender {
 
                     textarea.set_value(&value);
                     textarea
-                        .set_selection_start(Some((start + 3) as u32))
+                        .set_selection_start(Some((start + 1) as u32))
                         .unwrap();
                     textarea
-                        .set_selection_end(Some((start + 3) as u32))
+                        .set_selection_end(Some((start + 1) as u32))
                         .unwrap();
-                    textarea.set_scroll_top(textarea.scroll_height());
+
+                    let style = window().get_computed_style(&textarea).unwrap().unwrap();
+                    let padding_bottom = style
+                        .get_property_value("padding-bottom")
+                        .unwrap_or_default();
+                    let padding_bottom = padding_bottom
+                        .trim_end_matches("px")
+                        .parse::<i32>()
+                        .unwrap_or(8);
+
+                    textarea.set_scroll_top(textarea.scroll_height() + padding_bottom);
                     return false;
                 }
                 if event.key() == "Enter" {
@@ -458,6 +470,52 @@ impl Component for Sender {
                 });
                 false
             }
+            SenderMsg::OnTextInput => {
+                let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
+                // textarea.style().set_property("height", "auto").unwrap();
+                let document = window().document().unwrap();
+                let html = document
+                    .document_element()
+                    .unwrap()
+                    .dyn_into::<HtmlElement>()
+                    .unwrap();
+                let html_style = window().get_computed_style(&html).unwrap().unwrap();
+                // let html_style = html.style();
+
+                let font_size = html_style
+                    .get_property_value("font-size")
+                    .unwrap_or_default();
+                let font_size = font_size
+                    .trim_end_matches("px")
+                    .parse::<f64>()
+                    .unwrap_or(16.0); // 默认字体大小为16px
+
+                // 根据实际使用情况调整min_height和max_height
+                let min_height = 1.0 * font_size; // 假设最小高度为1rem
+                let max_height = 5.0 * font_size; // 假设最大高度为5rem
+
+                textarea.style().set_property("height", "auto").unwrap(); // 重置高度以获得准确的scrollHeight
+
+                let scroll_height = textarea.scroll_height() as f64;
+                if scroll_height > max_height {
+                    textarea
+                        .style()
+                        .set_property("height", &format!("{}px", max_height))
+                        .unwrap();
+                    textarea.style().set_property("overflow-y", "auto").unwrap();
+                } else {
+                    textarea
+                        .style()
+                        .set_property("height", &format!("{}px", scroll_height.max(min_height)))
+                        .unwrap();
+                    textarea
+                        .style()
+                        .set_property("overflow-y", "hidden")
+                        .unwrap();
+                }
+
+                true
+            }
         }
     }
 
@@ -467,7 +525,7 @@ impl Component for Sender {
                 MobileState::Desktop => (
                     "sender sender-size",
                     "emoji-wrapper emoji-wrapper-size",
-                    "msg-input-wrapper",
+                    "msg-input msg-input-size",
                     "empty-msg-tip box-shadow",
                     html!(
                         <button class="send-btn"
@@ -478,7 +536,7 @@ impl Component for Sender {
                 MobileState::Mobile => (
                     "sender",
                     "emoji-wrapper emoji-wrapper-size-mobile",
-                    "msg-input-wrapper",
+                    "msg-input msg-input-size-mobile",
                     "empty-msg-tip-mobile box-shadow",
                     html!(),
                 ),
@@ -605,6 +663,24 @@ impl Component for Sender {
             }
         }
 
+        let textarea = if self.is_mobile {
+            html! {
+                <textarea class={input_class}
+                    ref={self.input_ref.clone()}
+                    oninput={ctx.link().callback(|_|SenderMsg::OnTextInput)}
+                    {onpaste}
+                    {onkeydown}>
+                </textarea>
+            }
+        } else {
+            html! {
+                <textarea class={input_class}
+                    ref={self.input_ref.clone()}
+                    {onpaste}
+                    {onkeydown}>
+                </textarea>
+            }
+        };
         html! {
             <>
             {emojis}
@@ -629,12 +705,8 @@ impl Component for Sender {
                         {phone_call}
                     </div>
                 </div>
-                <div class={input_class}>
-                    <textarea class="msg-input"
-                        ref={self.input_ref.clone()}
-                        {onpaste}
-                        {onkeydown}>
-                    </textarea>
+                <div class="msg-input-wrapper">
+                    {textarea}
                     {warn}
                     {send_btn}
                 </div>
@@ -654,7 +726,7 @@ impl Component for Sender {
                 .unwrap();
             return;
         }
-        if !self.show_emoji && !ctx.props().disable && self.is_mobile {
+        if !self.show_emoji && !ctx.props().disable && !self.is_mobile {
             self.input_ref
                 .cast::<HtmlElement>()
                 .unwrap()

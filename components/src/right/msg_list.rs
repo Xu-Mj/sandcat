@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
+use sandcat_sdk::state::MobileState;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlElement;
 use yew::prelude::*;
@@ -386,9 +387,13 @@ impl Component for MessageList {
                 })
                 .collect::<Html>()
         }
+        let mut class = "resize resize-size";
+        if Dispatch::<MobileState>::global().get().is_mobile() {
+            class = "resize";
+        }
         html! {
             <>
-                <div class="resize">
+                <div {class}>
                     {new_msg_count}
                     <div ref={self.node_ref.clone()} class="msg-list"  {onscroll}>
                         {list}
