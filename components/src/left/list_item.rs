@@ -7,7 +7,7 @@ use yewdux::Dispatch;
 use sandcat_sdk::{
     db,
     model::{CommonProps, ComponentType, CurrentItem, RightContentType},
-    state::{ConvState, FriendListState, MobileState, ShowRight, UnreadState},
+    state::{ComponentTypeState, ConvState, FriendListState, MobileState, ShowRight, UnreadState},
 };
 
 pub struct ListItem {
@@ -103,6 +103,8 @@ impl Component for ListItem {
                     };
                 });
 
+                Dispatch::<ComponentTypeState>::global()
+                    .set(ComponentTypeState::from(ctx.props().component_type));
                 true
             }
             ListItemMsg::FriendStateChanged(state) => {

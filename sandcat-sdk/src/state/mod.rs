@@ -42,6 +42,13 @@ pub struct ComponentTypeState {
     pub component_type: ComponentType,
 }
 
+impl From<ComponentType> for ComponentTypeState {
+    fn from(value: ComponentType) -> Self {
+        Self {
+            component_type: value,
+        }
+    }
+}
 /// global unread count and contacts count(add friends)
 /// there is an issue that I've encountered which is difficult to understand.
 /// If the state not stored, and it's not at default value,

@@ -7,7 +7,7 @@ use yewdux::Dispatch;
 use icons::{ContactsIcon, MessagesIcon, SettingIcon};
 use sandcat_sdk::{
     model::{user::User, ComponentType},
-    state::{AppState, ComponentTypeState, ShowRight, UnreadState},
+    state::{AppState, ComponentTypeState, ConvState, FriendListState, ShowRight, UnreadState},
 };
 
 use crate::self_info::SelfInfo;
@@ -98,6 +98,8 @@ impl Component for Top {
             setting_class = "hover";
             self.com_s_dis.reduce_mut_callback(|s| {
                 Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::Show);
+                Dispatch::<ConvState>::global().set(ConvState::default());
+                Dispatch::<FriendListState>::global().set(FriendListState::default());
                 s.component_type = ComponentType::Setting;
             })
         } else {
