@@ -362,7 +362,6 @@
                 align-items: end;
                 padding-bottom: .3rem;
 
-
                 svg {
                     animation: msg-sending 1s linear infinite;
                 }

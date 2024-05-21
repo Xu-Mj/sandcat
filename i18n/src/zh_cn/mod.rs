@@ -33,6 +33,11 @@ cancel = 取消
 logout = 退出登录
 "#;
 
+pub const TOP: &str = r#"
+msg = 消息
+contact = 联系人
+"#;
+
 pub const ADD_FRIEND: &str = r#"
 no_result = 没有搜索结果
 search_prompt = 根据手机号、邮箱、账号搜索
