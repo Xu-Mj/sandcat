@@ -43,6 +43,7 @@ pub struct Sender {
     show_file_sender: bool,
     i18n: FluentBundle<FluentResource>,
     file_list: Vec<FileListItem>,
+    is_mobile: bool,
 }
 
 const INPUT_MAX_LEN: usize = 5000;
@@ -183,6 +184,7 @@ impl Component for Sender {
             show_file_sender: false,
             i18n,
             file_list: vec![],
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
 
@@ -652,7 +654,7 @@ impl Component for Sender {
                 .unwrap();
             return;
         }
-        if !self.show_emoji && !ctx.props().disable {
+        if !self.show_emoji && !ctx.props().disable && self.is_mobile {
             self.input_ref
                 .cast::<HtmlElement>()
                 .unwrap()
