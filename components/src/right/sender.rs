@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 use fluent::{FluentBundle, FluentResource};
 use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
+use gloo::utils::window;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{
     ClipboardEvent, DataTransferItem, DataTransferItemList, File, FileReader, HtmlElement,
@@ -461,7 +462,48 @@ impl Component for Sender {
             }
             SenderMsg::OnTextInput => {
                 let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
-                textarea.style().set_property("height", "auto").unwrap();
+                // textarea.style().set_property("height", "auto").unwrap();
+                let document = window().document().unwrap();
+                let html = document
+                    .document_element()
+                    .unwrap()
+                    .dyn_into::<HtmlElement>()
+                    .unwrap();
+                let html_style = window().get_computed_style(&html).unwrap().unwrap();
+                // let html_style = html.style();
+
+                let font_size = html_style
+                    .get_property_value("font-size")
+                    .unwrap_or_default();
+                log::debug!("font-size: {}", font_size);
+                let font_size = font_size
+                    .trim_end_matches("px")
+                    .parse::<f64>()
+                    .unwrap_or(16.0); // 默认字体大小为16px
+
+                // 根据实际使用情况调整min_height和max_height
+                let min_height = 1.0 * font_size; // 假设最小高度为1rem
+                let max_height = 5.0 * font_size; // 假设最大高度为5rem
+
+                textarea.style().set_property("height", "auto").unwrap(); // 重置高度以获得准确的scrollHeight
+
+                let scroll_height = textarea.scroll_height() as f64;
+                if scroll_height > max_height {
+                    textarea
+                        .style()
+                        .set_property("height", &format!("{}px", max_height))
+                        .unwrap();
+                    textarea.style().set_property("overflow-y", "auto").unwrap();
+                } else {
+                    textarea
+                        .style()
+                        .set_property("height", &format!("{}px", scroll_height.max(min_height)))
+                        .unwrap();
+                    textarea
+                        .style()
+                        .set_property("overflow-y", "hidden")
+                        .unwrap();
+                }
 
                 true
             }
@@ -612,6 +654,24 @@ impl Component for Sender {
             }
         }
 
+        let textarea = if self.is_mobile {
+            html! {
+                <textarea class={input_class}
+                    ref={self.input_ref.clone()}
+                    oninput={ctx.link().callback(|_|SenderMsg::OnTextInput)}
+                    {onpaste}
+                    {onkeydown}>
+                </textarea>
+            }
+        } else {
+            html! {
+                <textarea class={input_class}
+                    ref={self.input_ref.clone()}
+                    {onpaste}
+                    {onkeydown}>
+                </textarea>
+            }
+        };
         html! {
             <>
             {emojis}
@@ -637,12 +697,7 @@ impl Component for Sender {
                     </div>
                 </div>
                 <div class="msg-input-wrapper">
-                    <textarea class={input_class}
-                        // {rows}
-                        ref={self.input_ref.clone()}
-                        {onpaste}
-                        {onkeydown}>
-                    </textarea>
+                    {textarea}
                     {warn}
                     {send_btn}
                 </div>
