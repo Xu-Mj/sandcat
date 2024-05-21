@@ -391,7 +391,7 @@ input {
     padding: 1rem;
     gap: 1rem;
 
-    .setting-button {
+    .plus-icon {
         width: 2rem;
         height: 2rem;
         display: flex;
@@ -400,8 +400,29 @@ input {
         cursor: pointer;
     }
 
+    .plus-icon-mobile {
+        width: 2rem;
+        height: 2rem;
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        background-color: rgb(250, 92, 92);
+        border-radius: 50%;
+        box-shadow: 5px 5px 2px 2px rgba(0, 0, 0, 0.5);
+
+        svg{
+            path{
+                stroke: white;
+            }
+        }
+    }
+
     .search {
-        width: calc(100% - 2rem);
+        width: 100%;
         height: 1.5rem;
 
         .search-icon {
@@ -437,18 +458,30 @@ input {
     }
 }
 
-.info-panel {
+.info-panel-size {
     width: 21rem;
     height: 34rem;
     position: fixed;
     top: 50%;
     left: 50%;
+    border-radius: .3rem;
+    transform: translate(-50%, -50%);
+}
+
+.info-panel-size-mobile {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.info-panel {
+
     padding: 1rem;
     background-color: var(--color-background);
     z-index: 3;
-    transform: translate(-50%, -50%);
     overflow-y: auto;
-    border-radius: .3rem;
 
     .info-panel-item-avatar {
         width: 100%;
