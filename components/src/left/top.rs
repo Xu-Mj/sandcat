@@ -136,7 +136,7 @@ impl Component for Top {
                 {info_panel}
                 <div class="top-left pointer" {onclick}>
                     <img class="avatar" title={self.app_state.login_user.name.clone()} src={self.app_state.login_user.avatar.clone()} />
-                    <span><b>{self.app_state.login_user.name.clone()}</b></span>
+                    <span>{self.app_state.login_user.name.clone()}</span>
                 </div>
                 <div class="top-right">
                     <span class={msg_class} onclick={msg_onclick}>
