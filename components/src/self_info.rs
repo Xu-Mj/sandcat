@@ -18,6 +18,7 @@ use sandcat_sdk::db::repository::Repository;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::{User, UserUpdate};
 use sandcat_sdk::state::I18nState;
+use sandcat_sdk::state::MobileState;
 use utils::tr;
 
 pub struct SelfInfo {
@@ -30,6 +31,7 @@ pub struct SelfInfo {
     avatar: String,
     gender: String,
     _dispatch: Dispatch<I18nState>,
+    is_mobile: bool,
 }
 
 #[derive(Debug)]
@@ -70,6 +72,7 @@ impl Component for SelfInfo {
             gender: ctx.props().user.gender.to_string(),
             avatar: ctx.props().user.avatar.to_string(),
             _dispatch: dispatch,
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
 
@@ -148,9 +151,14 @@ impl Component for SelfInfo {
         let on_cancel = ctx.props().close.reform(|_| ());
         let onchange = ctx.link().callback(SelfInfoMsg::GenderChange);
         let user = ctx.props().user.clone();
-        log::debug!("user: {:?}", user);
+        // log::debug!("user: {:?}", user);
+        let class = if self.is_mobile {
+            "info-panel info-panel-size-mobile"
+        } else {
+            "info-panel info-panel-size box-shadow"
+        };
         html! {
-            <div class="info-panel box-shadow">
+            <div {class}>
                 <div class="info-panel-item-avatar">
                     <input type="file" id="avatar" name="avatar" hidden={true} accept="image/*"/>
                     <label for="avatar">
