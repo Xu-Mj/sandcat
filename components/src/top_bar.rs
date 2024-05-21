@@ -4,8 +4,9 @@ use yew::prelude::*;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{PeoplePlusIcon, PlusIcon, SearchIcon};
-use sandcat_sdk::model::ComponentType;
+use sandcat_sdk::{model::ComponentType, state::MobileState};
 use utils::tr;
+use yewdux::Dispatch;
 /// 左侧组件顶部选项栏
 /// 包含搜索和设置按钮以及一个排序按钮
 /// 可在联系人与消息列表中进行复用
@@ -26,6 +27,7 @@ pub struct TopBar {
     search_node: NodeRef,
     search_value: AttrValue,
     i18n: FluentBundle<FluentResource>,
+    is_mobile: bool,
 }
 
 pub enum TopBarMsg {
@@ -50,6 +52,7 @@ impl Component for TopBar {
             i18n,
             search_node: NodeRef::default(),
             search_value: AttrValue::default(),
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
 
@@ -122,6 +125,13 @@ impl Component for TopBar {
         };
         let click_plus = ctx.link().callback(|_| TopBarMsg::PlusButtonClicked);
         let onclick = ctx.link().callback(|_| TopBarMsg::SearchButtonClicked);
+        log::debug!("TopBar::view:{:?}", icon);
+        let plus_class = if self.is_mobile && ctx.props().components_type == ComponentType::Messages
+        {
+            "plus-icon-mobile"
+        } else {
+            "plus-icon"
+        };
         html! {
             // 水平布局，从左到右分别为排序选项卡、搜索输入框、设置按钮
             <div class="top-bar">
@@ -131,7 +141,7 @@ impl Component for TopBar {
                     </label>
                    <input id={id} ref={self.search_node.clone()} class="search-input" type="search" placeholder={tr!(self.i18n, "search")} {onchange} {onkeydown} />
                 </div>
-                <div class="setting-button" onclick={click_plus}>
+                <div class={plus_class} onclick={click_plus}>
                     {icon}
                 </div>
             </div>
