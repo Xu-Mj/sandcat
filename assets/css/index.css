@@ -482,19 +482,20 @@ input {
     left: 50%;
     border-radius: .3rem;
     transform: translate(-50%, -50%);
+    padding: 1rem;
 }
 
 .info-panel-size-mobile {
     width: 100%;
     height: 100%;
     position: fixed;
+    padding: 1rem;
+    padding-top: 3rem;
     top: 0;
     left: 0;
 }
 
 .info-panel {
-
-    padding: 1rem;
     background-color: var(--color-background);
     z-index: 3;
     overflow-y: auto;
