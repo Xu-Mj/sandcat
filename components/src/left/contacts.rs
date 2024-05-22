@@ -1,5 +1,7 @@
 use fluent::{FluentBundle, FluentResource};
 use indexmap::IndexMap;
+use sandcat_sdk::state::ComponentTypeState;
+use sandcat_sdk::state::MobileState;
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -47,6 +49,8 @@ pub struct Contacts {
     _add_friend_dis: Dispatch<AddFriendState>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
+    touch_start: i32,
+    is_mobile: bool,
 }
 
 pub enum QueryState<T> {
@@ -69,6 +73,8 @@ pub enum ContactsMsg {
     RemoveFriend(Rc<RemoveFriendState>),
     AddFriend(Rc<AddFriendState>),
     SwitchLanguage(Rc<I18nState>),
+    OnTouchStart(TouchEvent),
+    OnTouchEnd(TouchEvent),
 }
 
 impl Component for Contacts {
@@ -122,6 +128,8 @@ impl Component for Contacts {
             is_add_friend: false,
             show_context_menu: false,
             i18n,
+            touch_start: 0,
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
             _fs_dis: fs_dis,
             friend_state: friend_dispatch.get(),
             friend_dispatch,
@@ -283,10 +291,39 @@ impl Component for Contacts {
                 self.lang_state = state;
                 true
             }
+            ContactsMsg::OnTouchStart(event) => {
+                if let Some(touch) = event.touches().get(0) {
+                    log::debug!("TouchStart: {}", touch.client_x());
+                    self.touch_start = touch.client_x();
+                };
+                false
+            }
+            ContactsMsg::OnTouchEnd(event) => {
+                // we can't use the .touches() to get the touch end
+                // should use the changed_touches()
+                if let Some(touch) = event.changed_touches().get(0) {
+                    log::debug!("TouchEnd: {}", touch.client_x());
+                    if touch.client_x() - self.touch_start > 50 {
+                        // go to contacts
+                        Dispatch::<ComponentTypeState>::global()
+                            .reduce_mut(|s| s.component_type = ComponentType::Messages);
+                    }
+                }
+                self.touch_start = 0;
+                false
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let (ontouchstart, ontouchend) = if self.is_mobile {
+            (
+                Some(ctx.link().callback(ContactsMsg::OnTouchStart)),
+                Some(ctx.link().callback(ContactsMsg::OnTouchEnd)),
+            )
+        } else {
+            (None, None)
+        };
         // 根据搜索结果显示联系人列表，
         // 如果是搜索状态，那么搜索结果为空时需要提示用户没有结果
         let oncontextmenu = ctx
@@ -319,7 +356,7 @@ impl Component for Contacts {
             .map(|item| get_list_item(item.1, oncontextmenu.clone()))
             .collect::<Html>();
         html! {
-            <div class="list-wrapper">
+            <div class="list-wrapper" {ontouchstart} {ontouchend}>
                 {
                     if self.is_add_friend {
                         html!{
