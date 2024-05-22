@@ -91,6 +91,62 @@ pub struct SenderProps {
 }
 
 impl Sender {
+    fn handle_new_line(&self, ctx: &Context<Self>) -> bool {
+        let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
+        let mut value = textarea.value();
+        let char_count = value.chars().count();
+
+        let start = textarea.selection_start().unwrap().unwrap() as usize;
+        let end = textarea.selection_end().unwrap().unwrap() as usize;
+
+        // 保护性检查以确保start和end不越界
+        if start > char_count || end > char_count || start > end {
+            return false; // 越界，直接返回
+        }
+
+        let v: Vec<(usize, char)> = value.char_indices().collect();
+        let start_index = v.get(start).map_or(start, |&(i, _)| i);
+
+        match end.cmp(&char_count) {
+            Ordering::Equal => value.push('\n'),
+            Ordering::Less => {
+                let end_index = v.get(end).map_or(end, |&(i, _)| i);
+                if end_index == start_index {
+                    value.insert(start_index, '\n');
+                } else {
+                    let selected_text = &value[start_index..end_index];
+                    let new_text = "\n";
+                    value = value.replacen(selected_text, new_text, 1);
+                }
+            }
+            Ordering::Greater => {}
+        };
+
+        textarea.set_value(&value);
+        textarea
+            .set_selection_start(Some((start + 1) as u32))
+            .unwrap();
+        textarea
+            .set_selection_end(Some((start + 1) as u32))
+            .unwrap();
+
+        // handle textarea height
+        ctx.link().send_message(SenderMsg::OnTextInput);
+
+        // scroll to bottom
+        let style = window().get_computed_style(&textarea).unwrap().unwrap();
+        let padding_bottom = style
+            .get_property_value("padding-bottom")
+            .unwrap_or_default();
+        let padding_bottom = padding_bottom
+            .trim_end_matches("px")
+            .parse::<i32>()
+            .unwrap_or(8);
+
+        textarea.set_scroll_top(textarea.scroll_height() + padding_bottom);
+        false
+    }
+
     // fixme need to wait message store success
     fn store_message(&self, ctx: &Context<Self>, mut msg: Message) {
         let conv_type = ctx.props().conv_type.clone();
@@ -352,76 +408,19 @@ impl Component for Sender {
                 if event.key() != "Enter" {
                     return false;
                 }
-                self.is_key_down = false;
-                let end = chrono::Utc::now().timestamp_millis();
-                let need_new_line = self.is_mobile
-                    && event.key() == "Enter"
-                    && self.enter_key_down != 0
-                    && end - self.enter_key_down > 500;
-
-                if event.shift_key() || need_new_line {
-                    self.enter_key_down = 0;
-                    event.prevent_default();
-                    let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
-                    let mut value = textarea.value();
-                    let char_count = value.chars().count();
-
-                    let start = textarea.selection_start().unwrap().unwrap() as usize;
-                    let end = textarea.selection_end().unwrap().unwrap() as usize;
-
-                    // 保护性检查以确保start和end不越界
-                    if start > char_count || end > char_count || start > end {
-                        return false; // 越界，直接返回
-                    }
-
-                    let v: Vec<(usize, char)> = value.char_indices().collect();
-                    let start_index = v.get(start).map_or(start, |&(i, _)| i);
-
-                    match end.cmp(&char_count) {
-                        Ordering::Equal => value.push('\n'),
-                        Ordering::Less => {
-                            let end_index = v.get(end).map_or(end, |&(i, _)| i);
-                            if end_index == start_index {
-                                value.insert(start_index, '\n');
-                            } else {
-                                let selected_text = &value[start_index..end_index];
-                                let new_text = "\n";
-                                value = value.replacen(selected_text, new_text, 1);
-                            }
-                        }
-                        Ordering::Greater => {}
-                    };
-
-                    textarea.set_value(&value);
-                    textarea
-                        .set_selection_start(Some((start + 1) as u32))
-                        .unwrap();
-                    textarea
-                        .set_selection_end(Some((start + 1) as u32))
-                        .unwrap();
-
-                    // handle textarea height
-                    ctx.link().send_message(SenderMsg::OnTextInput);
-
-                    // scroll to bottom
-                    let style = window().get_computed_style(&textarea).unwrap().unwrap();
-                    let padding_bottom = style
-                        .get_property_value("padding-bottom")
-                        .unwrap_or_default();
-                    let padding_bottom = padding_bottom
-                        .trim_end_matches("px")
-                        .parse::<i32>()
-                        .unwrap_or(8);
-
-                    textarea.set_scroll_top(textarea.scroll_height() + padding_bottom);
+                if self.is_key_down {
                     return false;
                 }
-                if event.key() == "Enter" {
-                    log::debug!("enter");
+                self.is_key_down = false;
+
+                if event.shift_key() {
+                    self.enter_key_down = 0;
                     event.prevent_default();
-                    event.stop_propagation();
-                    ctx.link().send_message(SenderMsg::SendText);
+                    return self.handle_new_line(ctx);
                 }
+
+                ctx.link().send_message(SenderMsg::SendText);
+
                 false
             }
             SenderMsg::OnPaste(event) => {
@@ -546,9 +545,17 @@ impl Component for Sender {
             SenderMsg::OnEnterKeyDown(event) => {
                 if event.key() == "Enter" {
                     event.prevent_default();
-                    if self.is_mobile && !self.is_key_down {
+                    let time = chrono::Utc::now().timestamp_millis();
+                    if !self.is_key_down {
                         self.is_key_down = true;
-                        self.enter_key_down = chrono::Utc::now().timestamp_millis();
+                        self.enter_key_down = time;
+                    }
+                    if self.enter_key_down != 0
+                        && self.is_key_down
+                        && time - self.enter_key_down > 500
+                    {
+                        self.is_key_down = false;
+                        return self.handle_new_line(ctx);
                     }
                 }
                 false
