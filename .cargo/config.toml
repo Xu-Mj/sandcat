@@ -1,4 +1,6 @@
-[target.'cfg(target_arch="wasm32")']
-rustflags = [
-    "--cfg=web_sys_unstable_apis",
-]
+# [target.'cfg(target_arch="wasm32")']
+# rustflags = [
+#     "--cfg=web_sys_unstable_apis",
+# ]
+[build]
+rustflags = ["--cfg=web_sys_unstable_apis"]

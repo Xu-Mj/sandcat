@@ -45,6 +45,8 @@ pub struct Sender {
     i18n: FluentBundle<FluentResource>,
     file_list: Vec<FileListItem>,
     is_mobile: bool,
+    enter_key_down: i64,
+    is_key_down: bool,
 }
 
 const INPUT_MAX_LEN: usize = 5000;
@@ -68,6 +70,7 @@ pub enum SenderMsg {
     FileInputChanged(Event),
     SendFile,
     FileOnload(String, ContentType, JsValue),
+    OnEnterKeyUp(KeyboardEvent),
     OnEnterKeyDown(KeyboardEvent),
     OnPaste(Event),
     CloseFileSender,
@@ -187,65 +190,72 @@ impl Component for Sender {
             i18n,
             file_list: vec![],
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            enter_key_down: 0,
+            is_key_down: false,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             SenderMsg::SendText => {
-                let input = self.input_ref.cast::<HtmlTextAreaElement>().unwrap();
-                let content: AttrValue = input.value().into();
-                // 如果为空那么 提示不能发送空消息
-                if content.is_empty() {
-                    self.is_warn_needed = true;
-                    self.warn_msg.clone_from(&"no_empty".to_string());
-                    // 输入框立即获取焦点
-                    input.focus().unwrap();
-                    // 给提示框添加一个定时器，1s后消失
-                    let ctx = ctx.link().clone();
-                    self.timer = Some(Timeout::new(1000, move || {
-                        ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
-                    }));
-                    return true;
-                }
+                if let Some(input) = self.input_ref.cast::<HtmlTextAreaElement>() {
+                    let content: AttrValue = input.value().into();
+                    // 如果为空那么 提示不能发送空消息
+                    if content.is_empty() || content.trim().is_empty() {
+                        self.is_warn_needed = true;
+                        self.warn_msg.clone_from(&"no_empty".to_string());
+                        // 输入框立即获取焦点
+                        input.focus().unwrap();
+                        // 给提示框添加一个定时器，1s后消失
+                        let ctx = ctx.link().clone();
+                        self.timer = Some(Timeout::new(1000, move || {
+                            ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
+                        }));
+                        return true;
+                    }
 
-                if content.chars().count() > INPUT_MAX_LEN {
-                    self.is_warn_needed = true;
-                    self.warn_msg = "input_max_len".to_string();
-                    // 输入框立即获取焦点
-                    input.focus().unwrap();
-                    // 给提示框添加一个定时器，1s后消失
-                    let ctx = ctx.link().clone();
-                    self.timer = Some(Timeout::new(1000, move || {
-                        ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
-                    }));
-                    return true;
-                }
-                // 存储消息、发送消息
-                let friend_id = ctx.props().friend_id.clone();
-                let send_time = chrono::Local::now().timestamp_millis();
+                    if content.chars().count() > INPUT_MAX_LEN {
+                        self.is_warn_needed = true;
+                        self.warn_msg = "input_max_len".to_string();
+                        // 输入框立即获取焦点
+                        input.focus().unwrap();
+                        // 给提示框添加一个定时器，1s后消失
+                        let ctx = ctx.link().clone();
+                        self.timer = Some(Timeout::new(1000, move || {
+                            ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
+                        }));
+                        return true;
+                    }
+                    // 存储消息、发送消息
+                    let friend_id = ctx.props().friend_id.clone();
+                    let send_time = chrono::Local::now().timestamp_millis();
 
-                let send_id = ctx.props().cur_user_id.clone();
-                let msg = Message {
-                    id: 0,
-                    seq: 0,
-                    local_id: nanoid::nanoid!().into(),
-                    server_id: AttrValue::default(),
-                    send_id,
-                    friend_id,
-                    content_type: ContentType::Text,
-                    content: content.clone(),
-                    create_time: send_time,
-                    is_read: 1,
-                    is_self: true,
-                    send_time: 0,
-                    send_status: SendStatus::Sending,
-                    file_content: AttrValue::default(),
-                };
-                self.store_message(ctx, msg.clone());
-                self.send_msg(ctx, msg);
-                // 清空输入框
-                input.set_value("");
+                    let send_id = ctx.props().cur_user_id.clone();
+                    let msg = Message {
+                        id: 0,
+                        seq: 0,
+                        local_id: nanoid::nanoid!().into(),
+                        server_id: AttrValue::default(),
+                        send_id,
+                        friend_id,
+                        content_type: ContentType::Text,
+                        content: content.clone(),
+                        create_time: send_time,
+                        is_read: 1,
+                        is_self: true,
+                        send_time: 0,
+                        send_status: SendStatus::Sending,
+                        file_content: AttrValue::default(),
+                    };
+                    self.store_message(ctx, msg.clone());
+                    self.send_msg(ctx, msg);
+                    // 清空输入框
+                    input.set_value("");
+                    if self.is_mobile {
+                        // reset the mobile textarea height
+                        input.style().set_property("height", "auto").unwrap();
+                    }
+                }
                 true
             }
             SenderMsg::CleanEmptyMsgWarn => {
@@ -337,8 +347,20 @@ impl Component for Sender {
                 self.send_msg(ctx, msg);
                 true
             }
-            SenderMsg::OnEnterKeyDown(event) => {
-                if event.shift_key() && event.key() == "Enter" {
+            SenderMsg::OnEnterKeyUp(event) => {
+                // handle mobile enter key long press event
+                if event.key() != "Enter" {
+                    return false;
+                }
+                self.is_key_down = false;
+                let end = chrono::Utc::now().timestamp_millis();
+                let need_new_line = self.is_mobile
+                    && event.key() == "Enter"
+                    && self.enter_key_down != 0
+                    && end - self.enter_key_down > 500;
+
+                if event.shift_key() || need_new_line {
+                    self.enter_key_down = 0;
                     event.prevent_default();
                     let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
                     let mut value = textarea.value();
@@ -378,6 +400,10 @@ impl Component for Sender {
                         .set_selection_end(Some((start + 1) as u32))
                         .unwrap();
 
+                    // handle textarea height
+                    ctx.link().send_message(SenderMsg::OnTextInput);
+
+                    // scroll to bottom
                     let style = window().get_computed_style(&textarea).unwrap().unwrap();
                     let padding_bottom = style
                         .get_property_value("padding-bottom")
@@ -391,8 +417,9 @@ impl Component for Sender {
                     return false;
                 }
                 if event.key() == "Enter" {
+                    log::debug!("enter");
                     event.prevent_default();
-
+                    event.stop_propagation();
                     ctx.link().send_message(SenderMsg::SendText);
                 }
                 false
@@ -515,6 +542,16 @@ impl Component for Sender {
                 }
 
                 true
+            }
+            SenderMsg::OnEnterKeyDown(event) => {
+                if event.key() == "Enter" {
+                    event.prevent_default();
+                    if self.is_mobile && !self.is_key_down {
+                        self.is_key_down = true;
+                        self.enter_key_down = chrono::Utc::now().timestamp_millis();
+                    }
+                }
+                false
             }
         }
     }
@@ -645,6 +682,7 @@ impl Component for Sender {
         };
 
         let onkeydown = ctx.link().callback(SenderMsg::OnEnterKeyDown);
+        let onkeyup = ctx.link().callback(SenderMsg::OnEnterKeyUp);
         let onpaste = ctx.link().callback(SenderMsg::OnPaste);
         let video_click = ctx.link().callback(|_| SenderMsg::SendVideoCall);
         let audio_click = ctx.link().callback(|_| SenderMsg::SendAudioCall);
@@ -673,8 +711,6 @@ impl Component for Sender {
             {emojis}
             {file_sender}
             <div class={sender_class} ref={self.sender_ref.clone()}>
-                // 滑块
-                // <div class="sender-resizer" ref={self.resider_ref.clone()} ></div>
                 <div class="send-bar">
                     <div class="send-bar-left">
                         <span onclick={ctx.link().callback(move |_| SenderMsg::ShowEmoji)}>
@@ -697,7 +733,8 @@ impl Component for Sender {
                         ref={self.input_ref.clone()}
                         {oninput}
                         {onpaste}
-                        {onkeydown}>
+                        {onkeydown}
+                        {onkeyup}>
                     </textarea>
                     {warn}
                     {send_btn}
