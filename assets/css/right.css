@@ -17,11 +17,11 @@
     flex-direction: column;
     justify-content: center;
     background-color: var(--color-background);
-    width: 0;
+    width: 100%;
     height: 100%;
     position: absolute;
     top: 0;
-    right: 0;
+    right: -100%;
     transition: background-color 0.5s;
     animation: right-in .2s linear forwards;
     --avatar-width: 2.5rem;
@@ -30,7 +30,7 @@
 
 @keyframes right-in {
     to {
-        width: 100%;
+        right: 0;
     }
 
 }
