@@ -12,13 +12,16 @@ pub mod setting;
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
-use sandcat_sdk::db;
+use gloo::timers::callback::Timeout;
+use wasm_bindgen::JsCast;
+use web_sys::{CssAnimation, HtmlDivElement};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{BackIcon, CatHeadIcon, CloseIcon, MaxIcon};
+use sandcat_sdk::db;
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
 use sandcat_sdk::state::{AppState, MobileState, ShowRight};
@@ -36,6 +39,8 @@ use crate::select_friends::SelectFriendList;
 pub struct Right {
     show_setting: bool,
     show_friend_list: bool,
+    node_ref: NodeRef,
+    timeout: Option<Timeout>,
     i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
     _app_dis: Dispatch<AppState>,
@@ -62,6 +67,7 @@ pub enum RightMsg {
     CreateGroup(Vec<String>),
     SwitchLang(Rc<I18nState>),
     Close,
+    CleanTimer,
 }
 
 impl Right {
@@ -126,6 +132,8 @@ impl Component for Right {
             show_setting: false,
             show_friend_list: false,
             i18n,
+            node_ref: NodeRef::default(),
+            timeout: None,
             state: app_dis.get(),
             _app_dis: app_dis,
             conv_state: conv_dis.get(),
@@ -200,7 +208,28 @@ impl Component for Right {
                 true
             }
             RightMsg::Close => {
-                Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::None);
+                if let Some(node) = self.node_ref.cast::<HtmlDivElement>() {
+                    let animations = node.get_animations();
+                    for i in 0..animations.length() {
+                        let animation = animations.get(i);
+                        if let Ok(animation) = animation.dyn_into::<CssAnimation>() {
+                            if animation.animation_name() != "right-in" {
+                                continue;
+                            }
+                            animation.reverse().unwrap();
+                            let ctx = ctx.link().clone();
+                            self.timeout = Some(Timeout::new(200, move || {
+                                Dispatch::<ShowRight>::global()
+                                    .reduce_mut(|s| *s = ShowRight::None);
+                                ctx.send_message(RightMsg::CleanTimer);
+                            }));
+                        }
+                    }
+                }
+                false
+            }
+            RightMsg::CleanTimer => {
+                self.timeout = None;
                 false
             }
         }
@@ -317,7 +346,7 @@ impl Component for Right {
         };
 
         html! {
-            <div {class}>
+            <div ref={self.node_ref.clone()} {class}>
                 <div class="right-top-bar">
                     {operation_bar}
                     {top_bar_info}

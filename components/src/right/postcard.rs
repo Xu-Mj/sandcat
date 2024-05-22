@@ -388,7 +388,7 @@ impl PostCard {
                     {tr!(self.i18n, "remark")}{group.remark.clone()}
                 </div>
                 <div class="sign">
-                    {tr!(self.i18n, "signature")}{self.info.as_ref().unwrap().signature()}
+                    {tr!(self.i18n, "signature")}{group.signature()}
                 </div>
 
                 <Action friend_id={group.id.clone()}
