@@ -146,19 +146,35 @@ input {
     cursor: pointer;
 }
 
-.add-conv {
+.add-conv-size {
     width: 90%;
     height: 80%;
     max-width: 20rem;
-    padding: 1rem;
-    position: absolute;
-    border-radius: .3rem;
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
+    border-radius: .3rem;
+    position: absolute;
+}
+
+.add-conv-size-mobile {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+.add-conv {
+    padding: 1rem;
     background-color: var(--color-background);
     overflow: hidden;
     z-index: 10;
+
+    .empty-result {
+        text-align: center;
+        width: 100%;
+    }
 
     >fieldset {
         width: 100%;
@@ -403,7 +419,7 @@ input {
     .plus-icon-mobile {
         width: 2rem;
         height: 2rem;
-        position: fixed;
+        position: absolute;
         bottom: 2rem;
         right: 2rem;
         display: flex;
@@ -412,10 +428,10 @@ input {
         cursor: pointer;
         background-color: rgb(250, 92, 92);
         border-radius: 50%;
-        box-shadow: 5px 5px 2px 2px rgba(0, 0, 0, 0.5);
+        box-shadow: 3px 3px 1px 1px rgba(0, 0, 0, 0.2);
 
-        svg{
-            path{
+        svg {
+            path {
                 stroke: white;
             }
         }

@@ -79,6 +79,7 @@ un_mute = 取消免打扰
 pub const SELECT_FRIENDS: &str = r#"
 querying = 正在查询...
 select_friends = 选择好友
+empty_result = 没有搜索结果
 submit = 确定
 cancel = 取消
 "#;
