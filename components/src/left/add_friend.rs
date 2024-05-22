@@ -20,9 +20,9 @@ pub struct AddFriendProps {
 
 pub struct AddFriend {
     // 维护一个查询结果集
-    pub result: Option<UserWithMatchType>,
+    result: Option<UserWithMatchType>,
     // 是否正在搜索
-    pub is_searching: bool,
+    is_searching: bool,
     i18n: FluentBundle<FluentResource>,
 }
 

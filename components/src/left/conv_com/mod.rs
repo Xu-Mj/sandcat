@@ -16,7 +16,6 @@ use i18n::{
     en_us::{self, CONVERSATION},
     zh_cn, LanguageType,
 };
-use sandcat_sdk::db::{self, TOKEN, WS_ADDR};
 use sandcat_sdk::{
     api,
     model::{
@@ -29,6 +28,10 @@ use sandcat_sdk::{
         ConvState, CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState,
         SendMessageState, UnreadState, UpdateConvState,
     },
+};
+use sandcat_sdk::{
+    db::{self, TOKEN, WS_ADDR},
+    state::MobileState,
 };
 use utils::tr;
 use ws::WebSocketManager;
@@ -83,6 +86,8 @@ pub struct Chats {
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
     _update_dis: Dispatch<UpdateConvState>,
+    touch_start: i32,
+    is_mobile: bool,
 }
 
 impl Chats {
@@ -176,6 +181,8 @@ impl Chats {
             conv_state: conv_dispatch.get(),
             conv_dispatch,
             _update_dis,
+            touch_start: 0,
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
 

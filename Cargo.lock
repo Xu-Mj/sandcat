@@ -478,6 +478,7 @@ dependencies = [
  "i18n",
  "icons",
  "indexmap 2.2.6",
+ "js-sys",
  "log",
  "nanoid",
  "sandcat-sdk",

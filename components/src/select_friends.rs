@@ -2,6 +2,7 @@ use fluent::FluentBundle;
 use fluent::FluentResource;
 use gloo::utils::document;
 use indexmap::IndexMap;
+use sandcat_sdk::state::MobileState;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use web_sys::HtmlInputElement;
@@ -13,12 +14,14 @@ use i18n::LanguageType;
 use sandcat_sdk::db;
 use sandcat_sdk::model::friend::Friend;
 use utils::tr;
+use yewdux::Dispatch;
 
 pub struct SelectFriendList {
     data: IndexMap<AttrValue, Friend>,
     querying: bool,
     err: JsValue,
     i18n: FluentBundle<FluentResource>,
+    is_mobile: bool,
 }
 
 pub enum AddConvMsg {
@@ -70,6 +73,7 @@ impl Component for SelectFriendList {
             data: IndexMap::new(),
             querying: false,
             err: JsValue::NULL,
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
 
@@ -121,35 +125,33 @@ impl Component for SelectFriendList {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let mut content = html!();
+        let class = if self.is_mobile {
+            "add-conv add-conv-size-mobile"
+        } else {
+            "add-conv add-conv-size box-shadow"
+        };
+        let mut content = html!(<p class="empty-result">{tr!(self.i18n, "empty_result")}</p>);
         if self.querying {
             content = html!(<div>{tr!(self.i18n, "querying")}</div>)
         } else if !self.data.is_empty() {
-            content = html! {
-                <fieldset>
-                    <legend>{tr!(self.i18n, "select_friends")}</legend>
-                    {
-                        self.data.iter().map(|(index,item)| {
-                            let mut name = item.name.clone();
-                            if item.remark.is_some(){
-                                name = item.remark.as_ref().unwrap().clone();
-                            }
+            content = self.data.iter().map(|(index,item)| {
+                        let mut name = item.name.clone();
+                        if item.remark.is_some(){
+                            name = item.remark.as_ref().unwrap().clone();
+                        }
 
-                           index.to_string();
-                            html!{
-                                <div class="item" key={index.to_string()}>
-                                    <input type="checkbox" id={index.to_string()} name="friend" value={index.to_string()} />
-                                    <label for={index.to_string()}  class="item-card">
-                                        <img src={item.avatar.clone()}/>
-                                        {name}
-                                    </label>
-                                </div>
-                            }
+                        index.to_string();
+                        html!{
+                            <div class="item" key={index.to_string()}>
+                                <input type="checkbox" id={index.to_string()} name="friend" value={index.to_string()} />
+                                <label for={index.to_string()}  class="item-card">
+                                    <img src={item.avatar.clone()}/>
+                                    {name}
+                                </label>
+                            </div>
+                        }
 
-                        }).collect::<Html>()
-                    }
-                </fieldset>
-            }
+                    }).collect::<Html>()
         } else if !self.err.is_null() {
             content = html!(<div>{format!("查询出错{:?}", self.err)}</div>)
         }
@@ -157,8 +159,11 @@ impl Component for SelectFriendList {
         let close = ctx.link().callback(|_| AddConvMsg::Close);
 
         html! {
-            <div class="add-conv box-shadow">
-                {content}
+            <div {class}>
+                <fieldset>
+                    <legend>{tr!(self.i18n, "select_friends")}</legend>
+                    {content}
+                </fieldset>
                 <div class="add-conv-actions">
                     <div onclick={submit} >{tr!(self.i18n, "submit")}</div>
                     <div onclick={close} >{tr!(self.i18n, "cancel")}</div>

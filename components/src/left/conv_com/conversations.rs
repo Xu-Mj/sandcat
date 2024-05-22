@@ -14,8 +14,8 @@ use sandcat_sdk::model::seq::Seq;
 use sandcat_sdk::model::{ComponentType, CurrentItem, RightContentType};
 use sandcat_sdk::pb::message::Msg as PbMsg;
 use sandcat_sdk::state::{
-    AddFriendState, AddFriendStateItem, CreateConvState, I18nState, MuteState, RemoveConvState,
-    SendMessageState, UpdateConvState,
+    AddFriendState, AddFriendStateItem, ComponentTypeState, CreateConvState, I18nState, MuteState,
+    RemoveConvState, SendMessageState, UpdateConvState,
 };
 use sandcat_sdk::state::{ConvState, UnreadState};
 
@@ -59,6 +59,8 @@ pub enum ChatsMsg {
     HandleLackMessages(Vec<PbMsg>),
     SwitchLanguage(Rc<I18nState>),
     UpdateConvStateChanged(Rc<UpdateConvState>),
+    OnTouchStart(TouchEvent),
+    OnTouchEnd(TouchEvent),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -258,11 +260,39 @@ impl Component for Chats {
                 }
                 false
             }
+            ChatsMsg::OnTouchStart(event) => {
+                if let Some(touch) = event.touches().get(0) {
+                    log::debug!("TouchStart: {}", touch.client_x());
+                    self.touch_start = touch.client_x();
+                };
+                false
+            }
+            ChatsMsg::OnTouchEnd(event) => {
+                // we can't use the .touches() to get the touch end
+                // should use the changed_touches()
+                if let Some(touch) = event.changed_touches().get(0) {
+                    log::debug!("TouchEnd: {}", touch.client_x());
+                    if touch.client_x() - self.touch_start < 50 {
+                        // go to contacts
+                        Dispatch::<ComponentTypeState>::global()
+                            .reduce_mut(|s| s.component_type = ComponentType::Contacts);
+                    }
+                }
+                self.touch_start = 0;
+                false
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        log::debug!("Chats::view");
+        let (ontouchstart, ontouchend) = if self.is_mobile {
+            (
+                Some(ctx.link().callback(ChatsMsg::OnTouchStart)),
+                Some(ctx.link().callback(ChatsMsg::OnTouchEnd)),
+            )
+        } else {
+            (None, None)
+        };
         let content = if self.is_searching {
             if self.result.is_empty() {
                 html! {<div class="no-result">{"没有搜索结果"}</div>}
@@ -310,7 +340,7 @@ impl Component for Chats {
         // <ContextProvider<SingleCall> context={self.call_msg.clone()}>
         <>
             <PhoneCall ws={self.ws.clone()} user_id={ctx.props().user_id.clone()} msg={self.call_msg.clone()} send_msg={send_msg_callback}/>
-            <div class="list-wrapper">
+            <div class="list-wrapper" {ontouchstart} {ontouchend}>
                 {context_menu}
                 {friend_list}
                 <TopBar

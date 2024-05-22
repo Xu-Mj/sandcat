@@ -12,6 +12,7 @@ gloo-net = "0.5.0"
 futures-channel = "0.3.29"
 indexmap = { version = "2.2.3" }
 log = "0.4.6"
+js-sys = "0.3.55"
 nanoid = "0.4.0"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.39"
@@ -58,6 +59,8 @@ features = [
     "HtmlParagraphElement",
     "HtmlImageElement",
     "HtmlDialogElement",
+    "Animation",
+    "CssAnimation",
     "Node",
     "Selection",
     "DomRectList",

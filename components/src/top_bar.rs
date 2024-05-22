@@ -94,6 +94,7 @@ impl Component for TopBar {
             }
         }
     }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         // input 输入框事件
         let onchange = ctx
@@ -125,8 +126,7 @@ impl Component for TopBar {
         };
         let click_plus = ctx.link().callback(|_| TopBarMsg::PlusButtonClicked);
         let onclick = ctx.link().callback(|_| TopBarMsg::SearchButtonClicked);
-        let plus_class = if self.is_mobile && ctx.props().components_type == ComponentType::Messages
-        {
+        let plus_class = if self.is_mobile {
             "plus-icon-mobile"
         } else {
             "plus-icon"

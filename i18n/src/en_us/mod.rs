@@ -82,6 +82,7 @@ un_mute = Un-mute
 pub const SELECT_FRIENDS: &str = r#"
 querying = Querying
 select_friends = Select Friends
+empty_result = No Result
 submit = Submit
 cancel = Cancel
 "#;
