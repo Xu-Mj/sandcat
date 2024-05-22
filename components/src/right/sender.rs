@@ -403,26 +403,7 @@ impl Component for Sender {
                 self.send_msg(ctx, msg);
                 true
             }
-            SenderMsg::OnEnterKeyUp(event) => {
-                // handle mobile enter key long press event
-                if event.key() != "Enter" {
-                    return false;
-                }
-                if self.is_key_down {
-                    return false;
-                }
-                self.is_key_down = false;
 
-                if event.shift_key() {
-                    self.enter_key_down = 0;
-                    event.prevent_default();
-                    return self.handle_new_line(ctx);
-                }
-
-                ctx.link().send_message(SenderMsg::SendText);
-
-                false
-            }
             SenderMsg::OnPaste(event) => {
                 let event1: ClipboardEvent = event.clone().dyn_into().unwrap();
                 let data = event1.clipboard_data().unwrap();
@@ -542,21 +523,32 @@ impl Component for Sender {
 
                 true
             }
-            SenderMsg::OnEnterKeyDown(event) => {
-                if event.key() == "Enter" {
+            SenderMsg::OnEnterKeyUp(event) => {
+                // handle mobile enter key long press event
+                if event.key() != "Enter" {
+                    return false;
+                }
+                let need_new_line = self.enter_key_down != 0
+                    && chrono::Utc::now().timestamp_millis() - self.enter_key_down > 500;
+                log::debug!("need_new_line: {}", need_new_line);
+
+                self.is_key_down = false;
+
+                if event.shift_key() || need_new_line {
+                    self.enter_key_down = 0;
                     event.prevent_default();
-                    let time = chrono::Utc::now().timestamp_millis();
-                    if !self.is_key_down {
-                        self.is_key_down = true;
-                        self.enter_key_down = time;
-                    }
-                    if self.enter_key_down != 0
-                        && self.is_key_down
-                        && time - self.enter_key_down > 500
-                    {
-                        self.is_key_down = false;
-                        return self.handle_new_line(ctx);
-                    }
+                    return self.handle_new_line(ctx);
+                }
+
+                ctx.link().send_message(SenderMsg::SendText);
+
+                false
+            }
+            SenderMsg::OnEnterKeyDown(event) => {
+                if event.key() == "Enter" && !self.is_key_down {
+                    self.is_key_down = true; // 置标志变量为 true
+                    self.enter_key_down = chrono::Utc::now().timestamp_millis(); // 记录按键按下时间
+                    event.prevent_default(); // 阻止默认行为
                 }
                 false
             }
