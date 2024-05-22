@@ -40,6 +40,7 @@ pub struct Right {
     show_setting: bool,
     show_friend_list: bool,
     node_ref: NodeRef,
+    touch_start: i32,
     timeout: Option<Timeout>,
     i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
@@ -68,6 +69,8 @@ pub enum RightMsg {
     SwitchLang(Rc<I18nState>),
     Close,
     CleanTimer,
+    TouchStart(TouchEvent),
+    TouchEnd(TouchEvent),
 }
 
 impl Right {
@@ -133,6 +136,7 @@ impl Component for Right {
             show_friend_list: false,
             i18n,
             node_ref: NodeRef::default(),
+            touch_start: 0,
             timeout: None,
             state: app_dis.get(),
             _app_dis: app_dis,
@@ -232,13 +236,32 @@ impl Component for Right {
                 self.timeout = None;
                 false
             }
+            RightMsg::TouchStart(event) => {
+                if let Some(touch) = event.touches().get(0) {
+                    log::debug!("TouchStart: {}", touch.client_x());
+                    self.touch_start = touch.client_x();
+                };
+                false
+            }
+            RightMsg::TouchEnd(event) => {
+                // we can't use the .touches() to get the touch end
+                // should use the changed_touches()
+                if let Some(touch) = event.changed_touches().get(0) {
+                    log::debug!("TouchEnd: {}", touch.client_x());
+                    if touch.client_x() - self.touch_start > 50 {
+                        ctx.link().send_message(RightMsg::Close);
+                    }
+                }
+                self.touch_start = 0;
+                false
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let mut setting = html!();
         let mut friend_list = html!();
-        let (class, right_top_bar_class, back, operation_bar) =
+        let (class, right_top_bar_class, back, operation_bar, ontouchstart, ontouchend) =
             match *Dispatch::<MobileState>::global().get() {
                 MobileState::Desktop => (
                     "right-container",
@@ -251,12 +274,16 @@ impl Component for Right {
                             <CloseIcon/>
                         </div>
                     },
+                    None,
+                    None,
                 ),
                 MobileState::Mobile => (
                     "right-container-mobile",
                     "right-top-bar-friend-mobile",
                     html!(<span onclick={ctx.link().callback(|_| RightMsg::Close)}><BackIcon/></span>),
                     html!(),
+                    Some(ctx.link().callback(RightMsg::TouchStart)),
+                    Some(ctx.link().callback(RightMsg::TouchEnd)),
                 ),
             };
         let mut top_bar_info = html!(
@@ -346,7 +373,10 @@ impl Component for Right {
         };
 
         html! {
-            <div ref={self.node_ref.clone()} {class}>
+            <div ref={self.node_ref.clone()}
+                {class}
+                {ontouchstart}
+                {ontouchend}>
                 <div class="right-top-bar">
                     {operation_bar}
                     {top_bar_info}
