@@ -488,13 +488,13 @@ impl Component for Sender {
                 let font_size = font_size
                     .trim_end_matches("px")
                     .parse::<f64>()
-                    .unwrap_or(16.0); // 默认字体大小为16px
+                    .unwrap_or(16.0);
 
-                // 根据实际使用情况调整min_height和max_height
-                let min_height = 1.0 * font_size; // 假设最小高度为1rem
-                let max_height = 5.0 * font_size; // 假设最大高度为5rem
+                let min_height = 1.0 * font_size;
+                let max_height = 7.0 * font_size;
 
-                textarea.style().set_property("height", "auto").unwrap(); // 重置高度以获得准确的scrollHeight
+                // 重置高度以获得准确的scrollHeight
+                textarea.style().set_property("height", "auto").unwrap();
 
                 let scroll_height = textarea.scroll_height() as f64;
                 if scroll_height > max_height {
@@ -663,23 +663,10 @@ impl Component for Sender {
             }
         }
 
-        let textarea = if self.is_mobile {
-            html! {
-                <textarea class={input_class}
-                    ref={self.input_ref.clone()}
-                    oninput={ctx.link().callback(|_|SenderMsg::OnTextInput)}
-                    {onpaste}
-                    {onkeydown}>
-                </textarea>
-            }
+        let oninput = if self.is_mobile {
+            Some(ctx.link().callback(|_| SenderMsg::OnTextInput))
         } else {
-            html! {
-                <textarea class={input_class}
-                    ref={self.input_ref.clone()}
-                    {onpaste}
-                    {onkeydown}>
-                </textarea>
-            }
+            None
         };
         html! {
             <>
@@ -706,7 +693,12 @@ impl Component for Sender {
                     </div>
                 </div>
                 <div class="msg-input-wrapper">
-                    {textarea}
+                    <textarea class={input_class}
+                        ref={self.input_ref.clone()}
+                        {oninput}
+                        {onpaste}
+                        {onkeydown}>
+                    </textarea>
                     {warn}
                     {send_btn}
                 </div>
