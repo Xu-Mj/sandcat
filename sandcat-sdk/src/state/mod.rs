@@ -252,10 +252,11 @@ impl From<&str> for ThemeState {
 #[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
 #[serde(rename_all = "lowercase")]
+#[repr(i32)]
 pub enum MobileState {
     #[default]
-    Desktop,
-    Mobile,
+    Desktop = 0,
+    Mobile = 1,
 }
 
 impl MobileState {

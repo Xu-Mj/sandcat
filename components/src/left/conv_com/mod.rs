@@ -149,7 +149,16 @@ impl Chats {
             .get(WS_ADDR)
             .unwrap()
             .unwrap();
-        let url = format!("{}/{}/conn/{}/{}", addr, id.clone(), token, id);
+        let platform = Dispatch::<MobileState>::global().get();
+        let is_mobile = platform.is_mobile();
+        let url = format!(
+            "{}/{}/conn/{}/{}/{}",
+            addr,
+            id.clone(),
+            token,
+            id,
+            (*platform).clone() as i32
+        );
         let ws = Rc::new(RefCell::new(WebSocketManager::new(url, rec_msg_listener)));
         let res = match lang_state.lang {
             LanguageType::ZhCN => zh_cn::CONVERSATION,
@@ -182,7 +191,7 @@ impl Chats {
             conv_dispatch,
             _update_dis,
             touch_start: 0,
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile,
         }
     }
 
