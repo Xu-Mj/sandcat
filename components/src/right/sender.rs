@@ -568,27 +568,27 @@ impl Component for Sender {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let (sender_class, emoji_class, input_class, warn_class, send_btn) =
-            match *Dispatch::<MobileState>::global().get() {
-                MobileState::Desktop => (
-                    "sender sender-size",
-                    "emoji-wrapper emoji-wrapper-size",
-                    "msg-input msg-input-size",
-                    "empty-msg-tip box-shadow",
-                    html!(
+        let (sender_class, emoji_class, input_class, warn_class, send_btn) = if self.is_mobile {
+            (
+                "sender",
+                "emoji-wrapper emoji-wrapper-size-mobile",
+                "msg-input msg-input-size-mobile",
+                "empty-msg-tip-mobile box-shadow",
+                html!(),
+            )
+        } else {
+            (
+                "sender sender-size",
+                "emoji-wrapper emoji-wrapper-size",
+                "msg-input msg-input-size",
+                "empty-msg-tip box-shadow",
+                html!(
                         <button class="send-btn"
                             onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
                             {tr!(self.i18n, "send")}
                         </button>),
-                ),
-                MobileState::Mobile => (
-                    "sender",
-                    "emoji-wrapper emoji-wrapper-size-mobile",
-                    "msg-input msg-input-size-mobile",
-                    "empty-msg-tip-mobile box-shadow",
-                    html!(),
-                ),
-            };
+            )
+        };
         // spawn disable layer
         let mut disable = html!();
         if ctx.props().disable {

@@ -27,7 +27,7 @@ use sandcat_sdk::model::message::{
 use sandcat_sdk::model::notification::{Notification, NotificationType};
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::ItemInfo;
-use sandcat_sdk::state::{NotificationState, SendCallState};
+use sandcat_sdk::state::{MobileState, NotificationState, SendCallState};
 use ws::WebSocketManager;
 
 pub struct PhoneCall {
@@ -69,6 +69,7 @@ pub struct PhoneCall {
     pos_y: i32,
     /// 是否正在拖动面板
     is_dragging: bool,
+    is_mobile: bool,
 }
 
 #[derive(Properties, Clone, PartialEq, Debug)]
@@ -119,7 +120,7 @@ impl Component for PhoneCall {
     fn create(ctx: &Context<Self>) -> Self {
         let call_state_dis =
             Dispatch::global().subscribe(ctx.link().callback(PhoneCallMsg::CallStateChange));
-
+        let is_mobile = Dispatch::<MobileState>::global().get().is_mobile();
         Self {
             show_video: false,
             show_audio: false,
@@ -140,6 +141,7 @@ impl Component for PhoneCall {
             pos_x: 0,
             pos_y: 0,
             is_dragging: false,
+            is_mobile,
         }
     }
 
@@ -884,6 +886,11 @@ impl Component for PhoneCall {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let class = if self.is_mobile {
+            "phone-call-size-mobile"
+        } else {
+            "box-shadow phone-call-size"
+        };
         let mut video_or_audio_notify = html!();
         if self.show_notify {
             let info = self.call_friend_info.as_ref().unwrap();
@@ -950,7 +957,7 @@ impl Component for PhoneCall {
                         ""
                     };
                     video = html! {
-                        <div class="video-container box-shadow"
+                        <div class={format!("video-container {}", class)}
                             ref={self.wrapper_node.clone()}
                             onmousedown={ctx.link().callback(PhoneCallMsg::OnMouseDown)}
                             onmousemove={ctx.link().callback(PhoneCallMsg::OnMouseMove)}
@@ -980,7 +987,7 @@ impl Component for PhoneCall {
 
                     // let zoom_in_click = ctx.link().callback(|_|PhoneCallMsg::AudioZoomIn);
                     audio = html! {
-                        <div class="audio-container box-shadow" style={background}
+                        <div class={format!("audio-container {}", class)} style={background}
                             ref={self.wrapper_node.clone()}
                             onmousedown={ctx.link().callback(PhoneCallMsg::OnMouseDown)}
                             onmousemove={ctx.link().callback(PhoneCallMsg::OnMouseMove)}
