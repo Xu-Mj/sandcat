@@ -272,7 +272,7 @@ impl Component for Chats {
                 // should use the changed_touches()
                 if let Some(touch) = event.changed_touches().get(0) {
                     log::debug!("TouchEnd: {}", touch.client_x());
-                    if touch.client_x() - self.touch_start < 50 {
+                    if self.touch_start - touch.client_x() > 50 {
                         // go to contacts
                         Dispatch::<ComponentTypeState>::global()
                             .reduce_mut(|s| s.component_type = ComponentType::Contacts);

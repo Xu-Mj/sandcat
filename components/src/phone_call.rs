@@ -16,8 +16,8 @@ use yew::{html, AttrValue, Callback, Component, Context, Html, NodeRef, Properti
 use yewdux::Dispatch;
 
 use icons::{
-    AnswerPhoneIcon, HangupInNotifyIcon, MicrophoneIcon, MicrophoneMuteIcon, VideoRecordIcon,
-    VolumeIcon, VolumeMuteIcon,
+    AnswerPhoneIcon, AudioZoomInIcon, AudioZoomOutIcon, HangupInNotifyIcon, MicrophoneIcon,
+    MicrophoneMuteIcon, VideoRecordIcon, VolumeIcon, VolumeMuteIcon,
 };
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{
@@ -70,6 +70,7 @@ pub struct PhoneCall {
     /// 是否正在拖动面板
     is_dragging: bool,
     is_mobile: bool,
+    is_zoom: bool,
 }
 
 #[derive(Properties, Clone, PartialEq, Debug)]
@@ -109,9 +110,10 @@ pub enum PhoneCallMsg {
     OnMouseDown(MouseEvent),
     OnMouseMove(MouseEvent),
     OnMouseUp,
+    SwitchZoom,
 }
 
-const TIMEOUT: u32 = 60;
+const TIMEOUT: u32 = 6000;
 
 impl Component for PhoneCall {
     type Message = PhoneCallMsg;
@@ -142,6 +144,7 @@ impl Component for PhoneCall {
             pos_y: 0,
             is_dragging: false,
             is_mobile,
+            is_zoom: false,
         }
     }
 
@@ -814,7 +817,7 @@ impl Component for PhoneCall {
                 self.stream = Some(stream);
                 self.call_friend_info = Some(friend);
                 let ctx = ctx.link().clone();
-                self.call_timer = Some(Timeout::new(60 * 1000, move || {
+                self.call_timer = Some(Timeout::new(TIMEOUT * 1000, move || {
                     ctx.send_message(PhoneCallMsg::CallTimeout);
                 }));
                 true
@@ -882,11 +885,15 @@ impl Component for PhoneCall {
                 self.is_dragging = false;
                 false
             }
+            PhoneCallMsg::SwitchZoom => {
+                self.is_zoom = !self.is_zoom;
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let class = if self.is_mobile {
+        let mut class = if self.is_mobile {
             "phone-call-size-mobile"
         } else {
             "box-shadow phone-call-size"
@@ -950,6 +957,24 @@ impl Component for PhoneCall {
 
                 let volume_click = ctx.link().callback(|_| PhoneCallMsg::SwitchVolume);
                 let microphone_click = ctx.link().callback(|_| PhoneCallMsg::SwitchMicrophoneMute);
+
+                // get class
+                let zoom = if self.is_zoom {
+                    class = "zoom-call";
+                    html!(
+                        <div class="zoom-call-icon">
+                            <span onclick={ctx.link().callback(|_| PhoneCallMsg::SwitchZoom)}>
+                                <AudioZoomInIcon />
+                            </span>
+                        </div>
+                    )
+                } else {
+                    html!(
+                        <div class="zoom-call-icon" onclick={ctx.link().callback(|_| PhoneCallMsg::SwitchZoom)}>
+                            <AudioZoomOutIcon />
+                        </div>
+                    )
+                };
                 if self.show_video {
                     let self_video_style = if info.connected {
                         "animation: video-self-zoom-in .4s forwards"
@@ -962,6 +987,7 @@ impl Component for PhoneCall {
                             onmousedown={ctx.link().callback(PhoneCallMsg::OnMouseDown)}
                             onmousemove={ctx.link().callback(PhoneCallMsg::OnMouseMove)}
                             onmouseup={ctx.link().callback(|_|PhoneCallMsg::OnMouseUp)}>
+                            {zoom}
                             <video class="video-self" style={self_video_style} ref={self.video_node.clone()} playsinline={true} />
                             <video class="video-friend" ref={self.friend_video_node.clone()}  playsinline={true} />
                             <div class="call-operate" >
@@ -992,6 +1018,7 @@ impl Component for PhoneCall {
                             onmousedown={ctx.link().callback(PhoneCallMsg::OnMouseDown)}
                             onmousemove={ctx.link().callback(PhoneCallMsg::OnMouseMove)}
                             onmouseup={ctx.link().callback(|_|PhoneCallMsg::OnMouseUp)}>
+                            {zoom}
                             // <div class="audio-zoom">
                             //     <span click={zoom_in_click}>
                             //     <AudioZoomInIcon/>
@@ -1164,6 +1191,7 @@ impl PhoneCall {
         self.call_friend_info = None;
         self.volume_mute = false;
         self.microphone_mute = false;
+        self.is_zoom = false;
     }
 
     fn save_call_msg(&self, mut msg: Message) {
