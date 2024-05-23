@@ -9,3 +9,5 @@
 - we need to update user information when we click the conversation item
 - redesign the websocket reconnection logical,
 - textarea dynamic height under the mobile mode
+- knock off need to complete
+- send self message need to handle
