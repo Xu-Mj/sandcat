@@ -16,7 +16,7 @@ pub struct ListItem {
     friend_state: Rc<FriendListState>,
     friend_dispatch: Dispatch<FriendListState>,
     unread_count: usize,
-    is_mobile: Rc<MobileState>,
+    is_mobile: bool,
 }
 
 #[derive(Properties, PartialEq)]
@@ -57,7 +57,7 @@ impl Component for ListItem {
             unread_count,
             conv_state: conv_dispatch.get(),
             conv_dispatch,
-            is_mobile: Dispatch::<MobileState>::global().get(),
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
 
@@ -88,8 +88,8 @@ impl Component for ListItem {
                 self.unread_count = 0;
                 // show right if mobile
                 log::debug!("show right{:?}", Dispatch::<MobileState>::global().get());
-                if self.is_mobile.is_mobile() {
-                    Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::Show);
+                if self.is_mobile {
+                    Dispatch::<ShowRight>::global().set(ShowRight::Show);
                     // return false;
                 }
                 // do not update if current item is the same
@@ -117,8 +117,8 @@ impl Component for ListItem {
 
                     return false;
                 }
-                if self.is_mobile.is_mobile() {
-                    Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::Show);
+                if self.is_mobile {
+                    Dispatch::<ShowRight>::global().set(ShowRight::Show);
                     // return false;
                 }
                 if self.friend_state.friend.item_id == ctx.props().props.id {
@@ -162,7 +162,7 @@ impl Component for ListItem {
         match ctx.props().component_type {
             ComponentType::Contacts => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::FriendItemClicked);
-                if !self.is_mobile.is_mobile() {
+                if !self.is_mobile {
                     if self.conv_state.conv.item_id == id {
                         classes.push("selected");
                     } else {
@@ -172,7 +172,7 @@ impl Component for ListItem {
             }
             ComponentType::Messages => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::CleanUnreadCount);
-                if !self.is_mobile.is_mobile() {
+                if !self.is_mobile {
                     if self.conv_state.conv.item_id == id {
                         classes.push("selected");
                     } else {
