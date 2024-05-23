@@ -91,6 +91,13 @@ pub struct SenderProps {
 }
 
 impl Sender {
+    fn get_platform(&self) -> i32 {
+        if self.is_mobile {
+            MobileState::Mobile as i32
+        } else {
+            MobileState::Desktop as i32
+        }
+    }
     fn handle_new_line(&self, ctx: &Context<Self>) -> bool {
         let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
         let mut value = textarea.value();
@@ -176,6 +183,7 @@ impl Sender {
             _ => {}
         }
     }
+
     fn send_file(&self, ctx: &Context<Self>, file: File) {
         let mut content_type = ContentType::File;
 
@@ -287,6 +295,7 @@ impl Component for Sender {
                     let send_time = chrono::Local::now().timestamp_millis();
 
                     let send_id = ctx.props().cur_user_id.clone();
+                    let platform = self.get_platform();
                     let msg = Message {
                         id: 0,
                         seq: 0,
@@ -300,6 +309,7 @@ impl Component for Sender {
                         is_read: 1,
                         is_self: true,
                         send_time: 0,
+                        platform,
                         send_status: SendStatus::Sending,
                         file_content: AttrValue::default(),
                     };
@@ -337,6 +347,7 @@ impl Component for Sender {
                     is_read: 1,
                     is_self: true,
                     send_time: 0,
+                    platform: self.get_platform(),
                     send_status: SendStatus::Sending,
                     file_content: AttrValue::default(),
                 };
@@ -396,6 +407,7 @@ impl Component for Sender {
                     content_type,
                     file_content,
                     send_time: 0,
+                    platform: self.get_platform(),
                     send_status: SendStatus::Sending,
                 };
 

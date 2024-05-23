@@ -23,6 +23,8 @@ pub struct Msg {
     pub send_status: u8,
     pub is_read: u8,
     pub is_self: bool,
+    #[serde(default)]
+    pub platform: i32,
 }
 
 impl Into<Message> for Msg {
@@ -41,6 +43,7 @@ impl Into<Message> for Msg {
             id: self.id,
             seq: self.seq,
             is_self: self.is_self,
+            platform: self.platform,
             file_content: AttrValue::default(),
         }
     }
