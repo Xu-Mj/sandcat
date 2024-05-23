@@ -400,6 +400,13 @@ pub struct Candidate {
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
+pub struct CandidateData {
+    pub candidate: AttrValue,
+    pub sdp_mid: Option<String>,
+    pub sdp_m_index: Option<u16>,
+}
+
+#[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Agree {
     pub sdp: Option<String>,
     pub send_id: AttrValue,
@@ -583,7 +590,9 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             send_id: msg.send_id.into(),
             friend_id: msg.receiver_id.into(),
             create_time: msg.send_time,
-            sdp: msg.sdp.ok_or_else(|| String::from("sdp is empty"))?.into(),
+            sdp: String::from_utf8(msg.content)
+                .map_err(|e| e.to_string())?
+                .into(),
         }))),
         MsgType::Hangup => Ok(Msg::SingleCall(SingleCall::HangUp(Hangup {
             seq: msg.seq,
@@ -622,18 +631,21 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             send_id: msg.send_id.into(),
             friend_id: msg.receiver_id.into(),
             create_time: msg.send_time,
-            sdp: msg.sdp,
+            sdp: String::from_utf8(msg.content).ok(),
         }))),
-        MsgType::Candidate => Ok(Msg::SingleCall(SingleCall::NewIceCandidate(Candidate {
-            candidate: String::from_utf8(msg.content)
-                .map_err(|e| e.to_string())?
-                .into(),
-            sdp_mid: msg.sdp_mid,
-            sdp_m_index: msg.sdp_m_index.map(|i| i as u16),
-            send_id: msg.send_id.into(),
-            friend_id: msg.receiver_id.into(),
-            create_time: msg.send_time,
-        }))),
+        MsgType::Candidate => {
+            let data: CandidateData =
+                bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
+
+            Ok(Msg::SingleCall(SingleCall::NewIceCandidate(Candidate {
+                candidate: data.candidate,
+                sdp_mid: data.sdp_mid,
+                sdp_m_index: data.sdp_m_index,
+                send_id: msg.send_id.into(),
+                friend_id: msg.receiver_id.into(),
+                create_time: msg.send_time,
+            })))
+        }
         MsgType::Read => todo!(),
         MsgType::MsgRecResp => {
             let msg_type = if msg.group_id.is_empty() {
@@ -769,14 +781,14 @@ impl From<Msg> for PbMsg {
                         pb_msg.send_id = offer.send_id.as_str().into();
                         pb_msg.receiver_id = offer.friend_id.as_str().into();
                         pb_msg.create_time = offer.create_time;
-                        pb_msg.sdp = Some(offer.sdp.to_string());
+                        pb_msg.content = offer.sdp.as_bytes().to_vec();
                     }
                     SingleCall::Agree(agree) => {
                         pb_msg.msg_type = MsgType::ConnectSingleCall as i32;
                         pb_msg.send_id = agree.send_id.as_str().into();
                         pb_msg.receiver_id = agree.friend_id.as_str().into();
                         pb_msg.create_time = agree.create_time;
-                        pb_msg.sdp = agree.sdp;
+                        pb_msg.content = agree.sdp.unwrap_or_default().as_bytes().to_vec();
                     }
                     SingleCall::HangUp(hangup) => {
                         pb_msg.msg_type = MsgType::Hangup as i32;
@@ -791,9 +803,16 @@ impl From<Msg> for PbMsg {
                         pb_msg.send_id = candidate.send_id.as_str().into();
                         pb_msg.receiver_id = candidate.friend_id.as_str().into();
                         pb_msg.create_time = candidate.create_time;
-                        pb_msg.sdp_mid = candidate.sdp_mid;
-                        pb_msg.sdp_m_index = candidate.sdp_m_index.map(|c| c as i32);
-                        pb_msg.content = candidate.candidate.as_bytes().to_vec();
+                        let data = CandidateData {
+                            candidate: candidate.candidate,
+                            sdp_mid: candidate.sdp_mid,
+                            sdp_m_index: candidate.sdp_m_index,
+                        };
+                        let data = bincode::serialize(&data).unwrap();
+                        // pb_msg.sdp_mid = candidate.sdp_mid;
+                        // pb_msg.sdp_m_index = candidate.sdp_m_index.map(|c| c as i32);
+                        // pb_msg.content = candidate.candidate.as_bytes().to_vec();
+                        pb_msg.content = data;
                     }
                 }
                 pb_msg
