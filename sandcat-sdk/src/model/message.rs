@@ -46,8 +46,8 @@ pub struct Message {
     pub is_read: u8,
     #[serde(default)]
     pub is_self: bool,
-    // 是否删除字段可以只存储在服务端
-    // pub is_delete: bool,
+    #[serde(default)]
+    pub platform: i32,
     #[serde(skip)]
     pub file_content: AttrValue,
 }
@@ -90,6 +90,7 @@ impl From<InviteCancelMsg> for Message {
             send_status: value.send_status,
             is_read: 0,
             is_self: value.is_self,
+            platform: value.platform,
             file_content: Default::default(),
         }
     }
@@ -120,6 +121,7 @@ impl From<InviteAnswerMsg> for Message {
             send_status: value.send_status,
             is_read: 0,
             is_self: value.is_self,
+            platform: value.platform,
             file_content: Default::default(),
         }
     }
@@ -146,6 +148,7 @@ impl From<InviteNotAnswerMsg> for Message {
             send_status: value.send_status,
             is_read: 0,
             is_self: value.is_self,
+            platform: value.platform,
             file_content: Default::default(),
         }
     }
@@ -173,6 +176,7 @@ impl From<Hangup> for Message {
             send_status: value.send_status,
             is_read: 0,
             is_self: value.is_self,
+            platform: value.platform,
             file_content: Default::default(),
         }
     }
@@ -200,6 +204,7 @@ impl Message {
             send_status: value.send_status,
             is_read: 0,
             is_self: value.is_self,
+            platform: value.platform,
             file_content: Default::default(),
         }
     }
@@ -223,6 +228,7 @@ impl Message {
             send_status: msg.send_status,
             is_read: 0,
             is_self: msg.is_self,
+            platform: msg.platform,
             file_content: Default::default(),
         }
     }
@@ -348,6 +354,8 @@ pub struct InviteNotAnswerMsg {
     pub send_status: SendStatus,
     #[serde(default)]
     pub is_self: bool,
+    #[serde(default)]
+    pub platform: i32,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -363,6 +371,8 @@ pub struct InviteCancelMsg {
     pub send_status: SendStatus,
     #[serde(default)]
     pub is_self: bool,
+    #[serde(default)]
+    pub platform: i32,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -387,6 +397,8 @@ pub struct InviteAnswerMsg {
     // 主要区分发起端，因为接收端永远都是false不需要处理
     #[serde(default)]
     pub is_self: bool,
+    #[serde(default)]
+    pub platform: i32,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -428,6 +440,8 @@ pub struct Hangup {
     pub send_status: SendStatus,
     #[serde(default)]
     pub is_self: bool,
+    #[serde(default)]
+    pub platform: i32,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -486,6 +500,7 @@ impl TryFrom<pb::message::Msg> for Message {
             send_status,
             is_read: 0,
             is_self: false,
+            platform: value.platform,
             file_content: AttrValue::default(),
         })
     }
@@ -554,6 +569,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 is_self: false,
                 send_time: msg.send_time,
                 send_status: SendStatus::Success,
+                platform: msg.platform,
             })))
         }
         MsgType::SingleCallInviteNotAnswer => {
@@ -569,6 +585,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 is_self: false,
                 send_time: msg.send_time,
                 send_status: SendStatus::Success,
+                platform: msg.platform,
             })))
         }
         MsgType::SingleCallInviteCancel => {
@@ -584,6 +601,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 is_self: false,
                 send_time: msg.send_time,
                 send_status: SendStatus::Success,
+                platform: msg.platform,
             })))
         }
         MsgType::SingleCallOffer => Ok(Msg::SingleCall(SingleCall::Offer(Offer {
@@ -610,6 +628,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             ),
             is_self: false,
             send_status: SendStatus::Success,
+            platform: msg.platform,
         }))),
         MsgType::AgreeSingleCall => {
             let invite_type = get_invite_type(msg.content_type)?;
@@ -625,6 +644,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 is_self: false,
                 send_time: msg.send_time,
                 send_status: SendStatus::Success,
+                platform: msg.platform,
             })))
         }
         MsgType::ConnectSingleCall => Ok(Msg::SingleCall(SingleCall::Agree(Agree {
