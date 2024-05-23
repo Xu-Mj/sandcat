@@ -222,6 +222,7 @@ impl MessageList {
                 }
                 false
             }
+            Msg::KnockOff => false,
         }
     }
 }

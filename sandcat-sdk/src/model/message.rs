@@ -260,6 +260,7 @@ pub enum Msg {
     OfflineSync(Message),
     SingleCall(SingleCall),
     ServerRecResp(ServerResponse), // GroupInvitationReceived((UserID, GroupID)),
+    KnockOff,
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
@@ -689,6 +690,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         MsgType::Service => todo!(),
         MsgType::FriendshipReceived => todo!(),
         MsgType::FriendDelete => Ok(Msg::RecRelationshipDel((msg.send_id, msg.seq))),
+        MsgType::KnockOff => Ok(Msg::KnockOff),
     }
 }
 
@@ -860,6 +862,7 @@ impl From<Msg> for PbMsg {
             Msg::OfflineSync(_) => PbMsg::default(),
             Msg::ServerRecResp(_) => PbMsg::default(),
             Msg::RecRelationshipDel(_) => PbMsg::default(),
+            Msg::KnockOff => PbMsg::default(),
         }
     }
 }
