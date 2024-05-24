@@ -12,7 +12,7 @@ use web_sys::{
     RtcSessionDescriptionInit, RtcSignalingState,
 };
 use yew::platform::spawn_local;
-use yew::{html, AttrValue, Callback, Component, Context, Html, NodeRef, Properties};
+use yew::{html, AttrValue, Callback, Component, Context, Html, NodeRef, Properties, TouchEvent};
 use yewdux::Dispatch;
 
 use icons::{
@@ -113,6 +113,9 @@ pub enum PhoneCallMsg {
     OnMouseMove(MouseEvent),
     OnMouseUp,
     SwitchZoom,
+    OnTouchStart(TouchEvent),
+    OnTouchMove(TouchEvent),
+    OnTouchEnd,
 }
 
 const TIMEOUT: u32 = 6000;
@@ -891,7 +894,58 @@ impl Component for PhoneCall {
             }
             PhoneCallMsg::SwitchZoom => {
                 self.is_zoom = !self.is_zoom;
+                if !self.is_zoom && self.is_mobile {
+                    // set container to top:0; left:0;
+                    if let Some(div) = self.wrapper_node.cast::<HtmlDivElement>() {
+                        // ignore error
+                        let _ = div.style().set_property("top", "0");
+                        let _ = div.style().set_property("left", "0");
+                    }
+                }
                 true
+            }
+            PhoneCallMsg::OnTouchStart(event) => {
+                event.stop_propagation();
+                event.prevent_default();
+                if let Some(event) = event.touches().get(0) {
+                    self.pos_x = event.client_x();
+                    self.pos_y = event.client_y();
+                    self.is_dragging = true;
+                }
+                false
+            }
+            PhoneCallMsg::OnTouchMove(event) => {
+                if !self.is_dragging {
+                    return false;
+                }
+                if let Some(event) = event.touches().get(0) {
+                    let x = self.pos_x - event.client_x();
+                    let y = self.pos_y - event.client_y();
+                    self.pos_x = event.client_x();
+                    self.pos_y = event.client_y();
+                    // set new location for window
+                    if self.invite_info.is_some() {
+                        if let Some(div) = self.wrapper_node.cast::<HtmlDivElement>() {
+                            div.style()
+                                .set_property("top", &format!("{}px", div.offset_top() - y))
+                                .map_err(|e| log::error!("set top error: {:?}", e))
+                                .expect("set top position panic");
+                            div.style()
+                                .set_property("left", &format!("{}px", div.offset_left() - x))
+                                .expect("set left position panic");
+                        }
+                    }
+                }
+                true
+            }
+            PhoneCallMsg::OnTouchEnd => {
+                if !self.is_dragging {
+                    return false;
+                }
+                self.pos_x = 0;
+                self.pos_y = 0;
+                self.is_dragging = false;
+                false
             }
         }
     }
@@ -962,8 +1016,14 @@ impl Component for PhoneCall {
                 let volume_click = ctx.link().callback(|_| PhoneCallMsg::SwitchVolume);
                 let microphone_click = ctx.link().callback(|_| PhoneCallMsg::SwitchMicrophoneMute);
 
+                let mut ontouchstart = None;
+                let mut ontouchmove = None;
+                let mut ontouchend = None;
                 // get class
                 let zoom = if self.is_zoom {
+                    ontouchstart = Some(ctx.link().callback(PhoneCallMsg::OnTouchStart));
+                    ontouchmove = Some(ctx.link().callback(PhoneCallMsg::OnTouchMove));
+                    ontouchend = Some(ctx.link().callback(|_| PhoneCallMsg::OnTouchEnd));
                     class = "zoom-call";
                     html!(
                         <div class="zoom-call-icon">
@@ -1021,7 +1081,10 @@ impl Component for PhoneCall {
                             ref={self.wrapper_node.clone()}
                             onmousedown={ctx.link().callback(PhoneCallMsg::OnMouseDown)}
                             onmousemove={ctx.link().callback(PhoneCallMsg::OnMouseMove)}
-                            onmouseup={ctx.link().callback(|_|PhoneCallMsg::OnMouseUp)}>
+                            onmouseup={ctx.link().callback(|_|PhoneCallMsg::OnMouseUp)}
+                            {ontouchstart}
+                            {ontouchmove}
+                            {ontouchend}>
                             {zoom}
                             // <div class="audio-zoom">
                             //     <span click={zoom_in_click}>
