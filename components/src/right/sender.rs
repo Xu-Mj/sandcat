@@ -14,8 +14,8 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{CloseIcon, ImageIcon};
-use icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon};
+use icons::{CloseIcon, ImageIcon, KeyboardIcon};
+use icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon, VoiceIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
@@ -47,6 +47,7 @@ pub struct Sender {
     is_mobile: bool,
     enter_key_down: i64,
     is_key_down: bool,
+    is_voice_mode: bool,
 }
 
 const INPUT_MAX_LEN: usize = 5000;
@@ -78,6 +79,7 @@ pub enum SenderMsg {
     SendVideoCall,
     SendAudioCall,
     OnTextInput,
+    VoiceIconClicked,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -226,6 +228,122 @@ impl Sender {
             SenderMsg::FileOnload(file_name, content_type, file_content)
         });
     }
+
+    fn send_text(&mut self, ctx: &Context<Self>) -> bool {
+        log::info!(
+            "send text, platform: {:?}, {}",
+            self.get_platform(),
+            self.is_mobile
+        );
+        if let Some(input) = self.input_ref.cast::<HtmlTextAreaElement>() {
+            let content: AttrValue = input.value().into();
+            // 如果为空那么 提示不能发送空消息
+            if content.is_empty() || content.trim().is_empty() {
+                self.is_warn_needed = true;
+                self.warn_msg.clone_from(&"no_empty".to_string());
+                // 输入框立即获取焦点
+                input.focus().unwrap();
+                // 给提示框添加一个定时器，1s后消失
+                let ctx = ctx.link().clone();
+                self.timer = Some(Timeout::new(1000, move || {
+                    ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
+                }));
+                return true;
+            }
+
+            if content.chars().count() > INPUT_MAX_LEN {
+                self.is_warn_needed = true;
+                self.warn_msg = "input_max_len".to_string();
+                // 输入框立即获取焦点
+                input.focus().unwrap();
+                // 给提示框添加一个定时器，1s后消失
+                let ctx = ctx.link().clone();
+                self.timer = Some(Timeout::new(1000, move || {
+                    ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
+                }));
+                return true;
+            }
+            // 存储消息、发送消息
+            let friend_id = ctx.props().friend_id.clone();
+            let send_time = chrono::Local::now().timestamp_millis();
+
+            let send_id = ctx.props().cur_user_id.clone();
+            let platform = self.get_platform();
+            let msg = Message {
+                id: 0,
+                seq: 0,
+                local_id: nanoid::nanoid!().into(),
+                server_id: AttrValue::default(),
+                send_id,
+                friend_id,
+                content_type: ContentType::Text,
+                content: content.clone(),
+                create_time: send_time,
+                is_read: 1,
+                is_self: true,
+                send_time: 0,
+                platform,
+                send_status: SendStatus::Sending,
+                file_content: AttrValue::default(),
+            };
+            self.store_message(ctx, msg.clone());
+            self.send_msg(ctx, msg);
+            // 清空输入框
+            input.set_value("");
+            if self.is_mobile {
+                // reset the mobile textarea height
+                input.style().set_property("height", "auto").unwrap();
+            }
+        }
+        true
+    }
+
+    fn handle_input(&self) -> bool {
+        let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
+        // textarea.style().set_property("height", "auto").unwrap();
+        let document = window().document().unwrap();
+        let html = document
+            .document_element()
+            .unwrap()
+            .dyn_into::<HtmlElement>()
+            .unwrap();
+        let html_style = window().get_computed_style(&html).unwrap().unwrap();
+        // let html_style = html.style();
+
+        let font_size = html_style
+            .get_property_value("font-size")
+            .unwrap_or_default();
+        let font_size = font_size
+            .trim_end_matches("px")
+            .parse::<f64>()
+            .unwrap_or(16.0);
+
+        let min_height = 1.0 * font_size;
+        let max_height = 7.0 * font_size;
+
+        // 重置高度以获得准确的scrollHeight
+        textarea.style().set_property("height", "auto").unwrap();
+
+        let scroll_height = textarea.scroll_height() as f64;
+        if scroll_height > max_height {
+            textarea
+                .style()
+                .set_property("height", &format!("{}px", max_height))
+                .unwrap();
+            textarea.style().set_property("overflow-y", "auto").unwrap();
+        } else {
+            textarea
+                .style()
+                .set_property("height", &format!("{}px", scroll_height.max(min_height)))
+                .unwrap();
+            textarea
+                .style()
+                .set_property("overflow-y", "hidden")
+                .unwrap();
+        }
+
+        true
+    }
 }
 
 impl Component for Sender {
@@ -256,79 +374,13 @@ impl Component for Sender {
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
             enter_key_down: 0,
             is_key_down: false,
+            is_voice_mode: false,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            SenderMsg::SendText => {
-                log::info!(
-                    "send text, platform: {:?}, {}",
-                    self.get_platform(),
-                    self.is_mobile
-                );
-                if let Some(input) = self.input_ref.cast::<HtmlTextAreaElement>() {
-                    let content: AttrValue = input.value().into();
-                    // 如果为空那么 提示不能发送空消息
-                    if content.is_empty() || content.trim().is_empty() {
-                        self.is_warn_needed = true;
-                        self.warn_msg.clone_from(&"no_empty".to_string());
-                        // 输入框立即获取焦点
-                        input.focus().unwrap();
-                        // 给提示框添加一个定时器，1s后消失
-                        let ctx = ctx.link().clone();
-                        self.timer = Some(Timeout::new(1000, move || {
-                            ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
-                        }));
-                        return true;
-                    }
-
-                    if content.chars().count() > INPUT_MAX_LEN {
-                        self.is_warn_needed = true;
-                        self.warn_msg = "input_max_len".to_string();
-                        // 输入框立即获取焦点
-                        input.focus().unwrap();
-                        // 给提示框添加一个定时器，1s后消失
-                        let ctx = ctx.link().clone();
-                        self.timer = Some(Timeout::new(1000, move || {
-                            ctx.send_message(SenderMsg::CleanEmptyMsgWarn);
-                        }));
-                        return true;
-                    }
-                    // 存储消息、发送消息
-                    let friend_id = ctx.props().friend_id.clone();
-                    let send_time = chrono::Local::now().timestamp_millis();
-
-                    let send_id = ctx.props().cur_user_id.clone();
-                    let platform = self.get_platform();
-                    let msg = Message {
-                        id: 0,
-                        seq: 0,
-                        local_id: nanoid::nanoid!().into(),
-                        server_id: AttrValue::default(),
-                        send_id,
-                        friend_id,
-                        content_type: ContentType::Text,
-                        content: content.clone(),
-                        create_time: send_time,
-                        is_read: 1,
-                        is_self: true,
-                        send_time: 0,
-                        platform,
-                        send_status: SendStatus::Sending,
-                        file_content: AttrValue::default(),
-                    };
-                    self.store_message(ctx, msg.clone());
-                    self.send_msg(ctx, msg);
-                    // 清空输入框
-                    input.set_value("");
-                    if self.is_mobile {
-                        // reset the mobile textarea height
-                        input.style().set_property("height", "auto").unwrap();
-                    }
-                }
-                true
-            }
+            SenderMsg::SendText => self.send_text(ctx),
             SenderMsg::CleanEmptyMsgWarn => {
                 self.is_warn_needed = false;
                 self.timer = None;
@@ -496,52 +548,7 @@ impl Component for Sender {
                 });
                 false
             }
-            SenderMsg::OnTextInput => {
-                let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
-                // textarea.style().set_property("height", "auto").unwrap();
-                let document = window().document().unwrap();
-                let html = document
-                    .document_element()
-                    .unwrap()
-                    .dyn_into::<HtmlElement>()
-                    .unwrap();
-                let html_style = window().get_computed_style(&html).unwrap().unwrap();
-                // let html_style = html.style();
-
-                let font_size = html_style
-                    .get_property_value("font-size")
-                    .unwrap_or_default();
-                let font_size = font_size
-                    .trim_end_matches("px")
-                    .parse::<f64>()
-                    .unwrap_or(16.0);
-
-                let min_height = 1.0 * font_size;
-                let max_height = 7.0 * font_size;
-
-                // 重置高度以获得准确的scrollHeight
-                textarea.style().set_property("height", "auto").unwrap();
-
-                let scroll_height = textarea.scroll_height() as f64;
-                if scroll_height > max_height {
-                    textarea
-                        .style()
-                        .set_property("height", &format!("{}px", max_height))
-                        .unwrap();
-                    textarea.style().set_property("overflow-y", "auto").unwrap();
-                } else {
-                    textarea
-                        .style()
-                        .set_property("height", &format!("{}px", scroll_height.max(min_height)))
-                        .unwrap();
-                    textarea
-                        .style()
-                        .set_property("overflow-y", "hidden")
-                        .unwrap();
-                }
-
-                true
-            }
+            SenderMsg::OnTextInput => self.handle_input(),
             SenderMsg::OnEnterKeyUp(event) => {
                 // handle mobile enter key long press event
                 if event.key() != "Enter" {
@@ -571,31 +578,50 @@ impl Component for Sender {
                 }
                 false
             }
+            SenderMsg::VoiceIconClicked => {
+                // keyboard clicked
+                if self.is_mobile && self.is_voice_mode {
+                    if let Some(input) = self.input_ref.cast::<HtmlTextAreaElement>() {
+                        // igonre error
+                        let _ = input.style().remove_property("display");
+                        let _ = input.focus();
+                    }
+                } else if self.is_mobile && !self.is_voice_mode {
+                    self.input_ref
+                        .cast::<HtmlTextAreaElement>()
+                        .map(|input| input.style().set_property("display", "none"));
+                }
+                self.is_voice_mode = !self.is_voice_mode;
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let (sender_class, emoji_class, input_class, warn_class, send_btn) = if self.is_mobile {
-            (
-                "sender",
-                "emoji-wrapper emoji-wrapper-size-mobile",
-                "msg-input msg-input-size-mobile",
-                "empty-msg-tip-mobile box-shadow",
-                html!(),
-            )
-        } else {
-            (
-                "sender sender-size",
-                "emoji-wrapper emoji-wrapper-size",
-                "msg-input msg-input-size",
-                "empty-msg-tip box-shadow",
-                html!(
+        let (sender_class, emoji_class, input_class, warn_class, send_btn, mut recorder) =
+            if self.is_mobile {
+                (
+                    "sender",
+                    "emoji-wrapper emoji-wrapper-size-mobile",
+                    "msg-input msg-input-size-mobile",
+                    "empty-msg-tip-mobile box-shadow",
+                    html!(),
+                    html!(<div class="recorder">{"按住讲话"}</div>),
+                )
+            } else {
+                (
+                    "sender sender-size",
+                    "emoji-wrapper emoji-wrapper-size",
+                    "msg-input msg-input-size",
+                    "empty-msg-tip box-shadow",
+                    html!(
                         <button class="send-btn"
                             onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
                             {tr!(self.i18n, "send")}
                         </button>),
-            )
-        };
+                    html!(),
+                )
+            };
         // spawn disable layer
         let mut disable = html!();
         if ctx.props().disable {
@@ -724,6 +750,19 @@ impl Component for Sender {
         } else {
             None
         };
+
+        // voice icon
+        let voice_icon = if self.is_voice_mode {
+            html!(<KeyboardIcon />)
+        } else {
+            html!(<VoiceIcon />)
+        };
+
+        if !self.is_voice_mode {
+            recorder = html!();
+        };
+        let voice_icon_click = ctx.link().callback(|_| SenderMsg::VoiceIconClicked);
+
         html! {
             <>
             {emojis}
@@ -741,12 +780,16 @@ impl Component for Sender {
                                 <FileIcon />
                             </span>
                         </span>
+                        <span onclick={voice_icon_click}>
+                            {voice_icon}
+                        </span>
                     </div>
                     <div class="send-bar-right" >
                         {phone_call}
                     </div>
                 </div>
                 <div class="msg-input-wrapper">
+                    {recorder}
                     <textarea class={input_class}
                         ref={self.input_ref.clone()}
                         {oninput}

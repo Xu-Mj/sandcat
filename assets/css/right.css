@@ -607,6 +607,15 @@
                 border-radius: .3rem;
             }
 
+            .recorder {
+                width: 100%;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border: #e2e2e2 solid 1px;
+                border-radius: .3rem;
+            }
+
             .msg-input {
                 height: 100%;
                 width: 100%;
