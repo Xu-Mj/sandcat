@@ -173,16 +173,9 @@ impl Component for ListItem {
                 }));
 
                 // add hover class
-                if let Err(e) = self
-                    .node_ref
+                self.node_ref
                     .cast::<HtmlElement>()
-                    .unwrap()
-                    .class_list()
-                    .add_1("hover")
-                {
-                    log::error!("add hover class error: {:?}", e);
-                }
-
+                    .map(|div| div.class_list().add_1("hover"));
                 false
             }
             ListItemMsg::TouchEnd(event) => {
