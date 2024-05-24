@@ -607,15 +607,6 @@
                 border-radius: .3rem;
             }
 
-            .recorder {
-                width: 100%;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                border: #e2e2e2 solid 1px;
-                border-radius: .3rem;
-            }
-
             .msg-input {
                 height: 100%;
                 width: 100%;
@@ -976,4 +967,143 @@
         transform: rotate(270deg);
     }
 
+}
+
+.recorder {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    border-radius: .3rem;
+    background-color: rgba(0, 0, 0, .3);
+    z-index: 3;
+
+    .btn {
+        width: 5rem;
+        height: 2rem;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 1rem;
+        border: none;
+        border-radius: .3rem;
+        background-color: white;
+    }
+
+    .voice {
+        width: 8rem;
+        height: 4rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-evenly;
+        .item {
+            /* position: absolute; */
+            width: 8px;
+            border-radius: 6px;
+            background-color: #1f94ea;
+
+        }
+
+        /* .item {
+            position: absolute;
+            width: .5rem;
+            height: var(--voice-item-height);
+            border-radius: .3rem;
+            background-color: #1f94ea;
+            transform: translateX(calc(var(--voice-item-index) * 1rem + - 8rem));
+            animation: radius-animation var(--voice-item-animation-time) ease infinite;
+
+        } */
+    }
+}
+
+.recorder-mask {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, .3);
+}
+
+.voice .item {
+    position: absolute;
+    width: 8px;
+    border-radius: 6px;
+    background-color: #1f94ea;
+
+}
+
+.voice .one {
+    height: 18px;
+}
+
+.voice .two {
+    height: 53px;
+}
+
+.voice .three {
+    height: 36px;
+}
+
+.voice .four {
+    height: 70px;
+}
+
+.voice .five {
+    height: 30px;
+}
+
+.voice .six {
+    height: 40px;
+}
+
+.voice .seven {
+    height: 50px;
+}
+
+.voice .one {
+    animation: radius-animation .3s ease;
+}
+
+.voice .two {
+    animation: radius-animation .6s ease;
+}
+
+.voice .three {
+    animation: radius-animation .57s ease;
+}
+
+.voice .four {
+    animation: radius-animation .52s ease;
+}
+
+.voice .five {
+    animation: radius-animation .4s ease;
+}
+
+.voice .six {
+    animation: radius-animation .3s ease;
+}
+
+.voice .seven {
+    animation: radius-animation .7s ease;
+
+}
+
+.voice .item {
+    animation-iteration-count: infinite;
+    -webkit-animation-iteration-count: infinite;
+    animation-direction: alternate;
+    -webkit-animation-direction: alternate;
+}
+
+@keyframes radius-animation {
+    100% {
+        height: 10px;
+        /* border-radius: 50%; */
+        filter: contrast(2);
+    }
 }

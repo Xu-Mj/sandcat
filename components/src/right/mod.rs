@@ -4,6 +4,7 @@ pub mod friendship_list;
 pub mod msg_item;
 pub mod msg_list;
 pub mod postcard;
+mod recorder;
 pub mod sender;
 pub mod set_drawer;
 pub mod set_window;
@@ -241,7 +242,8 @@ impl Component for Right {
                     log::debug!("TouchStart: {}", touch.client_x());
                     self.touch_start = touch.client_x();
                 };
-                false
+                // false
+                true
             }
             RightMsg::TouchEnd(event) => {
                 // we can't use the .touches() to get the touch end

@@ -26,6 +26,7 @@ use utils::tr;
 
 use super::emoji::{get_emojis, Emoji};
 use crate::right::emoji::EmojiSpan;
+use crate::right::recorder::Recorder;
 
 /// 右侧发送组件
 /// 总体两排组件布局
@@ -80,6 +81,7 @@ pub enum SenderMsg {
     SendAudioCall,
     OnTextInput,
     VoiceIconClicked,
+    SendVoice(Vec<u8>),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -594,34 +596,35 @@ impl Component for Sender {
                 self.is_voice_mode = !self.is_voice_mode;
                 true
             }
+            SenderMsg::SendVoice(data) => {
+                log::debug!("send voice: {:?}", data);
+                false
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let (sender_class, emoji_class, input_class, warn_class, send_btn, mut recorder) =
-            if self.is_mobile {
-                (
-                    "sender",
-                    "emoji-wrapper emoji-wrapper-size-mobile",
-                    "msg-input msg-input-size-mobile",
-                    "empty-msg-tip-mobile box-shadow",
-                    html!(),
-                    html!(<div class="recorder">{"按住讲话"}</div>),
-                )
-            } else {
-                (
-                    "sender sender-size",
-                    "emoji-wrapper emoji-wrapper-size",
-                    "msg-input msg-input-size",
-                    "empty-msg-tip box-shadow",
-                    html!(
+        let (sender_class, emoji_class, input_class, warn_class, send_btn) = if self.is_mobile {
+            (
+                "sender",
+                "emoji-wrapper emoji-wrapper-size-mobile",
+                "msg-input msg-input-size-mobile",
+                "empty-msg-tip-mobile box-shadow",
+                html!(),
+            )
+        } else {
+            (
+                "sender sender-size",
+                "emoji-wrapper emoji-wrapper-size",
+                "msg-input msg-input-size",
+                "empty-msg-tip box-shadow",
+                html!(
                         <button class="send-btn"
                             onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
                             {tr!(self.i18n, "send")}
                         </button>),
-                    html!(),
-                )
-            };
+            )
+        };
         // spawn disable layer
         let mut disable = html!();
         if ctx.props().disable {
@@ -758,9 +761,10 @@ impl Component for Sender {
             html!(<VoiceIcon />)
         };
 
-        if !self.is_voice_mode {
-            recorder = html!();
-        };
+        let mut recorder = html!();
+        if self.is_voice_mode {
+            recorder = html!(<Recorder send_voice={ctx.link().callback(SenderMsg::SendVoice)} />);
+        }
         let voice_icon_click = ctx.link().callback(|_| SenderMsg::VoiceIconClicked);
 
         html! {
@@ -816,12 +820,10 @@ impl Component for Sender {
                 .unwrap();
             return;
         }
-        if !self.show_emoji && !ctx.props().disable && !self.is_mobile {
+        if !self.show_emoji && !ctx.props().disable && !self.is_mobile && !self.is_voice_mode {
             self.input_ref
                 .cast::<HtmlElement>()
-                .unwrap()
-                .focus()
-                .unwrap();
+                .map(|input| input.focus());
         }
         if self.show_emoji {
             let wrapper = self.emoji_wrapper_ref.cast::<HtmlElement>().unwrap();
