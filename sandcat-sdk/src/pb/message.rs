@@ -825,7 +825,6 @@ pub enum MsgType {
     FriendshipReceived = 24,
     /// / friend delete
     FriendDelete = 25,
-    KnockOff = 26,
 }
 impl MsgType {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -860,7 +859,6 @@ impl MsgType {
             MsgType::Service => "MsgTypeService",
             MsgType::FriendshipReceived => "MsgTypeFriendshipReceived",
             MsgType::FriendDelete => "MsgTypeFriendDelete",
-            MsgType::KnockOff => "MsgTypeKnockOff",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -892,7 +890,6 @@ impl MsgType {
             "MsgTypeService" => Some(Self::Service),
             "MsgTypeFriendshipReceived" => Some(Self::FriendshipReceived),
             "MsgTypeFriendDelete" => Some(Self::FriendDelete),
-            "MsgTypeKnockOff" => Some(Self::KnockOff),
             _ => None,
         }
     }

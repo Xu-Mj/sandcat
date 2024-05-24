@@ -88,6 +88,7 @@ pub struct Chats {
     _update_dis: Dispatch<UpdateConvState>,
     touch_start: i32,
     is_mobile: bool,
+    is_knocked: bool,
 }
 
 impl Chats {
@@ -159,7 +160,12 @@ impl Chats {
             id,
             (*platform).clone() as i32
         );
-        let ws = Rc::new(RefCell::new(WebSocketManager::new(url, rec_msg_listener)));
+        let knockoff = ctx.link().callback(|_| ChatsMsg::KnockOff);
+        let ws = Rc::new(RefCell::new(WebSocketManager::new(
+            url,
+            rec_msg_listener,
+            knockoff,
+        )));
         let res = match lang_state.lang {
             LanguageType::ZhCN => zh_cn::CONVERSATION,
             LanguageType::EnUS => en_us::CONVERSATION,
@@ -192,6 +198,7 @@ impl Chats {
             _update_dis,
             touch_start: 0,
             is_mobile,
+            is_knocked: false,
         }
     }
 

@@ -2,8 +2,10 @@ use std::rc::Rc;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
+use sandcat_sdk::model::page::Page;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
 use sandcat_sdk::db;
@@ -61,6 +63,8 @@ pub enum ChatsMsg {
     UpdateConvStateChanged(Rc<UpdateConvState>),
     OnTouchStart(TouchEvent),
     OnTouchEnd(TouchEvent),
+    KnockOff,
+    Logout,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -281,6 +285,16 @@ impl Component for Chats {
                 self.touch_start = 0;
                 false
             }
+            ChatsMsg::KnockOff => {
+                self.is_knocked = true;
+                true
+            }
+            ChatsMsg::Logout => {
+                if let Some(navigator) = ctx.link().navigator() {
+                    navigator.push(&Page::Login);
+                }
+                false
+            }
         }
     }
 
@@ -332,6 +346,16 @@ impl Component for Chats {
             }
         }
 
+        // show warning about knock off
+        let mut warning = html!();
+        if self.is_knocked {
+            warning = html! {
+                <div>
+                    {"GoodBye"}
+                    <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{"OK"}</button>
+                </div>
+            }
+        }
         // PhoneCall send message callback
         let send_msg_callback = ctx
             .link()
@@ -339,6 +363,7 @@ impl Component for Chats {
         html! {
         // <ContextProvider<SingleCall> context={self.call_msg.clone()}>
         <>
+            {warning}
             <PhoneCall ws={self.ws.clone()} user_id={ctx.props().user_id.clone()} msg={self.call_msg.clone()} send_msg={send_msg_callback}/>
             <div class="list-wrapper" {ontouchstart} {ontouchend}>
                 {context_menu}
