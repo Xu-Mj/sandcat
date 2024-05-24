@@ -30,6 +30,8 @@ use sandcat_sdk::model::ItemInfo;
 use sandcat_sdk::state::{MobileState, NotificationState, SendCallState};
 use ws::WebSocketManager;
 
+use crate::get_platform;
+
 pub struct PhoneCall {
     /// 显示视频通话
     show_video: bool,
@@ -637,6 +639,7 @@ impl Component for PhoneCall {
                 let pc = pc.clone();
                 let send_id = invite_info.friend_id.clone();
                 let friend_id = invite_info.send_id.clone();
+                let platform = get_platform(self.is_mobile);
                 spawn_local(async move {
                     let js_value = js_future.await.unwrap();
                     let rtc_desc = RtcSessionDescription::from(js_value);
@@ -652,6 +655,7 @@ impl Component for PhoneCall {
                                 send_id,
                                 friend_id,
                                 create_time: 0,
+                                platform,
                             })))
                     {
                         log::error!("send message error: {:?}", e);

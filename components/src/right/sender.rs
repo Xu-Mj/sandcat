@@ -262,6 +262,11 @@ impl Component for Sender {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             SenderMsg::SendText => {
+                log::info!(
+                    "send text, platform: {:?}, {}",
+                    self.get_platform(),
+                    self.is_mobile
+                );
                 if let Some(input) = self.input_ref.cast::<HtmlTextAreaElement>() {
                     let content: AttrValue = input.value().into();
                     // 如果为空那么 提示不能发送空消息
@@ -472,6 +477,7 @@ impl Component for Sender {
                         friend_id: ctx.props().friend_id.clone(),
                         send_id: ctx.props().cur_user_id.clone(),
                         invite_type: InviteType::Video,
+                        platform: self.get_platform(),
                     }
                 });
                 false
@@ -485,6 +491,7 @@ impl Component for Sender {
                         friend_id: ctx.props().friend_id.clone(),
                         send_id: ctx.props().cur_user_id.clone(),
                         invite_type: InviteType::Audio,
+                        platform: self.get_platform(),
                     }
                 });
                 false

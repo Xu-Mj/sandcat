@@ -8,9 +8,11 @@ use icons::{PhoneIcon, SendMsgIcon, VideoIcon};
 use sandcat_sdk::model::message::{InviteMsg, InviteType};
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, CurrentItem};
-use sandcat_sdk::state::SendCallState;
 use sandcat_sdk::state::{ComponentTypeState, ConvState};
+use sandcat_sdk::state::{MobileState, SendCallState};
 use utils::tr;
+
+use crate::get_platform;
 
 // 联系人卡面上的动作组件：发消息、点电话、打视频
 pub struct Action {
@@ -68,6 +70,7 @@ impl Component for Action {
                         friend_id: ctx.props().friend_id.clone(),
                         create_time: chrono::Utc::now().timestamp_millis(),
                         invite_type: t,
+                        platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
                     }
                 });
             }
