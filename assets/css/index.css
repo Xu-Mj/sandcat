@@ -138,8 +138,8 @@ input {
 .box-shadow {
     box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
         10px 10px 10px rgba(60, 60, 60, 0.12),
-        -10px -10px 15px rgba(60, 60, 60, 0.12),
-        -10px -10px 15px rgba(60, 60, 60, 0.12);
+        -2px -2px 15px rgba(60, 60, 60, 0.12),
+        -1px -1px 15px rgba(60, 60, 60, 0.12);
 }
 
 .pointer {
