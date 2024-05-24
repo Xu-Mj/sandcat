@@ -1,4 +1,5 @@
 use chrono::TimeZone;
+use gloo::{timers::callback::Timeout, utils::window};
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -17,6 +18,8 @@ pub struct ListItem {
     friend_dispatch: Dispatch<FriendListState>,
     unread_count: usize,
     is_mobile: bool,
+    touch_start: i64,
+    long_press_timer: Option<Timeout>,
 }
 
 #[derive(Properties, PartialEq)]
@@ -36,6 +39,9 @@ pub enum ListItemMsg {
     CleanUnreadCount,
     FriendItemClicked,
     OnContextMenu(MouseEvent),
+    TouchStart(TouchEvent),
+    TouchEnd(TouchEvent),
+    CleanTimer,
 }
 
 impl Component for ListItem {
@@ -58,6 +64,8 @@ impl Component for ListItem {
             conv_state: conv_dispatch.get(),
             conv_dispatch,
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            touch_start: 0,
+            long_press_timer: None,
         }
     }
 
@@ -87,7 +95,6 @@ impl Component for ListItem {
                 });
                 self.unread_count = 0;
                 // show right if mobile
-                log::debug!("show right{:?}", Dispatch::<MobileState>::global().get());
                 if self.is_mobile {
                     Dispatch::<ShowRight>::global().set(ShowRight::Show);
                     // return false;
@@ -144,6 +151,47 @@ impl Component for ListItem {
                 ));
                 false
             }
+            ListItemMsg::TouchStart(event) => {
+                self.touch_start = chrono::Utc::now().timestamp_millis();
+                let oncontextmenu = ctx.props().oncontextmenu.clone();
+                let id = ctx.props().props.id.clone();
+                let mute = ctx.props().mute;
+                let ctx = ctx.link().clone();
+                self.long_press_timer = Some(Timeout::new(500, move || {
+                    if let Some(event) = event.changed_touches().get(0) {
+                        window().navigator().vibrate_with_duration(100);
+                        oncontextmenu.emit((
+                            (event.client_x(), event.client_y()),
+                            id.clone(),
+                            mute,
+                        ));
+                    }
+                    ctx.send_message(ListItemMsg::CleanTimer);
+                }));
+                false
+            }
+            ListItemMsg::TouchEnd(event) => {
+                event.prevent_default();
+                if self.touch_start != 0
+                    && chrono::Utc::now().timestamp_millis() - self.touch_start > 500
+                {
+                    if let Some(event) = event.changed_touches().get(0) {
+                        ctx.props().oncontextmenu.emit((
+                            (event.client_x(), event.client_y()),
+                            ctx.props().props.id.clone(),
+                            ctx.props().mute,
+                        ));
+                    }
+                }
+                self.long_press_timer = None;
+                self.touch_start = 0;
+                false
+            }
+            ListItemMsg::CleanTimer => {
+                self.long_press_timer = None;
+                self.touch_start = 0;
+                false
+            }
         }
     }
 
@@ -153,6 +201,15 @@ impl Component for ListItem {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        // handle mobile long press event
+        let (touch_start, touch_end) = if self.is_mobile {
+            (
+                Some(ctx.link().callback(ListItemMsg::TouchStart)),
+                Some(ctx.link().callback(ListItemMsg::TouchEnd)),
+            )
+        } else {
+            (None, None)
+        };
         // 根据参数渲染组件
         let props = &ctx.props().props;
         let id = props.id.clone();
@@ -253,7 +310,7 @@ impl Component for ListItem {
         }
         let oncontextmenu = ctx.link().callback(ListItemMsg::OnContextMenu);
         html! {
-        <div class={classes} {onclick} title={props.name.clone()} {oncontextmenu}>
+        <div class={classes} {onclick} title={props.name.clone()} {oncontextmenu} ontouchstart={touch_start} ontouchend={touch_end}>
             {self.get_avatar(ctx)}
             <div class="item-info">
                 {unread_count}

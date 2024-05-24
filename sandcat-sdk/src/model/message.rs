@@ -339,6 +339,8 @@ pub struct InviteMsg {
     pub friend_id: AttrValue,
     pub create_time: i64,
     pub invite_type: InviteType,
+    #[serde(default)]
+    pub platform: i32,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -424,6 +426,8 @@ pub struct Agree {
     pub send_id: AttrValue,
     pub friend_id: AttrValue,
     pub create_time: i64,
+    #[serde(default)]
+    pub platform: i32,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -553,6 +557,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 friend_id: msg.receiver_id.into(),
                 create_time: msg.send_time,
                 invite_type,
+                platform: msg.platform,
             })))
         }
         MsgType::RejectSingleCall => {
@@ -652,6 +657,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             friend_id: msg.receiver_id.into(),
             create_time: msg.send_time,
             sdp: String::from_utf8(msg.content).ok(),
+            platform: msg.platform,
         }))),
         MsgType::Candidate => {
             let data: CandidateData =
@@ -710,6 +716,7 @@ impl From<Msg> for PbMsg {
                 create_time: msg.create_time,
                 content_type: msg.content_type as i32,
                 content: msg.content.as_bytes().to_vec(),
+                platform: msg.platform,
                 ..Default::default()
             },
             Msg::Group(group_msg) => {
@@ -724,6 +731,7 @@ impl From<Msg> for PbMsg {
                         pb_msg.create_time = msg.create_time;
                         pb_msg.content_type = msg.content_type as i32;
                         pb_msg.content = msg.content.as_bytes().to_vec();
+                        pb_msg.platform = msg.platform;
                     }
                     GroupMsg::Invitation(info) => {
                         pb_msg.msg_type = MsgType::GroupInvitation as i32;
@@ -759,6 +767,7 @@ impl From<Msg> for PbMsg {
                             InviteType::Video => ContentType::VideoCall as i32,
                             InviteType::Audio => ContentType::AudioCall as i32,
                         };
+                        pb_msg.platform = invite.platform;
                     }
                     SingleCall::InviteAnswer(answer) => {
                         pb_msg.msg_type = MsgType::RejectSingleCall as i32;
@@ -773,6 +782,7 @@ impl From<Msg> for PbMsg {
                             InviteType::Video => ContentType::VideoCall as i32,
                             InviteType::Audio => ContentType::AudioCall as i32,
                         };
+                        pb_msg.platform = answer.platform;
                     }
                     SingleCall::NotAnswer(not_answer) => {
                         pb_msg.msg_type = MsgType::SingleCallInviteNotAnswer as i32;
@@ -784,6 +794,7 @@ impl From<Msg> for PbMsg {
                             InviteType::Video => ContentType::VideoCall as i32,
                             InviteType::Audio => ContentType::AudioCall as i32,
                         };
+                        pb_msg.platform = not_answer.platform;
                     }
                     SingleCall::InviteCancel(cancel) => {
                         pb_msg.msg_type = MsgType::SingleCallInviteCancel as i32;
@@ -795,6 +806,7 @@ impl From<Msg> for PbMsg {
                             InviteType::Video => ContentType::VideoCall as i32,
                             InviteType::Audio => ContentType::AudioCall as i32,
                         };
+                        pb_msg.platform = cancel.platform;
                     }
                     SingleCall::Offer(offer) => {
                         pb_msg.msg_type = MsgType::SingleCallOffer as i32;
@@ -809,6 +821,7 @@ impl From<Msg> for PbMsg {
                         pb_msg.receiver_id = agree.friend_id.as_str().into();
                         pb_msg.create_time = agree.create_time;
                         pb_msg.content = agree.sdp.unwrap_or_default().as_bytes().to_vec();
+                        pb_msg.platform = agree.platform;
                     }
                     SingleCall::HangUp(hangup) => {
                         pb_msg.msg_type = MsgType::Hangup as i32;
@@ -817,6 +830,7 @@ impl From<Msg> for PbMsg {
                         pb_msg.create_time = hangup.create_time;
                         pb_msg.content = hangup.sustain.to_be_bytes().to_vec();
                         pb_msg.local_id = hangup.local_id.as_str().into();
+                        pb_msg.platform = hangup.platform;
                     }
                     SingleCall::NewIceCandidate(candidate) => {
                         pb_msg.msg_type = MsgType::Candidate as i32;
@@ -840,6 +854,7 @@ impl From<Msg> for PbMsg {
             Msg::SendRelationshipReq(msg) => PbMsg {
                 msg_type: MsgType::FriendApplyReq as i32,
                 content: bincode::serialize(&msg).unwrap(),
+                platform: msg.platform,
                 ..Default::default()
             },
             Msg::RecRelationship(_) => PbMsg {

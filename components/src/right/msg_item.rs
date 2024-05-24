@@ -15,8 +15,9 @@ use sandcat_sdk::model::message::{
 use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::{SendCallState, SendMessageState};
+use sandcat_sdk::state::{MobileState, SendCallState, SendMessageState};
 
+use crate::get_platform;
 use crate::right::friend_card::FriendCard;
 
 pub struct MsgItem {
@@ -173,6 +174,7 @@ impl Component for MsgItem {
                         friend_id: ctx.props().friend_id.clone(),
                         create_time: chrono::Utc::now().timestamp_millis(),
                         invite_type: InviteType::Video,
+                        platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
                     }
                 });
                 false
@@ -186,6 +188,7 @@ impl Component for MsgItem {
                         friend_id: ctx.props().friend_id.clone(),
                         create_time: chrono::Utc::now().timestamp_millis(),
                         invite_type: InviteType::Audio,
+                        platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
                     }
                 });
                 false

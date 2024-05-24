@@ -8,9 +8,12 @@ use sandcat_sdk::db;
 use sandcat_sdk::model::friend::{FriendShipRequest, ReadStatus};
 use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::RightContentType;
+use sandcat_sdk::state::MobileState;
 use utils::tr;
+use yewdux::Dispatch;
 
 use crate::action::Action;
+use crate::get_platform;
 
 pub struct UserInfoCom {
     node: NodeRef,
@@ -82,6 +85,7 @@ impl Component for UserInfoCom {
                     apply_msg,
                     source,
                     req_remark,
+                    platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
                 };
 
                 log::debug!("发送好友申请:{:?}", &new_friend);

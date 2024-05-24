@@ -270,11 +270,16 @@ impl Chats {
 
         match message {
             Msg::Single(ref mut msg) => {
-                let friend_id = msg.send_id.clone();
-                msg.send_id = msg.friend_id.clone();
-                msg.friend_id = friend_id;
-                msg.is_read = 0;
-                msg.is_self = false;
+                // if the message is self message, then we don't need to swap the send_id and friend_id
+                if msg.send_id == ctx.props().user_id {
+                    msg.is_self = true;
+                } else {
+                    let friend_id = msg.send_id.clone();
+                    msg.send_id = msg.friend_id.clone();
+                    msg.friend_id = friend_id;
+                    msg.is_read = 0;
+                    msg.is_self = false;
+                }
 
                 let conv = Conversation {
                     last_msg: msg.content.clone(),
@@ -335,7 +340,7 @@ impl Chats {
                             unread_count: 1,
                             ..Default::default()
                         };
-                        let is_self = msg.is_self;
+                        let is_self = msg.send_id == ctx.props().user_id;
 
                         let is_send = (self.conv_state.conv.content_type
                             == RightContentType::Friend

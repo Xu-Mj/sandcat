@@ -40,6 +40,8 @@ pub struct FriendShipRequest {
     pub apply_msg: Option<AttrValue>,
     pub source: Option<AttrValue>,
     pub req_remark: Option<AttrValue>,
+    #[serde(default)]
+    pub platform: i32,
 }
 
 #[derive(Debug, Clone, Serialize)]
