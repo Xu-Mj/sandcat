@@ -10,6 +10,8 @@ use sandcat_sdk::model::message::convert_server_msg;
 use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::pb::message::Msg as PbMsg;
 
+const KNOCKOFF_CODE: u16 = 4001;
+
 #[derive(Debug)]
 pub struct WebSocketManager {
     url: String,
@@ -18,6 +20,7 @@ pub struct WebSocketManager {
     max_reconnect_attempts: u32,
     reconnect_interval: i32,
     receive_callback: Callback<Msg>,
+    knockoff_callback: Callback<()>,
     // in case of memory leaks
     on_open: Option<Closure<dyn FnMut()>>,
     on_close: Option<Closure<dyn FnMut(CloseEvent)>>,
@@ -30,8 +33,13 @@ impl PartialEq for WebSocketManager {
         self.url == other.url
     }
 }
+
 impl WebSocketManager {
-    pub fn new(url: String, receive_callback: Callback<Msg>) -> Self {
+    pub fn new(
+        url: String,
+        receive_callback: Callback<Msg>,
+        knockoff_callback: Callback<()>,
+    ) -> Self {
         Self {
             url,
             ws: None,
@@ -39,6 +47,7 @@ impl WebSocketManager {
             max_reconnect_attempts: 5,
             reconnect_interval: 1000, // 初始重连间隔为1000毫秒
             receive_callback,
+            knockoff_callback,
             on_open: None,
             on_close: None,
             on_error: None,
@@ -90,7 +99,7 @@ impl WebSocketManager {
 
                 match bincode::deserialize(&body) {
                     Ok(msg) => match convert_server_msg(msg) {
-                        Ok(msg) => ws_manager_clone.borrow_mut().receive_callback.emit(msg),
+                        Ok(msg) => ws_manager_clone.borrow().receive_callback.emit(msg),
                         Err(e) => log::error!("convert message error {e}"),
                     },
                     Err(err) => log::error!("deserialize error: {:?}", err),
@@ -106,10 +115,12 @@ impl WebSocketManager {
 
         let ws_manager_clone = ws_manager.clone();
         let on_close = Closure::wrap(Box::new(move |e: CloseEvent| {
-            log::warn!("WebSocket closed: {:?}", e);
-            if e.code() == 4001 {
+            if e.code() == KNOCKOFF_CODE {
+                log::info!("Knocked off by another client");
+                ws_manager_clone.borrow().knockoff_callback.emit(());
                 return;
             }
+            log::warn!("WebSocket closed: {:?}", e);
             // reconnect
             ws_manager_clone
                 .borrow_mut()
