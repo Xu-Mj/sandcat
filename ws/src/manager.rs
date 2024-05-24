@@ -107,6 +107,9 @@ impl WebSocketManager {
         let ws_manager_clone = ws_manager.clone();
         let on_close = Closure::wrap(Box::new(move |e: CloseEvent| {
             log::warn!("WebSocket closed: {:?}", e);
+            if e.code() == 4001 {
+                return;
+            }
             // reconnect
             ws_manager_clone
                 .borrow_mut()

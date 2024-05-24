@@ -541,9 +541,6 @@ impl Chats {
                 });
                 self.handle_lack_msg(ctx, seq);
             }
-            Msg::KnockOff => {
-                log::debug!("handle_msg: KnockOff");
-            }
         }
         false
     }
