@@ -1,4 +1,5 @@
 # TODO LIST / UNRESOLVED QUESTIONS
+
 - the structure of the MESSAGE need to be same as server side MESSAGE structure
 - message item show send time while hover it
 - modify the friend remark
@@ -9,5 +10,5 @@
 - we need to update user information when we click the conversation item
 - redesign the websocket reconnection logical,
 - textarea dynamic height under the mobile mode
-- knock off need to complete
 - send self message need to handle
+- need to handle all types message about platform and if self msg
