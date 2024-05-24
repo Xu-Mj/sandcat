@@ -2,6 +2,7 @@ use chrono::TimeZone;
 use gloo::{timers::callback::Timeout, utils::window};
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
+use web_sys::HtmlElement;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
@@ -12,6 +13,7 @@ use sandcat_sdk::{
 };
 
 pub struct ListItem {
+    node_ref: NodeRef,
     conv_state: Rc<ConvState>,
     conv_dispatch: Dispatch<ConvState>,
     friend_state: Rc<FriendListState>,
@@ -58,6 +60,7 @@ impl Component for ListItem {
         let unread_count = ctx.props().unread_count;
 
         Self {
+            node_ref: NodeRef::default(),
             friend_state: friend_dispatch.get(),
             friend_dispatch,
             unread_count,
@@ -168,6 +171,18 @@ impl Component for ListItem {
                     }
                     ctx.send_message(ListItemMsg::CleanTimer);
                 }));
+
+                // add hover class
+                if let Err(e) = self
+                    .node_ref
+                    .cast::<HtmlElement>()
+                    .unwrap()
+                    .class_list()
+                    .add_1("hover")
+                {
+                    log::error!("add hover class error: {:?}", e);
+                }
+
                 false
             }
             ListItemMsg::TouchEnd(event) => {
@@ -182,6 +197,8 @@ impl Component for ListItem {
                             ctx.props().mute,
                         ));
                     }
+                } else {
+                    ctx.link().send_message(ListItemMsg::CleanUnreadCount);
                 }
                 self.long_press_timer = None;
                 self.touch_start = 0;
@@ -310,7 +327,13 @@ impl Component for ListItem {
         }
         let oncontextmenu = ctx.link().callback(ListItemMsg::OnContextMenu);
         html! {
-        <div class={classes} {onclick} title={props.name.clone()} {oncontextmenu} ontouchstart={touch_start} ontouchend={touch_end}>
+        <div ref={self.node_ref.clone()}
+            class={classes}
+            {onclick}
+            title={props.name.clone()}
+            {oncontextmenu}
+            ontouchstart={touch_start}
+            ontouchend={touch_end}>
             {self.get_avatar(ctx)}
             <div class="item-info">
                 {unread_count}
