@@ -148,6 +148,7 @@ verify_needed = 对方开启了好友验证，请先通过验证
 "#;
 
 pub const RECORDER: &str = r#"
+press = 按住讲话
 recorde = 录音
 stop = 停止
 send = 发送

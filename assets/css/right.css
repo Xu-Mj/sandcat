@@ -1040,37 +1040,84 @@
         height: 2rem;
     }
 
-    .voice {
-        width: 8rem;
-        height: 4rem;
-        display: flex;
-        justify-content: space-evenly;
-        align-items: center;
-        animation-play-state: paused;
 
-        .item {
-            width: .5rem;
-            height: var(--voice-item-height);
-            border-radius: .3rem;
-            background-color: #1f94ea;
+}
 
-            animation: radius-animation var(--voice-item-animation-time) ease;
-            animation-iteration-count: infinite;
-            -webkit-animation-iteration-count: infinite;
-            animation-direction: alternate;
-            -webkit-animation-direction: alternate;
-            animation-play-state: inherit;
-        }
+.voice {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    animation-play-state: paused;
+
+    .item {
+        width: .5rem;
+        height: var(--voice-item-height);
+        border-radius: .3rem;
+
+        animation: radius-animation var(--voice-item-animation-time) ease;
+        animation-iteration-count: infinite;
+        -webkit-animation-iteration-count: infinite;
+        animation-direction: alternate;
+        -webkit-animation-direction: alternate;
+        animation-play-state: inherit;
     }
 }
 
-.recorder-mask {
+.voice-size {
+    width: 8rem;
+    height: 4rem;
+}
+
+.voice-size-mobile {
+    width: 50%;
+    height: 4rem;
+    position: absolute;
+    bottom: 8rem;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.voice-cancel-background {
+    .item {
+        background-color: red;
+    }
+}
+
+.voice-normal-background {
+    .item {
+        background-color: #1f94ea;
+    }
+}
+
+.recorder-mobile {
+    width: 100%;
+    height: 3rem;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid gray;
+    border-radius: .3rem;
+
+    &:active {
+        background-color: gray;
+    }
+}
+
+.recorder-mobile-mask {
     width: 100%;
     height: 100%;
     position: fixed;
     top: 0;
     left: 0;
     background-color: rgba(0, 0, 0, .3);
+
+    .recorder-holder {
+        width: 100%;
+        height: 4rem;
+        background-color: gray;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+    }
 }
 
 @keyframes radius-animation {

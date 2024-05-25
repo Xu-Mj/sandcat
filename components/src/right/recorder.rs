@@ -1,27 +1,31 @@
-use std::mem::take;
+use std::{collections::HashMap, mem::take};
 
 use base64::prelude::*;
 use fluent::{FluentBundle, FluentResource};
-use gloo::timers::callback::Interval;
-use i18n::{en_us, zh_cn, LanguageType};
-use sandcat_sdk::state::I18nState;
-use utils::tr;
+use gloo::{timers::callback::Interval, utils::document};
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Blob, FileReader, HtmlDivElement, MediaRecorder, MediaStream};
 use yew::{
-    html, Callback, Component, Context, Html, NodeRef, ProgressEvent, Properties, TouchEvent,
+    html, Callback, Classes, Component, Context, Html, NodeRef, ProgressEvent, Properties,
+    TouchEvent,
 };
 use yewdux::Dispatch;
 
+use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::state::{I18nState, MobileState};
+use utils::tr;
+
 pub struct Recorder {
     node_ref: NodeRef,
+    mask_node: NodeRef,
+    holder_node: NodeRef,
     voice_node: NodeRef,
     is_mobile: bool,
-    show_mask: bool,
     media_recorder: Option<MediaRecorder>,
     on_data_available_closure: Option<Closure<dyn FnMut(JsValue)>>,
     on_error_closure: Option<Closure<dyn FnMut(JsValue)>>,
-    reader_container: Vec<Closure<dyn FnMut(ProgressEvent)>>,
+    on_stop_closure: Option<Closure<dyn FnMut(web_sys::Event)>>,
+    reader_container: HashMap<i64, Closure<dyn FnMut(ProgressEvent)>>,
     i18n: FluentBundle<FluentResource>,
     record_state: RecorderState,
     // timer
@@ -30,6 +34,7 @@ pub struct Recorder {
     data: Vec<u8>,
     // voice time in seconds
     time: u8,
+    is_cancel: bool,
 }
 
 #[derive(Clone, Properties, PartialEq)]
@@ -39,13 +44,15 @@ pub struct RecorderProps {
 
 pub enum RecorderMsg {
     TouchStart(TouchEvent),
+    TouchMove(TouchEvent),
     TouchEnd(TouchEvent),
+    OnMediaRecorderStop,
     IncreaseTime,
     Prepare,
     PrepareError(JsValue),
     Start(MediaStream),
     DataAvailable(Blob),
-    ReadData(JsValue),
+    ReadData((i64, JsValue)),
     Stop,
     Cancel,
     Send,
@@ -72,43 +79,29 @@ impl Component for Recorder {
         };
         let i18n = utils::create_bundle(res);
         Self {
-            is_mobile: false,
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
             node_ref: NodeRef::default(),
+            mask_node: NodeRef::default(),
+            holder_node: NodeRef::default(),
             voice_node: NodeRef::default(),
-            show_mask: false,
             media_recorder: None,
             on_data_available_closure: None,
             on_error_closure: None,
-            reader_container: vec![],
+            on_stop_closure: None,
+            reader_container: HashMap::with_capacity(3),
             i18n,
             time_interval: None,
             record_state: RecorderState::Static,
             data: vec![],
             time: 0,
+            is_cancel: false,
         }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            RecorderMsg::TouchStart(event) => {
-                event.stop_propagation();
-                event.prevent_default();
-                log::debug!("touch start recorder");
-                self.show_mask = true;
-                self.node_ref
-                    .cast::<HtmlDivElement>()
-                    .map(|div| div.class_list().add_1("hover"));
-                true
-            }
-            RecorderMsg::TouchEnd(event) => {
-                event.stop_propagation();
-                event.prevent_default();
-                self.show_mask = false;
-                true
-            }
             RecorderMsg::Prepare => {
                 // prepare audio stream
-                // ctx.link().send_message(RecorderMsg::Preparing);
                 self.record_state = RecorderState::Prepare;
                 ctx.link().send_future(async {
                     match utils::get_audio_stream().await {
@@ -122,10 +115,10 @@ impl Component for Recorder {
                 log::debug!("start recorder");
                 self.record_state = RecorderState::Recording;
 
-                let ctx_clone = ctx.link().clone();
                 // todo handle error
                 let recorder = MediaRecorder::new_with_media_stream(&stream).unwrap();
 
+                let ctx_clone = ctx.link().clone();
                 let on_data_available_closure = Closure::wrap(Box::new(move |data: JsValue| {
                     if let Ok(blob) = data.dyn_into::<web_sys::BlobEvent>() {
                         if let Some(blob) = blob.data() {
@@ -135,15 +128,25 @@ impl Component for Recorder {
                 })
                     as Box<dyn FnMut(JsValue)>);
 
-                recorder
-                    .set_ondataavailable(Some(on_data_available_closure.as_ref().unchecked_ref()));
                 let ctx_clone = ctx.link().clone();
                 let on_error_closure = Closure::wrap(Box::new(move |e: JsValue| {
                     log::error!("MediaRecorder error: {:?}", e);
                     ctx_clone.send_message(RecorderMsg::PrepareError(e));
                 }) as Box<dyn FnMut(JsValue)>);
 
+                let ctx_clone = ctx.link().clone();
+                let on_stop_closure = Closure::wrap(Box::new(move |e: web_sys::Event| {
+                    log::debug!("MediaRecorder stop: {:?}", e);
+                    ctx_clone.send_message(RecorderMsg::OnMediaRecorderStop);
+                })
+                    as Box<dyn FnMut(web_sys::Event)>);
+
+                recorder
+                    .set_ondataavailable(Some(on_data_available_closure.as_ref().unchecked_ref()));
+                recorder.set_onstop(Some(on_stop_closure.as_ref().unchecked_ref()));
                 recorder.set_onerror(Some(on_error_closure.as_ref().unchecked_ref()));
+
+                self.on_stop_closure = Some(on_stop_closure);
                 self.on_error_closure = Some(on_error_closure);
 
                 // start recording
@@ -165,20 +168,21 @@ impl Component for Recorder {
             RecorderMsg::DataAvailable(blob) => {
                 let ctx = ctx.link().clone();
                 let file_reader = FileReader::new().unwrap();
+                let key = chrono::Utc::now().timestamp_millis();
                 let onloadend_cb = Closure::wrap(Box::new(move |e: ProgressEvent| {
                     let file_reader: FileReader = e.target().unwrap().dyn_into().unwrap();
                     if let Ok(result) = file_reader.result() {
-                        ctx.send_message(RecorderMsg::ReadData(result));
+                        ctx.send_message(RecorderMsg::ReadData((key, result)));
                     }
                 })
                     as Box<dyn FnMut(ProgressEvent)>);
 
                 file_reader.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));
-                self.reader_container.push(onloadend_cb);
+                self.reader_container.insert(key, onloadend_cb);
                 file_reader.read_as_array_buffer(&blob).unwrap();
                 false
             }
-            RecorderMsg::ReadData(data) => {
+            RecorderMsg::ReadData((key, data)) => {
                 if let Ok(buffer) = data.dyn_into::<js_sys::ArrayBuffer>() {
                     let uint_8_array = js_sys::Uint8Array::new(&buffer);
                     let mut audio_data_vec = uint_8_array.to_vec();
@@ -186,18 +190,14 @@ impl Component for Recorder {
                     // Store audio data in your model
                     self.data.append(&mut audio_data_vec);
                 }
+                self.reader_container.remove(&key);
                 false
             }
             RecorderMsg::Stop => {
                 if let Some(ref recorder) = self.media_recorder {
                     recorder.stop().unwrap();
-                    self.media_recorder = None;
                 }
-                self.reader_container.clear();
-                self.record_state = RecorderState::Stop;
-                self.time_interval = None;
-                // self.on_data_available_closure = None;
-                self.on_error_closure = None;
+                // self.time_interval = None;
                 true
             }
             RecorderMsg::Cancel => {
@@ -218,13 +218,15 @@ impl Component for Recorder {
             RecorderMsg::Send => {
                 self.time_interval = None;
                 self.record_state = RecorderState::Static;
-                if self.time > 0 {
+                log::debug!("send voice: {}  {}", self.time, self.data.len());
+                if self.time > 0 && !self.data.is_empty() {
                     ctx.props()
                         .send_voice
                         .emit((take(&mut self.data), self.time));
                 }
-                self.on_data_available_closure = None;
-                self.on_error_closure = None;
+                // self.on_data_available_closure = None;
+                // self.on_error_closure = None;
+                self.clean();
                 true
             }
             RecorderMsg::IncreaseTime => {
@@ -236,13 +238,69 @@ impl Component for Recorder {
                 self.record_state = RecorderState::Error;
                 true
             }
+            RecorderMsg::TouchStart(event) => {
+                event.stop_propagation();
+                event.prevent_default();
+                log::debug!("touch start recorder");
+                self.mask_node
+                    .cast::<HtmlDivElement>()
+                    .map(|div| div.style().remove_property("display"));
+                // send message prepare to get audio stream
+                ctx.link().send_message(RecorderMsg::Prepare);
+                false
+            }
+            RecorderMsg::TouchEnd(event) => {
+                event.stop_propagation();
+                event.prevent_default();
+                // send voice data
+                if let Some(ref recorder) = self.media_recorder {
+                    recorder.stop().unwrap();
+                }
+                false
+            }
+            RecorderMsg::TouchMove(event) => {
+                event.stop_propagation();
+                // check if the touch is out of the recorder
+                if let Some(event) = event.changed_touches().get(0) {
+                    let x = event.client_x() as f32;
+                    let y = event.client_y() as f32;
+                    if let Some(element) = document().element_from_point(x, y) {
+                        if let Ok(div) = element.dyn_into::<HtmlDivElement>() {
+                            if let Some(holder) = self.holder_node.cast::<HtmlDivElement>() {
+                                self.is_cancel = !holder.eq(&div);
+                            }
+                        }
+                    }
+                }
+                true
+            }
+            RecorderMsg::OnMediaRecorderStop => {
+                log::error!("media stop");
+                if self.is_mobile {
+                    if !self.is_cancel && self.time > 0 && !self.data.is_empty() {
+                        ctx.props()
+                            .send_voice
+                            .emit((take(&mut self.data), self.time));
+                    } else {
+                        // todo warning voice too short
+                    }
+
+                    self.record_state = RecorderState::Static;
+                    self.mask_node
+                        .cast::<HtmlDivElement>()
+                        .map(|div| div.style().set_property("display", "none"));
+                    self.clean();
+                } else {
+                    self.time_interval = None;
+                    self.record_state = RecorderState::Stop;
+                }
+
+                true
+            }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let touch_start = ctx.link().callback(RecorderMsg::TouchStart);
-        let touch_end = ctx.link().callback(RecorderMsg::TouchEnd);
-
         let mut error = html!();
         if self.record_state == RecorderState::Error {
             error = html! {
@@ -252,13 +310,28 @@ impl Component for Recorder {
             };
         }
         let content = if self.is_mobile {
+            let touch_start = ctx.link().callback(RecorderMsg::TouchStart);
+            let touch_end = ctx.link().callback(RecorderMsg::TouchEnd);
+            let touch_move = ctx.link().callback(RecorderMsg::TouchMove);
+            let voice = self.get_voice_html();
+
             html! {
-                <div style="background-color: red;"
+                <div
                     ref={self.node_ref.clone()}
                     ontouchstart={touch_start}
+                    ontouchmove={touch_move}
                     ontouchend={touch_end}
-                    class="recorder">
-                    {"按住讲话"}
+                    class="recorder-mobile">
+
+                    <div ref={self.mask_node.clone()}
+                        class="recorder-mobile-mask"
+                        style="display: none;">
+                        {voice}
+                        <div ref={self.holder_node.clone()} class="recorder-holder">
+
+                        </div>
+                    </div>
+                    {tr!(self.i18n, "press")}
                 </div>
             }
         } else {
@@ -301,7 +374,7 @@ impl Component for Recorder {
                     {error}
                     {voice}
                     {audio}
-
+                    {self.time}
                     <button class="btn" disabled={stop_btn} onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{tr!(self.i18n, "stop")}</button>
                     <button class="btn" disabled={send_btn} onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{tr!(self.i18n, "send")}</button>
                     <button class="btn" disabled={cancel_btn} onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{tr!(self.i18n, "cancel")}</button>
@@ -312,9 +385,24 @@ impl Component for Recorder {
             {content}
         }
     }
+
+    fn destroy(&mut self, _ctx: &Context<Self>) {
+        log::error!("destroy clean state");
+        self.clean();
+    }
 }
 
 impl Recorder {
+    fn clean(&mut self) {
+        self.media_recorder = None;
+        self.time = 0;
+        self.time_interval = None;
+        self.is_cancel = false;
+        self.on_data_available_closure = None;
+        self.on_stop_closure = None;
+        self.on_error_closure = None;
+    }
+
     fn stop_voice_node_animation(&self) {
         if let Some(voice_node) = self.voice_node.cast::<HtmlDivElement>() {
             let _ = voice_node
@@ -343,8 +431,21 @@ impl Recorder {
 
             voice.push(html!(<div class="item" {style} />))
         }
+
+        let mut class = Classes::from("voice");
+        if self.is_mobile {
+            class.push("voice voice-size-mobile");
+        } else {
+            class.push("voice voice-size");
+        };
+
+        if self.is_cancel {
+            class.push("voice-cancel-background");
+        } else {
+            class.push("voice-normal-background");
+        }
         html! {
-            <div ref={self.voice_node.clone()} class="voice">
+            <div ref={self.voice_node.clone()} {class}>
                 {voice}
             </div>
 
