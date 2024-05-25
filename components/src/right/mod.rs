@@ -239,17 +239,14 @@ impl Component for Right {
             }
             RightMsg::TouchStart(event) => {
                 if let Some(touch) = event.touches().get(0) {
-                    log::debug!("TouchStart: {}", touch.client_x());
                     self.touch_start = touch.client_x();
                 };
-                // false
-                true
+                false
             }
             RightMsg::TouchEnd(event) => {
                 // we can't use the .touches() to get the touch end
                 // should use the changed_touches()
                 if let Some(touch) = event.changed_touches().get(0) {
-                    log::debug!("TouchEnd: {}", touch.client_x());
                     if touch.client_x() - self.touch_start > 50 {
                         ctx.link().send_message(RightMsg::Close);
                     }
