@@ -1,7 +1,10 @@
+use base64::prelude::*;
 use gloo::timers::callback::Timeout;
 use gloo::utils::{document, window};
 use nanoid::nanoid;
-use web_sys::Node;
+use wasm_bindgen::closure::Closure;
+use wasm_bindgen::JsCast;
+use web_sys::{HtmlAudioElement, HtmlDivElement, Node};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -31,6 +34,10 @@ pub struct MsgItem {
     pointer: (i32, i32),
     friend_info: Option<UserWithMatchType>,
     text_node: NodeRef,
+    audio_node: NodeRef,
+    audio_icon_node: NodeRef,
+    is_audio_playing: bool,
+    audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -45,6 +52,8 @@ pub enum MsgItemMsg {
     QueryGroupMember(AttrValue),
     CloseFriendCard,
     TextDoubleClick(MouseEvent),
+    PlayAudio,
+    AudioPlayEnd,
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -93,6 +102,10 @@ impl Component for MsgItem {
             pointer: (0, 0),
             friend_info: None,
             text_node: NodeRef::default(),
+            audio_node: NodeRef::default(),
+            audio_icon_node: NodeRef::default(),
+            audio_on_stop: None,
+            is_audio_playing: false,
         }
     }
 
@@ -154,14 +167,6 @@ impl Component for MsgItem {
                     };
 
                     MsgItemMsg::SpawnFriendCard(Box::new((user, x, y)))
-                    // FriendCard::show(
-                    //     UserWithMatchType::from(user),
-                    //     None,
-                    //     LanguageType::EnUS,
-                    //     true,
-                    //     x,
-                    //     y,
-                    // );
                 });
                 false
             }
@@ -275,9 +280,37 @@ impl Component for MsgItem {
                     let range = document().create_range().unwrap();
                     range.select_node_contents(&div).unwrap();
                     selection.add_range(&range).unwrap();
-                } else {
-                    log::debug!("Could not obtain selection");
                 }
+                false
+            }
+            MsgItemMsg::PlayAudio => {
+                self.is_audio_playing = !self.is_audio_playing;
+                if self.is_audio_playing {
+                    if let Some(audio) = self.audio_node.cast::<HtmlAudioElement>() {
+                        let ctx = ctx.link().clone();
+                        let on_ended_closure = Closure::wrap(Box::new(move |_: Event| {
+                            ctx.send_message(MsgItemMsg::AudioPlayEnd);
+                        })
+                            as Box<dyn FnMut(_)>);
+                        audio.set_onended(Some(on_ended_closure.as_ref().unchecked_ref()));
+                        self.audio_on_stop = Some(on_ended_closure);
+                        let _ = audio.play();
+                    }
+                    self.play_audio_animation();
+                } else {
+                    if let Some(audio) = self.audio_node.cast::<HtmlAudioElement>() {
+                        let _ = audio.pause();
+                        audio.set_current_time(0.);
+                    }
+                    self.stop_audio_animation();
+                    self.audio_on_stop = None;
+                }
+                false
+            }
+            MsgItemMsg::AudioPlayEnd => {
+                self.is_audio_playing = false;
+                self.stop_audio_animation();
+                self.audio_on_stop = None;
                 false
             }
         }
@@ -289,6 +322,7 @@ impl Component for MsgItem {
         let msg_type = ctx.props().msg.content_type;
 
         let mut msg_content_classes = Classes::from("msg-item-text");
+        msg_content_classes.push("content-wrapper");
         if ctx.props().msg.is_self {
             msg_content_classes.push("background-self");
             classes = Classes::from("msg-item-reverse");
@@ -323,7 +357,6 @@ impl Component for MsgItem {
                     </div>
                 }
             }
-            // todo 限制图片宽度，高度自适应，聊天列表展示缩略图，点击查看原图
             ContentType::Image => {
                 let img_url = if ctx.props().msg.file_content.is_empty() {
                     AttrValue::from(format!("/api/file/get/{}", ctx.props().msg.content.clone()))
@@ -409,7 +442,21 @@ impl Component for MsgItem {
                 }
             }
             ContentType::Default => html!(),
-            ContentType::Audio => html!(),
+            ContentType::Audio => {
+                let onclick = ctx.link().callback(|_| MsgItemMsg::PlayAudio);
+                let duration = ctx.props().msg.content.clone();
+                let audio_base64 =
+                    BASE64_STANDARD.encode(ctx.props().msg.audio_data.as_ref().unwrap());
+                let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
+                msg_content_classes.push("audio-msg-item");
+                html! {
+                    <div class={msg_content_classes} {onclick}>
+                        <audio ref={self.audio_node.clone()} src={data_url} /* controls={true} *//>
+                        {self.voice_in_msg_icon()}
+                        <span>{format!("{}''", duration)}</span>
+                    </div>
+                }
+            }
             ContentType::Error => html!(),
         };
 
@@ -462,12 +509,53 @@ impl Component for MsgItem {
                 <div class="msg-item-avatar">
                     {avatar}
                 </div>
-                <div class="content-wrapper">
-                    {content}
-                </div>
+                {content}
                 {send_status}
             </div>
             </>
+        }
+    }
+}
+impl MsgItem {
+    fn voice_in_msg_icon(&self) -> Html {
+        html! {
+            <div id="voice-in-msg-icon" ref={self.audio_icon_node.clone()}>
+                <div style="height: .3rem; "></div>
+                <div style="height: .4rem; "></div>
+                <div style="height: .9rem; "></div>
+                <div style="height: .5rem; "></div>
+                <div style="height: .2rem; "></div>
+            </div>
+        }
+    }
+
+    fn play_audio_animation(&self) {
+        if let Some(div) = self.audio_icon_node.cast::<HtmlDivElement>() {
+            for index in 0..div.child_element_count() {
+                div.child_nodes().get(index).map(|node| {
+                    node.dyn_into::<HtmlDivElement>().map(|div| {
+                        div.style().set_property(
+                            "animation",
+                            format!(
+                                "voice-play .4s linear {}s infinite alternate ",
+                                index as f32 / 10. + 0.1
+                            )
+                            .as_str(),
+                        )
+                    })
+                });
+            }
+        }
+    }
+
+    fn stop_audio_animation(&self) {
+        if let Some(div) = self.audio_icon_node.cast::<HtmlDivElement>() {
+            for index in 0..div.child_element_count() {
+                div.child_nodes().get(index).map(|node| {
+                    node.dyn_into::<HtmlDivElement>()
+                        .map(|div| div.style().remove_property("animation"))
+                });
+            }
         }
     }
 }

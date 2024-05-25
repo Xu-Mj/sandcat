@@ -164,6 +164,40 @@
 
 }
 
+#voice-in-msg-icon {
+    height: 1rem;
+    width: 1rem;
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+
+    &>div {
+        width: 1px;
+        border-radius: 1px;
+        background-color: var(--color-text);
+    }
+}
+
+@keyframes voice-play {
+    0% {
+        opacity: 0;
+    }
+
+    30% {
+        opacity: 1;
+    }
+
+    40% {
+        opacity: 1;
+        transform: scale(1.25);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 .msg-container {
     width: 100%;
     height: 100%;
@@ -307,6 +341,12 @@
         position: relative;
         scroll-behavior: smooth;
 
+        svg {
+            path {
+                stroke: var(--color-text);
+            }
+        }
+
         /* 消息组件,对方消息 */
 
         .msg-item {
@@ -320,15 +360,15 @@
             }
 
             .content-wrapper {
-                max-width: 80%;
+                max-width: calc(100% - var(--avatar-width) * 2 - .6rem);
                 height: auto;
-                display: flex;
-                flex-direction: column;
+                /* display: flex;
+                flex-direction: column; */
                 position: relative;
 
-                svg {
+                /* svg {
                     transform: translateY(12.5%);
-                }
+                } */
 
                 /*&::before {*/
                 /*    content: '';*/
@@ -360,14 +400,7 @@
             .content-wrapper {
                 max-width: calc(100% - var(--avatar-width) * 2 - .6rem);
                 height: auto;
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
                 position: relative;
-
-                svg {
-                    transform: translateY(12.5%);
-                }
             }
 
             .msg-sending {
@@ -400,6 +433,16 @@
                 }
             }
 
+        }
+
+        .audio-msg-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: .5rem;
+            flex-direction: inherit;
+            cursor: pointer;
+            user-select: none !important;
         }
 
         /* 消息头像wrapper */
@@ -967,4 +1010,119 @@
         transform: rotate(270deg);
     }
 
+}
+
+.recorder {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    border-radius: .3rem;
+    background-color: rgba(0, 0, 0, .3);
+    z-index: 3;
+
+    .btn {
+        width: 5rem;
+        height: 2rem;
+        text-align: center;
+        vertical-align: middle;
+        font-size: 1rem;
+        border: none;
+        border-radius: .3rem;
+        background-color: white;
+    }
+
+    .audio {
+        width: 8rem;
+        height: 2rem;
+    }
+
+
+}
+
+.voice {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+    animation-play-state: paused;
+
+    .item {
+        width: .5rem;
+        height: var(--voice-item-height);
+        border-radius: .3rem;
+
+        animation: radius-animation var(--voice-item-animation-time) ease;
+        animation-iteration-count: infinite;
+        -webkit-animation-iteration-count: infinite;
+        animation-direction: alternate;
+        -webkit-animation-direction: alternate;
+        animation-play-state: inherit;
+    }
+}
+
+.voice-size {
+    width: 8rem;
+    height: 4rem;
+}
+
+.voice-size-mobile {
+    width: 50%;
+    height: 4rem;
+    position: absolute;
+    bottom: 8rem;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.voice-cancel-background {
+    .item {
+        background-color: red;
+    }
+}
+
+.voice-normal-background {
+    .item {
+        background-color: #1f94ea;
+    }
+}
+
+.recorder-mobile {
+    width: 100%;
+    height: 3rem;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid gray;
+    border-radius: .3rem;
+
+    &:active {
+        background-color: gray;
+    }
+}
+
+.recorder-mobile-mask {
+    width: 100%;
+    height: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    background-color: rgba(0, 0, 0, .3);
+
+    .recorder-holder {
+        width: 100%;
+        height: 4rem;
+        background-color: gray;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+    }
+}
+
+@keyframes radius-animation {
+    100% {
+        height: .5rem;
+        filter: contrast(2);
+    }
 }

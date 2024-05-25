@@ -4,6 +4,7 @@ pub mod friendship_list;
 pub mod msg_item;
 pub mod msg_list;
 pub mod postcard;
+mod recorder;
 pub mod sender;
 pub mod set_drawer;
 pub mod set_window;
@@ -153,7 +154,6 @@ impl Component for Right {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        log::debug!("Right update msg: {:?}", msg);
         match msg {
             RightMsg::StateChanged(state) => {
                 // 根据state中的不同数据变化，渲染右侧页面
@@ -238,7 +238,6 @@ impl Component for Right {
             }
             RightMsg::TouchStart(event) => {
                 if let Some(touch) = event.touches().get(0) {
-                    log::debug!("TouchStart: {}", touch.client_x());
                     self.touch_start = touch.client_x();
                 };
                 false
@@ -247,7 +246,6 @@ impl Component for Right {
                 // we can't use the .touches() to get the touch end
                 // should use the changed_touches()
                 if let Some(touch) = event.changed_touches().get(0) {
-                    log::debug!("TouchEnd: {}", touch.client_x());
                     if touch.client_x() - self.touch_start > 50 {
                         ctx.link().send_message(RightMsg::Close);
                     }

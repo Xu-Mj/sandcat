@@ -147,6 +147,15 @@ group_dismissed = 群聊已经解散
 verify_needed = 对方开启了好友验证，请先通过验证
 "#;
 
+pub const RECORDER: &str = r#"
+press = 按住讲话
+recorde = 录音
+stop = 停止
+send = 发送
+cancel = 取消
+error = 错误，请检查音频设备
+"#;
+
 pub const REGISTER: &str = r#"
 avatar = 头像
 nickname = 昵称

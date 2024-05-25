@@ -48,6 +48,8 @@ pub struct Message {
     pub is_self: bool,
     #[serde(default)]
     pub platform: i32,
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub audio_data: Option<Vec<u8>>,
     #[serde(skip)]
     pub file_content: AttrValue,
 }
@@ -91,6 +93,7 @@ impl From<InviteCancelMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_data: None,
             file_content: Default::default(),
         }
     }
@@ -122,6 +125,7 @@ impl From<InviteAnswerMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_data: None,
             file_content: Default::default(),
         }
     }
@@ -149,6 +153,7 @@ impl From<InviteNotAnswerMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_data: None,
             file_content: Default::default(),
         }
     }
@@ -177,6 +182,7 @@ impl From<Hangup> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_data: None,
             file_content: Default::default(),
         }
     }
@@ -205,6 +211,7 @@ impl Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_data: None,
             file_content: Default::default(),
         }
     }
@@ -229,6 +236,7 @@ impl Message {
             is_read: 0,
             is_self: msg.is_self,
             platform: msg.platform,
+            audio_data: None,
             file_content: Default::default(),
         }
     }
@@ -475,7 +483,7 @@ pub struct ReadNotice {
 impl TryFrom<pb::message::Msg> for Message {
     type Error = String;
 
-    fn try_from(value: pb::message::Msg) -> Result<Self, Self::Error> {
+    fn try_from(mut value: pb::message::Msg) -> Result<Self, Self::Error> {
         let msg_type = MsgType::try_from(value.msg_type).map_err(|e| e.to_string())?;
         let friend_id = if msg_type == MsgType::GroupMsg {
             value.group_id.into()
@@ -488,6 +496,18 @@ impl TryFrom<pb::message::Msg> for Message {
         } else {
             SendStatus::Success
         };
+        let mut audio_data = None;
+        let content = if value.msg_type == MsgType::SingleMsg as i32
+            && value.content_type == ContentType::Audio as i32
+        {
+            let duration = value.content.remove(0);
+            audio_data = Some(value.content);
+            duration.to_string().into()
+        } else {
+            String::from_utf8(value.content)
+                .map_err(|e| e.to_string())?
+                .into()
+        };
         Ok(Self {
             id: 0,
             seq: value.seq,
@@ -496,15 +516,14 @@ impl TryFrom<pb::message::Msg> for Message {
             send_id: value.send_id.into(),
             friend_id,
             content_type: ContentType::from(value.content_type),
-            content: String::from_utf8(value.content)
-                .map_err(|e| e.to_string())?
-                .into(),
+            content,
             create_time: value.create_time,
             send_time: value.send_time,
             send_status,
             is_read: 0,
             is_self: false,
             platform: value.platform,
+            audio_data,
             file_content: AttrValue::default(),
         })
     }
@@ -708,21 +727,35 @@ fn get_invite_type(t: i32) -> Result<InviteType, String> {
 impl From<Msg> for PbMsg {
     fn from(value: Msg) -> Self {
         match value {
-            Msg::Single(msg) => PbMsg {
-                msg_type: MsgType::SingleMsg as i32,
-                local_id: msg.local_id.as_str().into(),
-                send_id: msg.send_id.as_str().into(),
-                receiver_id: msg.friend_id.as_str().into(),
-                create_time: msg.create_time,
-                content_type: msg.content_type as i32,
-                content: msg.content.as_bytes().to_vec(),
-                platform: msg.platform,
-                ..Default::default()
-            },
+            Msg::Single(msg) => {
+                let content = if msg.content_type == ContentType::Audio {
+                    let mut content = msg.audio_data.unwrap_or_default();
+                    content.insert(0, msg.content.as_str().parse::<u8>().unwrap_or_default());
+                    content
+                } else {
+                    msg.content.as_bytes().to_vec()
+                };
+                PbMsg {
+                    msg_type: MsgType::SingleMsg as i32,
+                    local_id: msg.local_id.as_str().into(),
+                    send_id: msg.send_id.as_str().into(),
+                    receiver_id: msg.friend_id.as_str().into(),
+                    create_time: msg.create_time,
+                    content_type: msg.content_type as i32,
+                    content,
+                    platform: msg.platform,
+                    ..Default::default()
+                }
+            }
             Msg::Group(group_msg) => {
                 let mut pb_msg = PbMsg::default();
                 match group_msg {
                     GroupMsg::Message(msg) => {
+                        let content = if msg.content_type == ContentType::Audio {
+                            msg.audio_data.unwrap_or_default()
+                        } else {
+                            msg.content.as_bytes().to_vec()
+                        };
                         pb_msg.msg_type = MsgType::GroupMsg as i32;
                         pb_msg.local_id = msg.local_id.as_str().into();
                         pb_msg.send_id = msg.send_id.as_str().into();
@@ -730,7 +763,7 @@ impl From<Msg> for PbMsg {
                         pb_msg.group_id = msg.friend_id.to_string();
                         pb_msg.create_time = msg.create_time;
                         pb_msg.content_type = msg.content_type as i32;
-                        pb_msg.content = msg.content.as_bytes().to_vec();
+                        pb_msg.content = content;
                         pb_msg.platform = msg.platform;
                     }
                     GroupMsg::Invitation(info) => {

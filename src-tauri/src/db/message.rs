@@ -44,6 +44,7 @@ impl Into<Message> for Msg {
             seq: self.seq,
             is_self: self.is_self,
             platform: self.platform,
+            audio_data: None,
             file_content: AttrValue::default(),
         }
     }

@@ -152,6 +152,15 @@ group_dismissed = THE GROUP HAS BEEN DISMISSED
 verify_needed = FRIEND ENABLED THE FRIEND VERIFICATION, PLEASE PASS IT FIRST
 "#;
 
+pub const RECORDER: &str = r#"
+press = press to speak
+recorde = rc
+stop = stop
+send = send
+cancel = cancel
+error = ERROR: check your recorder
+"#;
+
 pub const REGISTER: &str = r#"
 submit = register
 avatar = avatar

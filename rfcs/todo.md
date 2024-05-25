@@ -9,6 +9,9 @@
 - we need to update user information when we look up the friend info
 - we need to update user information when we click the conversation item
 - redesign the websocket reconnection logical,
-- textarea dynamic height under the mobile mode
-- send self message need to handle
+- adjust textarea dynamic height under the mobile mode
 - need to handle all types message about platform and if self msg
+- **redesign the audio message type in indexeddb**
+- phone call type need i18n
+- voice data maybe need to select from db dynamically when user click the voice message
+- we need to calculate the swape time and y cordinate of swapping
