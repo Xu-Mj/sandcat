@@ -13,3 +13,5 @@
 - need to handle all types message about platform and if self msg
 - **redesign the audio message type in indexeddb**
 - phone call type need i18n
+- voice data maybe need to select from db dynamically when user click the voice message
+- we need to calculate the swape time and y cordinate of swapping
