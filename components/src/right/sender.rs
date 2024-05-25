@@ -81,7 +81,7 @@ pub enum SenderMsg {
     SendAudioCall,
     OnTextInput,
     VoiceIconClicked,
-    SendVoice(Vec<u8>),
+    SendVoice((Vec<u8>, u8)),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -587,7 +587,7 @@ impl Component for Sender {
                 self.is_voice_mode = !self.is_voice_mode;
                 true
             }
-            SenderMsg::SendVoice(data) => {
+            SenderMsg::SendVoice((data, duration)) => {
                 log::debug!("send voice");
                 let time = chrono::Utc::now().timestamp_millis();
                 let msg = Message {
@@ -597,6 +597,7 @@ impl Component for Sender {
                     friend_id: ctx.props().friend_id.clone(),
                     send_id: ctx.props().cur_user_id.clone(),
                     is_read: 1,
+                    content: duration.to_string().into(),
                     content_type: ContentType::Audio,
                     platform: self.get_platform(),
                     send_status: SendStatus::Sending,

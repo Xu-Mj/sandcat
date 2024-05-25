@@ -28,7 +28,7 @@ pub struct Recorder {
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct RecorderProps {
-    pub send_voice: Callback<Vec<u8>>,
+    pub send_voice: Callback<(Vec<u8>, u8)>,
 }
 
 pub enum RecorderMsg {
@@ -207,7 +207,9 @@ impl Component for Recorder {
                 self.time_interval = None;
                 self.record_state = RecorderState::Static;
                 if self.time > 0 {
-                    ctx.props().send_voice.emit(take(&mut self.data));
+                    ctx.props()
+                        .send_voice
+                        .emit((take(&mut self.data), self.time));
                 }
                 self.on_data_available_closure = None;
                 self.on_error_closure = None;

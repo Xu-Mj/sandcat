@@ -1,3 +1,4 @@
+use base64::prelude::*;
 use gloo::timers::callback::Timeout;
 use gloo::utils::{document, window};
 use nanoid::nanoid;
@@ -31,6 +32,7 @@ pub struct MsgItem {
     pointer: (i32, i32),
     friend_info: Option<UserWithMatchType>,
     text_node: NodeRef,
+    audio_node: NodeRef,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -45,6 +47,7 @@ pub enum MsgItemMsg {
     QueryGroupMember(AttrValue),
     CloseFriendCard,
     TextDoubleClick(MouseEvent),
+    PlayAudio,
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -93,6 +96,7 @@ impl Component for MsgItem {
             pointer: (0, 0),
             friend_info: None,
             text_node: NodeRef::default(),
+            audio_node: NodeRef::default(),
         }
     }
 
@@ -280,6 +284,7 @@ impl Component for MsgItem {
                 }
                 false
             }
+            MsgItemMsg::PlayAudio => false,
         }
     }
 
@@ -409,7 +414,19 @@ impl Component for MsgItem {
                 }
             }
             ContentType::Default => html!(),
-            ContentType::Audio => html!(),
+            ContentType::Audio => {
+                let onclick = ctx.link().callback(|_| MsgItemMsg::PlayAudio);
+                let duration = ctx.props().msg.content.clone();
+                let audio_base64 =
+                    BASE64_STANDARD.encode(ctx.props().msg.audio_data.as_ref().unwrap());
+                let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
+                html! {
+                    <div class={msg_content_classes} {onclick}>
+                        <audio ref={self.audio_node.clone()} src={data_url} controls={true}/>
+                        {duration}
+                    </div>
+                }
+            }
             ContentType::Error => html!(),
         };
 
