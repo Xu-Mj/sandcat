@@ -154,7 +154,6 @@ impl Component for Right {
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        log::debug!("Right update msg: {:?}", msg);
         match msg {
             RightMsg::StateChanged(state) => {
                 // 根据state中的不同数据变化，渲染右侧页面
