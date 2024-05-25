@@ -1,8 +1,8 @@
-use std::{collections::HashMap, mem::take};
+use std::mem::take;
 
 use base64::prelude::*;
 use fluent::{FluentBundle, FluentResource};
-use gloo::{timers::callback::Interval, utils::document};
+use gloo::utils::document;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Blob, FileReader, HtmlDivElement, MediaRecorder, MediaStream};
 use yew::{
@@ -25,11 +25,10 @@ pub struct Recorder {
     on_data_available_closure: Option<Closure<dyn FnMut(JsValue)>>,
     on_error_closure: Option<Closure<dyn FnMut(JsValue)>>,
     on_stop_closure: Option<Closure<dyn FnMut(web_sys::Event)>>,
-    reader_container: HashMap<i64, Closure<dyn FnMut(ProgressEvent)>>,
+    reader_container: Option<Closure<dyn FnMut(ProgressEvent)>>,
     i18n: FluentBundle<FluentResource>,
     record_state: RecorderState,
-    // timer
-    time_interval: Option<Interval>,
+    start_time: i64,
     // voice data
     data: Vec<u8>,
     // voice time in seconds
@@ -46,13 +45,12 @@ pub enum RecorderMsg {
     TouchStart(TouchEvent),
     TouchMove(TouchEvent),
     TouchEnd(TouchEvent),
-    OnMediaRecorderStop,
-    IncreaseTime,
     Prepare,
     PrepareError(JsValue),
     Start(MediaStream),
     DataAvailable(Blob),
-    ReadData((i64, JsValue)),
+    ReadData(JsValue),
+    RecordeComplete,
     Stop,
     Cancel,
     Send,
@@ -88,12 +86,12 @@ impl Component for Recorder {
             on_data_available_closure: None,
             on_error_closure: None,
             on_stop_closure: None,
-            reader_container: HashMap::with_capacity(3),
+            reader_container: None,
             i18n,
-            time_interval: None,
             record_state: RecorderState::Static,
             data: vec![],
             time: 0,
+            start_time: 0,
             is_cancel: false,
         }
     }
@@ -122,6 +120,7 @@ impl Component for Recorder {
                 let on_data_available_closure = Closure::wrap(Box::new(move |data: JsValue| {
                     if let Ok(blob) = data.dyn_into::<web_sys::BlobEvent>() {
                         if let Some(blob) = blob.data() {
+                            log::debug!("touch start recorder");
                             ctx_clone.send_message(RecorderMsg::DataAvailable(blob));
                         }
                     }
@@ -134,32 +133,19 @@ impl Component for Recorder {
                     ctx_clone.send_message(RecorderMsg::PrepareError(e));
                 }) as Box<dyn FnMut(JsValue)>);
 
-                let ctx_clone = ctx.link().clone();
-                let on_stop_closure = Closure::wrap(Box::new(move |e: web_sys::Event| {
-                    log::debug!("MediaRecorder stop: {:?}", e);
-                    ctx_clone.send_message(RecorderMsg::OnMediaRecorderStop);
-                })
-                    as Box<dyn FnMut(web_sys::Event)>);
-
                 recorder
                     .set_ondataavailable(Some(on_data_available_closure.as_ref().unchecked_ref()));
-                recorder.set_onstop(Some(on_stop_closure.as_ref().unchecked_ref()));
                 recorder.set_onerror(Some(on_error_closure.as_ref().unchecked_ref()));
 
-                self.on_stop_closure = Some(on_stop_closure);
                 self.on_error_closure = Some(on_error_closure);
 
+                self.start_time = chrono::Utc::now().timestamp_millis();
                 // start recording
-                recorder.start_with_time_slice(500).unwrap();
+                // todo handle error
+                recorder.start().unwrap();
                 self.on_data_available_closure = Some(on_data_available_closure);
 
                 self.media_recorder = Some(recorder);
-
-                // start timer
-                let ctx = ctx.link().clone();
-                self.time_interval = Some(Interval::new(1000, move || {
-                    ctx.send_message(RecorderMsg::IncreaseTime)
-                }));
 
                 // start animation
                 self.start_voice_node_animation();
@@ -168,29 +154,33 @@ impl Component for Recorder {
             RecorderMsg::DataAvailable(blob) => {
                 let ctx = ctx.link().clone();
                 let file_reader = FileReader::new().unwrap();
-                let key = chrono::Utc::now().timestamp_millis();
                 let onloadend_cb = Closure::wrap(Box::new(move |e: ProgressEvent| {
                     let file_reader: FileReader = e.target().unwrap().dyn_into().unwrap();
                     if let Ok(result) = file_reader.result() {
-                        ctx.send_message(RecorderMsg::ReadData((key, result)));
+                        ctx.send_message(RecorderMsg::ReadData(result));
                     }
                 })
                     as Box<dyn FnMut(ProgressEvent)>);
 
                 file_reader.set_onloadend(Some(onloadend_cb.as_ref().unchecked_ref()));
-                self.reader_container.insert(key, onloadend_cb);
+                self.reader_container = Some(onloadend_cb);
                 file_reader.read_as_array_buffer(&blob).unwrap();
                 false
             }
-            RecorderMsg::ReadData((key, data)) => {
+            RecorderMsg::ReadData(data) => {
+                // calculate time
+                self.time =
+                    ((chrono::Utc::now().timestamp_millis() - self.start_time) / 1000) as u8;
+
+                // read data
                 if let Ok(buffer) = data.dyn_into::<js_sys::ArrayBuffer>() {
                     let uint_8_array = js_sys::Uint8Array::new(&buffer);
                     let mut audio_data_vec = uint_8_array.to_vec();
-
-                    // Store audio data in your model
                     self.data.append(&mut audio_data_vec);
                 }
-                self.reader_container.remove(&key);
+
+                self.reader_container = None;
+                ctx.link().send_message(RecorderMsg::RecordeComplete);
                 false
             }
             RecorderMsg::Stop => {
@@ -205,20 +195,14 @@ impl Component for Recorder {
                     recorder.stop().unwrap();
                     self.media_recorder = None;
                 }
-                self.reader_container.clear();
                 self.record_state = RecorderState::Static;
-                self.time_interval = None;
-                self.on_data_available_closure = None;
-                self.on_error_closure = None;
                 self.stop_voice_node_animation();
                 self.data.clear();
-                self.time = 0;
+                self.clean();
                 true
             }
             RecorderMsg::Send => {
-                self.time_interval = None;
                 self.record_state = RecorderState::Static;
-                log::debug!("send voice: {}  {}", self.time, self.data.len());
                 if self.time > 0 && !self.data.is_empty() {
                     ctx.props()
                         .send_voice
@@ -229,10 +213,6 @@ impl Component for Recorder {
                 self.clean();
                 true
             }
-            RecorderMsg::IncreaseTime => {
-                self.time += 1;
-                true
-            }
             RecorderMsg::PrepareError(_) => {
                 log::error!("prepare error");
                 self.record_state = RecorderState::Error;
@@ -241,7 +221,6 @@ impl Component for Recorder {
             RecorderMsg::TouchStart(event) => {
                 event.stop_propagation();
                 event.prevent_default();
-                log::debug!("touch start recorder");
                 self.mask_node
                     .cast::<HtmlDivElement>()
                     .map(|div| div.style().remove_property("display"));
@@ -274,8 +253,7 @@ impl Component for Recorder {
                 }
                 true
             }
-            RecorderMsg::OnMediaRecorderStop => {
-                log::error!("media stop");
+            RecorderMsg::RecordeComplete => {
                 if self.is_mobile {
                     if !self.is_cancel && self.time > 0 && !self.data.is_empty() {
                         ctx.props()
@@ -290,10 +268,8 @@ impl Component for Recorder {
                         .cast::<HtmlDivElement>()
                         .map(|div| div.style().set_property("display", "none"));
                     self.clean();
-                } else {
-                    self.time_interval = None;
-                    self.record_state = RecorderState::Stop;
                 }
+                self.record_state = RecorderState::Stop;
 
                 true
             }
@@ -396,7 +372,6 @@ impl Recorder {
     fn clean(&mut self) {
         self.media_recorder = None;
         self.time = 0;
-        self.time_interval = None;
         self.is_cancel = false;
         self.on_data_available_closure = None;
         self.on_stop_closure = None;
