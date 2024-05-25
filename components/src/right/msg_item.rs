@@ -8,7 +8,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::LanguageType;
-use icons::{CycleIcon, MsgPhoneIcon, VideoRecordIcon};
+use icons::{CycleIcon, MsgPhoneIcon, VideoRecordIcon, VoiceInMsgIcon};
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{
     GroupMsg, InviteMsg, InviteType, Message, Msg, SendStatus, ServerResponse,
@@ -294,6 +294,7 @@ impl Component for MsgItem {
         let msg_type = ctx.props().msg.content_type;
 
         let mut msg_content_classes = Classes::from("msg-item-text");
+        msg_content_classes.push("content-wrapper");
         if ctx.props().msg.is_self {
             msg_content_classes.push("background-self");
             classes = Classes::from("msg-item-reverse");
@@ -420,10 +421,12 @@ impl Component for MsgItem {
                 let audio_base64 =
                     BASE64_STANDARD.encode(ctx.props().msg.audio_data.as_ref().unwrap());
                 let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
+                msg_content_classes.push("audio-msg-item");
                 html! {
                     <div class={msg_content_classes} {onclick}>
-                        <audio ref={self.audio_node.clone()} src={data_url} controls={true}/>
-                        {duration}
+                        <audio ref={self.audio_node.clone()} src={data_url} /* controls={true} *//>
+                        <VoiceInMsgIcon />
+                        <span>{format!("{}''", duration)}</span>
                     </div>
                 }
             }
@@ -479,9 +482,9 @@ impl Component for MsgItem {
                 <div class="msg-item-avatar">
                     {avatar}
                 </div>
-                <div class="content-wrapper">
-                    {content}
-                </div>
+                // <div class="content-wrapper">
+                {content}
+                // </div>
                 {send_status}
             </div>
             </>

@@ -307,6 +307,11 @@
         position: relative;
         scroll-behavior: smooth;
 
+        svg{
+            path{
+                stroke: var(--color-text);
+            }
+        }
         /* 消息组件,对方消息 */
 
         .msg-item {
@@ -320,15 +325,15 @@
             }
 
             .content-wrapper {
-                max-width: 80%;
+                max-width: calc(100% - var(--avatar-width) * 2 - .6rem);
                 height: auto;
-                display: flex;
-                flex-direction: column;
+                /* display: flex;
+                flex-direction: column; */
                 position: relative;
 
-                svg {
+                /* svg {
                     transform: translateY(12.5%);
-                }
+                } */
 
                 /*&::before {*/
                 /*    content: '';*/
@@ -360,14 +365,7 @@
             .content-wrapper {
                 max-width: calc(100% - var(--avatar-width) * 2 - .6rem);
                 height: auto;
-                display: flex;
-                flex-direction: column;
-                align-items: flex-end;
                 position: relative;
-
-                svg {
-                    transform: translateY(12.5%);
-                }
             }
 
             .msg-sending {
@@ -400,6 +398,14 @@
                 }
             }
 
+        }
+
+        .audio-msg-item {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: .5rem;
+            flex-direction: inherit;
         }
 
         /* 消息头像wrapper */
