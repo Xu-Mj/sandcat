@@ -448,7 +448,6 @@ impl Component for Sender {
 
                 let msg = Message {
                     local_id: nanoid::nanoid!().into(),
-                    server_id: AttrValue::default(),
                     content: file_name.clone().into(),
                     is_self: true,
                     create_time: time,
@@ -589,7 +588,24 @@ impl Component for Sender {
                 true
             }
             SenderMsg::SendVoice(data) => {
-                log::debug!("send voice: {:?}", data);
+                log::debug!("send voice");
+                let time = chrono::Utc::now().timestamp_millis();
+                let msg = Message {
+                    local_id: nanoid::nanoid!().into(),
+                    is_self: true,
+                    create_time: time,
+                    friend_id: ctx.props().friend_id.clone(),
+                    send_id: ctx.props().cur_user_id.clone(),
+                    is_read: 1,
+                    content_type: ContentType::Audio,
+                    platform: self.get_platform(),
+                    send_status: SendStatus::Sending,
+                    audio_data: Some(data),
+                    ..Default::default()
+                };
+
+                self.store_message(ctx, msg.clone());
+                self.send_msg(ctx, msg);
                 false
             }
         }

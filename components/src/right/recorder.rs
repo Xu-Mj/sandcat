@@ -184,7 +184,7 @@ impl Component for Recorder {
                 self.reader_container.clear();
                 self.record_state = RecorderState::Stop;
                 self.time_interval = None;
-                self.on_data_available_closure = None;
+                // self.on_data_available_closure = None;
                 self.on_error_closure = None;
                 true
             }
@@ -209,6 +209,8 @@ impl Component for Recorder {
                 if self.time > 0 {
                     ctx.props().send_voice.emit(take(&mut self.data));
                 }
+                self.on_data_available_closure = None;
+                self.on_error_closure = None;
                 true
             }
             RecorderMsg::IncreaseTime => {
