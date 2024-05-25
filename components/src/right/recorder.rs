@@ -1,12 +1,17 @@
 use std::mem::take;
 
 use base64::prelude::*;
+use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Interval;
+use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::state::I18nState;
+use utils::tr;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Blob, FileReader, HtmlDivElement, MediaRecorder, MediaStream};
 use yew::{
     html, Callback, Component, Context, Html, NodeRef, ProgressEvent, Properties, TouchEvent,
 };
+use yewdux::Dispatch;
 
 pub struct Recorder {
     node_ref: NodeRef,
@@ -17,6 +22,7 @@ pub struct Recorder {
     on_data_available_closure: Option<Closure<dyn FnMut(JsValue)>>,
     on_error_closure: Option<Closure<dyn FnMut(JsValue)>>,
     reader_container: Vec<Closure<dyn FnMut(ProgressEvent)>>,
+    i18n: FluentBundle<FluentResource>,
     record_state: RecorderState,
     // timer
     time_interval: Option<Interval>,
@@ -60,6 +66,11 @@ impl Component for Recorder {
     type Properties = RecorderProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
+        let res = match Dispatch::<I18nState>::global().get().lang {
+            LanguageType::ZhCN => zh_cn::RECORDER,
+            LanguageType::EnUS => en_us::RECORDER,
+        };
+        let i18n = utils::create_bundle(res);
         Self {
             is_mobile: false,
             node_ref: NodeRef::default(),
@@ -69,6 +80,7 @@ impl Component for Recorder {
             on_data_available_closure: None,
             on_error_closure: None,
             reader_container: vec![],
+            i18n,
             time_interval: None,
             record_state: RecorderState::Static,
             data: vec![],
@@ -235,7 +247,7 @@ impl Component for Recorder {
         if self.record_state == RecorderState::Error {
             error = html! {
                 <div class="error">
-                    {"录音失败"}
+                    {tr!(self.i18n, "error")}
                 </div>
             };
         }
@@ -285,14 +297,14 @@ impl Component for Recorder {
             let on_recorder_click = ctx.link().callback(|_| RecorderMsg::Prepare);
             html! {
                 <div ref={self.node_ref.clone()} class="recorder">
+                    <button class="btn" disabled={record_btn} onclick={on_recorder_click}>{tr!(self.i18n, "recorde")}</button>
                     {error}
-                    <button class="btn" disabled={record_btn} onclick={on_recorder_click}>{"录制"}</button>
                     {voice}
                     {audio}
 
-                    <button class="btn" disabled={stop_btn} onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{"停止"}</button>
-                    <button class="btn" disabled={send_btn} onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{"发送"}</button>
-                    <button class="btn" disabled={cancel_btn} onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{"取消"}</button>
+                    <button class="btn" disabled={stop_btn} onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{tr!(self.i18n, "stop")}</button>
+                    <button class="btn" disabled={send_btn} onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{tr!(self.i18n, "send")}</button>
+                    <button class="btn" disabled={cancel_btn} onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{tr!(self.i18n, "cancel")}</button>
                 </div>
             }
         };

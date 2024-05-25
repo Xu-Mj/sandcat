@@ -12,3 +12,4 @@
 - adjust textarea dynamic height under the mobile mode
 - need to handle all types message about platform and if self msg
 - **redesign the audio message type in indexeddb**
+- phone call type need i18n
