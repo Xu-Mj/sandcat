@@ -9,6 +9,6 @@
 - we need to update user information when we look up the friend info
 - we need to update user information when we click the conversation item
 - redesign the websocket reconnection logical,
-- textarea dynamic height under the mobile mode
-- send self message need to handle
+- adjust textarea dynamic height under the mobile mode
 - need to handle all types message about platform and if self msg
+- **redesign the audio message type in indexeddb**

@@ -272,8 +272,6 @@ impl Sender {
             let send_id = ctx.props().cur_user_id.clone();
             let platform = self.get_platform();
             let msg = Message {
-                id: 0,
-                seq: 0,
                 local_id: nanoid::nanoid!().into(),
                 server_id: AttrValue::default(),
                 send_id,
@@ -283,10 +281,9 @@ impl Sender {
                 create_time: send_time,
                 is_read: 1,
                 is_self: true,
-                send_time: 0,
                 platform,
                 send_status: SendStatus::Sending,
-                file_content: AttrValue::default(),
+                ..Default::default()
             };
             self.store_message(ctx, msg.clone());
             self.send_msg(ctx, msg);
@@ -394,8 +391,6 @@ impl Component for Sender {
                 let time = chrono::Utc::now().timestamp_millis();
                 let send_id = ctx.props().cur_user_id.clone();
                 let msg = Message {
-                    id: 0,
-                    seq: 0,
                     local_id: nanoid::nanoid!().into(),
                     server_id: AttrValue::default(),
                     send_id,
@@ -405,10 +400,9 @@ impl Component for Sender {
                     create_time: time,
                     is_read: 1,
                     is_self: true,
-                    send_time: 0,
                     platform: self.get_platform(),
                     send_status: SendStatus::Sending,
-                    file_content: AttrValue::default(),
+                    ..Default::default()
                 };
                 self.store_message(ctx, msg.clone());
                 self.send_msg(ctx, msg);
@@ -453,21 +447,19 @@ impl Component for Sender {
                 };
 
                 let msg = Message {
-                    id: 0,
-                    seq: 0,
                     local_id: nanoid::nanoid!().into(),
                     server_id: AttrValue::default(),
                     content: file_name.clone().into(),
                     is_self: true,
-                    is_read: 0,
                     create_time: time,
                     friend_id: ctx.props().friend_id.clone(),
                     send_id: ctx.props().cur_user_id.clone(),
+                    is_read: 1,
                     content_type,
                     file_content,
-                    send_time: 0,
                     platform: self.get_platform(),
                     send_status: SendStatus::Sending,
+                    ..Default::default()
                 };
 
                 self.store_message(ctx, msg.clone());
