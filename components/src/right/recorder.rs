@@ -10,6 +10,7 @@ use yew::{
 
 pub struct Recorder {
     node_ref: NodeRef,
+    voice_node: NodeRef,
     is_mobile: bool,
     show_mask: bool,
     media_recorder: Option<MediaRecorder>,
@@ -62,6 +63,7 @@ impl Component for Recorder {
         Self {
             is_mobile: false,
             node_ref: NodeRef::default(),
+            voice_node: NodeRef::default(),
             show_mask: false,
             media_recorder: None,
             on_data_available_closure: None,
@@ -144,6 +146,8 @@ impl Component for Recorder {
                     ctx.send_message(RecorderMsg::IncreaseTime)
                 }));
 
+                // start animation
+                self.start_voice_node_animation();
                 true
             }
             RecorderMsg::DataAvailable(blob) => {
@@ -175,13 +179,30 @@ impl Component for Recorder {
             RecorderMsg::Stop => {
                 if let Some(ref recorder) = self.media_recorder {
                     recorder.stop().unwrap();
+                    self.media_recorder = None;
                 }
                 self.reader_container.clear();
                 self.record_state = RecorderState::Stop;
                 self.time_interval = None;
+                self.on_data_available_closure = None;
+                self.on_error_closure = None;
                 true
             }
-            RecorderMsg::Cancel => todo!(),
+            RecorderMsg::Cancel => {
+                if let Some(ref recorder) = self.media_recorder {
+                    recorder.stop().unwrap();
+                    self.media_recorder = None;
+                }
+                self.reader_container.clear();
+                self.record_state = RecorderState::Static;
+                self.time_interval = None;
+                self.on_data_available_closure = None;
+                self.on_error_closure = None;
+                self.stop_voice_node_animation();
+                self.data.clear();
+                self.time = 0;
+                true
+            }
             RecorderMsg::Send => {
                 self.time_interval = None;
                 self.record_state = RecorderState::Static;
@@ -201,6 +222,7 @@ impl Component for Recorder {
             }
         }
     }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         let touch_start = ctx.link().callback(RecorderMsg::TouchStart);
         let touch_end = ctx.link().callback(RecorderMsg::TouchEnd);
@@ -228,29 +250,45 @@ impl Component for Recorder {
             if self.record_state == RecorderState::Stop {
                 let audio_base64 = BASE64_STANDARD.encode(&self.data);
                 let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
-                audio = html!(<audio class="middle" src={data_url} controls={true}></audio>);
+                audio = html!(<audio class="audio" src={data_url} controls={true}></audio>);
             };
+            let mut voice = html!();
 
-            let mut progress = html!();
-            if self.record_state != RecorderState::Stop {
-                // progress = html!(
-                // <progress class="middle progress-bar" value={self.time.to_string()} max="60"/>
-                // );
-                progress = get_voice_html();
+            let mut record_btn = true;
+            let mut stop_btn = true;
+            let mut send_btn = true;
+            let mut cancel_btn = true;
+            match self.record_state {
+                RecorderState::Static => {
+                    record_btn = false;
+                    voice = self.get_voice_html();
+                }
+                RecorderState::Prepare => {
+                    voice = self.get_voice_html();
+                }
+                RecorderState::Recording => {
+                    stop_btn = false;
+                    cancel_btn = false;
+                    voice = self.get_voice_html();
+                }
+                RecorderState::Error => {}
+                RecorderState::Stop => {
+                    send_btn = false;
+                    cancel_btn = false;
+                }
             }
 
             let on_recorder_click = ctx.link().callback(|_| RecorderMsg::Prepare);
             html! {
                 <div ref={self.node_ref.clone()} class="recorder">
                     {error}
-                    <button class="btn" onclick={on_recorder_click}>{"录制"}</button>
-                    // progress bar
-                    {progress}
+                    <button class="btn" disabled={record_btn} onclick={on_recorder_click}>{"录制"}</button>
+                    {voice}
                     {audio}
 
-                    <button class="btn" onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{"停止"}</button>
-                    <button class="btn" onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{"发送"}</button>
-                    <button class="btn" onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{"取消"}</button>
+                    <button class="btn" disabled={stop_btn} onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{"停止"}</button>
+                    <button class="btn" disabled={send_btn} onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{"发送"}</button>
+                    <button class="btn" disabled={cancel_btn} onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{"取消"}</button>
                 </div>
             }
         };
@@ -260,31 +298,40 @@ impl Component for Recorder {
     }
 }
 
-fn get_voice_html() -> Html {
-    // let mut voice = Vec::with_capacity(7);
-    // let heights = vec![1, 3, 2, 5, 2, 3, 4];
-    // let times = vec![0.3, 0.6, 0.57, 0.52, 0.4, 0.3, 0.7];
-    // for i in 0..7 {
-    //     let style = format!(
-    //         "--voice-item-height: {}rem; --voice-item-animation-time:{}s",
-    //         heights[i], times[i]
-    //     );
+impl Recorder {
+    fn stop_voice_node_animation(&self) {
+        if let Some(voice_node) = self.voice_node.cast::<HtmlDivElement>() {
+            let _ = voice_node
+                .style()
+                .set_property("animation-play-state", "paused");
+        }
+    }
 
-    //     voice.push(html!(<div class="item" {style} />))
-    // }
-    html! {
+    fn start_voice_node_animation(&self) {
+        if let Some(voice_node) = self.voice_node.cast::<HtmlDivElement>() {
+            let _ = voice_node
+                .style()
+                .set_property("animation-play-state", "running");
+        }
+    }
 
-        <div class="voice">
-            // {voice}
-            <div class="item one"></div>
-        <div class="item two"></div>
-        <div class="item three"></div>
-        <div class="item four"></div>
-        <div class="item five"></div>
-        <div class="item six"></div>
-        <div class="item seven"></div>
+    fn get_voice_html(&self) -> Html {
+        let mut voice = Vec::with_capacity(7);
+        let heights = [1., 3., 2., 4., 1.5, 2.5, 3.];
+        let times = [0.3, 0.6, 0.57, 0.52, 0.4, 0.3, 0.7];
+        for i in 0..7 {
+            let style = format!(
+                "--voice-item-height: {}rem; --voice-item-animation-time:{}s",
+                heights[i], times[i]
+            );
 
-        </div>
+            voice.push(html!(<div class="item" {style} />))
+        }
+        html! {
+            <div ref={self.voice_node.clone()} class="voice">
+                {voice}
+            </div>
 
+        }
     }
 }
