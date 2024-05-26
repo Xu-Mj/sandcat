@@ -49,7 +49,6 @@ pub enum MsgItemMsg {
     CloseFriendCard,
     TextDoubleClick(MouseEvent),
     PlayAudio,
-    AudioPlayEnd,
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -291,31 +290,6 @@ impl Component for MsgItem {
                     //     paly_audio.emit(voice.data);
                     // });
                 }
-                // self.is_audio_playing = !self.is_audio_playing;
-                // if self.is_audio_playing {
-                //     if let Some(audio) = self.audio_node.cast::<HtmlAudioElement>() {
-                //         let ctx = ctx.link().clone();
-                //         let on_ended_closure = Closure::wrap(Box::new(move |_: Event| {
-                //             ctx.send_message(MsgItemMsg::AudioPlayEnd);
-                //         })
-                //             as Box<dyn FnMut(_)>);
-                //         audio.set_onended(Some(on_ended_closure.as_ref().unchecked_ref()));
-                //         self.audio_on_stop = Some(on_ended_closure);
-                //         let _ = audio.play();
-                //     }
-                //     self.play_audio_animation();
-                // } else {
-                //     if let Some(audio) = self.audio_node.cast::<HtmlAudioElement>() {
-                //         let _ = audio.pause();
-                //         audio.set_current_time(0.);
-                //     }
-                //     self.stop_audio_animation();
-                //     self.audio_on_stop = None;
-                // }
-                false
-            }
-            MsgItemMsg::AudioPlayEnd => {
-                self.stop_audio_animation();
                 false
             }
         }
@@ -450,13 +424,9 @@ impl Component for MsgItem {
             ContentType::Audio => {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::PlayAudio);
                 let duration = ctx.props().msg.content.clone();
-                // let audio_base64 =
-                //     BASE64_STANDARD.encode(ctx.props().msg.audio_data.as_ref().unwrap());
-                // let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
                 msg_content_classes.push("audio-msg-item");
                 html! {
                     <div class={msg_content_classes} {onclick}>
-                        // <audio ref={self.audio_node.clone()} src={data_url} /* controls={true} *//>
                         {self.voice_in_msg_icon()}
                         <span>{format!("{}''", duration)}</span>
                     </div>
@@ -539,26 +509,14 @@ impl MsgItem {
             for index in 0..div.child_element_count() {
                 div.child_nodes().get(index).map(|node| {
                     node.dyn_into::<HtmlDivElement>().map(|div| {
-                        div.style().set_property(
+                        let _ = div.style().remove_property("animation");
+                        // reset style
+                        div.offset_width();
+                        let _ = div.style().set_property(
                             "animation",
-                            format!(
-                                "voice-play .4s linear {}s forwards ",
-                                index as f32 / 10. + 0.1
-                            )
-                            .as_str(),
-                        )
+                            format!("voice-play .4s linear {}s", index as f32 / 10. + 0.1).as_str(),
+                        );
                     })
-                });
-            }
-        }
-    }
-
-    fn stop_audio_animation(&self) {
-        if let Some(div) = self.audio_icon_node.cast::<HtmlDivElement>() {
-            for index in 0..div.child_element_count() {
-                div.child_nodes().get(index).map(|node| {
-                    node.dyn_into::<HtmlDivElement>()
-                        .map(|div| div.style().remove_property("animation"))
                 });
             }
         }

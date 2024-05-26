@@ -351,6 +351,7 @@ impl Component for MessageList {
                 if let Some(audio) = audio.cast::<HtmlAudioElement>() {
                     if self.is_playing_audio == id {
                         let _ = audio.pause();
+                        audio.set_src("");
                         self.is_playing_audio = AttrValue::default();
                         return false;
                     }
