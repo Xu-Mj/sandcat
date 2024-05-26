@@ -334,7 +334,10 @@ impl Component for MsgItem {
             }
             ContentType::Image => {
                 let img_url = if ctx.props().msg.file_content.is_empty() {
-                    AttrValue::from(format!("/api/file/get/{}", ctx.props().msg.content.clone()))
+                    let full_original = &ctx.props().msg.content;
+                    let file_name_prefix =
+                        full_original.split("||").next().unwrap_or(full_original);
+                    AttrValue::from(format!("/api/file/get/{}", file_name_prefix))
                 } else {
                     ctx.props().msg.file_content.clone()
                 };
@@ -370,15 +373,11 @@ impl Component for MsgItem {
                 </div>
             },
             ContentType::File => {
-                let full_original = ctx.props().msg.content.clone().to_string();
-                let full: Vec<&str> = full_original.split("||").collect();
+                let full_original = ctx.props().msg.content.clone();
+                let mut parts = full_original.split("||");
+                let file_name = parts.next().unwrap_or(&full_original).to_string();
+                let file_name_prefix = parts.next().unwrap_or(&full_original).to_string();
 
-                let file_name = full.last().cloned().unwrap_or(full_original.as_str());
-
-                // 这里利用了map_or，它允许我们处理不匹配的类型
-                let file_name_prefix = full
-                    .first()
-                    .map_or(full_original.clone(), |&s| s.to_string());
                 html! {
                     <div class="msg-item-content">
                         <a href={file_name_prefix} download="" class="msg-item-file-name">
