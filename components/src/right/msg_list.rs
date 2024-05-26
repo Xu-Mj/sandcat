@@ -1,8 +1,10 @@
 use std::rc::Rc;
 
+use base64::prelude::*;
 use indexmap::IndexMap;
-use sandcat_sdk::state::MobileState;
+use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
+use web_sys::HtmlAudioElement;
 use web_sys::HtmlElement;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -14,8 +16,10 @@ use sandcat_sdk::model::message::GroupMsg;
 use sandcat_sdk::model::message::Message;
 use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::model::message::SingleCall;
+use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::ItemInfo;
 use sandcat_sdk::model::RightContentType;
+use sandcat_sdk::state::MobileState;
 use sandcat_sdk::state::RecMessageState;
 use sandcat_sdk::state::RefreshMsgListState;
 use sandcat_sdk::state::SendResultState;
@@ -25,6 +29,8 @@ use crate::right::{msg_item::MsgItem, sender::Sender};
 pub struct MessageList {
     list: IndexMap<AttrValue, Message>,
     node_ref: NodeRef,
+    audio_ref: NodeRef,
+    is_playing_audio: AttrValue,
     page: u32,
     page_size: u32,
     is_all: bool,
@@ -32,6 +38,7 @@ pub struct MessageList {
     friend: Option<Box<dyn ItemInfo>>,
     new_msg_count: u32,
     is_black: bool,
+    audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
 
     // listen sync offline message, query message list
     _sync_msg_dis: Dispatch<RefreshMsgListState>,
@@ -51,6 +58,8 @@ pub enum MessageListMsg {
     SyncOfflineMsg,
     GoBottom,
     QueryFriend(Option<Box<dyn ItemInfo>>),
+    PlayAudio((AttrValue, Vec<u8>)),
+    AudioOnStop,
 }
 
 /// 接收对方用户信息即可，
@@ -240,6 +249,7 @@ impl Component for MessageList {
         let self_ = Self {
             // list: vec![],
             node_ref: NodeRef::default(),
+            audio_ref: NodeRef::default(),
             page_size: 20,
             page: 1,
             is_all: false,
@@ -247,10 +257,12 @@ impl Component for MessageList {
             friend: None,
             new_msg_count: 0,
             is_black: false,
+            audio_on_stop: None,
             _sync_msg_dis,
             _rec_msg_dis,
             _send_result_dis,
             list: IndexMap::new(),
+            is_playing_audio: AttrValue::default(),
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -333,6 +345,40 @@ impl Component for MessageList {
                 }
                 true
             }
+            MessageListMsg::PlayAudio((id, data)) => {
+                let audio = self.audio_ref.clone();
+                // query audio data
+                if let Some(audio) = audio.cast::<HtmlAudioElement>() {
+                    if self.is_playing_audio == id {
+                        let _ = audio.pause();
+                        self.is_playing_audio = AttrValue::default();
+                        return false;
+                    }
+                    self.is_playing_audio = id;
+                    let audio_base64 = BASE64_STANDARD.encode(data);
+                    let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
+                    audio.set_src(&data_url);
+
+                    let on_stop = self.audio_on_stop.get_or_insert_with(|| {
+                        let ctx = ctx.link().clone();
+                        Closure::wrap(Box::new(move |_: Event| {
+                            ctx.send_message(MessageListMsg::AudioOnStop);
+                        }) as Box<dyn FnMut(Event)>)
+                    });
+
+                    audio.set_onended(Some(on_stop.as_ref().unchecked_ref()));
+                    // todo handle error
+                    if let Err(e) = audio.play() {
+                        log::error!("play audio error: {:?}", e);
+                    };
+                }
+                false
+            }
+            MessageListMsg::AudioOnStop => {
+                self.is_playing_audio = AttrValue::default();
+                self.audio_on_stop = None;
+                false
+            }
         }
     }
 
@@ -374,6 +420,10 @@ impl Component for MessageList {
                     if msg.is_self {
                         avatar = props.cur_user_avatar.clone();
                     }
+                    let mut play_audio = None;
+                    if msg.content_type == ContentType::Audio {
+                        play_audio = Some(ctx.link().callback(MessageListMsg::PlayAudio));
+                    }
                     html! {
                         <MsgItem
                             user_id={props.cur_user_id.clone()}
@@ -381,6 +431,7 @@ impl Component for MessageList {
                             msg={msg.clone()}
                             avatar={avatar}
                             conv_type={conv_type.clone()}
+                            {play_audio}
                             key={msg.id}
                         />
                     }
@@ -394,6 +445,7 @@ impl Component for MessageList {
         html! {
             <>
                 <div {class}>
+                    <audio ref={self.audio_ref.clone()}/>
                     {new_msg_count}
                     <div ref={self.node_ref.clone()} class="msg-list"  {onscroll}>
                         {list}

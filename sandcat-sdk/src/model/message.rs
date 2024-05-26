@@ -270,6 +270,38 @@ pub enum Msg {
     ServerRecResp(ServerResponse), // GroupInvitationReceived((UserID, GroupID)),
 }
 
+impl Msg {
+    fn new_audio_dataless_msg(msg: &Message) -> Message {
+        Message {
+            id: msg.id,
+            seq: msg.seq,
+            local_id: msg.local_id.clone(),
+            server_id: msg.server_id.clone(),
+            send_id: msg.send_id.clone(),
+            friend_id: msg.friend_id.clone(),
+            content_type: msg.content_type,
+            content: msg.content.clone(),
+            create_time: msg.create_time,
+            send_time: msg.send_time,
+            send_status: msg.send_status.clone(),
+            is_read: msg.is_read,
+            is_self: msg.is_self,
+            platform: msg.platform,
+            audio_data: None,
+            file_content: msg.file_content.clone(),
+        }
+    }
+
+    pub fn split_audio(&self) -> Option<Self> {
+        if let Msg::Single(msg) = self {
+            if msg.content_type == ContentType::Audio {
+                return Some(Msg::Single(Self::new_audio_dataless_msg(msg)));
+            }
+        }
+        None
+    }
+}
+
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub enum RespMsgType {
     #[default]

@@ -1,10 +1,8 @@
-use base64::prelude::*;
 use gloo::timers::callback::Timeout;
 use gloo::utils::{document, window};
 use nanoid::nanoid;
-use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
-use web_sys::{HtmlAudioElement, HtmlDivElement, Node};
+use web_sys::{HtmlDivElement, Node};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -34,10 +32,8 @@ pub struct MsgItem {
     pointer: (i32, i32),
     friend_info: Option<UserWithMatchType>,
     text_node: NodeRef,
-    audio_node: NodeRef,
     audio_icon_node: NodeRef,
-    is_audio_playing: bool,
-    audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
+    // audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -63,6 +59,7 @@ pub struct MsgItemProps {
     pub avatar: AttrValue,
     pub msg: Message,
     pub conv_type: RightContentType,
+    pub play_audio: Option<Callback<(AttrValue, Vec<u8>)>>,
 }
 
 impl Component for MsgItem {
@@ -102,10 +99,8 @@ impl Component for MsgItem {
             pointer: (0, 0),
             friend_info: None,
             text_node: NodeRef::default(),
-            audio_node: NodeRef::default(),
             audio_icon_node: NodeRef::default(),
-            audio_on_stop: None,
-            is_audio_playing: false,
+            // audio_on_stop: None,
         }
     }
 
@@ -284,33 +279,43 @@ impl Component for MsgItem {
                 false
             }
             MsgItemMsg::PlayAudio => {
-                self.is_audio_playing = !self.is_audio_playing;
-                if self.is_audio_playing {
-                    if let Some(audio) = self.audio_node.cast::<HtmlAudioElement>() {
-                        let ctx = ctx.link().clone();
-                        let on_ended_closure = Closure::wrap(Box::new(move |_: Event| {
-                            ctx.send_message(MsgItemMsg::AudioPlayEnd);
-                        })
-                            as Box<dyn FnMut(_)>);
-                        audio.set_onended(Some(on_ended_closure.as_ref().unchecked_ref()));
-                        self.audio_on_stop = Some(on_ended_closure);
-                        let _ = audio.play();
-                    }
+                if let Some(paly_audio) = ctx.props().play_audio.clone() {
+                    let voice_id = ctx.props().msg.local_id.clone();
+                    paly_audio.emit((
+                        voice_id,
+                        ctx.props().msg.audio_data.as_ref().unwrap().clone(),
+                    ));
                     self.play_audio_animation();
-                } else {
-                    if let Some(audio) = self.audio_node.cast::<HtmlAudioElement>() {
-                        let _ = audio.pause();
-                        audio.set_current_time(0.);
-                    }
-                    self.stop_audio_animation();
-                    self.audio_on_stop = None;
+                    // spawn_local(async move {
+                    //     let voice = db::db_ins().voices.get(&voice_id).await.unwrap();
+                    //     paly_audio.emit(voice.data);
+                    // });
                 }
+                // self.is_audio_playing = !self.is_audio_playing;
+                // if self.is_audio_playing {
+                //     if let Some(audio) = self.audio_node.cast::<HtmlAudioElement>() {
+                //         let ctx = ctx.link().clone();
+                //         let on_ended_closure = Closure::wrap(Box::new(move |_: Event| {
+                //             ctx.send_message(MsgItemMsg::AudioPlayEnd);
+                //         })
+                //             as Box<dyn FnMut(_)>);
+                //         audio.set_onended(Some(on_ended_closure.as_ref().unchecked_ref()));
+                //         self.audio_on_stop = Some(on_ended_closure);
+                //         let _ = audio.play();
+                //     }
+                //     self.play_audio_animation();
+                // } else {
+                //     if let Some(audio) = self.audio_node.cast::<HtmlAudioElement>() {
+                //         let _ = audio.pause();
+                //         audio.set_current_time(0.);
+                //     }
+                //     self.stop_audio_animation();
+                //     self.audio_on_stop = None;
+                // }
                 false
             }
             MsgItemMsg::AudioPlayEnd => {
-                self.is_audio_playing = false;
                 self.stop_audio_animation();
-                self.audio_on_stop = None;
                 false
             }
         }
@@ -445,13 +450,13 @@ impl Component for MsgItem {
             ContentType::Audio => {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::PlayAudio);
                 let duration = ctx.props().msg.content.clone();
-                let audio_base64 =
-                    BASE64_STANDARD.encode(ctx.props().msg.audio_data.as_ref().unwrap());
-                let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
+                // let audio_base64 =
+                //     BASE64_STANDARD.encode(ctx.props().msg.audio_data.as_ref().unwrap());
+                // let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
                 msg_content_classes.push("audio-msg-item");
                 html! {
                     <div class={msg_content_classes} {onclick}>
-                        <audio ref={self.audio_node.clone()} src={data_url} /* controls={true} *//>
+                        // <audio ref={self.audio_node.clone()} src={data_url} /* controls={true} *//>
                         {self.voice_in_msg_icon()}
                         <span>{format!("{}''", duration)}</span>
                     </div>
@@ -537,7 +542,7 @@ impl MsgItem {
                         div.style().set_property(
                             "animation",
                             format!(
-                                "voice-play .4s linear {}s infinite alternate ",
+                                "voice-play .4s linear {}s forwards ",
                                 index as f32 / 10. + 0.1
                             )
                             .as_str(),

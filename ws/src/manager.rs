@@ -143,7 +143,6 @@ impl WebSocketManager {
 
     pub fn send_message(&self, message: Msg) -> Result<(), JsValue> {
         if let Some(ws) = &self.ws {
-            log::debug!("send message: {:?}", &PbMsg::from(message.clone()));
             // encode message
             let msg = bincode::serialize(&PbMsg::from(message))
                 .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
