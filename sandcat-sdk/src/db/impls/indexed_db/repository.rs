@@ -16,7 +16,7 @@ use crate::db::{
     GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME, GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX,
     MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
     MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX,
-    SEQ_TABLE_NAME, USER_TABLE_NAME,
+    SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
 };
 
 use super::DB_NAME;
@@ -52,6 +52,15 @@ impl Repository {
                 .expect("IndexedDB.onsuccess should have a valid result; qed");
             assert!(result.is_instance_of::<IdbDatabase>());
             let db = IdbDatabase::from(result);
+            let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
+            parameters.key_path(Some(&JsValue::from_str("local_id")));
+
+            db.create_object_store_with_optional_parameters(
+                &String::from(VOICE_TABLE_NAME),
+                &parameters,
+            )
+            .unwrap();
+
             let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
             parameters.key_path(Some(&JsValue::from_str("id")));
             parameters.auto_increment(true);
