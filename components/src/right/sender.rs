@@ -19,6 +19,7 @@ use icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon, VoiceIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{GroupMsg, InviteMsg, InviteType, Msg, SendStatus};
+use sandcat_sdk::model::voice::Voice;
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::state::{MobileState, SendCallState};
 use sandcat_sdk::{model::message::Message, model::ContentType, state::SendMessageState};
@@ -81,7 +82,7 @@ pub enum SenderMsg {
     SendAudioCall,
     OnTextInput,
     VoiceIconClicked,
-    SendVoice((Vec<u8>, u8)),
+    SendVoice(Voice),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -159,34 +160,37 @@ impl Sender {
     }
 
     // fixme need to wait message store success
-    fn store_message(&self, ctx: &Context<Self>, mut msg: Message) {
+    fn store_send_msg(&self, ctx: &Context<Self>, mut msg: Message) {
         let conv_type = ctx.props().conv_type.clone();
         spawn_local(async move {
             match conv_type {
                 RightContentType::Friend => {
                     db::db_ins().messages.add_message(&mut msg).await.unwrap();
+                    Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
                 }
                 RightContentType::Group => {
                     db::db_ins().group_msgs.put(&msg).await.unwrap();
+                    Dispatch::<SendMessageState>::global()
+                        .reduce_mut(|s| s.msg = Msg::Group(GroupMsg::Message(msg)));
                 }
                 _ => {}
             }
         });
     }
 
-    fn send_msg(&self, ctx: &Context<Self>, msg: Message) {
-        log::debug!("send message state in sender");
-        match ctx.props().conv_type {
-            RightContentType::Friend => {
-                Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
-            }
-            RightContentType::Group => {
-                Dispatch::<SendMessageState>::global()
-                    .reduce_mut(|s| s.msg = Msg::Group(GroupMsg::Message(msg)));
-            }
-            _ => {}
-        }
-    }
+    // fn send_msg(&self, ctx: &Context<Self>, msg: Message) {
+    //     log::debug!("send message state in sender");
+    //     match ctx.props().conv_type {
+    //         RightContentType::Friend => {
+    //             Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
+    //         }
+    //         RightContentType::Group => {
+    //             Dispatch::<SendMessageState>::global()
+    //                 .reduce_mut(|s| s.msg = Msg::Group(GroupMsg::Message(msg)));
+    //         }
+    //         _ => {}
+    //     }
+    // }
 
     fn send_file(&self, ctx: &Context<Self>, file: File) {
         let mut content_type = ContentType::File;
@@ -285,8 +289,8 @@ impl Sender {
                 send_status: SendStatus::Sending,
                 ..Default::default()
             };
-            self.store_message(ctx, msg.clone());
-            self.send_msg(ctx, msg);
+            self.store_send_msg(ctx, msg);
+            // self.send_msg(ctx, msg);
             // 清空输入框
             input.set_value("");
             if self.is_mobile {
@@ -404,8 +408,8 @@ impl Component for Sender {
                     send_status: SendStatus::Sending,
                     ..Default::default()
                 };
-                self.store_message(ctx, msg.clone());
-                self.send_msg(ctx, msg);
+                self.store_send_msg(ctx, msg);
+                // self.send_msg(ctx, msg);
                 true
             }
             SenderMsg::ShowEmoji => {
@@ -461,8 +465,8 @@ impl Component for Sender {
                     ..Default::default()
                 };
 
-                self.store_message(ctx, msg.clone());
-                self.send_msg(ctx, msg);
+                self.store_send_msg(ctx, msg);
+                // self.send_msg(ctx, msg);
                 true
             }
 
@@ -587,26 +591,26 @@ impl Component for Sender {
                 self.is_voice_mode = !self.is_voice_mode;
                 true
             }
-            SenderMsg::SendVoice((data, duration)) => {
+            SenderMsg::SendVoice(voice) => {
                 log::debug!("send voice");
                 let time = chrono::Utc::now().timestamp_millis();
                 let msg = Message {
-                    local_id: nanoid::nanoid!().into(),
+                    local_id: voice.local_id.into(),
                     is_self: true,
                     create_time: time,
                     friend_id: ctx.props().friend_id.clone(),
                     send_id: ctx.props().cur_user_id.clone(),
                     is_read: 1,
-                    content: duration.to_string().into(),
+                    content: voice.duration.to_string().into(),
                     content_type: ContentType::Audio,
                     platform: self.get_platform(),
                     send_status: SendStatus::Sending,
-                    audio_data: Some(data),
+                    audio_data: Some(voice.data),
                     ..Default::default()
                 };
 
-                self.store_message(ctx, msg.clone());
-                self.send_msg(ctx, msg);
+                self.store_send_msg(ctx, msg);
+                // self.send_msg(ctx, msg);
                 false
             }
         }

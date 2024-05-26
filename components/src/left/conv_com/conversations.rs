@@ -214,6 +214,7 @@ impl Component for Chats {
             ChatsMsg::SendMsg(state) => {
                 log::debug!("send message from sender in conversation");
                 let msg = state.msg.clone();
+                // todo split audio message
                 self.send_msg(msg.clone());
                 self.rec_msg_dis.reduce_mut(|s| s.msg = msg.clone());
                 self.handle_sent_msg(ctx, msg);
