@@ -1,3 +1,5 @@
+use std::mem::take;
+
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -8,6 +10,7 @@ use sandcat_sdk::{
         conversation::Conversation,
         friend::FriendStatus,
         message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
+        voice::Voice,
         ContentType, FriendShipStateType, RightContentType,
     },
     state::{FriendShipState, SendResultState, UnreadState},
@@ -303,6 +306,18 @@ impl Chats {
                 self.handle_lack_msg(ctx, msg.seq);
                 spawn_local(async move {
                     // ctx.link().send_future(async move {
+                    // split audio data
+                    if msg.content_type == ContentType::Audio {
+                        let duration = msg.content.parse::<u8>().unwrap_or_default();
+                        let voice = Voice::new(
+                            msg.local_id.to_string(),
+                            take(&mut msg.audio_data).unwrap_or_default(),
+                            duration,
+                        );
+                        if let Err(e) = db::db_ins().voices.save(&voice).await {
+                            log::error!("save voice to db error: {:?}", e);
+                        }
+                    }
                     // save to db
                     db::db_ins().messages.add_message(&mut msg).await.unwrap();
                     // ChatsMsg::None
@@ -329,7 +344,7 @@ impl Chats {
                         self.handle_group_invitation(ctx, msg.clone());
                     }
                     GroupMsg::Message(msg) => {
-                        let msg = msg.clone();
+                        let mut msg = msg.clone();
                         // let _msg_id = msg.server_id.to_string();
                         let conv = Conversation {
                             last_msg: msg.content.clone(),
@@ -350,6 +365,17 @@ impl Chats {
                         self.handle_lack_msg(ctx, msg.seq);
                         ctx.link().send_future(async move {
                             // 数据入库
+                            if msg.content_type == ContentType::Audio {
+                                let duration = msg.content.parse::<u8>().unwrap_or_default();
+                                let voice = Voice::new(
+                                    msg.local_id.to_string(),
+                                    take(&mut msg.audio_data).unwrap_or_default(),
+                                    duration,
+                                );
+                                if let Err(e) = db::db_ins().voices.save(&voice).await {
+                                    log::error!("save voice to db error: {:?}", e);
+                                }
+                            }
                             db::db_ins().group_msgs.put(&msg).await.unwrap();
                             ChatsMsg::None
                             // if let Err(err) = db::group_msgs().await.put(&msg).await {
