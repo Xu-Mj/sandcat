@@ -115,7 +115,6 @@ impl Component for Recorder {
                 true
             }
             RecorderMsg::Start(stream) => {
-                log::debug!("start recorder");
                 self.record_state = RecorderState::Recording;
 
                 // todo handle error
@@ -292,6 +291,12 @@ impl Component for Recorder {
             let touch_move = ctx.link().callback(RecorderMsg::TouchMove);
             let voice = self.get_voice_html();
 
+            // hint
+            let hint = if self.is_cancel {
+                tr!(self.i18n, "cancel-mobile")
+            } else {
+                tr!(self.i18n, "send-mobile")
+            };
             html! {
                 <div
                     ref={self.node_ref.clone()}
@@ -304,6 +309,7 @@ impl Component for Recorder {
                         class="recorder-mobile-mask"
                         style="display: none;">
                         {voice}
+                        <div class="recorder-mobile-hint">{hint}</div>
                         <div ref={self.holder_node.clone()} class="recorder-holder">
 
                         </div>
