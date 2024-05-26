@@ -4,7 +4,7 @@ use base64::prelude::*;
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{Blob, FileReader, HtmlDivElement, MediaRecorder, MediaStream};
+use web_sys::{Blob, FileReader, HtmlDivElement, MediaRecorder, MediaRecorderOptions, MediaStream};
 use yew::{
     html, Callback, Classes, Component, Context, Html, NodeRef, ProgressEvent, Properties,
     TouchEvent,
@@ -118,7 +118,16 @@ impl Component for Recorder {
                 self.record_state = RecorderState::Recording;
 
                 // todo handle error
-                let recorder = MediaRecorder::new_with_media_stream(&stream).unwrap();
+                let recorder = match MediaRecorder::new_with_media_stream_and_media_recorder_options(
+                    &stream,
+                    MediaRecorderOptions::new().mime_type("audio/webm;codecs=opus"),
+                ) {
+                    Ok(recorder) => recorder,
+                    Err(e) => {
+                        ctx.link().send_message(RecorderMsg::PrepareError(e));
+                        return false;
+                    }
+                };
 
                 let ctx_clone = ctx.link().clone();
                 let on_data_available_closure = Closure::wrap(Box::new(move |data: JsValue| {

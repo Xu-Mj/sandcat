@@ -1,11 +1,13 @@
 use std::rc::Rc;
 
-use base64::prelude::*;
 use indexmap::IndexMap;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
+use web_sys::Blob;
+use web_sys::BlobPropertyBag;
 use web_sys::HtmlAudioElement;
 use web_sys::HtmlElement;
+use web_sys::Url;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
@@ -39,6 +41,7 @@ pub struct MessageList {
     new_msg_count: u32,
     is_black: bool,
     audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
+    audio_data_url: Option<String>,
 
     // listen sync offline message, query message list
     _sync_msg_dis: Dispatch<RefreshMsgListState>,
@@ -258,6 +261,7 @@ impl Component for MessageList {
             new_msg_count: 0,
             is_black: false,
             audio_on_stop: None,
+            audio_data_url: None,
             _sync_msg_dis,
             _rec_msg_dis,
             _send_result_dis,
@@ -356,10 +360,33 @@ impl Component for MessageList {
                         return false;
                     }
                     self.is_playing_audio = id;
-                    let audio_base64 = BASE64_STANDARD.encode(data);
-                    let data_url = format!("data:audio/mp3;base64,{}", audio_base64);
+                    let u8_array = js_sys::Uint8Array::new_with_length(data.len() as u32);
+                    let audio_data = wasm_bindgen::Clamped(data);
+                    u8_array.copy_from(&audio_data[..]);
+
+                    let array: js_sys::Array = js_sys::Array::new_with_length(1);
+                    array.set(0, u8_array.buffer().into());
+
+                    let mime_type = "audio/webm; codecs=opus";
+                    let mut property_bag = BlobPropertyBag::new();
+                    property_bag.type_(mime_type);
+
+                    // todo handle error
+                    let blob =
+                        match Blob::new_with_u8_array_sequence_and_options(&array, &property_bag) {
+                            Ok(blob) => blob,
+                            Err(e) => {
+                                log::error!("create blob error: {:?}", e);
+                                return false;
+                            }
+                        };
+                    let data_url = Url::create_object_url_with_blob(&blob).unwrap();
+
                     audio.set_src(&data_url);
 
+                    self.audio_data_url = Some(data_url);
+
+                    // set stop event
                     let on_stop = self.audio_on_stop.get_or_insert_with(|| {
                         let ctx = ctx.link().clone();
                         Closure::wrap(Box::new(move |_: Event| {
@@ -378,6 +405,12 @@ impl Component for MessageList {
             MessageListMsg::AudioOnStop => {
                 self.is_playing_audio = AttrValue::default();
                 self.audio_on_stop = None;
+                if let Some(ref url) = self.audio_data_url {
+                    if let Err(e) = Url::revoke_object_url(url) {
+                        log::error!("revoke object url error: {:?}", e);
+                    };
+                }
+                self.audio_data_url = None;
                 false
             }
         }
