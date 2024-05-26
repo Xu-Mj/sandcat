@@ -293,9 +293,9 @@ impl Component for Recorder {
 
             // hint
             let hint = if self.is_cancel {
-                tr!(self.i18n, "cancel-mobile")
+                tr!(self.i18n, "cancel_mobile")
             } else {
-                tr!(self.i18n, "send-mobile")
+                tr!(self.i18n, "send_mobile")
             };
             html! {
                 <div

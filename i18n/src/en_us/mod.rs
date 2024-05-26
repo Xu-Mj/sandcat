@@ -157,7 +157,9 @@ press = press to speak
 recorde = rc
 stop = stop
 send = send
+send_mobile = Release to send
 cancel = cancel
+cancel_mobile = Release to cancel
 error = ERROR: check your recorder
 "#;
 
