@@ -264,9 +264,9 @@ impl Component for Recorder {
                     }
 
                     self.record_state = RecorderState::Static;
-                    // self.mask_node
-                    //     .cast::<HtmlDivElement>()
-                    //     .map(|div| div.style().set_property("display", "none"));
+                    self.mask_node
+                        .cast::<HtmlDivElement>()
+                        .map(|div| div.style().set_property("display", "none"));
                     self.clean();
                 }
                 self.record_state = RecorderState::Stop;
@@ -375,15 +375,12 @@ impl Recorder {
         let data = take(&mut self.data);
         let duration = self.time;
         let voice = Voice::new(nanoid::nanoid!(), data, duration);
-        let mask = self.mask_node.clone();
         ctx.link().send_future(async move {
             // send voice data
             if let Err(e) = db::db_ins().voices.save(&voice).await {
                 return RecorderMsg::PrepareError(e);
             }
             send_voice.emit(voice);
-            mask.cast::<HtmlDivElement>()
-                .map(|div| div.style().set_property("display", "none"));
             RecorderMsg::SendComplete
         });
     }
