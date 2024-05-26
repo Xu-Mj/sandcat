@@ -6,6 +6,7 @@ pub mod notification;
 pub mod page;
 pub mod seq;
 pub mod user;
+pub mod voice;
 
 use std::fmt::{Debug, Display};
 

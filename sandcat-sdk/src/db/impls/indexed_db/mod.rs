@@ -9,6 +9,7 @@ pub mod message;
 pub mod repository;
 pub mod seq;
 pub mod user;
+pub mod voice;
 
 use std::{
     error::Error,
@@ -31,6 +32,7 @@ pub const GROUP_TABLE_NAME: &str = "groups";
 pub const GROUP_MSG_TABLE_NAME: &str = "group_messages";
 pub const GROUP_MEMBERS_TABLE_NAME: &str = "group_members";
 pub const SEQ_TABLE_NAME: &str = "seq";
+pub const VOICE_TABLE_NAME: &str = "voices";
 
 pub const FRIENDSHIP_UNREAD_INDEX: &str = "read";
 pub const FRIENDSHIP_ID_INDEX: &str = "fs_id";
