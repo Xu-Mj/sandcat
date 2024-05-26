@@ -117,10 +117,12 @@ impl Component for Recorder {
             RecorderMsg::Start(stream) => {
                 self.record_state = RecorderState::Recording;
 
+                let mut options = MediaRecorderOptions::new();
+                options.mime_type("audio/webm;codecs=opus");
+                options.bits_per_second(32000);
                 // todo handle error
                 let recorder = match MediaRecorder::new_with_media_stream_and_media_recorder_options(
-                    &stream,
-                    MediaRecorderOptions::new().mime_type("audio/webm;codecs=opus"),
+                    &stream, &options,
                 ) {
                     Ok(recorder) => recorder,
                     Err(e) => {
