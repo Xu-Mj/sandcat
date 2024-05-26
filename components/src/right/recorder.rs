@@ -4,7 +4,7 @@ use base64::prelude::*;
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{Blob, FileReader, HtmlDivElement, MediaRecorder, MediaStream};
+use web_sys::{Blob, FileReader, HtmlDivElement, MediaRecorder, MediaRecorderOptions, MediaStream};
 use yew::{
     html, Callback, Classes, Component, Context, Html, NodeRef, ProgressEvent, Properties,
     TouchEvent,
@@ -12,7 +12,11 @@ use yew::{
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use sandcat_sdk::state::{I18nState, MobileState};
+use sandcat_sdk::{
+    db,
+    model::voice::Voice,
+    state::{I18nState, MobileState},
+};
 use utils::tr;
 
 pub struct Recorder {
@@ -38,7 +42,7 @@ pub struct Recorder {
 
 #[derive(Clone, Properties, PartialEq)]
 pub struct RecorderProps {
-    pub send_voice: Callback<(Vec<u8>, u8)>,
+    pub send_voice: Callback<Voice>,
 }
 
 pub enum RecorderMsg {
@@ -51,6 +55,7 @@ pub enum RecorderMsg {
     DataAvailable(Blob),
     ReadData(JsValue),
     RecordeComplete,
+    SendComplete,
     Stop,
     Cancel,
     Send,
@@ -110,17 +115,26 @@ impl Component for Recorder {
                 true
             }
             RecorderMsg::Start(stream) => {
-                log::debug!("start recorder");
                 self.record_state = RecorderState::Recording;
 
+                let mut options = MediaRecorderOptions::new();
+                options.mime_type("audio/webm;codecs=opus");
+                options.bits_per_second(32000);
                 // todo handle error
-                let recorder = MediaRecorder::new_with_media_stream(&stream).unwrap();
+                let recorder = match MediaRecorder::new_with_media_stream_and_media_recorder_options(
+                    &stream, &options,
+                ) {
+                    Ok(recorder) => recorder,
+                    Err(e) => {
+                        ctx.link().send_message(RecorderMsg::PrepareError(e));
+                        return false;
+                    }
+                };
 
                 let ctx_clone = ctx.link().clone();
                 let on_data_available_closure = Closure::wrap(Box::new(move |data: JsValue| {
                     if let Ok(blob) = data.dyn_into::<web_sys::BlobEvent>() {
                         if let Some(blob) = blob.data() {
-                            log::debug!("touch start recorder");
                             ctx_clone.send_message(RecorderMsg::DataAvailable(blob));
                         }
                     }
@@ -204,9 +218,7 @@ impl Component for Recorder {
             RecorderMsg::Send => {
                 self.record_state = RecorderState::Static;
                 if self.time > 0 && !self.data.is_empty() {
-                    ctx.props()
-                        .send_voice
-                        .emit((take(&mut self.data), self.time));
+                    self.send(ctx);
                 }
                 // self.on_data_available_closure = None;
                 // self.on_error_closure = None;
@@ -256,9 +268,7 @@ impl Component for Recorder {
             RecorderMsg::RecordeComplete => {
                 if self.is_mobile {
                     if !self.is_cancel && self.time > 0 && !self.data.is_empty() {
-                        ctx.props()
-                            .send_voice
-                            .emit((take(&mut self.data), self.time));
+                        self.send(ctx);
                     } else {
                         // todo warning voice too short
                     }
@@ -273,6 +283,7 @@ impl Component for Recorder {
 
                 true
             }
+            RecorderMsg::SendComplete => false,
         }
     }
 
@@ -291,6 +302,12 @@ impl Component for Recorder {
             let touch_move = ctx.link().callback(RecorderMsg::TouchMove);
             let voice = self.get_voice_html();
 
+            // hint
+            let hint = if self.is_cancel {
+                tr!(self.i18n, "cancel_mobile")
+            } else {
+                tr!(self.i18n, "send_mobile")
+            };
             html! {
                 <div
                     ref={self.node_ref.clone()}
@@ -303,6 +320,7 @@ impl Component for Recorder {
                         class="recorder-mobile-mask"
                         style="display: none;">
                         {voice}
+                        <div class="recorder-mobile-hint">{hint}</div>
                         <div ref={self.holder_node.clone()} class="recorder-holder">
 
                         </div>
@@ -350,7 +368,7 @@ impl Component for Recorder {
                     {error}
                     {voice}
                     {audio}
-                    {self.time}
+
                     <button class="btn" disabled={stop_btn} onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{tr!(self.i18n, "stop")}</button>
                     <button class="btn" disabled={send_btn} onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{tr!(self.i18n, "send")}</button>
                     <button class="btn" disabled={cancel_btn} onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{tr!(self.i18n, "cancel")}</button>
@@ -369,6 +387,20 @@ impl Component for Recorder {
 }
 
 impl Recorder {
+    fn send(&mut self, ctx: &Context<Self>) {
+        let send_voice = ctx.props().send_voice.clone();
+        let data = take(&mut self.data);
+        let duration = self.time;
+        let voice = Voice::new(nanoid::nanoid!(), data, duration);
+        ctx.link().send_future(async move {
+            // send voice data
+            if let Err(e) = db::db_ins().voices.save(&voice).await {
+                return RecorderMsg::PrepareError(e);
+            }
+            send_voice.emit(voice);
+            RecorderMsg::SendComplete
+        });
+    }
     fn clean(&mut self) {
         self.media_recorder = None;
         self.time = 0;

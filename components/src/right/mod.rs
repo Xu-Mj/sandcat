@@ -41,7 +41,7 @@ pub struct Right {
     show_setting: bool,
     show_friend_list: bool,
     node_ref: NodeRef,
-    touch_start: i32,
+    touch_start: Option<TouchInfo>,
     timeout: Option<Timeout>,
     i18n: FluentBundle<FluentResource>,
     state: Rc<AppState>,
@@ -55,6 +55,13 @@ pub struct Right {
     _friend_list_dis: Dispatch<FriendListState>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
+}
+
+#[derive(Debug, Default)]
+struct TouchInfo {
+    x: i32,
+    y: i32,
+    start_time: i64,
 }
 
 #[derive(Debug)]
@@ -137,7 +144,7 @@ impl Component for Right {
             show_friend_list: false,
             i18n,
             node_ref: NodeRef::default(),
-            touch_start: 0,
+            touch_start: None,
             timeout: None,
             state: app_dis.get(),
             _app_dis: app_dis,
@@ -238,7 +245,11 @@ impl Component for Right {
             }
             RightMsg::TouchStart(event) => {
                 if let Some(touch) = event.touches().get(0) {
-                    self.touch_start = touch.client_x();
+                    self.touch_start = Some(TouchInfo {
+                        x: touch.client_x(),
+                        y: touch.client_y(),
+                        start_time: chrono::Utc::now().timestamp_millis(),
+                    });
                 };
                 false
             }
@@ -246,11 +257,16 @@ impl Component for Right {
                 // we can't use the .touches() to get the touch end
                 // should use the changed_touches()
                 if let Some(touch) = event.changed_touches().get(0) {
-                    if touch.client_x() - self.touch_start > 50 {
-                        ctx.link().send_message(RightMsg::Close);
+                    if let Some(ref info) = self.touch_start {
+                        if touch.client_x() - info.x > 50
+                            && (info.y - touch.client_y() < 20 || touch.client_y() - info.y < 20)
+                            && (chrono::Utc::now().timestamp_millis() - info.start_time < 200)
+                        {
+                            ctx.link().send_message(RightMsg::Close);
+                        }
                     }
                 }
-                self.touch_start = 0;
+                self.touch_start = None;
                 false
             }
         }

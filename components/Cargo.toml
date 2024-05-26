@@ -41,6 +41,7 @@ features = [
     "HtmlAudioElement",
     "HtmlVideoElement",
     "MediaRecorder",
+    "MediaRecorderOptions",
     "MediaStream",
     "MediaStreamTrack",
     "MouseEvent",

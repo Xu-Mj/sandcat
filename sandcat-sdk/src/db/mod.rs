@@ -13,12 +13,15 @@ use self::{
     group_members::GroupMembers,
     group_msg::GroupMessages,
     groups::GroupInterface,
-    impls::indexed_db::{group_members::GroupMembersRepo, group_msg::GroupMsgRepo, seq::SeqRepo},
+    impls::indexed_db::{
+        group_members::GroupMembersRepo, group_msg::GroupMsgRepo, seq::SeqRepo, voice::VoiceRepo,
+    },
     message::MessageRepo,
     messages::Messages,
     seq::SeqInterface,
     user::UserRepo,
     users::Users,
+    voice::Voices,
 };
 
 pub mod conversations;
@@ -31,6 +34,7 @@ pub mod impls;
 pub mod messages;
 pub mod seq;
 pub mod users;
+pub mod voice;
 
 static DB_INSTANCE: OnceCell<Db> = OnceCell::new();
 
@@ -61,6 +65,7 @@ pub struct Db {
     pub group_msgs: Box<dyn GroupMessages>,
     pub users: Box<dyn Users>,
     pub seq: Box<dyn SeqInterface>,
+    pub voices: Box<dyn Voices>,
 }
 
 impl Db {
@@ -75,7 +80,8 @@ impl Db {
             messages: Box::new(MessageRepo::new(repo.clone())),
             group_msgs: Box::new(GroupMsgRepo::new(repo.clone())),
             users: Box::new(UserRepo::new(repo.clone())),
-            seq: Box::new(SeqRepo::new(repo)),
+            seq: Box::new(SeqRepo::new(repo.clone())),
+            voices: Box::new(VoiceRepo::new(repo)),
         }
     }
 }

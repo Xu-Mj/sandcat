@@ -214,9 +214,15 @@ impl Component for Chats {
             ChatsMsg::SendMsg(state) => {
                 log::debug!("send message from sender in conversation");
                 let msg = state.msg.clone();
-                self.send_msg(msg.clone());
-                self.rec_msg_dis.reduce_mut(|s| s.msg = msg.clone());
-                self.handle_sent_msg(ctx, msg);
+                // todo split audio message
+                let msg_inner = if let Some(inner) = msg.split_audio() {
+                    inner
+                } else {
+                    msg.clone()
+                };
+                self.send_msg(msg);
+                self.rec_msg_dis.reduce_mut(|s| s.msg = msg_inner.clone());
+                self.handle_sent_msg(ctx, msg_inner);
                 true
             }
             ChatsMsg::RecMsgNotify(msg) => {
@@ -224,9 +230,14 @@ impl Component for Chats {
                 false
             }
             ChatsMsg::SendMessage(msg) => {
-                self.send_msg(msg.clone());
-                self.rec_msg_dis.reduce_mut(|s| s.msg = msg.clone());
-                self.handle_sent_msg(ctx, msg);
+                let msg_inner = if let Some(inner) = msg.split_audio() {
+                    inner
+                } else {
+                    msg.clone()
+                };
+                self.send_msg(msg);
+                self.rec_msg_dis.reduce_mut(|s| s.msg = msg_inner.clone());
+                self.handle_sent_msg(ctx, msg_inner);
                 true
             }
             ChatsMsg::InsertConvWithoutUpdate(conv) => {
@@ -361,7 +372,6 @@ impl Component for Chats {
             .link()
             .callback(|msg| ChatsMsg::SendMessage(Msg::SingleCall(msg)));
         html! {
-        // <ContextProvider<SingleCall> context={self.call_msg.clone()}>
         <>
             {warning}
             <PhoneCall ws={self.ws.clone()} user_id={ctx.props().user_id.clone()} msg={self.call_msg.clone()} send_msg={send_msg_callback}/>
@@ -379,8 +389,6 @@ impl Component for Chats {
                 </div>
             </div>
         </>
-        // </ContextProvider<SingleCall>>
-
         }
     }
 

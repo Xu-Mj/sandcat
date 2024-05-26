@@ -152,6 +152,8 @@ press = 按住讲话
 recorde = 录音
 stop = 停止
 send = 发送
+send_mobile = 松开发送
+cancel_mobile = 松开取消
 cancel = 取消
 error = 错误，请检查音频设备
 "#;

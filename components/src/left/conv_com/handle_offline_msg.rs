@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, mem::take};
 
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -12,6 +12,7 @@ use sandcat_sdk::{
             convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall,
             DEFAULT_HELLO_MESSAGE,
         },
+        voice::Voice,
         ContentType, RightContentType,
     },
     pb::message::Msg as PbMsg,
@@ -44,6 +45,17 @@ impl Chats {
         };
 
         spawn_local(async move {
+            if msg.content_type == ContentType::Audio {
+                let duration = msg.content.parse::<u8>().unwrap_or_default();
+                let voice = Voice::new(
+                    msg.local_id.to_string(),
+                    take(&mut msg.audio_data).unwrap_or_default(),
+                    duration,
+                );
+                if let Err(e) = db::db_ins().voices.save(&voice).await {
+                    log::error!("save voice to db error: {:?}", e);
+                }
+            }
             db::db_ins().messages.add_message(&mut msg).await.unwrap();
         });
 
@@ -86,8 +98,19 @@ impl Chats {
                     GroupMsg::Dismiss((group_id, _)) => {
                         self.handle_group_dismiss(ctx, group_id);
                     }
-                    GroupMsg::Message(msg) => {
+                    GroupMsg::Message(mut msg) => {
                         spawn_local(async move {
+                            if msg.content_type == ContentType::Audio {
+                                let duration = msg.content.parse::<u8>().unwrap_or_default();
+                                let voice = Voice::new(
+                                    msg.local_id.to_string(),
+                                    take(&mut msg.audio_data).unwrap_or_default(),
+                                    duration,
+                                );
+                                if let Err(e) = db::db_ins().voices.save(&voice).await {
+                                    log::error!("save voice to db error: {:?}", e);
+                                }
+                            }
                             db::db_ins().group_msgs.put(&msg).await.unwrap();
                         });
                     }
