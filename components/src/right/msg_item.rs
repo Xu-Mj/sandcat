@@ -280,15 +280,11 @@ impl Component for MsgItem {
             MsgItemMsg::PlayAudio => {
                 if let Some(paly_audio) = ctx.props().play_audio.clone() {
                     let voice_id = ctx.props().msg.local_id.clone();
-                    paly_audio.emit((
-                        voice_id,
-                        ctx.props().msg.audio_data.as_ref().unwrap().clone(),
-                    ));
                     self.play_audio_animation();
-                    // spawn_local(async move {
-                    //     let voice = db::db_ins().voices.get(&voice_id).await.unwrap();
-                    //     paly_audio.emit(voice.data);
-                    // });
+                    spawn_local(async move {
+                        let voice = db::db_ins().voices.get(&voice_id).await.unwrap();
+                        paly_audio.emit((voice_id, voice.data));
+                    });
                 }
                 false
             }

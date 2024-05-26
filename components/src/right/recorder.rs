@@ -125,7 +125,6 @@ impl Component for Recorder {
                 let on_data_available_closure = Closure::wrap(Box::new(move |data: JsValue| {
                     if let Ok(blob) = data.dyn_into::<web_sys::BlobEvent>() {
                         if let Some(blob) = blob.data() {
-                            log::debug!("touch start recorder");
                             ctx_clone.send_message(RecorderMsg::DataAvailable(blob));
                         }
                     }
@@ -352,7 +351,7 @@ impl Component for Recorder {
                     {error}
                     {voice}
                     {audio}
-                    {self.time}
+
                     <button class="btn" disabled={stop_btn} onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{tr!(self.i18n, "stop")}</button>
                     <button class="btn" disabled={send_btn} onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{tr!(self.i18n, "send")}</button>
                     <button class="btn" disabled={cancel_btn} onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{tr!(self.i18n, "cancel")}</button>
