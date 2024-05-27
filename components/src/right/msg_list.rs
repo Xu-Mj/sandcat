@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
+use sandcat_sdk::state::SendMessageState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::Blob;
@@ -47,6 +48,7 @@ pub struct MessageList {
     _sync_msg_dis: Dispatch<RefreshMsgListState>,
     // listen rec message, update message list
     _rec_msg_dis: Dispatch<RecMessageState>,
+    _sent_msg_dis: Dispatch<SendMessageState>,
     // listen send result, update message item status
     _send_result_dis: Dispatch<SendResultState>,
 }
@@ -57,6 +59,7 @@ pub enum MessageListMsg {
     NextPageNone,
     SendFile(Message),
     ReceiveMsg(Rc<RecMessageState>),
+    SentMsg(Rc<SendMessageState>),
     SendResultCallback(Rc<SendResultState>),
     SyncOfflineMsg,
     GoBottom,
@@ -247,10 +250,13 @@ impl Component for MessageList {
             .subscribe_silent(ctx.link().callback(|_| MessageListMsg::SyncOfflineMsg));
         let _rec_msg_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(MessageListMsg::ReceiveMsg));
+        let _sent_msg_dis =
+            Dispatch::global().subscribe_silent(ctx.link().callback(MessageListMsg::SentMsg));
         let _send_result_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(MessageListMsg::SendResultCallback));
         let self_ = Self {
-            // list: vec![],
+            list: IndexMap::new(),
+            is_playing_audio: AttrValue::default(),
             node_ref: NodeRef::default(),
             audio_ref: NodeRef::default(),
             page_size: 20,
@@ -265,8 +271,7 @@ impl Component for MessageList {
             _sync_msg_dis,
             _rec_msg_dis,
             _send_result_dis,
-            list: IndexMap::new(),
-            is_playing_audio: AttrValue::default(),
+            _sent_msg_dis,
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -317,6 +322,10 @@ impl Component for MessageList {
             }
             MessageListMsg::ReceiveMsg(msg_state) => {
                 log::debug!("rec message in message list....");
+                let msg = msg_state.msg.clone();
+                self.handle_rec_msg(ctx, msg, friend_id)
+            }
+            MessageListMsg::SentMsg(msg_state) => {
                 let msg = msg_state.msg.clone();
                 self.handle_rec_msg(ctx, msg, friend_id)
             }
