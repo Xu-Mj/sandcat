@@ -4,5 +4,5 @@ use web_sys::File;
 
 #[async_trait(?Send)]
 pub trait FileApi {
-    async fn upload_file(&self, file: File) -> Result<String, JsValue>;
+    async fn upload_file(&self, file: &File) -> Result<String, JsValue>;
 }

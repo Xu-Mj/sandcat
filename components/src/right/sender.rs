@@ -192,13 +192,14 @@ impl Sender {
     //     }
     // }
 
+    // todo upload file by behind task and update the upload state
     fn send_file(&self, ctx: &Context<Self>, file: File) {
         let mut content_type = ContentType::File;
 
         ctx.link().send_future(async move {
             let file_name_src = file.name();
             let file_name = api::file()
-                .upload_file(file.clone())
+                .upload_file(&file)
                 .await
                 .map_err(|err| log::error!("上传文件错误: {:?}", err))
                 .unwrap();

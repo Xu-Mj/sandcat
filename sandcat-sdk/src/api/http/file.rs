@@ -19,11 +19,11 @@ impl FileHttp {
 
 #[async_trait(?Send)]
 impl FileApi for FileHttp {
-    async fn upload_file(&self, file: File) -> Result<String, JsValue> {
+    async fn upload_file(&self, file: &File) -> Result<String, JsValue> {
         use web_sys::FormData;
 
         let form = FormData::new().unwrap();
-        form.append_with_blob("file", &file).unwrap();
+        form.append_with_blob("file", file).unwrap();
 
         // 创建请求体
         let mut opts = web_sys::RequestInit::new();
