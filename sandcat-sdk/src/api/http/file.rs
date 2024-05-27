@@ -1,8 +1,9 @@
 use async_trait::async_trait;
 use gloo_net::http::Request;
+use log::info;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{Blob, FormData};
+use web_sys::{Blob, BlobPropertyBag, FormData};
 use web_sys::{File, Response};
 
 use crate::api::file::FileApi;
@@ -48,13 +49,23 @@ impl FileApi for FileHttp {
     // todo add auth header
     async fn upload_voice(&self, data: &[u8]) -> Result<String, JsValue> {
         // convert Vec<u8> to Blob
-        let array = js_sys::Uint8Array::from(data);
-        let blob = Blob::new_with_u8_array_sequence(&array)?;
+        // we can't use Uint8Array type to set Blob because it will change the data
+        let u8_array = js_sys::Uint8Array::from(data);
+        let array: js_sys::Array = js_sys::Array::new_with_length(1);
+        array.set(0, u8_array.buffer().into());
+
+        let mut options = BlobPropertyBag::new();
+        options.type_("audio/webm;codecs=opus");
+        let blob = Blob::new_with_u8_array_sequence_and_options(&array, &options)?;
+        info!("blob: {}", blob.size());
+        web_sys::console::log_1(&blob);
+        let form = FormData::new().unwrap();
+        form.append_with_blob_and_filename("file", &blob, "audio.webm")
+            .unwrap();
 
         let url = "/api/file/upload";
         let text = Request::post(url)
-            .header("Content-Type", "audio/webm")
-            .body(blob)
+            .body(form)
             .map_err(|e| e.to_string())?
             .send()
             .await
