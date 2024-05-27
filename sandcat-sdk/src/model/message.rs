@@ -49,6 +49,7 @@ pub struct Message {
     #[serde(default)]
     pub platform: i32,
     pub audio_duration: u8,
+    #[serde(default)]
     pub audio_downloaded: bool,
     #[serde(skip)]
     pub file_content: AttrValue,

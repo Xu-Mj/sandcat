@@ -8,7 +8,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::LanguageType;
-use icons::{CycleIcon, MsgPhoneIcon, VideoRecordIcon};
+use icons::{CycleIcon, ExclamationIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{
     GroupMsg, InviteMsg, InviteType, Message, Msg, SendStatus, ServerResponse,
@@ -33,6 +33,11 @@ pub struct MsgItem {
     friend_info: Option<UserWithMatchType>,
     text_node: NodeRef,
     audio_icon_node: NodeRef,
+    // if timeout then show downloading icon
+    show_audio_download_timer: Option<Timeout>,
+    // if timeout then show download timeout icon
+    audio_download_timeout: Option<Timeout>,
+    download_stage: AudioDownloadStage,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -48,6 +53,15 @@ pub enum MsgItemMsg {
     CloseFriendCard,
     TextDoubleClick(MouseEvent),
     PlayAudio,
+    ShowAudioDownload,
+    AudioDownloadTimeout,
+}
+
+enum AudioDownloadStage {
+    // component rendered < 200ms
+    Hidden,
+    Downloading,
+    Timeout,
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -88,6 +102,14 @@ impl Component for MsgItem {
             }));
         }
 
+        let mut timer = None;
+        if ctx.props().msg.content_type == ContentType::Audio {
+            let ctx = ctx.link().clone();
+            timer = Some(Timeout::new(350, move || {
+                ctx.send_message(MsgItemMsg::ShowAudioDownload);
+            }));
+        }
+
         Self {
             timeout,
             show_img_preview: false,
@@ -99,6 +121,9 @@ impl Component for MsgItem {
             friend_info: None,
             text_node: NodeRef::default(),
             audio_icon_node: NodeRef::default(),
+            show_audio_download_timer: timer,
+            audio_download_timeout: None,
+            download_stage: AudioDownloadStage::Hidden,
         }
     }
 
@@ -287,6 +312,19 @@ impl Component for MsgItem {
                 }
                 false
             }
+            MsgItemMsg::ShowAudioDownload => {
+                self.download_stage = AudioDownloadStage::Downloading;
+                let ctx = ctx.link().clone();
+                self.show_audio_download_timer = None;
+                self.audio_download_timeout = Some(Timeout::new(3000, move || {
+                    ctx.send_message(MsgItemMsg::AudioDownloadTimeout);
+                }));
+                true
+            }
+            MsgItemMsg::AudioDownloadTimeout => {
+                self.download_stage = AudioDownloadStage::Timeout;
+                true
+            }
         }
     }
 
@@ -416,12 +454,22 @@ impl Component for MsgItem {
             }
             ContentType::Default => html!(),
             ContentType::Audio => {
+                // if audio download success, the ctx.props().msg.audio_downloaded will be true
+                let icon = if ctx.props().msg.audio_downloaded {
+                    self.voice_in_msg_icon()
+                } else {
+                    match self.download_stage {
+                        AudioDownloadStage::Hidden => self.voice_in_msg_icon(),
+                        AudioDownloadStage::Downloading => html!(<MsgLoadingIcon />),
+                        AudioDownloadStage::Timeout => html!(<ExclamationIcon />),
+                    }
+                };
                 let onclick = ctx.link().callback(|_| MsgItemMsg::PlayAudio);
                 let duration = ctx.props().msg.audio_duration;
                 msg_content_classes.push("audio-msg-item");
                 html! {
                     <div class={msg_content_classes} {onclick}>
-                        {self.voice_in_msg_icon()}
+                        {icon}
                         <span>{format!("{}''", duration)}</span>
                     </div>
                 }
