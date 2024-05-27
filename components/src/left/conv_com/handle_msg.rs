@@ -11,7 +11,7 @@ use sandcat_sdk::{
         voice::Voice,
         ContentType, FriendShipStateType, RightContentType,
     },
-    state::{FriendShipState, SendResultState, UnreadState},
+    state::{AudioDownloadedState, FriendShipState, SendResultState, UnreadState},
 };
 
 use super::Chats;
@@ -303,6 +303,8 @@ impl Chats {
                         // request from file server
                         let data = api::file().download_voice(&msg.content).await.unwrap();
                         msg.audio_downloaded = true;
+                        Dispatch::<AudioDownloadedState>::global()
+                            .reduce_mut(|s| s.local_id = msg.local_id.clone());
                         let voice = Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
                         if let Err(e) = db::db_ins().voices.save(&voice).await {
                             log::error!("save voice to db error: {:?}", e);
@@ -359,6 +361,8 @@ impl Chats {
                                 // request from file server
                                 let data = api::file().download_voice(&msg.content).await.unwrap();
                                 msg.audio_downloaded = true;
+                                Dispatch::<AudioDownloadedState>::global()
+                                    .reduce_mut(|s| s.local_id = msg.local_id.clone());
                                 let voice =
                                     Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
                                 if let Err(e) = db::db_ins().voices.save(&voice).await {
