@@ -48,6 +48,7 @@ pub struct Message {
     pub is_self: bool,
     #[serde(default)]
     pub platform: i32,
+    pub audio_duration: u8,
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub audio_data: Option<Vec<u8>>,
     #[serde(skip)]
@@ -93,6 +94,7 @@ impl From<InviteCancelMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_duration: 0,
             audio_data: None,
             file_content: Default::default(),
         }
@@ -125,6 +127,7 @@ impl From<InviteAnswerMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_duration: 0,
             audio_data: None,
             file_content: Default::default(),
         }
@@ -153,6 +156,7 @@ impl From<InviteNotAnswerMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_duration: 0,
             audio_data: None,
             file_content: Default::default(),
         }
@@ -182,6 +186,7 @@ impl From<Hangup> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_duration: 0,
             audio_data: None,
             file_content: Default::default(),
         }
@@ -211,6 +216,7 @@ impl Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            audio_duration: 0,
             audio_data: None,
             file_content: Default::default(),
         }
@@ -236,6 +242,7 @@ impl Message {
             is_read: 0,
             is_self: msg.is_self,
             platform: msg.platform,
+            audio_duration: 0,
             audio_data: None,
             file_content: Default::default(),
         }
@@ -287,6 +294,7 @@ impl Msg {
             is_read: msg.is_read,
             is_self: msg.is_self,
             platform: msg.platform,
+            audio_duration: msg.audio_duration,
             audio_data: None,
             file_content: msg.file_content.clone(),
         }
@@ -528,17 +536,12 @@ impl TryFrom<pb::message::Msg> for Message {
         } else {
             SendStatus::Success
         };
-        let mut audio_data = None;
-        let content = if value.msg_type == MsgType::SingleMsg as i32
+        let duration = if value.msg_type == MsgType::SingleMsg as i32
             && value.content_type == ContentType::Audio as i32
         {
-            let duration = value.content.remove(0);
-            audio_data = Some(value.content);
-            duration.to_string().into()
+            value.content.remove(0)
         } else {
-            String::from_utf8(value.content)
-                .map_err(|e| e.to_string())?
-                .into()
+            0
         };
         Ok(Self {
             id: 0,
@@ -548,14 +551,17 @@ impl TryFrom<pb::message::Msg> for Message {
             send_id: value.send_id.into(),
             friend_id,
             content_type: ContentType::from(value.content_type),
-            content,
+            content: String::from_utf8(value.content)
+                .map_err(|e| e.to_string())?
+                .into(),
             create_time: value.create_time,
             send_time: value.send_time,
             send_status,
             is_read: 0,
             is_self: false,
             platform: value.platform,
-            audio_data,
+            audio_duration: duration,
+            audio_data: None,
             file_content: AttrValue::default(),
         })
     }
@@ -761,8 +767,8 @@ impl From<Msg> for PbMsg {
         match value {
             Msg::Single(msg) => {
                 let content = if msg.content_type == ContentType::Audio {
-                    let mut content = msg.audio_data.unwrap_or_default();
-                    content.insert(0, msg.content.as_str().parse::<u8>().unwrap_or_default());
+                    let mut content = msg.content.as_bytes().to_vec();
+                    content.insert(0, msg.audio_duration);
                     content
                 } else {
                     msg.content.as_bytes().to_vec()

@@ -1,9 +1,13 @@
 use async_trait::async_trait;
+use gloo_net::http::Request;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
+use web_sys::{Blob, FormData};
 use web_sys::{File, Response};
 
 use crate::api::file::FileApi;
+
+use super::RespStatus;
 
 #[allow(dead_code)]
 pub struct FileHttp {
@@ -20,8 +24,6 @@ impl FileHttp {
 #[async_trait(?Send)]
 impl FileApi for FileHttp {
     async fn upload_file(&self, file: &File) -> Result<String, JsValue> {
-        use web_sys::FormData;
-
         let form = FormData::new().unwrap();
         form.append_with_blob("file", file).unwrap();
 
@@ -41,5 +43,40 @@ impl FileApi for FileHttp {
         let text = JsFuture::from(res.text().unwrap()).await.unwrap();
 
         Ok(text.as_string().unwrap())
+    }
+
+    // todo add auth header
+    async fn upload_voice(&self, data: &[u8]) -> Result<String, JsValue> {
+        // convert Vec<u8> to Blob
+        let array = js_sys::Uint8Array::from(data);
+        let blob = Blob::new_with_u8_array_sequence(&array)?;
+
+        let url = "/api/file/upload";
+        let text = Request::post(url)
+            .header("Content-Type", "audio/webm")
+            .body(blob)
+            .map_err(|e| e.to_string())?
+            .send()
+            .await
+            .map_err(|err| err.to_string())?
+            .success()?
+            .text()
+            .await
+            .map_err(|err| err.to_string())?;
+
+        Ok(text)
+    }
+
+    async fn download_voice(&self, name: &str) -> Result<Vec<u8>, JsValue> {
+        let url = format!("/api/file/get/{}", name);
+        let result = Request::get(&url)
+            .send()
+            .await
+            .map_err(|err| err.to_string())?
+            .success()?
+            .binary()
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(result)
     }
 }
