@@ -471,7 +471,6 @@ impl Component for MsgItem {
             ContentType::AudioCall => {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::CallAudio);
                 let full_original = ctx.props().msg.content.clone();
-                log::info!("full_original: {}", full_original);
                 let mut parts = full_original.split("||");
                 let text = if parts.clone().count() < 2 {
                     tr!(self.i18n.as_ref().unwrap(), &full_original)
