@@ -347,6 +347,12 @@
             }
         }
 
+        #exclamation{
+            path {
+                stroke: #e11d48;
+                fill: #e11d48;
+            }
+        }
         /* 消息组件,对方消息 */
 
         .msg-item {
@@ -643,6 +649,7 @@
 
             .msg-input-size {
                 border: none;
+                resize: none;
             }
 
             .msg-input-size-mobile {

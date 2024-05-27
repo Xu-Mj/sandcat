@@ -9,7 +9,7 @@ use i18n::LanguageType;
 use crate::model::{
     friend::{Friend, FriendShipWithUser},
     group::Group,
-    message::{InviteMsg, Msg, ServerResponse},
+    message::{InviteMsg, Message, Msg, ServerResponse},
     notification::Notification,
     user::User,
     ComponentType, CurrentItem, FriendShipStateType, RightContentType,
@@ -96,6 +96,18 @@ pub enum ItemType {
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct SendMessageState {
     pub msg: Msg,
+}
+
+/// send audio message
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct SendAudioMsgState {
+    pub msg: Message,
+}
+
+/// send audio message
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct AudioDownloadedState {
+    pub local_id: AttrValue,
 }
 
 #[derive(Default, Clone, PartialEq, Debug, Store)]

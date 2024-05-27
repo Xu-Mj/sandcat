@@ -1,10 +1,31 @@
 use yew::prelude::*;
 
+#[function_component(ExclamationIcon)]
+pub fn exclamation_icon() -> Html {
+    html! {
+    <svg id="exclamation" xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 16 16">
+        <path fill="#e11d48" d="M7.002 11a1 1 0 1 1 2 0a1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.553.553 0 0 1-1.1 0z"/>
+    </svg>
+    }
+}
+
+#[function_component(MsgLoadingIcon)]
+pub fn msg_loading_icon() -> Html {
+    html! {
+    <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24">
+        <g fill="none" stroke="#000000" stroke-linecap="round" stroke-width="2">
+            <path stroke-dasharray="60" stroke-dashoffset="60" stroke-opacity=".3" d="M12 3C16.9706 3 21 7.02944 21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3Z"><animate fill="freeze" attributeName="stroke-dashoffset" dur="1.3s" values="60;0"/></path><path stroke-dasharray="15" stroke-dashoffset="15" d="M12 3C16.9706 3 21 7.02944 21 12"><animate fill="freeze" attributeName="stroke-dashoffset" dur="0.3s" values="15;0"/><animateTransform attributeName="transform" dur="1.5s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12"/>
+            </path>
+        </g>
+    </svg>
+    }
+}
+
 #[function_component(VoiceInMsgIcon)]
 pub fn voice_in_msg_icon() -> Html {
     html! {
     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
-        <path fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16M8 9v6m12-5v4M4 10v4m12-7v10"/>
+        <path fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16M8 9v6m12-5v4M4 10v4m12-7v10"/>
     </svg>
     }
 }
@@ -12,11 +33,11 @@ pub fn voice_in_msg_icon() -> Html {
 #[function_component(KeyboardIcon)]
 pub fn keyboard_icon() -> Html {
     html! {
-    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 48 48">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
         <g fill="none">
-            <path stroke="#000000" stroke-linejoin="round" stroke-width="4" d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z"/>
+            <path stroke="#000000" stroke-linejoin="round" stroke-width="3" d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z"/>
             <path fill="#000000" fill-rule="evenodd" d="M15 19a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m0 8a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m9-8a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m0 8a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m9-8a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5m0 8a2.5 2.5 0 1 0 0-5a2.5 2.5 0 0 0 0 5" clip-rule="evenodd"/>
-            <path stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M17 33h14"/>
+            <path stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 33h14"/>
         </g>
     </svg>
     }
@@ -25,11 +46,11 @@ pub fn keyboard_icon() -> Html {
 #[function_component(VoiceIcon)]
 pub fn voice_icon() -> Html {
     html! {
-    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 48 48">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 48 48">
         <g fill="none">
-            <path stroke="#000000" stroke-linejoin="round" stroke-width="4" d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z"/>
+            <path stroke="#000000" stroke-linejoin="round" stroke-width="3" d="M24 44c11.046 0 20-8.954 20-20S35.046 4 24 4S4 12.954 4 24s8.954 20 20 20Z"/>
             <path fill="#000000" d="M17 25.9a2 2 0 1 0 0-4a2 2 0 0 0 0 4"/>
-            <path stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M21.95 28.85A6.978 6.978 0 0 0 24 23.9a6.978 6.978 0 0 0-2.05-4.95m4.95 14.849a13.956 13.956 0 0 0 4.1-9.9c0-3.866-1.567-7.366-4.1-9.899"/>
+            <path stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21.95 28.85A6.978 6.978 0 0 0 24 23.9a6.978 6.978 0 0 0-2.05-4.95m4.95 14.849a13.956 13.956 0 0 0 4.1-9.9c0-3.866-1.567-7.366-4.1-9.899"/>
         </g>
     </svg>
     }
@@ -67,7 +88,7 @@ pub fn close_icon() -> Html {
 pub fn back_icon() -> Html {
     html! {
         <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
-            <path fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 6s-6 4.419-6 6s6 6 6 6" color="#000000"/>
+            <path fill="none" stroke="#000000" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 6s-6 4.419-6 6s6 6 6 6" color="#000000"/>
         </svg>
     }
 }
@@ -259,8 +280,8 @@ pub fn max_icon() -> Html {
 pub fn plus_icon() -> Html {
     html! {
         <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M24.0605 10L24.0239 38" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M10 24L38 24" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M24.0605 10L24.0239 38" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 24L38 24" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     }
 }
@@ -269,11 +290,11 @@ pub fn plus_icon() -> Html {
 pub fn people_plus_icon() -> Html {
     html! {
         <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M19 20C22.866 20 26 16.866 26 13C26 9.13401 22.866 6 19 6C15.134 6 12 9.13401 12 13C12 16.866 15.134 20 19 20Z" fill="none" stroke="#000000" stroke-width="1" stroke-linejoin="round"/>
+            <path d="M19 20C22.866 20 26 16.866 26 13C26 9.13401 22.866 6 19 6C15.134 6 12 9.13401 12 13C12 16.866 15.134 20 19 20Z" fill="none" stroke="#000000" stroke-width="3" stroke-linejoin="round"/>
             <path fill-rule="evenodd" clip-rule="evenodd" d="M36 29V41V29Z" fill="none"/>
             <path fill-rule="evenodd" clip-rule="evenodd" d="M30 35H42H30Z" fill="none"/>
-            <path d="M36 29V41M30 35H42" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M27 28H18.8C14.3196 28 12.0794 28 10.3681 28.8719C8.86278 29.6389 7.63893 30.8628 6.87195 32.3681C6 34.0794 6 36.3196 6 40.8V42H27" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M36 29V41M30 35H42" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M27 28H18.8C14.3196 28 12.0794 28 10.3681 28.8719C8.86278 29.6389 7.63893 30.8628 6.87195 32.3681C6 34.0794 6 36.3196 6 40.8V42H27" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
     }
 }
@@ -312,9 +333,9 @@ pub fn setting_icon() -> Html {
 pub fn search_icon() -> Html {
     html! {
     <svg class="icon" width="20" height="20" viewBox="0 0 48 48" fill="none">
-        <path d="M21 38C30.3888 38 38 30.3888 38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38Z" fill="none" stroke="#000000" stroke-width="1" stroke-linejoin="round"/>
-        <path d="M26.657 14.3431C25.2093 12.8954 23.2093 12 21.0001 12C18.791 12 16.791 12.8954 15.3433 14.3431" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M33.2216 33.2217L41.7069 41.707" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M21 38C30.3888 38 38 30.3888 38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38Z" fill="none" stroke="#000000" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M26.657 14.3431C25.2093 12.8954 23.2093 12 21.0001 12C18.791 12 16.791 12.8954 15.3433 14.3431" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M33.2216 33.2217L41.7069 41.707" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     }
 }
@@ -323,10 +344,10 @@ pub fn search_icon() -> Html {
 pub fn smile_icon() -> Html {
     html! {
     <svg class="icon" width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" fill="none" stroke="#000000" stroke-width="1" stroke-linejoin="round"/>
-        <path d="M31 31C31 31 29 35 24 35C19 35 17 31 17 31" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M31 18V22" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M17 18V22" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" fill="none" stroke="#000000" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M31 31C31 31 29 35 24 35C19 35 17 31 17 31" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M31 18V22" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M17 18V22" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     }
 }
@@ -335,10 +356,10 @@ pub fn smile_icon() -> Html {
 pub fn file_icon() -> Html {
     html! {
     <svg class="icon" width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M40 23V14L31 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H22" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M33 29V43" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M26 36H33H40" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M30 4V14H40" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M40 23V14L31 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H22" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M33 29V43" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M26 36H33H40" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M30 4V14H40" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     }
 }
@@ -347,9 +368,9 @@ pub fn file_icon() -> Html {
 pub fn file_preview_icon() -> Html {
     html! {
     <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M40 23V14L31 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H22" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M28.2 30H37.8L41 34.1176L33 44L25 34.1176L28.2 30Z" fill="none" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M30 4V14H40" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M40 23V14L31 4H10C8.89543 4 8 4.89543 8 6V42C8 43.1046 8.89543 44 10 44H22" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M28.2 30H37.8L41 34.1176L33 44L25 34.1176L28.2 30Z" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M30 4V14H40" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
     }
 }
@@ -359,7 +380,7 @@ pub fn phone_icon() -> Html {
     html! {
     <svg class="icon" width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M16.9961 7.68583C17.7227 7.68583 18.3921 8.07985 18.7448 8.71509L21.1912 13.1219C21.5115 13.6989 21.5266 14.3968 21.2314 14.9871L18.8746 19.7008C18.8746 19.7008 19.5576 23.2122 22.416 26.0706C25.2744 28.929 28.7741 29.6002 28.7741 29.6002L33.487 27.2438C34.0777 26.9484 34.7761 26.9637 35.3533 27.2846L39.7726 29.7416C40.4072 30.0945 40.8008 30.7635 40.8008 31.4896L40.8008 36.5631C40.8008 39.1468 38.4009 41.0129 35.9528 40.1868C30.9249 38.4903 23.1202 35.2601 18.1734 30.3132C13.2265 25.3664 9.99631 17.5617 8.29977 12.5338C7.47375 10.0857 9.33984 7.68583 11.9235 7.68583L16.9961 7.68583Z"
-            fill="none" stroke="#000000" stroke-width="1" stroke-linejoin="round"/>
+            fill="none" stroke="#000000" stroke-width="3" stroke-linejoin="round"/>
     </svg>
     }
 }
@@ -368,8 +389,8 @@ pub fn phone_icon() -> Html {
 pub fn video_icon() -> Html {
     html! {
     <svg class="icon" width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-     <path d="M4 10C4 8.89543 4.89543 8 6 8H34C35.1046 8 36 8.89543 36 10V19L44 13V36L36 30V38C36 39.1046 35.1046 40 34 40H6C4.89543 40 4 39.1046 4 38V10Z" fill="none" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
-     <circle cx="17" cy="21" r="5" fill="none" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+     <path d="M4 10C4 8.89543 4.89543 8 6 8H34C35.1046 8 36 8.89543 36 10V19L44 13V36L36 30V38C36 39.1046 35.1046 40 34 40H6C4.89543 40 4 39.1046 4 38V10Z" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+     <circle cx="17" cy="21" r="5" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
      }
 }

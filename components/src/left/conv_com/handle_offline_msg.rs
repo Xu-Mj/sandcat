@@ -1,11 +1,11 @@
-use std::{collections::HashMap, mem::take};
+use std::collections::HashMap;
 
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use sandcat_sdk::{
-    db,
+    api, db,
     model::{
         conversation::Conversation,
         message::{
@@ -46,12 +46,10 @@ impl Chats {
 
         spawn_local(async move {
             if msg.content_type == ContentType::Audio {
-                let duration = msg.content.parse::<u8>().unwrap_or_default();
-                let voice = Voice::new(
-                    msg.local_id.to_string(),
-                    take(&mut msg.audio_data).unwrap_or_default(),
-                    duration,
-                );
+                // request from file server
+                let data = api::file().download_voice(&msg.content).await.unwrap();
+                msg.audio_downloaded = true;
+                let voice = Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
                 if let Err(e) = db::db_ins().voices.save(&voice).await {
                     log::error!("save voice to db error: {:?}", e);
                 }
@@ -101,12 +99,11 @@ impl Chats {
                     GroupMsg::Message(mut msg) => {
                         spawn_local(async move {
                             if msg.content_type == ContentType::Audio {
-                                let duration = msg.content.parse::<u8>().unwrap_or_default();
-                                let voice = Voice::new(
-                                    msg.local_id.to_string(),
-                                    take(&mut msg.audio_data).unwrap_or_default(),
-                                    duration,
-                                );
+                                // request from file server
+                                let data = api::file().download_voice(&msg.content).await.unwrap();
+                                msg.audio_downloaded = true;
+                                let voice =
+                                    Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
                                 if let Err(e) = db::db_ins().voices.save(&voice).await {
                                     log::error!("save voice to db error: {:?}", e);
                                 }

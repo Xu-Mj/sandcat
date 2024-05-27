@@ -1,9 +1,14 @@
 use async_trait::async_trait;
+use gloo_net::http::Request;
+use log::info;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
+use web_sys::{Blob, BlobPropertyBag, FormData};
 use web_sys::{File, Response};
 
 use crate::api::file::FileApi;
+
+use super::RespStatus;
 
 #[allow(dead_code)]
 pub struct FileHttp {
@@ -20,8 +25,6 @@ impl FileHttp {
 #[async_trait(?Send)]
 impl FileApi for FileHttp {
     async fn upload_file(&self, file: &File) -> Result<String, JsValue> {
-        use web_sys::FormData;
-
         let form = FormData::new().unwrap();
         form.append_with_blob("file", file).unwrap();
 
@@ -41,5 +44,50 @@ impl FileApi for FileHttp {
         let text = JsFuture::from(res.text().unwrap()).await.unwrap();
 
         Ok(text.as_string().unwrap())
+    }
+
+    // todo add auth header
+    async fn upload_voice(&self, data: &[u8]) -> Result<String, JsValue> {
+        // convert Vec<u8> to Blob
+        // we can't use Uint8Array type to set Blob because it will change the data
+        let u8_array = js_sys::Uint8Array::from(data);
+        let array: js_sys::Array = js_sys::Array::new_with_length(1);
+        array.set(0, u8_array.buffer().into());
+
+        let mut options = BlobPropertyBag::new();
+        options.type_("audio/webm;codecs=opus");
+        let blob = Blob::new_with_u8_array_sequence_and_options(&array, &options)?;
+        info!("blob: {}", blob.size());
+        web_sys::console::log_1(&blob);
+        let form = FormData::new().unwrap();
+        form.append_with_blob_and_filename("file", &blob, "audio.webm")
+            .unwrap();
+
+        let url = "/api/file/upload";
+        let text = Request::post(url)
+            .body(form)
+            .map_err(|e| e.to_string())?
+            .send()
+            .await
+            .map_err(|err| err.to_string())?
+            .success()?
+            .text()
+            .await
+            .map_err(|err| err.to_string())?;
+
+        Ok(text)
+    }
+
+    async fn download_voice(&self, name: &str) -> Result<Vec<u8>, JsValue> {
+        let url = format!("/api/file/get/{}", name);
+        let result = Request::get(&url)
+            .send()
+            .await
+            .map_err(|err| err.to_string())?
+            .success()?
+            .binary()
+            .await
+            .map_err(|e| e.to_string())?;
+        Ok(result)
     }
 }

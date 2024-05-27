@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
-use sandcat_sdk::state::SendMessageState;
+use sandcat_sdk::state::AudioDownloadedState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::Blob;
@@ -25,6 +25,8 @@ use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::state::MobileState;
 use sandcat_sdk::state::RecMessageState;
 use sandcat_sdk::state::RefreshMsgListState;
+use sandcat_sdk::state::SendAudioMsgState;
+use sandcat_sdk::state::SendMessageState;
 use sandcat_sdk::state::SendResultState;
 
 use crate::right::{msg_item::MsgItem, sender::Sender};
@@ -51,6 +53,9 @@ pub struct MessageList {
     _sent_msg_dis: Dispatch<SendMessageState>,
     // listen send result, update message item status
     _send_result_dis: Dispatch<SendResultState>,
+    _sent_audio_dis: Dispatch<SendAudioMsgState>,
+    // listen audio downloaded state when content type is audio
+    _audio_dis: Dispatch<AudioDownloadedState>,
 }
 
 pub enum MessageListMsg {
@@ -60,12 +65,14 @@ pub enum MessageListMsg {
     SendFile(Message),
     ReceiveMsg(Rc<RecMessageState>),
     SentMsg(Rc<SendMessageState>),
+    SentAudio(Rc<SendAudioMsgState>),
     SendResultCallback(Rc<SendResultState>),
     SyncOfflineMsg,
     GoBottom,
     QueryFriend(Option<Box<dyn ItemInfo>>),
     PlayAudio((AttrValue, Vec<u8>)),
     AudioOnStop,
+    AudioDownloaded(Rc<AudioDownloadedState>),
 }
 
 /// 接收对方用户信息即可，
@@ -239,6 +246,56 @@ impl MessageList {
             }
         }
     }
+
+    fn play_audio(&mut self, ctx: &Context<Self>, id: AttrValue, data: Vec<u8>) {
+        let audio = self.audio_ref.clone();
+        // query audio data
+        if let Some(audio) = audio.cast::<HtmlAudioElement>() {
+            if self.is_playing_audio == id {
+                let _ = audio.pause();
+                audio.set_src("");
+                self.is_playing_audio = AttrValue::default();
+                return;
+            }
+            self.is_playing_audio = id;
+            let u8_array = js_sys::Uint8Array::from(data.as_slice());
+
+            let array: js_sys::Array = js_sys::Array::new_with_length(1);
+            array.set(0, u8_array.buffer().into());
+
+            let mime_type = "audio/webm; codecs=opus";
+            let mut property_bag = BlobPropertyBag::new();
+            property_bag.type_(mime_type);
+
+            // todo handle error
+            let blob = match Blob::new_with_u8_array_sequence_and_options(&array, &property_bag) {
+                Ok(blob) => blob,
+                Err(e) => {
+                    log::error!("create blob error: {:?}", e);
+                    return;
+                }
+            };
+            let data_url = Url::create_object_url_with_blob(&blob).unwrap();
+
+            audio.set_src(&data_url);
+
+            self.audio_data_url = Some(data_url);
+
+            // set stop event
+            let on_stop = self.audio_on_stop.get_or_insert_with(|| {
+                let ctx = ctx.link().clone();
+                Closure::wrap(Box::new(move |_: Event| {
+                    ctx.send_message(MessageListMsg::AudioOnStop);
+                }) as Box<dyn FnMut(Event)>)
+            });
+
+            audio.set_onended(Some(on_stop.as_ref().unchecked_ref()));
+            // todo handle error
+            if let Err(e) = audio.play() {
+                log::error!("play audio error: {:?}", e);
+            };
+        }
+    }
 }
 
 impl Component for MessageList {
@@ -254,6 +311,11 @@ impl Component for MessageList {
             Dispatch::global().subscribe_silent(ctx.link().callback(MessageListMsg::SentMsg));
         let _send_result_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(MessageListMsg::SendResultCallback));
+        let _sent_audio_dis =
+            Dispatch::global().subscribe_silent(ctx.link().callback(MessageListMsg::SentAudio));
+
+        let audio_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(MessageListMsg::AudioDownloaded));
         let self_ = Self {
             list: IndexMap::new(),
             is_playing_audio: AttrValue::default(),
@@ -271,7 +333,9 @@ impl Component for MessageList {
             _sync_msg_dis,
             _rec_msg_dis,
             _send_result_dis,
+            _sent_audio_dis,
             _sent_msg_dis,
+            _audio_dis: audio_dis,
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -326,8 +390,17 @@ impl Component for MessageList {
                 self.handle_rec_msg(ctx, msg, friend_id)
             }
             MessageListMsg::SentMsg(msg_state) => {
+                if let Msg::Single(msg) = &msg_state.msg {
+                    if msg.content_type == ContentType::Audio {
+                        return false;
+                    }
+                }
                 let msg = msg_state.msg.clone();
                 self.handle_rec_msg(ctx, msg, friend_id)
+            }
+            MessageListMsg::SentAudio(state) => {
+                let msg = state.msg.clone();
+                self.insert_msg(msg, friend_id)
             }
             MessageListMsg::GoBottom => {
                 self.new_msg_count = 0;
@@ -359,56 +432,7 @@ impl Component for MessageList {
                 true
             }
             MessageListMsg::PlayAudio((id, data)) => {
-                let audio = self.audio_ref.clone();
-                // query audio data
-                if let Some(audio) = audio.cast::<HtmlAudioElement>() {
-                    if self.is_playing_audio == id {
-                        let _ = audio.pause();
-                        audio.set_src("");
-                        self.is_playing_audio = AttrValue::default();
-                        return false;
-                    }
-                    self.is_playing_audio = id;
-                    let u8_array = js_sys::Uint8Array::new_with_length(data.len() as u32);
-                    let audio_data = wasm_bindgen::Clamped(data);
-                    u8_array.copy_from(&audio_data[..]);
-
-                    let array: js_sys::Array = js_sys::Array::new_with_length(1);
-                    array.set(0, u8_array.buffer().into());
-
-                    let mime_type = "audio/webm; codecs=opus";
-                    let mut property_bag = BlobPropertyBag::new();
-                    property_bag.type_(mime_type);
-
-                    // todo handle error
-                    let blob =
-                        match Blob::new_with_u8_array_sequence_and_options(&array, &property_bag) {
-                            Ok(blob) => blob,
-                            Err(e) => {
-                                log::error!("create blob error: {:?}", e);
-                                return false;
-                            }
-                        };
-                    let data_url = Url::create_object_url_with_blob(&blob).unwrap();
-
-                    audio.set_src(&data_url);
-
-                    self.audio_data_url = Some(data_url);
-
-                    // set stop event
-                    let on_stop = self.audio_on_stop.get_or_insert_with(|| {
-                        let ctx = ctx.link().clone();
-                        Closure::wrap(Box::new(move |_: Event| {
-                            ctx.send_message(MessageListMsg::AudioOnStop);
-                        }) as Box<dyn FnMut(Event)>)
-                    });
-
-                    audio.set_onended(Some(on_stop.as_ref().unchecked_ref()));
-                    // todo handle error
-                    if let Err(e) = audio.play() {
-                        log::error!("play audio error: {:?}", e);
-                    };
-                }
+                self.play_audio(ctx, id, data);
                 false
             }
             MessageListMsg::AudioOnStop => {
@@ -420,6 +444,13 @@ impl Component for MessageList {
                     };
                 }
                 self.audio_data_url = None;
+                false
+            }
+            MessageListMsg::AudioDownloaded(state) => {
+                if let Some(item) = self.list.get_mut(&state.local_id) {
+                    item.audio_downloaded = true;
+                    return true;
+                }
                 false
             }
         }

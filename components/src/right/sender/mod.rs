@@ -1,5 +1,6 @@
 mod component;
 pub use component::*;
+use log::error;
 
 use std::cmp::Ordering;
 
@@ -27,9 +28,11 @@ use sandcat_sdk::model::message::GroupMsg;
 use sandcat_sdk::model::message::Message;
 use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::model::message::SendStatus;
+use sandcat_sdk::model::voice::Voice;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::state::MobileState;
+use sandcat_sdk::state::SendAudioMsgState;
 use sandcat_sdk::state::SendMessageState;
 
 use super::emoji::Emoji;
@@ -124,22 +127,26 @@ impl Sender {
     }
 
     // fixme need to wait message store success
-    fn store_send_msg(&self, ctx: &Context<Self>, mut msg: Message) {
+    fn store_send_msg(&self, ctx: &Context<Self>, msg: Message) {
         let conv_type = ctx.props().conv_type.clone();
         spawn_local(async move {
-            match conv_type {
-                RightContentType::Friend => {
-                    db::db_ins().messages.add_message(&mut msg).await.unwrap();
-                    Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
-                }
-                RightContentType::Group => {
-                    db::db_ins().group_msgs.put(&msg).await.unwrap();
-                    Dispatch::<SendMessageState>::global()
-                        .reduce_mut(|s| s.msg = Msg::Group(GroupMsg::Message(msg)));
-                }
-                _ => {}
-            }
+            Self::store_send_msg_(conv_type, msg).await;
         });
+    }
+
+    async fn store_send_msg_(conv_type: RightContentType, mut msg: Message) {
+        match conv_type {
+            RightContentType::Friend => {
+                db::db_ins().messages.add_message(&mut msg).await.unwrap();
+                Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
+            }
+            RightContentType::Group => {
+                db::db_ins().group_msgs.put(&msg).await.unwrap();
+                Dispatch::<SendMessageState>::global()
+                    .reduce_mut(|s| s.msg = Msg::Group(GroupMsg::Message(msg)));
+            }
+            _ => {}
+        }
     }
 
     // fn send_msg(&self, ctx: &Context<Self>, msg: Message) {
@@ -311,5 +318,48 @@ impl Sender {
         }
 
         true
+    }
+
+    fn send_voice_msg(
+        platform: i32,
+        friend_id: AttrValue,
+        user_id: AttrValue,
+        voice: Voice,
+        conv_type: RightContentType,
+    ) {
+        spawn_local(async move {
+            if let Err(e) = db::db_ins().voices.save(&voice).await {
+                error!("save voice error:{:?}", e);
+            }
+
+            let time = chrono::Utc::now().timestamp_millis();
+            let mut msg = Message {
+                local_id: voice.local_id.into(),
+                is_self: true,
+                create_time: time,
+                friend_id: friend_id.clone(),
+                send_id: user_id.clone(),
+                is_read: 1,
+                content_type: ContentType::Audio,
+                platform,
+                send_status: SendStatus::Sending,
+                audio_duration: voice.duration,
+                audio_downloaded: true,
+                ..Default::default()
+            };
+            Dispatch::<SendAudioMsgState>::global().set(SendAudioMsgState { msg: msg.clone() });
+
+            // send to file server
+            let name = match api::file().upload_voice(&voice.data).await {
+                Ok(name) => name,
+                Err(e) => {
+                    error!("send to file server error:{:?}", e);
+                    return;
+                }
+            };
+            msg.content = name.into();
+            // send to message server
+            Self::store_send_msg_(conv_type, msg).await;
+        });
     }
 }
