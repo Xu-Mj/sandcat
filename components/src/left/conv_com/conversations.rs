@@ -214,15 +214,9 @@ impl Component for Chats {
             ChatsMsg::SendMsg(state) => {
                 log::debug!("send message from sender in conversation");
                 let msg = state.msg.clone();
-                // todo split audio message
-                let msg_inner = if let Some(inner) = msg.split_audio() {
-                    inner
-                } else {
-                    msg.clone()
-                };
+                self.handle_sent_msg(ctx, &msg);
                 self.send_msg(msg);
-                self.rec_msg_dis.reduce_mut(|s| s.msg = msg_inner.clone());
-                self.handle_sent_msg(ctx, msg_inner);
+                // self.rec_msg_dis.reduce_mut(|s| s.msg = msg_inner.clone());
                 true
             }
             ChatsMsg::RecMsgNotify(msg) => {
@@ -230,14 +224,9 @@ impl Component for Chats {
                 false
             }
             ChatsMsg::SendMessage(msg) => {
-                let msg_inner = if let Some(inner) = msg.split_audio() {
-                    inner
-                } else {
-                    msg.clone()
-                };
+                self.handle_sent_msg(ctx, &msg);
                 self.send_msg(msg);
-                self.rec_msg_dis.reduce_mut(|s| s.msg = msg_inner.clone());
-                self.handle_sent_msg(ctx, msg_inner);
+                // self.rec_msg_dis.reduce_mut(|s| s.msg = msg_inner.clone());
                 true
             }
             ChatsMsg::InsertConvWithoutUpdate(conv) => {

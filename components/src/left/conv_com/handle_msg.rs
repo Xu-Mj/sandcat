@@ -21,7 +21,8 @@ use super::Chats;
 use crate::left::conv_com::conversations::ChatsMsg;
 
 impl Chats {
-    pub fn handle_sent_msg(&mut self, ctx: &Context<Self>, msg: Msg) -> bool {
+    /// used to update the conversation list when a message is sent
+    pub fn handle_sent_msg(&mut self, ctx: &Context<Self>, msg: &Msg) -> bool {
         log::debug!("handle_sent_msg:{:?}", msg);
         let conv_type = match msg {
             Msg::Group(_) => RightContentType::Group,
@@ -29,9 +30,7 @@ impl Chats {
             _ => RightContentType::Default,
         };
         match msg {
-            Msg::Single(mut msg)
-            | Msg::Group(GroupMsg::Message(mut msg))
-            | Msg::OfflineSync(mut msg) => {
+            Msg::Single(msg) | Msg::Group(GroupMsg::Message(msg)) | Msg::OfflineSync(msg) => {
                 let conv = Conversation {
                     last_msg: msg.content.clone(),
                     last_msg_time: msg.create_time,
@@ -42,27 +41,22 @@ impl Chats {
                     ..Default::default()
                 };
                 let is_self = msg.is_self;
-                spawn_local(async move {
-                    if let Err(err) = db::db_ins().messages.add_message(&mut msg).await {
-                        log::error!("{:?}", err);
-                    }
-                });
                 self.operate_msg(ctx, conv, is_self)
             }
             Msg::Group(group_msg) => {
                 match group_msg {
                     GroupMsg::Invitation((msg, _)) => {
-                        self.handle_group_invitation(ctx, msg);
+                        self.handle_group_invitation(ctx, msg.clone());
                     }
                     GroupMsg::Dismiss((group_id, _)) => {
-                        self.handle_group_dismiss(ctx, group_id);
+                        self.handle_group_dismiss(ctx, group_id.clone());
                     }
                     // don't handle it now
                     _ => {}
                 }
                 false
             }
-            Msg::SingleCall(msg) => self.handle_single_call_conv(ctx, msg, conv_type),
+            Msg::SingleCall(msg) => self.handle_single_call_conv(ctx, msg.clone(), conv_type),
             _ => false,
         }
     }
