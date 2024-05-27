@@ -643,6 +643,7 @@
 
             .msg-input-size {
                 border: none;
+                resize: none;
             }
 
             .msg-input-size-mobile {
