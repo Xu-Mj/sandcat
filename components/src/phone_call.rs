@@ -118,7 +118,7 @@ pub enum PhoneCallMsg {
     OnTouchEnd,
 }
 
-const TIMEOUT: u32 = 6000;
+const TIMEOUT: u32 = 120;
 
 impl Component for PhoneCall {
     type Message = PhoneCallMsg;
@@ -483,7 +483,7 @@ impl Component for PhoneCall {
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
                             content_type,
-                            content: AttrValue::from("已经取消"),
+                            content: AttrValue::from("cancel"),
                             create_time,
                             is_self: true,
                             ..Default::default()
@@ -560,7 +560,8 @@ impl Component for PhoneCall {
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
                             content_type,
-                            content: AttrValue::from(utils::format_milliseconds(sustain)),
+                            content: format!("duration||{}", utils::format_milliseconds(sustain))
+                                .into(),
                             create_time,
                             is_read: 1,
                             is_self: true,
@@ -695,7 +696,7 @@ impl Component for PhoneCall {
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
                             content_type,
-                            content: AttrValue::from("Rejected"),
+                            content: AttrValue::from("deny"),
                             create_time,
                             is_read: 1,
                             is_self: true,
@@ -764,7 +765,7 @@ impl Component for PhoneCall {
                                 send_id: send_id.clone(),
                                 friend_id: friend_id.clone(),
                                 content_type,
-                                content: AttrValue::from("Not Answer"),
+                                content: AttrValue::from("not_answer"),
                                 create_time,
                                 is_self: true,
                                 ..Default::default()
