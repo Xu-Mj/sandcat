@@ -309,24 +309,13 @@ impl Component for Sender {
             }
             SenderMsg::SendVoice(voice) => {
                 log::debug!("send voice");
-                let time = chrono::Utc::now().timestamp_millis();
-                let msg = Message {
-                    local_id: voice.local_id.into(),
-                    is_self: true,
-                    create_time: time,
-                    friend_id: ctx.props().friend_id.clone(),
-                    send_id: ctx.props().cur_user_id.clone(),
-                    is_read: 1,
-                    content: voice.duration.to_string().into(),
-                    content_type: ContentType::Audio,
-                    platform: self.get_platform(),
-                    send_status: SendStatus::Sending,
-                    audio_data: Some(voice.data),
-                    ..Default::default()
-                };
-
-                self.store_send_msg(ctx, msg);
-                // self.send_msg(ctx, msg);
+                Self::send_voice_msg(
+                    self.get_platform(),
+                    ctx.props().friend_id.clone(),
+                    ctx.props().cur_user_id.clone(),
+                    voice,
+                    ctx.props().conv_type.clone(),
+                );
                 false
             }
         }

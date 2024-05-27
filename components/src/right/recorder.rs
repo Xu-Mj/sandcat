@@ -13,7 +13,6 @@ use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::{
-    db,
     model::voice::Voice,
     state::{I18nState, MobileState},
 };
@@ -54,7 +53,7 @@ pub enum RecorderMsg {
     DataAvailable(Blob),
     ReadData(JsValue),
     RecordeComplete,
-    SendComplete,
+    // SendComplete,
     Stop,
     Cancel,
     Send,
@@ -279,8 +278,7 @@ impl Component for Recorder {
                 self.record_state = RecorderState::Stop;
 
                 true
-            }
-            RecorderMsg::SendComplete => false,
+            } // RecorderMsg::SendComplete => false,
         }
     }
 
@@ -388,14 +386,17 @@ impl Recorder {
         let data = take(&mut self.data);
         let duration = self.time;
         let voice = Voice::new(nanoid::nanoid!(), data, duration);
-        ctx.link().send_future(async move {
-            // send voice data
-            if let Err(e) = db::db_ins().voices.save(&voice).await {
-                return RecorderMsg::PrepareError(e);
-            }
-            send_voice.emit(voice);
-            RecorderMsg::SendComplete
-        });
+        send_voice.emit(voice);
+        // ctx.link().send_future(async move {
+        //     // store voice data
+        //     if let Err(e) = db::db_ins().voices.save(&voice).await {
+        //         return RecorderMsg::PrepareError(e);
+        //     }
+
+        //     // send voice
+        //     send_voice.emit(voice);
+        //     RecorderMsg::SendComplete
+        // });
     }
 
     fn clean(&mut self) {
