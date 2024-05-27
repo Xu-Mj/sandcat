@@ -3,7 +3,7 @@ use yew::prelude::*;
 #[function_component(ExclamationIcon)]
 pub fn exclamation_icon() -> Html {
     html! {
-    <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 16 16">
+    <svg id="exclamation" xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 16 16">
         <path fill="#e11d48" d="M7.002 11a1 1 0 1 1 2 0a1 1 0 0 1-2 0M7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.553.553 0 0 1-1.1 0z"/>
     </svg>
     }
