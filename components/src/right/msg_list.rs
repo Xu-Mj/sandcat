@@ -1,8 +1,6 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
-use sandcat_sdk::state::SendAudioMsgState;
-use sandcat_sdk::state::SendMessageState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::Blob;
@@ -26,6 +24,8 @@ use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::state::MobileState;
 use sandcat_sdk::state::RecMessageState;
 use sandcat_sdk::state::RefreshMsgListState;
+use sandcat_sdk::state::SendAudioMsgState;
+use sandcat_sdk::state::SendMessageState;
 use sandcat_sdk::state::SendResultState;
 
 use crate::right::{msg_item::MsgItem, sender::Sender};
@@ -254,9 +254,7 @@ impl MessageList {
                 return;
             }
             self.is_playing_audio = id;
-            let u8_array = js_sys::Uint8Array::new_with_length(data.len() as u32);
-            let audio_data = wasm_bindgen::Clamped(data);
-            u8_array.copy_from(&audio_data[..]);
+            let u8_array = js_sys::Uint8Array::from(data.as_slice());
 
             let array: js_sys::Array = js_sys::Array::new_with_length(1);
             array.set(0, u8_array.buffer().into());

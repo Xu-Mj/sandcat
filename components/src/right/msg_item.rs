@@ -418,7 +418,7 @@ impl Component for MsgItem {
             ContentType::Default => html!(),
             ContentType::Audio => {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::PlayAudio);
-                let duration = ctx.props().msg.content.clone();
+                let duration = ctx.props().msg.audio_duration;
                 msg_content_classes.push("audio-msg-item");
                 html! {
                     <div class={msg_content_classes} {onclick}>
