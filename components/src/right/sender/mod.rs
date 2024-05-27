@@ -344,7 +344,7 @@ impl Sender {
                 platform,
                 send_status: SendStatus::Sending,
                 audio_duration: voice.duration,
-                audio_data: None,
+                audio_downloaded: true,
                 ..Default::default()
             };
             Dispatch::<SendAudioMsgState>::global().set(SendAudioMsgState { msg: msg.clone() });

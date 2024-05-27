@@ -45,7 +45,7 @@ impl Into<Message> for Msg {
             is_self: self.is_self,
             platform: self.platform,
             audio_duration: 0,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: AttrValue::default(),
         }
     }

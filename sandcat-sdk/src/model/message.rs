@@ -49,8 +49,7 @@ pub struct Message {
     #[serde(default)]
     pub platform: i32,
     pub audio_duration: u8,
-    #[serde(skip_serializing_if = "Option::is_none", default)]
-    pub audio_data: Option<Vec<u8>>,
+    pub audio_downloaded: bool,
     #[serde(skip)]
     pub file_content: AttrValue,
 }
@@ -95,7 +94,7 @@ impl From<InviteCancelMsg> for Message {
             is_self: value.is_self,
             platform: value.platform,
             audio_duration: 0,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: Default::default(),
         }
     }
@@ -128,7 +127,7 @@ impl From<InviteAnswerMsg> for Message {
             is_self: value.is_self,
             platform: value.platform,
             audio_duration: 0,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: Default::default(),
         }
     }
@@ -157,7 +156,7 @@ impl From<InviteNotAnswerMsg> for Message {
             is_self: value.is_self,
             platform: value.platform,
             audio_duration: 0,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: Default::default(),
         }
     }
@@ -187,7 +186,7 @@ impl From<Hangup> for Message {
             is_self: value.is_self,
             platform: value.platform,
             audio_duration: 0,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: Default::default(),
         }
     }
@@ -217,7 +216,7 @@ impl Message {
             is_self: value.is_self,
             platform: value.platform,
             audio_duration: 0,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: Default::default(),
         }
     }
@@ -243,7 +242,7 @@ impl Message {
             is_self: msg.is_self,
             platform: msg.platform,
             audio_duration: 0,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: Default::default(),
         }
     }
@@ -295,7 +294,7 @@ impl Msg {
             is_self: msg.is_self,
             platform: msg.platform,
             audio_duration: msg.audio_duration,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: msg.file_content.clone(),
         }
     }
@@ -561,7 +560,7 @@ impl TryFrom<pb::message::Msg> for Message {
             is_self: false,
             platform: value.platform,
             audio_duration: duration,
-            audio_data: None,
+            audio_downloaded: false,
             file_content: AttrValue::default(),
         })
     }
@@ -790,7 +789,9 @@ impl From<Msg> for PbMsg {
                 match group_msg {
                     GroupMsg::Message(msg) => {
                         let content = if msg.content_type == ContentType::Audio {
-                            msg.audio_data.unwrap_or_default()
+                            let mut content = msg.content.as_bytes().to_vec();
+                            content.insert(0, msg.audio_duration);
+                            content
                         } else {
                             msg.content.as_bytes().to_vec()
                         };

@@ -1,5 +1,3 @@
-use std::mem::take;
-
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -304,6 +302,7 @@ impl Chats {
                     if msg.content_type == ContentType::Audio {
                         // request from file server
                         let data = api::file().download_voice(&msg.content).await.unwrap();
+                        msg.audio_downloaded = true;
                         let voice = Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
                         if let Err(e) = db::db_ins().voices.save(&voice).await {
                             log::error!("save voice to db error: {:?}", e);
@@ -357,12 +356,11 @@ impl Chats {
                         ctx.link().send_future(async move {
                             // 数据入库
                             if msg.content_type == ContentType::Audio {
-                                let duration = msg.content.parse::<u8>().unwrap_or_default();
-                                let voice = Voice::new(
-                                    msg.local_id.to_string(),
-                                    take(&mut msg.audio_data).unwrap_or_default(),
-                                    duration,
-                                );
+                                // request from file server
+                                let data = api::file().download_voice(&msg.content).await.unwrap();
+                                msg.audio_downloaded = true;
+                                let voice =
+                                    Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
                                 if let Err(e) = db::db_ins().voices.save(&voice).await {
                                     log::error!("save voice to db error: {:?}", e);
                                 }
