@@ -19,3 +19,4 @@
 - change the method about send message in side. split the inside and outside, send inside directly
 - decrease the state count; --every action will trigger a state change
 - message item right click menu: delete and resent
+- receive voice message need to render the voice data download progress
