@@ -20,7 +20,6 @@ use sandcat_sdk::{
 use utils::tr;
 
 pub struct Recorder {
-    node_ref: NodeRef,
     mask_node: NodeRef,
     holder_node: NodeRef,
     voice_node: NodeRef,
@@ -83,7 +82,6 @@ impl Component for Recorder {
         let i18n = utils::create_bundle(res);
         Self {
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
-            node_ref: NodeRef::default(),
             mask_node: NodeRef::default(),
             holder_node: NodeRef::default(),
             voice_node: NodeRef::default(),
@@ -154,9 +152,11 @@ impl Component for Recorder {
                 self.on_error_closure = Some(on_error_closure);
 
                 self.start_time = chrono::Utc::now().timestamp_millis();
+
                 // start recording
-                // todo handle error
-                recorder.start().unwrap();
+                if let Err(e) = recorder.start() {
+                    ctx.link().send_message(RecorderMsg::PrepareError(e));
+                }
                 self.on_data_available_closure = Some(on_data_available_closure);
 
                 self.media_recorder = Some(recorder);
@@ -201,7 +201,6 @@ impl Component for Recorder {
                 if let Some(ref recorder) = self.media_recorder {
                     recorder.stop().unwrap();
                 }
-                // self.time_interval = None;
                 true
             }
             RecorderMsg::Cancel => {
@@ -220,8 +219,6 @@ impl Component for Recorder {
                 if self.time > 0 && !self.data.is_empty() {
                     self.send(ctx);
                 }
-                // self.on_data_available_closure = None;
-                // self.on_error_closure = None;
                 self.clean();
                 true
             }
@@ -310,7 +307,6 @@ impl Component for Recorder {
             };
             html! {
                 <div
-                    ref={self.node_ref.clone()}
                     ontouchstart={touch_start}
                     ontouchmove={touch_move}
                     ontouchend={touch_end}
@@ -363,7 +359,7 @@ impl Component for Recorder {
 
             let on_recorder_click = ctx.link().callback(|_| RecorderMsg::Prepare);
             html! {
-                <div ref={self.node_ref.clone()} class="recorder">
+                <div class="recorder">
                     <button class="btn" disabled={record_btn} onclick={on_recorder_click}>{tr!(self.i18n, "recorde")}</button>
                     {error}
                     {voice}
@@ -401,6 +397,7 @@ impl Recorder {
             RecorderMsg::SendComplete
         });
     }
+
     fn clean(&mut self) {
         self.media_recorder = None;
         self.time = 0;
