@@ -16,3 +16,5 @@
 - voice data maybe need to select from db dynamically when user click the voice message
 - we need to calculate the swape time and y cordinate of swapping
 - voice data is huge, we need to compress it and redesign the way to send it to server-- consider to use the audio file instead of the voice data
+- change the method about send message in side. split the inside and outside, send inside directly
+- decrease the state count; --every action will trigger a state change
