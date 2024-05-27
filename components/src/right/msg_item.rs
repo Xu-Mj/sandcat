@@ -455,18 +455,25 @@ impl Component for MsgItem {
             ContentType::Default => html!(),
             ContentType::Audio => {
                 // if audio download success, the ctx.props().msg.audio_downloaded will be true
-                let icon = if ctx.props().msg.audio_downloaded {
-                    self.voice_in_msg_icon()
+                let (icon, onclick) = if ctx.props().msg.audio_downloaded {
+                    (
+                        self.voice_in_msg_icon(),
+                        Some(ctx.link().callback(|_| MsgItemMsg::PlayAudio)),
+                    )
                 } else {
                     match self.download_stage {
-                        AudioDownloadStage::Hidden => self.voice_in_msg_icon(),
-                        AudioDownloadStage::Downloading => html!(<MsgLoadingIcon />),
-                        AudioDownloadStage::Timeout => html!(<ExclamationIcon />),
+                        AudioDownloadStage::Hidden => (
+                            self.voice_in_msg_icon(),
+                            Some(ctx.link().callback(|_| MsgItemMsg::PlayAudio)),
+                        ),
+                        AudioDownloadStage::Downloading => (html!(<MsgLoadingIcon />), None),
+                        AudioDownloadStage::Timeout => (html!(<ExclamationIcon />), None),
                     }
                 };
-                let onclick = ctx.link().callback(|_| MsgItemMsg::PlayAudio);
+
                 let duration = ctx.props().msg.audio_duration;
                 msg_content_classes.push("audio-msg-item");
+
                 html! {
                     <div class={msg_content_classes} {onclick}>
                         {icon}
