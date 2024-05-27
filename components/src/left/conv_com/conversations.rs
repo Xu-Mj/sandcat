@@ -216,7 +216,6 @@ impl Component for Chats {
                 let msg = state.msg.clone();
                 self.handle_sent_msg(ctx, &msg);
                 self.send_msg(msg);
-                // self.rec_msg_dis.reduce_mut(|s| s.msg = msg_inner.clone());
                 true
             }
             ChatsMsg::RecMsgNotify(msg) => {
@@ -226,7 +225,6 @@ impl Component for Chats {
             ChatsMsg::SendMessage(msg) => {
                 self.handle_sent_msg(ctx, &msg);
                 self.send_msg(msg);
-                // self.rec_msg_dis.reduce_mut(|s| s.msg = msg_inner.clone());
                 true
             }
             ChatsMsg::InsertConvWithoutUpdate(conv) => {
