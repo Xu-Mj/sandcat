@@ -104,6 +104,12 @@ pub struct SendAudioMsgState {
     pub msg: Message,
 }
 
+/// send audio message
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct AudioDownloadedState {
+    pub local_id: AttrValue,
+}
+
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct SendCallState {
     pub msg: InviteMsg,

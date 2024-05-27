@@ -20,3 +20,4 @@
 - decrease the state count; --every action will trigger a state change
 - message item right click menu: delete and resent
 - receive voice message need to render the voice data download progress
+- add loading animation for users

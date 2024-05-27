@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
+use sandcat_sdk::state::AudioDownloadedState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::Blob;
@@ -53,6 +54,8 @@ pub struct MessageList {
     // listen send result, update message item status
     _send_result_dis: Dispatch<SendResultState>,
     _sent_audio_dis: Dispatch<SendAudioMsgState>,
+    // listen audio downloaded state when content type is audio
+    _audio_dis: Dispatch<AudioDownloadedState>,
 }
 
 pub enum MessageListMsg {
@@ -69,6 +72,7 @@ pub enum MessageListMsg {
     QueryFriend(Option<Box<dyn ItemInfo>>),
     PlayAudio((AttrValue, Vec<u8>)),
     AudioOnStop,
+    AudioDownloaded(Rc<AudioDownloadedState>),
 }
 
 /// 接收对方用户信息即可，
@@ -309,6 +313,9 @@ impl Component for MessageList {
             .subscribe_silent(ctx.link().callback(MessageListMsg::SendResultCallback));
         let _sent_audio_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(MessageListMsg::SentAudio));
+
+        let audio_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(MessageListMsg::AudioDownloaded));
         let self_ = Self {
             list: IndexMap::new(),
             is_playing_audio: AttrValue::default(),
@@ -328,6 +335,7 @@ impl Component for MessageList {
             _send_result_dis,
             _sent_audio_dis,
             _sent_msg_dis,
+            _audio_dis: audio_dis,
         };
         self_.query_friend(ctx);
         self_.query(ctx);
@@ -436,6 +444,13 @@ impl Component for MessageList {
                     };
                 }
                 self.audio_data_url = None;
+                false
+            }
+            MessageListMsg::AudioDownloaded(state) => {
+                if let Some(item) = self.list.get_mut(&state.local_id) {
+                    item.audio_downloaded = true;
+                    return true;
+                }
                 false
             }
         }

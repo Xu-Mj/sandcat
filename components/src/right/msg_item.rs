@@ -33,7 +33,6 @@ pub struct MsgItem {
     friend_info: Option<UserWithMatchType>,
     text_node: NodeRef,
     audio_icon_node: NodeRef,
-    // audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -88,6 +87,7 @@ impl Component for MsgItem {
                 ctx.send_message(MsgItemMsg::SendTimeout);
             }));
         }
+
         Self {
             timeout,
             show_img_preview: false,
@@ -99,7 +99,6 @@ impl Component for MsgItem {
             friend_info: None,
             text_node: NodeRef::default(),
             audio_icon_node: NodeRef::default(),
-            // audio_on_stop: None,
         }
     }
 
