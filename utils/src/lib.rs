@@ -15,9 +15,9 @@ pub fn format_milliseconds(millis: i64) -> String {
     let seconds = seconds % 60;
 
     if hours > 0 {
-        format!("时间: {:02}:{:02}:{:02}", hours, minutes, seconds)
+        format!("{:02}:{:02}:{:02}", hours, minutes, seconds)
     } else {
-        format!("时间: {:02}:{:02}", minutes, seconds)
+        format!("{:02}:{:02}", minutes, seconds)
     }
 }
 

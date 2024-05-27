@@ -1,13 +1,15 @@
+use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
 use gloo::utils::{document, window};
 use nanoid::nanoid;
+use utils::tr;
 use wasm_bindgen::JsCast;
 use web_sys::{HtmlDivElement, Node};
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use i18n::LanguageType;
+use i18n::{en_us, zh_cn, LanguageType};
 use icons::{CycleIcon, ExclamationIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{
@@ -16,7 +18,7 @@ use sandcat_sdk::model::message::{
 use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::{MobileState, SendCallState, SendMessageState};
+use sandcat_sdk::state::{I18nState, MobileState, SendCallState, SendMessageState};
 
 use crate::get_platform;
 use crate::right::friend_card::FriendCard;
@@ -38,6 +40,7 @@ pub struct MsgItem {
     // if timeout then show download timeout icon
     audio_download_timeout: Option<Timeout>,
     download_stage: AudioDownloadStage,
+    i18n: Option<FluentBundle<FluentResource>>,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -110,6 +113,18 @@ impl Component for MsgItem {
             }));
         }
 
+        // i18n
+        let mut i18n = None;
+        if ctx.props().msg.content_type == ContentType::VideoCall
+            || ctx.props().msg.content_type == ContentType::AudioCall
+        {
+            let res = match Dispatch::<I18nState>::global().get().lang {
+                LanguageType::ZhCN => zh_cn::MSG_ITEM,
+                LanguageType::EnUS => en_us::MSG_ITEM,
+            };
+            i18n = Some(utils::create_bundle(res));
+        }
+
         Self {
             timeout,
             show_img_preview: false,
@@ -124,6 +139,7 @@ impl Component for MsgItem {
             show_audio_download_timer: timer,
             audio_download_timeout: None,
             download_stage: AudioDownloadStage::Hidden,
+            i18n,
         }
     }
 
@@ -412,8 +428,8 @@ impl Component for MsgItem {
             ContentType::File => {
                 let full_original = ctx.props().msg.content.clone();
                 let mut parts = full_original.split("||");
-                let file_name = parts.next().unwrap_or(&full_original).to_string();
                 let file_name_prefix = parts.next().unwrap_or(&full_original).to_string();
+                let file_name = parts.next().unwrap_or(&full_original).to_string();
 
                 html! {
                     <div class="msg-item-content">
@@ -434,9 +450,19 @@ impl Component for MsgItem {
             }
             ContentType::VideoCall => {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::CallVideo);
+                let full_original = ctx.props().msg.content.clone();
+                let mut parts = full_original.split("||");
+                let text = if parts.clone().count() < 2 {
+                    tr!(self.i18n.as_ref().unwrap(), &full_original)
+                } else {
+                    let prefix = parts.next().unwrap_or(&full_original).to_string();
+                    let duration = parts.next().unwrap_or(&full_original).to_string();
+
+                    format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
+                };
                 html! {
                     <div class={msg_content_classes} {onclick} style="cursor: pointer;">
-                        {ctx.props().msg.content.clone()}
+                        {text}
                         {"\t"}
                         <VideoRecordIcon/>
                     </div>
@@ -444,9 +470,20 @@ impl Component for MsgItem {
             }
             ContentType::AudioCall => {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::CallAudio);
+                let full_original = ctx.props().msg.content.clone();
+                log::info!("full_original: {}", full_original);
+                let mut parts = full_original.split("||");
+                let text = if parts.clone().count() < 2 {
+                    tr!(self.i18n.as_ref().unwrap(), &full_original)
+                } else {
+                    let prefix = parts.next().unwrap_or(&full_original).to_string();
+                    let duration = parts.next().unwrap_or(&full_original).to_string();
+
+                    format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
+                };
                 html! {
                     <div class={msg_content_classes} {onclick} style="cursor: pointer;">
-                        {ctx.props().msg.content.clone()}
+                        {text}
                         {"\t"}
                          <MsgPhoneIcon />
                     </div>

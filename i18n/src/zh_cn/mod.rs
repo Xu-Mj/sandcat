@@ -76,6 +76,14 @@ mute = 消息免打扰
 un_mute = 取消免打扰
 "#;
 
+pub const MSG_ITEM: &str = r#"
+cancel = 已取消
+duration = 时间:
+busy = 占线
+deny = 已拒绝
+not_answer = 未接听
+"#;
+
 pub const SELECT_FRIENDS: &str = r#"
 querying = 正在查询...
 select_friends = 选择好友

@@ -11,7 +11,7 @@
 - redesign the websocket reconnection logical,
 - adjust textarea dynamic height under the mobile mode
 - need to handle all types message about platform and if self msg
-- **redesign the audio message type in indexeddb**
+- **redesign the audio message type in indexeddb** -- down
 - phone call type need i18n
 - voice data maybe need to select from db dynamically when user click the voice message
 - we need to calculate the swape time and y cordinate of swapping
@@ -21,3 +21,6 @@
 - message item right click menu: delete and resent
 - receive voice message need to render the voice data download progress
 - add loading animation for users
+- need emoji in text message
+- phone call need duration on the panel
+- reply busy when the user is in the call

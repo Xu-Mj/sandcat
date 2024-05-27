@@ -87,7 +87,7 @@ impl From<InviteCancelMsg> for Message {
             send_id: value.send_id,
             friend_id: value.friend_id,
             content_type,
-            content: AttrValue::from("已经取消"),
+            content: AttrValue::from("cancel"),
             create_time: value.create_time,
             send_time: value.send_time,
             send_status: value.send_status,
@@ -140,7 +140,7 @@ impl From<InviteNotAnswerMsg> for Message {
             InviteType::Video => ContentType::VideoCall,
             InviteType::Audio => ContentType::AudioCall,
         };
-        let content = AttrValue::from("NOT ANSWER");
+        let content = AttrValue::from("not_answer");
         Message {
             id: 0,
             seq: value.seq,
@@ -169,7 +169,7 @@ impl From<Hangup> for Message {
             InviteType::Video => ContentType::VideoCall,
             InviteType::Audio => ContentType::AudioCall,
         };
-        let content = AttrValue::from(utils::format_milliseconds(value.sustain));
+        let content = format!("duration||{}", utils::format_milliseconds(value.sustain)).into();
 
         Message {
             id: 0,
@@ -200,7 +200,7 @@ impl Message {
             InviteType::Audio => ContentType::AudioCall,
         };
         // 计算时间
-        let content = AttrValue::from(utils::format_milliseconds(value.sustain));
+        let content = format!("duration||{}", utils::format_milliseconds(value.sustain)).into();
         Message {
             id: 0,
             seq: value.seq,
@@ -235,7 +235,7 @@ impl Message {
             send_id: msg.send_id,
             friend_id: msg.friend_id,
             content_type,
-            content: AttrValue::from("Not Answer"),
+            content: AttrValue::from("not_answer"),
             create_time: msg.create_time,
             send_time: msg.send_time,
             send_status: msg.send_status,

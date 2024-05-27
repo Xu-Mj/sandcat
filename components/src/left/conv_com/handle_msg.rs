@@ -11,7 +11,9 @@ use sandcat_sdk::{
         voice::Voice,
         ContentType, FriendShipStateType, RightContentType,
     },
-    state::{AudioDownloadedState, FriendShipState, SendResultState, UnreadState},
+    state::{
+        AudioDownloadedState, FriendShipState, SendMessageState, SendResultState, UnreadState,
+    },
 };
 
 use super::Chats;
@@ -54,7 +56,12 @@ impl Chats {
                 }
                 false
             }
-            Msg::SingleCall(msg) => self.handle_single_call_conv(ctx, msg.clone(), conv_type),
+            Msg::SingleCall(msg) => {
+                Dispatch::<SendMessageState>::global().set(SendMessageState {
+                    msg: Msg::SingleCall(msg.clone()),
+                });
+                self.handle_single_call_conv(ctx, msg.clone(), conv_type)
+            }
             _ => false,
         }
     }

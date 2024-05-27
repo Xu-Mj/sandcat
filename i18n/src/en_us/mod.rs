@@ -58,6 +58,14 @@ no_groups = No Groups
 no_result = No Result
 "#;
 
+pub const MSG_ITEM: &str = r#"
+cancel = Canceled
+duration = Duration:
+deny = Denied
+busy = Busy
+not_answer = Not answered
+"#;
+
 pub const ADD_FRIEND: &str = r#"
 no_result = No Result
 search_prompt = search by phone number or email address or account
