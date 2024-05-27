@@ -461,7 +461,7 @@ impl Component for MsgItem {
                     format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
                 };
                 html! {
-                    <div class={msg_content_classes} {onclick} style="cursor: pointer;">
+                    <div class={msg_content_classes} {onclick} style="cursor: pointer; user-select: none;">
                         {text}
                         {"\t"}
                         <VideoRecordIcon/>
@@ -481,7 +481,7 @@ impl Component for MsgItem {
                     format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
                 };
                 html! {
-                    <div class={msg_content_classes} {onclick} style="cursor: pointer;">
+                    <div class={msg_content_classes} {onclick} style="cursor: pointer; user-select: none;">
                         {text}
                         {"\t"}
                          <MsgPhoneIcon />
