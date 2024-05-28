@@ -362,12 +362,16 @@ impl Component for MsgItem {
                 true
             }
             MsgItemMsg::DeleteItem => {
-                ctx.props().del_item.emit(ctx.props().msg.local_id.clone());
-                // let del_item = ctx.props().del_item.clone();
-                // let id = ctx.props().msg.local_id.clone();
-                // spawn_local(async move {
-                //     db::db_ins().messages.
-                // })
+                let del_item = ctx.props().del_item.clone();
+                let id = ctx.props().msg.id;
+                let local_id = ctx.props().msg.local_id.clone();
+                spawn_local(async move {
+                    if let Err(e) = db::db_ins().messages.delete(id).await {
+                        log::error!("delete message error: {:?}", e);
+                        return;
+                    }
+                    del_item.emit(local_id);
+                });
                 false
             }
         }
