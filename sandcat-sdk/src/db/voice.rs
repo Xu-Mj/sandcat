@@ -9,4 +9,6 @@ pub trait Voices: Debug {
     async fn save(&self, voice: &Voice) -> Result<(), JsValue>;
 
     async fn get(&self, local_id: &str) -> Result<Voice, JsValue>;
+
+    async fn del(&self, local_id: &str) -> Result<(), JsValue>;
 }
