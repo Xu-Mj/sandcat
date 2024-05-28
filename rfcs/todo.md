@@ -12,16 +12,16 @@
 - adjust textarea dynamic height under the mobile mode
 - need to handle all types message about platform and if self msg
 - **redesign the audio message type in indexeddb** -- done
-- phone call type need i18n
-- voice data maybe need to select from db dynamically when user click the voice message
-- we need to calculate the swape time and y cordinate of swapping
-- voice data is huge, we need to compress it and redesign the way to send it to server-- consider to use the audio file instead of the voice data
-- change the method about send message in side. split the inside and outside, send inside directly
+- phone call type need i18n -- done
+- voice data maybe need to select from db dynamically when user click the voice message -- done
+- we need to calculate the swape time and y cordinate of swapping -- done
+- voice data is huge, we need to compress it and redesign the way to send it to server-- consider to use the audio file instead of the voice data -- done
+- change the method about send message in side. split the inside and outside, send inside directly -- done
 - decrease the state count; --every action will trigger a state change
 - message item right click menu: delete and resent
 - receive voice message need to render the voice data download progress -- done
 - add loading animation for users
 - need emoji in text message
-- phone call need duration on the panel
+- phone call need duration on the panel -- done
 - reply busy when the user is in the call
 - knock off is not complete
