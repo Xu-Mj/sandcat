@@ -62,4 +62,10 @@ impl Voices for VoiceRepo {
         // }
         Ok(rx.await.unwrap())
     }
+
+    async fn del(&self, local_id: &str) -> Result<(), JsValue> {
+        let store = self.store(VOICE_TABLE_NAME).await?;
+        store.delete(&JsValue::from(local_id))?;
+        Ok(())
+    }
 }
