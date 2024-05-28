@@ -64,12 +64,21 @@ pub struct PhoneCall {
     is_dragging: bool,
     is_mobile: bool,
     is_zoom: bool,
+    conn_state: ConnectionState,
 }
 
 impl Debug for PhoneCall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         <NodeRef as Debug>::fmt(&self.friend_video_node, f)
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum ConnectionState {
+    Waiting,
+    Connecting,
+    Connected,
+    Error,
 }
 
 impl PhoneCall {
@@ -100,6 +109,7 @@ impl PhoneCall {
             is_dragging: false,
             is_mobile,
             is_zoom: false,
+            conn_state: ConnectionState::Waiting,
         }
     }
 

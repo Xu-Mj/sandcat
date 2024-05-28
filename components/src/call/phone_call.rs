@@ -15,8 +15,8 @@ use yew::{html, AttrValue, Callback, Component, Context, Html, Properties, Touch
 use yewdux::Dispatch;
 
 use icons::{
-    AnswerPhoneIcon, AudioZoomInIcon, AudioZoomOutIcon, HangupInNotifyIcon, MicrophoneIcon,
-    MicrophoneMuteIcon, VideoRecordIcon, VolumeIcon, VolumeMuteIcon,
+    AnswerPhoneIcon, AudioZoomInIcon, AudioZoomOutIcon, HangUpLoadingIcon, HangupInNotifyIcon,
+    MicrophoneIcon, MicrophoneMuteIcon, VideoRecordIcon, VolumeIcon, VolumeMuteIcon,
 };
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{
@@ -29,6 +29,7 @@ use sandcat_sdk::model::ItemInfo;
 use sandcat_sdk::state::{NotificationState, SendCallState};
 use ws::WebSocketManager;
 
+use crate::call::ConnectionState;
 use crate::get_platform;
 
 use super::PhoneCall;
@@ -204,9 +205,9 @@ impl Component for PhoneCall {
                         // 接通
                         log::debug!("请求被对方同意");
                         // todo需要在webrtc状态为Connected下进行回调修改
-                        self.invite_info.as_mut().unwrap().start_time =
-                            chrono::Utc::now().timestamp_millis();
-                        self.invite_info.as_mut().unwrap().connected = true;
+                        // self.invite_info.as_mut().unwrap().start_time =
+                        //     chrono::Utc::now().timestamp_millis();
+                        // self.invite_info.as_mut().unwrap().connected = true;
                         let mut description = RtcSessionDescriptionInit::new(RtcSdpType::Answer);
                         description.sdp(&msg.sdp.unwrap());
                         let future = JsFuture::from(
@@ -554,6 +555,8 @@ impl Component for PhoneCall {
                         self.show_audio = true;
                     }
                 }
+                // change the connection state
+                self.conn_state = ConnectionState::Connecting;
                 true
             }
             PhoneCallMsg::ConnectedCall(stream) => {
@@ -603,10 +606,6 @@ impl Component for PhoneCall {
                         log::error!("send message error: {:?}", e);
                     }
                 });
-                self.invite_info.as_mut().unwrap().connected = true;
-                self.invite_info.as_mut().unwrap().start_time =
-                    chrono::Utc::now().timestamp_millis();
-
                 true
             }
             PhoneCallMsg::DenyCall => {
@@ -887,6 +886,11 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::OnConnect(event) => {
+                // truly connected
+                self.invite_info.as_mut().unwrap().connected = true;
+                self.invite_info.as_mut().unwrap().start_time =
+                    chrono::Utc::now().timestamp_millis();
+                self.conn_state = ConnectionState::Connected;
                 match self.invite_info.as_ref().unwrap().invite_type {
                     InviteType::Video => {
                         let friend_video: HtmlVideoElement = self.friend_video_node.cast().unwrap();
@@ -905,6 +909,13 @@ impl Component for PhoneCall {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        // todo error notification
+        if self.conn_state == ConnectionState::Error {
+            return html! {
+                    <div class="error">
+                    </div>
+            };
+        }
         let mut class = if self.is_mobile {
             "phone-call-size-mobile"
         } else {
@@ -946,6 +957,12 @@ impl Component for PhoneCall {
 
         let mut video = html!();
         let mut audio = html!();
+
+        let hangup_icon = if self.conn_state != ConnectionState::Connecting {
+            html!(<HangupInNotifyIcon/>)
+        } else {
+            html!(<HangUpLoadingIcon/>)
+        };
 
         if self.show_video || self.show_audio {
             if let Some(info) = self.invite_info.as_ref() {
@@ -1013,7 +1030,7 @@ impl Component for PhoneCall {
                                     {microphone}
                                 </span>
                                 <span class="hangup-icon" onclick={hangup} >
-                                    <HangupInNotifyIcon/>
+                                    {hangup_icon}
                                 </span>
                                 <span class="call-volume" onclick={volume_click} >
                                     {volume}
@@ -1052,7 +1069,7 @@ impl Component for PhoneCall {
                                         {microphone}
                                     </span>
                                     <span class="hangup-icon" onclick={hangup} >
-                                        <HangupInNotifyIcon/>
+                                        {hangup_icon}
                                     </span>
                                     <span class="call-volume" onclick={volume_click} >
                                         {volume}

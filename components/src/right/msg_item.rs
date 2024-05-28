@@ -10,7 +10,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{CycleIcon, ExclamationIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
+use icons::{ExclamationIcon, HangUpLoadingIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{
     GroupMsg, InviteMsg, InviteType, Message, Msg, SendStatus, ServerResponse,
@@ -536,7 +536,7 @@ impl Component for MsgItem {
         } else if self.show_sending {
             send_status = html! {
                 <div class="msg-sending">
-                    <CycleIcon/>
+                    <HangUpLoadingIcon fill={AttrValue::from("#000000")}/>
                 </div>
             };
         }
