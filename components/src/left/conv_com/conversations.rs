@@ -348,9 +348,11 @@ impl Component for Chats {
         let mut warning = html!();
         if self.is_knocked {
             warning = html! {
-                <div>
-                    {"GoodBye"}
-                    <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{"OK"}</button>
+                <div class="knock-off-warning">
+                    <div class="warning-window box-shadow">
+                        <h2>{"GoodBye"}</h2>
+                        <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{"OK"}</button>
+                    </div>
                 </div>
             }
         }
