@@ -22,7 +22,7 @@ use sandcat_sdk::state::{I18nState, MobileState, SendCallState, SendMessageState
 
 use crate::get_platform;
 use crate::right::friend_card::FriendCard;
-
+use crate::right::msg_right_click::MsgRightClick;
 pub struct MsgItem {
     avatar: AttrValue,
     show_img_preview: bool,
@@ -41,6 +41,10 @@ pub struct MsgItem {
     audio_download_timeout: Option<Timeout>,
     download_stage: AudioDownloadStage,
     i18n: Option<FluentBundle<FluentResource>>,
+    /// right click menu
+    show_context_menu: bool,
+    /// hold right click item position
+    context_menu_pos: (i32, i32),
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -58,6 +62,9 @@ pub enum MsgItemMsg {
     PlayAudio,
     ShowAudioDownload,
     AudioDownloadTimeout,
+    OnContextMenu(MouseEvent),
+    CloseContextMenu,
+    DeleteItem,
 }
 
 enum AudioDownloadStage {
@@ -74,6 +81,7 @@ pub struct MsgItemProps {
     pub avatar: AttrValue,
     pub msg: Message,
     pub conv_type: RightContentType,
+    pub del_item: Callback<AttrValue>,
     pub play_audio: Option<Callback<(AttrValue, Vec<u8>)>>,
 }
 
@@ -140,6 +148,8 @@ impl Component for MsgItem {
             audio_download_timeout: None,
             download_stage: AudioDownloadStage::Hidden,
             i18n,
+            show_context_menu: false,
+            context_menu_pos: (0, 0),
         }
     }
 
@@ -341,6 +351,25 @@ impl Component for MsgItem {
                 self.download_stage = AudioDownloadStage::Timeout;
                 true
             }
+            MsgItemMsg::OnContextMenu(event) => {
+                event.prevent_default();
+                self.context_menu_pos = (event.client_x(), event.client_y());
+                self.show_context_menu = true;
+                true
+            }
+            MsgItemMsg::CloseContextMenu => {
+                self.show_context_menu = false;
+                true
+            }
+            MsgItemMsg::DeleteItem => {
+                ctx.props().del_item.emit(ctx.props().msg.local_id.clone());
+                // let del_item = ctx.props().del_item.clone();
+                // let id = ctx.props().msg.local_id.clone();
+                // spawn_local(async move {
+                //     db::db_ins().messages.
+                // })
+                false
+            }
         }
     }
 
@@ -357,6 +386,8 @@ impl Component for MsgItem {
         } else {
             msg_content_classes.push("background-other");
         }
+
+        let oncontextmenu = ctx.link().callback(Self::Message::OnContextMenu);
 
         let content = match msg_type {
             ContentType::Text => {
@@ -380,7 +411,11 @@ impl Component for MsgItem {
                     })
                     .collect::<Html>();
                 html! {
-                    <div class={msg_content_classes} ref={self.text_node.clone()} ondblclick={ctx.link().callback(MsgItemMsg::TextDoubleClick)}>
+                    <div
+                        class={msg_content_classes}
+                        {oncontextmenu}
+                        ref={self.text_node.clone()}
+                        ondblclick={ctx.link().callback(MsgItemMsg::TextDoubleClick)}>
                         {html_content}
                     </div>
                 }
@@ -410,7 +445,7 @@ impl Component for MsgItem {
                 html! {
                 <>
                     {img_preview}
-                    <div class="msg-item-content pointer">
+                    <div class="msg-item-content pointer" {oncontextmenu}>
                         <div class="img-mask">
                         </div>
                         <img class="msg-item-img" src={img_url} {onclick}/>
@@ -419,7 +454,7 @@ impl Component for MsgItem {
                 }
             }
             ContentType::Video => html! {
-                <div class="msg-item-content">
+                <div class="msg-item-content" {oncontextmenu}>
                     <video class="msg-item-video">
                         <source src={ctx.props().msg.content.clone()} type="video/mp4" />
                     </video>
@@ -432,7 +467,7 @@ impl Component for MsgItem {
                 let file_name = parts.next().unwrap_or(&full_original).to_string();
 
                 html! {
-                    <div class="msg-item-content">
+                    <div class="msg-item-content" {oncontextmenu}>
                         <a href={file_name_prefix} download="" class="msg-item-file-name">
                             {file_name}
                         </a>
@@ -441,7 +476,7 @@ impl Component for MsgItem {
             }
             ContentType::Emoji => {
                 html! {
-                    <div class="msg-item-emoji">
+                    <div class="msg-item-emoji" {oncontextmenu}>
                         // <span class="msg-item-emoji">
                             <img class="emoji" src={ctx.props().msg.content.clone()} />
                         // </span>
@@ -461,7 +496,7 @@ impl Component for MsgItem {
                     format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
                 };
                 html! {
-                    <div class={msg_content_classes} {onclick} style="cursor: pointer; user-select: none;">
+                    <div class={msg_content_classes} {oncontextmenu} {onclick} style="cursor: pointer; user-select: none;">
                         {text}
                         {"\t"}
                         <VideoRecordIcon/>
@@ -481,7 +516,7 @@ impl Component for MsgItem {
                     format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
                 };
                 html! {
-                    <div class={msg_content_classes} {onclick} style="cursor: pointer; user-select: none;">
+                    <div class={msg_content_classes} {oncontextmenu} {onclick} style="cursor: pointer; user-select: none;">
                         {text}
                         {"\t"}
                          <MsgPhoneIcon />
@@ -511,7 +546,7 @@ impl Component for MsgItem {
                 msg_content_classes.push("audio-msg-item");
 
                 html! {
-                    <div class={msg_content_classes} {onclick}>
+                    <div class={msg_content_classes} {oncontextmenu} {onclick}>
                         {icon}
                         <span>{format!("{}''", duration)}</span>
                     </div>
@@ -562,9 +597,22 @@ impl Component for MsgItem {
             html!(<img class="avatar pointer" src={self.avatar.clone()} onclick={_avatar_click} />)
         };
 
+        // context menu
+        let mut context_menu = html!();
+        if self.show_context_menu {
+            context_menu = html! {
+                <MsgRightClick
+                    x={self.context_menu_pos.0}
+                    y={self.context_menu_pos.1}
+                    close={ctx.link().callback( |_|MsgItemMsg::CloseContextMenu)}
+                    delete={ctx.link().callback(|_|MsgItemMsg::DeleteItem)}
+                    />
+            }
+        }
         html! {
             <>
             {friend_card}
+            {context_menu}
             <div class={classes} id={id.to_string()} >
                 <div class="msg-item-avatar">
                     {avatar}

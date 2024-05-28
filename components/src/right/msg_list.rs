@@ -73,6 +73,7 @@ pub enum MessageListMsg {
     PlayAudio((AttrValue, Vec<u8>)),
     AudioOnStop,
     AudioDownloaded(Rc<AudioDownloadedState>),
+    DelItem(AttrValue),
 }
 
 /// 接收对方用户信息即可，
@@ -330,6 +331,7 @@ impl Component for MessageList {
             is_black: false,
             audio_on_stop: None,
             audio_data_url: None,
+
             _sync_msg_dis,
             _rec_msg_dis,
             _send_result_dis,
@@ -453,6 +455,11 @@ impl Component for MessageList {
                 }
                 false
             }
+            MessageListMsg::DelItem(id) => {
+                self.list.shift_remove(&id);
+
+                true
+            }
         }
     }
 
@@ -498,6 +505,8 @@ impl Component for MessageList {
                     if msg.content_type == ContentType::Audio {
                         play_audio = Some(ctx.link().callback(MessageListMsg::PlayAudio));
                     }
+                    let del_item = ctx.link().callback(MessageListMsg::DelItem);
+
                     html! {
                         <MsgItem
                             user_id={props.cur_user_id.clone()}
@@ -506,6 +515,7 @@ impl Component for MessageList {
                             avatar={avatar}
                             conv_type={conv_type.clone()}
                             {play_audio}
+                            del_item={del_item.clone()}
                             key={msg.id}
                         />
                     }
@@ -516,6 +526,7 @@ impl Component for MessageList {
         if Dispatch::<MobileState>::global().get().is_mobile() {
             class = "resize";
         }
+
         html! {
             <>
                 <div {class}>

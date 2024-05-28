@@ -361,7 +361,12 @@ impl Component for Chats {
         html! {
         <>
             {warning}
-            <PhoneCall ws={self.ws.clone()} user_id={ctx.props().user_id.clone()} msg={self.call_msg.clone()} send_msg={send_msg_callback}/>
+            <PhoneCall
+                ws={self.ws.clone()}
+                user_id={ctx.props().user_id.clone()}
+                msg={self.call_msg.clone()}
+                send_msg={send_msg_callback}/>
+
             <div class="list-wrapper" {ontouchstart} {ontouchend}>
                 {context_menu}
                 {friend_list}
