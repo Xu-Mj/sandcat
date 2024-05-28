@@ -329,4 +329,10 @@ impl Messages for MessageRepo {
         onsuccess.forget();
         Ok(())
     }
+
+    async fn delete(&self, local_id: i32) -> Result<(), JsValue> {
+        let store = self.store(MESSAGE_TABLE_NAME).await?;
+        store.delete(&JsValue::from(local_id))?;
+        Ok(())
+    }
 }
