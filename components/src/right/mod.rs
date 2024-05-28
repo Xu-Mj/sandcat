@@ -3,6 +3,7 @@ pub mod friend_card;
 pub mod friendship_list;
 pub mod msg_item;
 pub mod msg_list;
+mod msg_right_click;
 pub mod postcard;
 mod recorder;
 pub mod sender;

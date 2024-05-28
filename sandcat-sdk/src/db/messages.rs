@@ -26,4 +26,6 @@ pub trait Messages: Debug {
     async fn unread_count(&self) -> usize;
 
     async fn batch_delete(&self, friend_id: &str) -> Result<(), JsValue>;
+
+    async fn delete(&self, local_id: i32) -> Result<(), JsValue>;
 }
