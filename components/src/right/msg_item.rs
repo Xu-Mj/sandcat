@@ -365,7 +365,15 @@ impl Component for MsgItem {
                 let del_item = ctx.props().del_item.clone();
                 let id = ctx.props().msg.id;
                 let local_id = ctx.props().msg.local_id.clone();
+                let content_type = ctx.props().msg.content_type;
                 spawn_local(async move {
+                    if content_type == ContentType::Audio {
+                        // delete audio file
+                        if let Err(e) = db::db_ins().voices.del(&local_id).await {
+                            log::error!("delete audio file error: {:?}", e);
+                            return;
+                        }
+                    }
                     if let Err(e) = db::db_ins().messages.delete(id).await {
                         log::error!("delete message error: {:?}", e);
                         return;

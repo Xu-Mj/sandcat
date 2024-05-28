@@ -18,7 +18,7 @@
 - voice data is huge, we need to compress it and redesign the way to send it to server-- consider to use the audio file instead of the voice data -- done
 - change the method about send message in side. split the inside and outside, send inside directly -- done
 - decrease the state count; --every action will trigger a state change
-- message item right click menu: delete and resent
+- message item right click menu: delete and resent -- delete done
 - receive voice message need to render the voice data download progress -- done
 - add loading animation for users
 - need emoji in text message
