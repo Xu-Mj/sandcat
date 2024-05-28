@@ -92,6 +92,8 @@ pub struct MessageListProps {
     pub lang: LanguageType,
 }
 
+const MSG_LIST_MAX_LEN: usize = 20;
+
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum ScrollState {
     None,
@@ -172,28 +174,34 @@ impl MessageList {
     }
 
     fn insert_msg(&mut self, msg: Message, friend_id: AttrValue) -> bool {
-        if msg.friend_id == friend_id {
-            let is_self = msg.is_self;
-            self.list.shift_insert(0, msg.local_id.clone(), msg);
+        if msg.friend_id != friend_id {
+            return false;
+        }
+        let is_self = msg.is_self;
+        self.list.shift_insert(0, msg.local_id.clone(), msg);
 
-            if is_self {
+        if is_self {
+            self.new_msg_count = 0;
+            self.scroll_state = ScrollState::Bottom;
+        } else if let Some(node) = self.node_ref.cast::<HtmlElement>() {
+            // if node scroll top is less than -20, then do not scroll, 20 is redundant
+            if node.scroll_top() < -20 {
+                // 如果消息列表没有拉到最下面，那么加一
+                self.new_msg_count += 1;
+                self.scroll_state = ScrollState::None;
+            } else {
                 self.new_msg_count = 0;
                 self.scroll_state = ScrollState::Bottom;
-            } else if let Some(node) = self.node_ref.cast::<HtmlElement>() {
-                // if node scroll top is less than -20, then do not scroll, 20 is redundant
-                if node.scroll_top() < -20 {
-                    // 如果消息列表没有拉到最下面，那么加一
-                    self.new_msg_count += 1;
-                    self.scroll_state = ScrollState::None;
-                } else {
-                    self.new_msg_count = 0;
-                    self.scroll_state = ScrollState::Bottom;
-                }
             }
-            true
-        } else {
-            false
         }
+
+        // calculate cache size
+        while self.scroll_state == ScrollState::Bottom && self.list.len() > MSG_LIST_MAX_LEN {
+            // we need to delete the last 100 cache messages from the past
+            self.list.pop();
+        }
+
+        true
     }
     fn handle_rec_msg(&mut self, ctx: &Context<Self>, msg: Msg, friend_id: AttrValue) -> bool {
         log::debug!("handle_rec_msg: {:?}", msg);
