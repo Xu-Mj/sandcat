@@ -175,13 +175,20 @@ impl MessageList {
         if msg.friend_id == friend_id {
             let is_self = msg.is_self;
             self.list.shift_insert(0, msg.local_id.clone(), msg);
-            if is_self || self.scroll_state == ScrollState::Bottom {
+
+            if is_self {
                 self.new_msg_count = 0;
                 self.scroll_state = ScrollState::Bottom;
-            } else {
-                // 如果消息列表没有拉到最下面，那么加一
-                self.new_msg_count += 1;
-                self.scroll_state = ScrollState::None;
+            } else if let Some(node) = self.node_ref.cast::<HtmlElement>() {
+                // if node scroll top is less than -20, then do not scroll, 20 is redundant
+                if node.scroll_top() < -20 {
+                    // 如果消息列表没有拉到最下面，那么加一
+                    self.new_msg_count += 1;
+                    self.scroll_state = ScrollState::None;
+                } else {
+                    self.new_msg_count = 0;
+                    self.scroll_state = ScrollState::Bottom;
+                }
             }
             true
         } else {
@@ -348,6 +355,7 @@ impl Component for MessageList {
         if self.scroll_state == ScrollState::Bottom {
             let node = self.node_ref.cast::<HtmlElement>().unwrap();
             node.set_scroll_top(0);
+            self.scroll_state = ScrollState::Bottom;
         }
     }
 
