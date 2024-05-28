@@ -13,9 +13,49 @@ use yew::{AttrValue, Callback, NodeRef};
 use sandcat_sdk::model::message::{Candidate, InviteType, Msg, Offer, SingleCall};
 use ws::WebSocketManager;
 
-pub struct WebRTC;
+pub struct WebRTC {
+    on_ice_candidate: Option<Closure<dyn FnMut(web_sys::RtcPeerConnectionIceEvent)>>,
+    on_track: Option<Closure<dyn FnMut(web_sys::RtcTrackEvent)>>,
+    on_ice_connection_state_change: Option<Closure<dyn FnMut()>>,
+    on_ice_gathering_state_change: Option<Closure<dyn FnMut()>>,
+    on_signaling_state_change: Option<Closure<dyn FnMut()>>,
+    on_negotiation: Option<Closure<dyn FnMut()>>,
+    pc: Option<RtcPeerConnection>,
+    close_event: Callback<()>,
+    conn_event: Callback<()>,
+}
 
 impl WebRTC {
+    pub fn new(close_event: Callback<()>, conn_event: Callback<()>) -> Self {
+        Self {
+            on_ice_candidate: None,
+            on_track: None,
+            on_ice_connection_state_change: None,
+            on_ice_gathering_state_change: None,
+            on_signaling_state_change: None,
+            on_negotiation: None,
+            pc: None,
+            close_event,
+            conn_event,
+        }
+    }
+
+    pub fn pc(&self) -> &RtcPeerConnection {
+        self.pc.as_ref().unwrap()
+    }
+
+    pub fn close(&mut self) {
+        if let Some(ref pc) = self.pc {
+            pc.close();
+            self.pc = None;
+        }
+        self.on_negotiation = None;
+        self.on_signaling_state_change = None;
+        self.on_ice_candidate = None;
+        self.on_ice_connection_state_change = None;
+        self.on_ice_gathering_state_change = None;
+        self.on_track = None;
+    }
     pub fn send_msg1(ws: Rc<RefCell<WebSocketManager>>, msg: Msg) {
         // 发送已收到消息给服务器
         match ws.borrow().send_message(msg) {
@@ -27,14 +67,14 @@ impl WebRTC {
     }
 
     pub fn create_pc(
+        &mut self,
         ws: Rc<RefCell<WebSocketManager>>,
         send_id: AttrValue,
         friend_id: AttrValue,
-        close_event: Callback<AttrValue>,
         invite_type: InviteType,
         friend_video_node: NodeRef,
         friend_audio_node: NodeRef,
-    ) -> Result<RtcPeerConnection, JsValue> {
+    ) -> Result<(), JsValue> {
         // 创建一个新的RtcIceServer
         let mut ice_server = RtcIceServer::new();
         ice_server.url("stun:stun.l.google.com:19302");
@@ -69,8 +109,7 @@ impl WebRTC {
                 as Box<dyn FnMut(web_sys::RtcPeerConnectionIceEvent)>);
 
         let pc_clone = pc.clone();
-        let callback = close_event.clone();
-        let friend = friend_id.clone();
+        let callback = self.close_event.clone();
         let on_ice_connection_state_change = Closure::wrap(Box::new(move || {
             log::debug!(
                 "on ice connection state change:{:?}",
@@ -81,7 +120,7 @@ impl WebRTC {
                 | RtcIceConnectionState::Disconnected
                 | RtcIceConnectionState::Closed => {
                     // 关闭视频流
-                    callback.clone().emit(friend.clone());
+                    callback.clone().emit(());
                 }
                 _ => {}
             }
@@ -97,7 +136,7 @@ impl WebRTC {
             );
         }) as Box<dyn FnMut()>);
         let pc_clone = pc.clone();
-        let friend = friend_id.clone();
+        let close_event = self.close_event.clone();
         let on_signaling_state_change = Closure::wrap(Box::new(move || {
             // handle signaling state change event
             log::debug!(
@@ -106,7 +145,7 @@ impl WebRTC {
             );
             if pc_clone.signaling_state() == RtcSignalingState::Closed {
                 // 关闭视频流
-                close_event.emit(friend.clone());
+                close_event.emit(());
             }
         }) as Box<dyn FnMut()>);
 
@@ -140,7 +179,10 @@ impl WebRTC {
         }) as Box<dyn FnOnce()>);
         let friend_node = friend_video_node.clone();
         let friend_audio_node = friend_audio_node.clone();
+        let conn_event = self.conn_event.clone();
         let on_track = Closure::wrap(Box::new(move |event: web_sys::RtcTrackEvent| {
+            // callback the conn event
+            conn_event.emit(());
             // handle track event
             match invite_type {
                 InviteType::Video => {
@@ -156,7 +198,7 @@ impl WebRTC {
             }
         }) as Box<dyn FnMut(web_sys::RtcTrackEvent)>);
 
-        // 添加到 RtcPeerConnection
+        // add to RtcPeerConnection
         pc.set_onicecandidate(Some(on_ice_candidate.as_ref().unchecked_ref()));
         pc.set_oniceconnectionstatechange(Some(
             on_ice_connection_state_change.as_ref().unchecked_ref(),
@@ -168,12 +210,13 @@ impl WebRTC {
         pc.set_onnegotiationneeded(Some(on_negotiation_needed.as_ref().unchecked_ref()));
         pc.set_ontrack(Some(on_track.as_ref().unchecked_ref()));
 
-        on_ice_candidate.forget();
-        on_ice_connection_state_change.forget();
-        on_ice_gathering_state_change.forget();
-        on_signaling_state_change.forget();
-        on_negotiation_needed.forget();
-        on_track.forget();
-        Ok(pc)
+        self.on_track = Some(on_track);
+        self.on_ice_candidate = Some(on_ice_candidate);
+        self.on_ice_connection_state_change = Some(on_ice_connection_state_change);
+        self.on_ice_gathering_state_change = Some(on_ice_gathering_state_change);
+        self.on_signaling_state_change = Some(on_signaling_state_change);
+        self.on_negotiation = Some(on_negotiation_needed);
+        self.pc = Some(pc);
+        Ok(())
     }
 }

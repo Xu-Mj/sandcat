@@ -1,9 +1,9 @@
 use sandcat_sdk::state::MobileState;
 
 pub mod action;
+pub mod call;
 pub mod dialog;
 pub mod left;
-pub mod phone_call;
 pub mod right;
 pub mod select_friends;
 pub mod self_info;

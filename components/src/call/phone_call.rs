@@ -4,15 +4,14 @@ use std::rc::Rc;
 use gloo::timers::callback::Timeout;
 use log::debug;
 use nanoid::nanoid;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
-    HtmlAudioElement, HtmlDivElement, HtmlVideoElement, MediaStream, MediaStreamTrack, MouseEvent,
-    RtcIceCandidateInit, RtcPeerConnection, RtcSdpType, RtcSessionDescription,
-    RtcSessionDescriptionInit, RtcSignalingState,
+    HtmlAudioElement, HtmlDivElement, HtmlVideoElement, MediaStream, MouseEvent,
+    RtcIceCandidateInit, RtcSdpType, RtcSessionDescription, RtcSessionDescriptionInit,
 };
 use yew::platform::spawn_local;
-use yew::{html, AttrValue, Callback, Component, Context, Html, NodeRef, Properties, TouchEvent};
+use yew::{html, AttrValue, Callback, Component, Context, Html, Properties, TouchEvent};
 use yewdux::Dispatch;
 
 use icons::{
@@ -27,53 +26,12 @@ use sandcat_sdk::model::message::{
 use sandcat_sdk::model::notification::{Notification, NotificationType};
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::ItemInfo;
-use sandcat_sdk::state::{MobileState, NotificationState, SendCallState};
+use sandcat_sdk::state::{NotificationState, SendCallState};
 use ws::WebSocketManager;
 
 use crate::get_platform;
 
-pub struct PhoneCall {
-    /// 显示视频通话
-    show_video: bool,
-    /// 显示语音通话
-    show_audio: bool,
-    /// 标记当前是否是被邀请方
-    invited: bool,
-    /// 显示通话邀请通知
-    show_notify: bool,
-    /// 音量是否静音
-    volume_mute: bool,
-    /// 麦克风是否静音
-    microphone_mute: bool,
-    /// 好友语音通话node ref
-    friend_audio_node: NodeRef,
-    /// 自己的视频通话node ref
-    video_node: NodeRef,
-    /// 好友视频通话node ref
-    friend_video_node: NodeRef,
-    /// 通话面板ref，用来面板拖动
-    wrapper_node: NodeRef,
-    /// 通话邀请信息
-    invite_info: Option<InviteInfo>,
-    /// 通话webrtc PeerConnection
-    pc: Option<RtcPeerConnection>,
-    /// 音视频流
-    stream: Option<MediaStream>,
-    /// 通话的好友信息
-    call_friend_info: Option<Box<dyn ItemInfo>>,
-    /// 邀请计时器，到时间即为未接听
-    call_timer: Option<Timeout>,
-    /// 用来监听是否有通话消息
-    /// 通话状态， 用来挂断、取消等等。。
-    _call_state_dis: Dispatch<SendCallState>,
-    /// 面板拖动记录x、y坐标
-    pos_x: i32,
-    pos_y: i32,
-    /// 是否正在拖动面板
-    is_dragging: bool,
-    is_mobile: bool,
-    is_zoom: bool,
-}
+use super::PhoneCall;
 
 #[derive(Properties, Clone, PartialEq, Debug)]
 pub struct PhoneCallProps {
@@ -97,7 +55,7 @@ pub enum PhoneCallMsg {
     // 类似与VideoOnReady（当本地视频流准备好之后完全接通视频电话）
     ConnectedCall(MediaStream),
     DenyCall,
-    DisConnCall(AttrValue),
+    DisConnCall,
     ShowVideoWindow(MediaStream, Box<dyn ItemInfo>),
     ShowAudioWindow(MediaStream, Box<dyn ItemInfo>),
     CallTimeout,
@@ -125,32 +83,7 @@ impl Component for PhoneCall {
     type Properties = PhoneCallProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let call_state_dis =
-            Dispatch::global().subscribe(ctx.link().callback(PhoneCallMsg::CallStateChange));
-        let is_mobile = Dispatch::<MobileState>::global().get().is_mobile();
-        Self {
-            show_video: false,
-            show_audio: false,
-            friend_audio_node: NodeRef::default(),
-            invited: false,
-            video_node: NodeRef::default(),
-            friend_video_node: NodeRef::default(),
-            wrapper_node: NodeRef::default(),
-            invite_info: None,
-            pc: None,
-            stream: None,
-            show_notify: false,
-            call_friend_info: None,
-            call_timer: None,
-            volume_mute: false,
-            microphone_mute: false,
-            _call_state_dis: call_state_dis,
-            pos_x: 0,
-            pos_y: 0,
-            is_dragging: false,
-            is_mobile,
-            is_zoom: false,
-        }
+        Self::new(ctx)
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
@@ -240,7 +173,7 @@ impl Component for PhoneCall {
             }
             SingleCall::Offer(msg) => {
                 // 建立通话连接，收到offer，设置sdp
-                if self.pc.is_some() {
+                if self.rtc.is_some() {
                     log::warn!("收到邀请，但是占线: {:?}", &msg);
                     return false;
                 }
@@ -265,7 +198,7 @@ impl Component for PhoneCall {
                 // 同意通话请求并建立连接，设置sdp
                 // 判断是否是我们发出去的邀请回复
                 if let Some(info) = &self.invite_info {
-                    if info.friend_id == msg.send_id && self.pc.is_some() {
+                    if info.friend_id == msg.send_id && self.rtc.is_some() {
                         // 接通
                         log::debug!("请求被对方同意");
                         // todo需要在webrtc状态为Connected下进行回调修改
@@ -275,9 +208,10 @@ impl Component for PhoneCall {
                         let mut description = RtcSessionDescriptionInit::new(RtcSdpType::Answer);
                         description.sdp(&msg.sdp.unwrap());
                         let future = JsFuture::from(
-                            self.pc
+                            self.rtc
                                 .as_ref()
                                 .unwrap()
+                                .pc()
                                 .set_remote_description(&description),
                         );
                         spawn_local(async {
@@ -290,6 +224,7 @@ impl Component for PhoneCall {
                 }
             }
             SingleCall::NewIceCandidate(msg) => {
+                log::error!("new ice candidate: {:?}", msg);
                 let mut candidate = RtcIceCandidateInit::new(&msg.candidate);
                 if let Some(index) = msg.sdp_m_index {
                     candidate.sdp_m_line_index(Some(index));
@@ -298,13 +233,15 @@ impl Component for PhoneCall {
                     candidate.sdp_mid(Some(&mid));
                 }
                 let future = JsFuture::from(
-                    self.pc
+                    self.rtc
                         .as_ref()
                         .unwrap()
+                        .pc()
                         .add_ice_candidate_with_opt_rtc_ice_candidate_init(Some(&candidate)),
                 );
                 spawn_local(async {
                     if let Err(err) = future.await {
+                        // todo need to interrupt the call
                         log::error!("set ice candidate failed: {:?}", err);
                     }
                 })
@@ -621,7 +558,7 @@ impl Component for PhoneCall {
             PhoneCallMsg::ConnectedCall(stream) => {
                 log::debug!("ConnectedCall");
                 // set stream to peer connection
-                let pc = self.pc.as_ref().unwrap().clone();
+                let pc = self.rtc.as_ref().unwrap().pc().clone();
                 let invite_info = self.invite_info.as_ref().unwrap();
                 match invite_info.invite_type {
                     InviteType::Video => {
@@ -640,7 +577,7 @@ impl Component for PhoneCall {
                 self.stream = Some(stream);
                 let js_future = JsFuture::from(pc.create_answer());
                 let ws = Rc::clone(&ctx.props().ws.clone());
-                let pc = pc.clone();
+                // let pc = pc.clone();
                 let send_id = invite_info.friend_id.clone();
                 let friend_id = invite_info.send_id.clone();
                 let platform = get_platform(self.is_mobile);
@@ -717,7 +654,7 @@ impl Component for PhoneCall {
                 });
                 true
             }
-            PhoneCallMsg::DisConnCall(_) => {
+            PhoneCallMsg::DisConnCall => {
                 // 判断视频窗口是否还存在
                 if self.show_video {
                     // 窗口还在说明连接被中断，因为不在了的情况是对端主动发起的挂断请求
@@ -735,7 +672,7 @@ impl Component for PhoneCall {
                 video.set_muted(true);
                 self.stream = Some(stream);
                 let ctx = ctx.link().clone();
-                self.call_timer = Some(Timeout::new(TIMEOUT * 1000, move || {
+                self.call_timeout = Some(Timeout::new(TIMEOUT * 1000, move || {
                     ctx.send_message(PhoneCallMsg::CallTimeout);
                 }));
                 false
@@ -825,7 +762,7 @@ impl Component for PhoneCall {
                 self.stream = Some(stream);
                 self.call_friend_info = Some(friend);
                 let ctx = ctx.link().clone();
-                self.call_timer = Some(Timeout::new(TIMEOUT * 1000, move || {
+                self.call_timeout = Some(Timeout::new(TIMEOUT * 1000, move || {
                     ctx.send_message(PhoneCallMsg::CallTimeout);
                 }));
                 true
@@ -1117,159 +1054,5 @@ impl Component for PhoneCall {
                 {video_or_audio_notify}
             </>
         }
-    }
-}
-
-impl PhoneCall {
-    fn create_pc(&mut self, ctx: &Context<Self>, sdp: &str) -> Result<(), JsValue> {
-        let callback = ctx.link().callback(PhoneCallMsg::DisConnCall);
-        let invite_info = self.invite_info.as_ref().unwrap();
-        let mut friend_id = invite_info.friend_id.clone();
-        if self.invited {
-            friend_id = invite_info.send_id.clone();
-        }
-
-        let pc = web_rtc::WebRTC::create_pc(
-            ctx.props().ws.clone(),
-            ctx.props().user_id.clone(),
-            friend_id,
-            callback,
-            invite_info.invite_type.clone(),
-            self.friend_video_node.clone(),
-            self.friend_audio_node.clone(),
-        )?;
-
-        if self.invited {
-            let mut description = RtcSessionDescriptionInit::new(RtcSdpType::Offer);
-            description.sdp(sdp);
-            if pc.signaling_state() == RtcSignalingState::Stable {
-                let future = JsFuture::from(pc.set_remote_description(&description));
-                spawn_local(async move {
-                    match future.await {
-                        Ok(_) => {
-                            log::debug!("set remote desc success in rtc signal state stable")
-                        }
-                        Err(err) => {
-                            log::error!(
-                                "set remote desc failed in rtc signal state stable: {:?}",
-                                err
-                            )
-                        }
-                    }
-                });
-            } else {
-                let future = JsFuture::from(pc.set_remote_description(&description));
-                spawn_local(async move {
-                    match future.await {
-                        Ok(_) => {
-                            log::debug!("set remote desc success in rtc signal state not stable")
-                        }
-                        Err(err) => {
-                            log::error!(
-                                "set remote desc failed in rtc signal state not stable: {:?}",
-                                err
-                            )
-                        }
-                    }
-                });
-                // 生成并设置answer为本地描述
-                let future = JsFuture::from(
-                    pc.set_local_description(&RtcSessionDescriptionInit::new(RtcSdpType::Rollback)),
-                );
-                spawn_local(async move {
-                    match future.await {
-                        Ok(_) => {
-                            log::debug!("set remote desc success in rtc signal state not stable")
-                        }
-                        Err(err) => {
-                            log::error!(
-                                "set remote desc failed in rtc signal state not stable: {:?}",
-                                err
-                            )
-                        }
-                    }
-                });
-                return Ok(());
-            }
-        } else {
-            let stream = self.stream.as_ref().unwrap();
-            for track in stream.get_tracks() {
-                pc.add_track_0(&track.into(), stream);
-            }
-        }
-
-        self.pc = Some(pc);
-        Ok(())
-    }
-
-    fn mute_audio(&mut self, mute: bool) {
-        if let Some(stream) = self.stream.as_ref() {
-            let tracks = stream.get_audio_tracks();
-            for track in tracks {
-                let track = track.unchecked_into::<MediaStreamTrack>();
-                track.set_enabled(!mute);
-            }
-        }
-    }
-
-    fn finish_call(&mut self) {
-        if let Some(pc) = self.pc.as_ref() {
-            log::debug!("hang up video clear pc");
-            pc.close();
-        }
-
-        if let Some(stream) = &self.stream {
-            for track in stream.get_tracks() {
-                if let Ok(track) = track.dyn_into::<MediaStreamTrack>() {
-                    track.stop();
-                }
-            }
-        }
-
-        if let Some(invite_info) = self.invite_info.as_ref() {
-            match invite_info.invite_type {
-                InviteType::Video => {
-                    if let Some(video) = self.video_node.cast::<HtmlVideoElement>() {
-                        log::debug!("hang up video clear stream");
-                        video.set_src_object(None);
-                    }
-                    if let Some(friend_video_node) =
-                        self.friend_video_node.cast::<HtmlVideoElement>()
-                    {
-                        log::debug!("hang up video clear stream2");
-                        friend_video_node.set_src_object(None);
-                    }
-                    self.show_video = false;
-                }
-                InviteType::Audio => {
-                    if let Some(audio) = self.friend_audio_node.cast::<HtmlAudioElement>() {
-                        log::debug!("hang up audio clear stream");
-                        audio.set_src_object(None);
-                    }
-                    self.show_audio = false;
-                }
-            }
-        }
-
-        self.pc = None;
-        self.stream = None;
-        self.invite_info = None;
-        self.invited = false;
-        self.call_timer = None;
-        self.call_friend_info = None;
-        self.volume_mute = false;
-        self.microphone_mute = false;
-        self.is_zoom = false;
-    }
-
-    fn save_call_msg(&self, mut msg: Message) {
-        spawn_local(async move {
-            db::db_ins()
-                .messages
-                .add_message(&mut msg)
-                .await
-                .map_err(|err| log::error!("消息入库失败:{:?}", err))
-                .unwrap();
-        });
     }
 }
