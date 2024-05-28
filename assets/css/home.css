@@ -215,6 +215,20 @@
     }
 }
 
+.call-duration {
+    position: absolute;
+    bottom: 4rem;
+    width: 100%;
+    text-align: center;
+}
+
+.call-duration-zoom {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    font-size: small;
+    text-align: center;
+}
 
 .call-operate {
     position: absolute;

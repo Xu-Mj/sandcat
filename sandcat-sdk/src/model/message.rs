@@ -108,9 +108,9 @@ impl From<InviteAnswerMsg> for Message {
             InviteType::Audio => ContentType::AudioCall,
         };
         let content = if value.agree {
-            AttrValue::from("一接通")
+            AttrValue::from("agreed")
         } else {
-            AttrValue::from("已经拒绝")
+            AttrValue::from("deny")
         };
         Message {
             id: 0,
