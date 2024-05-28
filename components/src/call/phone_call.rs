@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use gloo::timers::callback::Timeout;
+use gloo::timers::callback::{Interval, Timeout};
 use log::debug;
 use nanoid::nanoid;
 use wasm_bindgen::JsCast;
@@ -62,6 +62,7 @@ pub enum PhoneCallMsg {
     CallTimeout,
     // callback from pc on_track
     OnConnect(web_sys::RtcTrackEvent),
+    TickCallDuration,
     Notification(Notification),
     // 显示顶部消息通知
     ShowCallNotify(Box<dyn ItemInfo>),
@@ -891,6 +892,10 @@ impl Component for PhoneCall {
                 self.invite_info.as_mut().unwrap().start_time =
                     chrono::Utc::now().timestamp_millis();
                 self.conn_state = ConnectionState::Connected;
+                let ctx = ctx.link().clone();
+                self.call_timer = Some(Interval::new(1000, move || {
+                    ctx.send_message(PhoneCallMsg::TickCallDuration);
+                }));
                 match self.invite_info.as_ref().unwrap().invite_type {
                     InviteType::Video => {
                         let friend_video: HtmlVideoElement = self.friend_video_node.cast().unwrap();
@@ -904,6 +909,10 @@ impl Component for PhoneCall {
                     }
                 }
                 false
+            }
+            PhoneCallMsg::TickCallDuration => {
+                self.call_duration += 1;
+                true
             }
         }
     }
@@ -958,10 +967,16 @@ impl Component for PhoneCall {
         let mut video = html!();
         let mut audio = html!();
 
-        let hangup_icon = if self.conn_state != ConnectionState::Connecting {
-            html!(<HangupInNotifyIcon/>)
-        } else {
-            html!(<HangUpLoadingIcon/>)
+        let (hangup_icon, duration) = match self.conn_state {
+            ConnectionState::Waiting => (html!(<HangupInNotifyIcon/>), String::from("Waiting ...")),
+            ConnectionState::Connecting => {
+                (html!(<HangUpLoadingIcon/>), String::from("Connecting..."))
+            }
+            ConnectionState::Connected => (html!(<HangupInNotifyIcon/>), self.format_duration()),
+            ConnectionState::Error => (
+                html!(<HangupInNotifyIcon/>),
+                String::from("Connection error"),
+            ),
         };
 
         if self.show_video || self.show_audio {
@@ -1010,6 +1025,11 @@ impl Component for PhoneCall {
                         </div>
                     )
                 };
+                let call_duration_class = if self.is_zoom {
+                    "call-duration-zoom"
+                } else {
+                    "call-duration"
+                };
                 if self.show_video {
                     let self_video_style = if info.connected {
                         "animation: video-self-zoom-in .4s forwards"
@@ -1025,6 +1045,7 @@ impl Component for PhoneCall {
                             {zoom}
                             <video class="video-self" style={self_video_style} ref={self.video_node.clone()} playsinline={true} />
                             <video class="video-friend" ref={self.friend_video_node.clone()}  playsinline={true} />
+                            <div class="call-duration">{duration}</div>
                             <div class="call-operate" >
                                 <span class="switch-microphone" onclick={microphone_click} >
                                     {microphone}
@@ -1064,6 +1085,7 @@ impl Component for PhoneCall {
                             // </div>
                             <img class="audio-avatar" src={avatar} />
                             <audio ref={self.friend_audio_node.clone()}/>
+                            <div class={call_duration_class}>{duration}</div>
                             <div class="call-operate" >
                                     <span class="switch-microphone" onclick={microphone_click} >
                                         {microphone}

@@ -53,7 +53,10 @@ pub struct PhoneCall {
     call_friend_info: Option<Box<dyn ItemInfo>>,
     /// 邀请计时器，到时间即为未接听
     call_timeout: Option<Timeout>,
+    /// record call duration interval
     call_timer: Option<Interval>,
+    /// record call duration
+    call_duration: u32,
     /// 用来监听是否有通话消息
     /// 通话状态， 用来挂断、取消等等。。
     _call_state_dis: Dispatch<SendCallState>,
@@ -101,6 +104,7 @@ impl PhoneCall {
             call_friend_info: None,
             call_timeout: None,
             call_timer: None,
+            call_duration: 0,
             volume_mute: false,
             microphone_mute: false,
             _call_state_dis: call_state_dis,
@@ -263,5 +267,12 @@ impl PhoneCall {
                 .map_err(|err| log::error!("消息入库失败:{:?}", err))
                 .unwrap();
         });
+    }
+
+    fn format_duration(&self) -> String {
+        let hours = self.call_duration / 3600;
+        let minutes = (self.call_duration % 3600) / 60;
+        let secs = self.call_duration % 60;
+        format!("{:02}:{:02}:{:02}", hours, minutes, secs)
     }
 }
