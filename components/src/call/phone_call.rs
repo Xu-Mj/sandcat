@@ -59,6 +59,8 @@ pub enum PhoneCallMsg {
     ShowVideoWindow(MediaStream, Box<dyn ItemInfo>),
     ShowAudioWindow(MediaStream, Box<dyn ItemInfo>),
     CallTimeout,
+    // callback from pc on_track
+    OnConnect(web_sys::RtcTrackEvent),
     Notification(Notification),
     // 显示顶部消息通知
     ShowCallNotify(Box<dyn ItemInfo>),
@@ -224,7 +226,6 @@ impl Component for PhoneCall {
                 }
             }
             SingleCall::NewIceCandidate(msg) => {
-                log::error!("new ice candidate: {:?}", msg);
                 let mut candidate = RtcIceCandidateInit::new(&msg.candidate);
                 if let Some(index) = msg.sdp_m_index {
                     candidate.sdp_m_line_index(Some(index));
@@ -883,6 +884,21 @@ impl Component for PhoneCall {
                 self.pos_x = 0;
                 self.pos_y = 0;
                 self.is_dragging = false;
+                false
+            }
+            PhoneCallMsg::OnConnect(event) => {
+                match self.invite_info.as_ref().unwrap().invite_type {
+                    InviteType::Video => {
+                        let friend_video: HtmlVideoElement = self.friend_video_node.cast().unwrap();
+                        friend_video.set_src_object(Some(&event.streams().get(0).into()));
+                        let _ = friend_video.play().expect("friend video play error");
+                    }
+                    InviteType::Audio => {
+                        let friend_audio: HtmlAudioElement = self.friend_audio_node.cast().unwrap();
+                        friend_audio.set_src_object(Some(&event.streams().get(0).into()));
+                        let _ = friend_audio.play().expect("friend video play error");
+                    }
+                }
                 false
             }
         }

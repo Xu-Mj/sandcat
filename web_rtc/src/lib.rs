@@ -4,13 +4,13 @@ use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
-    HtmlAudioElement, HtmlVideoElement, RtcConfiguration, RtcIceConnectionState, RtcIceServer,
-    RtcPeerConnection, RtcSessionDescriptionInit, RtcSignalingState,
+    RtcConfiguration, RtcIceConnectionState, RtcIceServer, RtcPeerConnection,
+    RtcSessionDescriptionInit, RtcSignalingState,
 };
 use yew::platform::spawn_local;
-use yew::{AttrValue, Callback, NodeRef};
+use yew::{AttrValue, Callback};
 
-use sandcat_sdk::model::message::{Candidate, InviteType, Msg, Offer, SingleCall};
+use sandcat_sdk::model::message::{Candidate, Msg, Offer, SingleCall};
 use ws::WebSocketManager;
 
 pub struct WebRTC {
@@ -22,11 +22,11 @@ pub struct WebRTC {
     on_negotiation: Option<Closure<dyn FnMut()>>,
     pc: Option<RtcPeerConnection>,
     close_event: Callback<()>,
-    conn_event: Callback<()>,
+    conn_event: Callback<web_sys::RtcTrackEvent>,
 }
 
 impl WebRTC {
-    pub fn new(close_event: Callback<()>, conn_event: Callback<()>) -> Self {
+    pub fn new(close_event: Callback<()>, conn_event: Callback<web_sys::RtcTrackEvent>) -> Self {
         Self {
             on_ice_candidate: None,
             on_track: None,
@@ -71,9 +71,6 @@ impl WebRTC {
         ws: Rc<RefCell<WebSocketManager>>,
         send_id: AttrValue,
         friend_id: AttrValue,
-        invite_type: InviteType,
-        friend_video_node: NodeRef,
-        friend_audio_node: NodeRef,
     ) -> Result<(), JsValue> {
         // 创建一个新的RtcIceServer
         let mut ice_server = RtcIceServer::new();
@@ -177,25 +174,10 @@ impl WebRTC {
                 WebRTC::send_msg1(ws.clone(), msg);
             });
         }) as Box<dyn FnOnce()>);
-        let friend_node = friend_video_node.clone();
-        let friend_audio_node = friend_audio_node.clone();
         let conn_event = self.conn_event.clone();
         let on_track = Closure::wrap(Box::new(move |event: web_sys::RtcTrackEvent| {
             // callback the conn event
-            conn_event.emit(());
-            // handle track event
-            match invite_type {
-                InviteType::Video => {
-                    let friend_video: HtmlVideoElement = friend_node.cast().unwrap();
-                    friend_video.set_src_object(Some(&event.streams().get(0).into()));
-                    let _ = friend_video.play().expect("friend video play error");
-                }
-                InviteType::Audio => {
-                    let friend_audio: HtmlAudioElement = friend_audio_node.cast().unwrap();
-                    friend_audio.set_src_object(Some(&event.streams().get(0).into()));
-                    let _ = friend_audio.play().expect("friend video play error");
-                }
-            }
+            conn_event.emit(event);
         }) as Box<dyn FnMut(web_sys::RtcTrackEvent)>);
 
         // add to RtcPeerConnection

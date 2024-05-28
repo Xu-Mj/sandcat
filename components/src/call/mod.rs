@@ -105,31 +105,18 @@ impl PhoneCall {
 
     fn create_pc(&mut self, ctx: &Context<Self>, sdp: &str) -> Result<(), JsValue> {
         let close_event = ctx.link().callback(|_| PhoneCallMsg::DisConnCall);
-        let conn_event = ctx.link().callback(|_| PhoneCallMsg::DisConnCall);
+        let conn_event = ctx.link().callback(PhoneCallMsg::OnConnect);
         let invite_info = self.invite_info.as_ref().unwrap();
         let mut friend_id = invite_info.friend_id.clone();
         if self.invited {
             friend_id = invite_info.send_id.clone();
         }
 
-        // let pc = web_rtc::WebRTC::create_pc(
-        //     ctx.props().ws.clone(),
-        //     ctx.props().user_id.clone(),
-        //     friend_id,
-        //     callback,
-        //     invite_info.invite_type.clone(),
-        //     self.friend_video_node.clone(),
-        //     self.friend_audio_node.clone(),
-        // )?;
-
         let mut rtc = web_rtc::WebRTC::new(close_event, conn_event);
         rtc.create_pc(
             ctx.props().ws.clone(),
             ctx.props().user_id.clone(),
             friend_id,
-            invite_info.invite_type.clone(),
-            self.friend_video_node.clone(),
-            self.friend_audio_node.clone(),
         )?;
         let pc = rtc.pc();
         if self.invited {
