@@ -153,7 +153,7 @@ impl Component for PostCard {
 }
 
 impl PostCard {
-    fn get_avatar(&self, avatar_str: AttrValue) -> Html {
+    fn get_avatar(&self, avatar_str: &AttrValue) -> Html {
         // deal with group avatars
 
         let mut avatar_style = "--avatar-column: 1";
@@ -326,13 +326,13 @@ impl PostCard {
                         // <div >
                         //     <img class="postcard-avatar" src={self.info.as_ref().unwrap().avatar()} />
                         // </div>
-                        {self.get_avatar(friend.avatar.clone())}
+                        {self.get_avatar(&friend.avatar)}
                         <div class="info">
                             <span class="name">
-                                {friend.name.clone()}
+                                {&friend.name}
                             </span>
                             <span class="num">
-                                {tr!(self.i18n, "account")}{friend.friend_id.clone()}
+                                {tr!(self.i18n, "account")}{&friend.friend_id}
                             </span>
                             <span class="region">
                                 {tr!(self.i18n, "region")}{friend.region.clone()}
@@ -348,8 +348,8 @@ impl PostCard {
                     {tr!(self.i18n, "signature")}{friend.signature.clone()}
                 </div>
 
-                <Action friend_id={friend.friend_id.clone()}
-                    user_id={ctx.props().user_id.clone()}
+                <Action friend_id={&friend.friend_id}
+                    user_id={&ctx.props().user_id}
                     conv_type={ctx.props().conv_type.clone()}
                     lang={ctx.props().lang} />
             </div>
@@ -372,13 +372,13 @@ impl PostCard {
                         // <div >
                         //     <img class="postcard-avatar" src={self.info.as_ref().unwrap().avatar()} />
                         // </div>
-                        {self.get_avatar(group.avatar.clone())}
+                        {self.get_avatar(&group.avatar)}
                         <div class="info">
                             <span class="name">
-                                {group.name.clone()}
+                                {&group.name}
                             </span>
                             <span class="num">
-                                {tr!(self.i18n, "account")}{group.id.clone()}
+                                {tr!(self.i18n, "account")}{&group.id}
                             </span>
                         </div>
                     </div>
@@ -391,8 +391,8 @@ impl PostCard {
                     {tr!(self.i18n, "signature")}{group.signature()}
                 </div>
 
-                <Action friend_id={group.id.clone()}
-                    user_id={ctx.props().user_id.clone()}
+                <Action friend_id={&group.id}
+                    user_id={&ctx.props().user_id}
                     conv_type={ctx.props().conv_type.clone()}
                     lang={ctx.props().lang} />
             </div>
