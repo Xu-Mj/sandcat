@@ -8,6 +8,7 @@ use std::{cell::RefCell, rc::Rc};
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
 use indexmap::IndexMap;
+use log::error;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -37,7 +38,7 @@ use utils::tr;
 use ws::WebSocketManager;
 
 use self::conversations::ChatsMsg;
-use crate::left::list_item::ListItem;
+use crate::{dialog::Dialog, left::list_item::ListItem};
 
 pub struct Chats {
     /// used to notify the PhoneCall component to make a call
@@ -108,12 +109,23 @@ impl Chats {
             if local_seq.local_seq < server_seq.seq {
                 log::debug!("pull offline messages");
                 // request offline messages
-                messages = api::messages()
+                messages = match api::messages()
                     .pull_offline_msg(user_id.as_str(), local_seq.local_seq, server_seq.seq)
                     .await
-                    .unwrap();
+                {
+                    Ok(messages) => messages,
+                    Err(e) => {
+                        error!("pull offline messages error: {:?}", e);
+                        Dialog::error("pull offline messages error");
+                        return ChatsMsg::None;
+                    }
+                };
                 local_seq.local_seq = server_seq.seq;
-                db::db_ins().seq.put(&local_seq).await.unwrap();
+                if let Err(e) = db::db_ins().seq.put(&local_seq).await {
+                    error!("save local seq error: {:?}", e);
+                    Dialog::error("save local seq error");
+                    return ChatsMsg::None;
+                }
             }
             ChatsMsg::QueryConvs((convs, messages, local_seq))
         });
