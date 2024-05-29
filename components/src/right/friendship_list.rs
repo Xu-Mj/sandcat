@@ -270,11 +270,11 @@ impl Component for FriendShipList {
                 html! {
                     <div class="friendship-item" /* {onclick} */>
                         <div class="item-left">
-                            <img class="avatar" src={item.avatar.clone()} />
+                            <img class="avatar" src={&item.avatar} />
                         // </div>
                         <div class="item-info">
                         //     <div class="name-time">
-                                <span>{item.name.clone()}</span>
+                                <span>{&item.name}</span>
                                 // <span class="time">{time_str}</span>
                                 {remark}
                             </div>

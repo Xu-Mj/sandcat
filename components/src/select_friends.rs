@@ -145,7 +145,7 @@ impl Component for SelectFriendList {
                             <div class="item" key={index.to_string()}>
                                 <input type="checkbox" id={index.to_string()} name="friend" value={index.to_string()} />
                                 <label for={index.to_string()}  class="item-card">
-                                    <img src={item.avatar.clone()}/>
+                                    <img src={&item.avatar}/>
                                     {name}
                                 </label>
                             </div>

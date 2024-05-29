@@ -317,7 +317,7 @@ impl Component for Right {
                 setting = html! (
                     <SetWindow
                         id={info.id()}
-                        user_id={self.state.login_user.id.clone()}
+                        user_id={&self.state.login_user.id}
                         conv_type={info.get_type()}
                         close={ctx.link().callback(|_| RightMsg::ShowSetting)}
                         plus_click={close.clone()}
@@ -352,10 +352,10 @@ impl Component for Right {
                 } else {
                     html! {
                     <MessageList
-                        friend_id={&self.conv_state.conv.item_id.clone()}
-                        cur_user_avatar={self.state.login_user.avatar.clone()}
+                        friend_id={&self.conv_state.conv.item_id}
+                        cur_user_avatar={&self.state.login_user.avatar}
                         conv_type={self.conv_state.conv.content_type.clone()}
-                        cur_user_id={self.state.login_user.id.clone()}
+                        cur_user_id={&self.state.login_user.id}
                         lang={self.lang_state.lang}/>
                     }
                 }

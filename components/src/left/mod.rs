@@ -87,9 +87,9 @@ impl Component for Left {
                 <Top />
                 <div class="left-down">
                     <div class={classes}>
-                    <Chats user_id={ctx.props().user_id.clone()}
-                            avatar={self.app_state.login_user.avatar.clone()} />
-                    <Contacts user_id={ctx.props().user_id.clone()}/>
+                    <Chats user_id={&ctx.props().user_id}
+                            avatar={&self.app_state.login_user.avatar} />
+                    <Contacts user_id={&ctx.props().user_id}/>
                     </div>
                 </div>
             </div>

@@ -369,7 +369,7 @@ impl Component for Chats {
             {warning}
             <PhoneCall
                 ws={self.ws.clone()}
-                user_id={ctx.props().user_id.clone()}
+                user_id={&ctx.props().user_id}
                 msg={self.call_msg.clone()}
                 send_msg={send_msg_callback}/>
 

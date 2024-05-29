@@ -535,8 +535,8 @@ impl Component for MessageList {
 
                     html! {
                         <MsgItem
-                            user_id={props.cur_user_id.clone()}
-                            friend_id={props.friend_id.clone()}
+                            user_id={&props.cur_user_id}
+                            friend_id={&props.friend_id}
                             msg={msg.clone()}
                             avatar={avatar}
                             conv_type={conv_type.clone()}
@@ -563,8 +563,8 @@ impl Component for MessageList {
                     </div>
                 </div>
                 <Sender
-                    friend_id={props.friend_id.clone()}
-                    cur_user_id={props.cur_user_id.clone()}
+                    friend_id={&props.friend_id}
+                    cur_user_id={&props.cur_user_id}
                     conv_type={ctx.props().conv_type.clone()}
                     disable = {self.is_black}
                     {on_file_send}

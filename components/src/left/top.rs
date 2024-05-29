@@ -185,8 +185,8 @@ impl Component for Top {
                 <div class="top-up">
                     {info_panel}
                     <div class="top-left pointer" {onclick}>
-                        <img class="avatar" title={self.app_state.login_user.name.clone()} src={self.app_state.login_user.avatar.clone()} />
-                        <span><b>{self.app_state.login_user.name.clone()}</b></span>
+                        <img class="avatar" title={&self.app_state.login_user.name} src={&self.app_state.login_user.avatar} />
+                        <span><b>{&self.app_state.login_user.name}</b></span>
                     </div>
                     {top_right}
                 </div>

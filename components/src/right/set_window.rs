@@ -283,8 +283,8 @@ impl Component for SetWindow {
                 if let Some(friend) = self.friend.as_ref() {
                     avatars = html! {
                         <div class="avatar-name">
-                            <img src={friend.avatar.clone()} />
-                            <span>{friend.name.clone()}</span>
+                            <img src={&friend.avatar} />
+                            <span>{&friend.name}</span>
                         </div>
                     };
                     let on_name_change = ctx.link().callback(SetWindowMsg::OnFriendNameChange);
@@ -321,19 +321,19 @@ impl Component for SetWindow {
                                 <div>
                                     {tr!(self.i18n, "group_name")}
                                 </div>
-                                <input type="text" value={v.name.clone()} onchange={on_group_name_change} />
+                                <input type="text" value={&v.name} onchange={on_group_name_change} />
                             </div>
                             <div class="group-announcement">
                                 <div>
                                     {tr!(self.i18n, "group_announcement")}
                                 </div>
-                                <input type="text" value={v.announcement.clone()} onchange={on_group_anno_change} />
+                                <input type="text" value={&v.announcement} onchange={on_group_anno_change} />
                             </div>
                             <div class="group-desc">
                                 <div>
                                     {tr!(self.i18n, "group_desc")}
                                 </div>
-                                <input type="text" value={v.description.clone()} onchange={on_group_desc_change} />
+                                <input type="text" value={&v.description} onchange={on_group_desc_change} />
                             </div>
                         </>
                     }
