@@ -1,23 +1,25 @@
 use std::collections::HashMap;
 
+use log::error;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use sandcat_sdk::{
-    api, db,
+    db,
     model::{
         conversation::Conversation,
         message::{
             convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall,
             DEFAULT_HELLO_MESSAGE,
         },
-        voice::Voice,
         ContentType, RightContentType,
     },
     pb::message::Msg as PbMsg,
     state::RefreshMsgListState,
 };
+
+use crate::dialog::Dialog;
 
 use super::{conversations::ChatsMsg, Chats};
 
@@ -33,7 +35,6 @@ impl Chats {
         msg.send_id = msg.friend_id.clone();
         msg.friend_id = friend_id;
 
-        // let (last_msg, last_msg_type) = get_invite_type(invite_type);
         let conv = Conversation {
             friend_id: msg.friend_id.clone(),
             last_msg,
@@ -47,14 +48,18 @@ impl Chats {
         spawn_local(async move {
             if msg.content_type == ContentType::Audio {
                 // request from file server
-                let data = api::file().download_voice(&msg.content).await.unwrap();
-                msg.audio_downloaded = true;
-                let voice = Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
-                if let Err(e) = db::db_ins().voices.save(&voice).await {
-                    log::error!("save voice to db error: {:?}", e);
+                if let Err(e) =
+                    Self::download_voice_and_save(&msg.content, &msg.local_id, msg.audio_duration)
+                        .await
+                {
+                    Dialog::error(&e);
                 }
+                msg.audio_downloaded = true;
             }
-            db::db_ins().messages.add_message(&mut msg).await.unwrap();
+            if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
+                error!("save message to db error: {:?}", e);
+                Dialog::error("save message to db error");
+            }
         });
 
         if let Some(v) = map.get_mut(&conv.friend_id) {
@@ -83,7 +88,14 @@ impl Chats {
 
         for item in messages.into_iter() {
             // let friend_id = item.send_id.clone();
-            let msg = convert_server_msg(item).unwrap();
+            let msg = match convert_server_msg(item) {
+                Ok(msg) => msg,
+                Err(e) => {
+                    error!("convert_server_msg error: {:?}", e);
+                    Dialog::error("convert_server_msg error");
+                    return;
+                }
+            };
             let conv_type = self.get_msg_type(&msg);
             match msg {
                 Msg::Single(msg) => {
@@ -100,25 +112,32 @@ impl Chats {
                         spawn_local(async move {
                             if msg.content_type == ContentType::Audio {
                                 // request from file server
-                                let data = api::file().download_voice(&msg.content).await.unwrap();
-                                msg.audio_downloaded = true;
-                                let voice =
-                                    Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
-                                if let Err(e) = db::db_ins().voices.save(&voice).await {
-                                    log::error!("save voice to db error: {:?}", e);
+                                if let Err(e) = Self::download_voice_and_save(
+                                    &msg.content,
+                                    &msg.local_id,
+                                    msg.audio_duration,
+                                )
+                                .await
+                                {
+                                    Dialog::error(&e);
                                 }
+                                msg.audio_downloaded = true;
                             }
-                            db::db_ins().group_msgs.put(&msg).await.unwrap();
+                            if let Err(e) = db::db_ins().group_msgs.put(&msg).await {
+                                error!("save message to db error: {:?}", e);
+                                Dialog::error("save message to db error");
+                            }
                         });
                     }
                     GroupMsg::MemberExit((mem_id, group_id, _)) => {
                         // todo send a exit message to the group
                         spawn_local(async move {
-                            db::db_ins()
-                                .group_members
-                                .delete(&mem_id, &group_id)
-                                .await
-                                .unwrap();
+                            if let Err(e) =
+                                db::db_ins().group_members.delete(&mem_id, &group_id).await
+                            {
+                                error!("remove members error: {:?}", e);
+                                Dialog::error("remove members error");
+                            }
                         });
                     }
                     GroupMsg::Update((group, _)) => {
@@ -203,12 +222,10 @@ impl Chats {
                             is_self: true,
                             ..Default::default()
                         };
-                        db::db_ins()
-                            .messages
-                            .add_message(&mut msg)
-                            .await
-                            .map_err(|err| log::error!("save message fail:{:?}", err))
-                            .unwrap();
+                        if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
+                            error!("save message to db error: {:?}", e);
+                            Dialog::error("save message to db error");
+                        }
 
                         ChatsMsg::SendMessage(Msg::Single(msg))
                     });

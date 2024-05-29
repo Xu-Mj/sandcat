@@ -288,19 +288,19 @@ impl Chats {
         });
     }
 
-    async fn download_voice_and_save(msg: &mut Message) -> Result<(), String> {
+    pub async fn download_voice_and_save(
+        url: &str,
+        local_id: &str,
+        duration: u8,
+    ) -> Result<(), String> {
         // request from file server
-        let data = api::file()
-            .download_voice(&msg.content)
-            .await
-            .map_err(|e| {
-                error!("download voice error: {:?}", e);
-                String::from("download voice error")
-            })?;
-        msg.audio_downloaded = true;
+        let data = api::file().download_voice(url).await.map_err(|e| {
+            error!("download voice error: {:?}", e);
+            String::from("download voice error")
+        })?;
         Dispatch::<AudioDownloadedState>::global()
-            .reduce_mut(|s| s.local_id = msg.local_id.clone());
-        let voice = Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
+            .reduce_mut(|s| s.local_id = local_id.to_string().into());
+        let voice = Voice::new(local_id.to_string(), data, duration);
         db::db_ins().voices.save(&voice).await.map_err(|e| {
             log::error!("save voice to db error: {:?}", e);
             String::from("save voice to db error")
@@ -352,15 +352,22 @@ impl Chats {
                     // split audio data
                     if msg.content_type == ContentType::Audio {
                         // request from file server
-                        if let Err(e) = Self::download_voice_and_save(&mut msg).await {
+                        if let Err(e) = Self::download_voice_and_save(
+                            &msg.content,
+                            &msg.local_id,
+                            msg.audio_duration,
+                        )
+                        .await
+                        {
                             Dialog::error(&e);
                         }
+                        msg.audio_downloaded = true;
                     }
                     // save to db
                     if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
                         error!("save message to db error: {:?}", e);
                         Dialog::error("save message to db error");
-                    };
+                    }
                     // ChatsMsg::None
                     // if let Err(err) = db::messages().await.add_message(&mut msg).await {
                     //     HomeMsg::Notification(Notification::error_from_content(
@@ -408,9 +415,16 @@ impl Chats {
                             // 数据入库
                             if msg.content_type == ContentType::Audio {
                                 // request from file server
-                                if let Err(e) = Self::download_voice_and_save(&mut msg).await {
+                                if let Err(e) = Self::download_voice_and_save(
+                                    &msg.content,
+                                    &msg.local_id,
+                                    msg.audio_duration,
+                                )
+                                .await
+                                {
                                     Dialog::error(&e);
                                 }
+                                msg.audio_downloaded = true;
                             }
                             if let Err(e) = db::db_ins().group_msgs.put(&msg).await {
                                 error!("save message to db error: {:?}", e);
