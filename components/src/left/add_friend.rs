@@ -132,7 +132,10 @@ impl Component for AddFriend {
             html! {<div class="no-result">{tr!(self.i18n, "no_result")}</div>}
         } else {
             html! {
-                <UserInfoCom user_id={ctx.props().user_id.clone()} info={self.result.as_ref().unwrap().clone()}  lang={ctx.props().lang} />
+                <UserInfoCom
+                    user_id={&ctx.props().user_id}
+                    info={self.result.as_ref().unwrap().clone()}
+                    lang={ctx.props().lang} />
             }
         };
         let search_callback = ctx.link().callback(AddFriendMsg::SearchFriend);

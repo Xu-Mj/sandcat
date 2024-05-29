@@ -222,7 +222,6 @@ impl Component for ListItem {
         };
         // 根据参数渲染组件
         let props = &ctx.props().props;
-        let id = props.id.clone();
         let onclick;
         let mut unread_count = html! {};
         let mut classes = Classes::from("item");
@@ -230,7 +229,7 @@ impl Component for ListItem {
             ComponentType::Contacts => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::FriendItemClicked);
                 if !self.is_mobile {
-                    if self.conv_state.conv.item_id == id {
+                    if self.conv_state.conv.item_id == props.id {
                         classes.push("selected");
                     } else {
                         classes.push("hover")
@@ -240,7 +239,7 @@ impl Component for ListItem {
             ComponentType::Messages => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::CleanUnreadCount);
                 if !self.is_mobile {
-                    if self.conv_state.conv.item_id == id {
+                    if self.conv_state.conv.item_id == props.id {
                         classes.push("selected");
                     } else {
                         classes.push("hover")
@@ -308,10 +307,10 @@ impl Component for ListItem {
                 right = html! {
                     <>
                         <div class="name-time">
-                            <span>{props.name.clone()}</span>
+                            <span>{&props.name}</span>
                             <span class="time">{time_str}</span>
                         </div>
-                        <div class="remark">{props.remark.clone()}</div>
+                        <div class="remark">{&props.remark}</div>
                     </>
                 }
             }
@@ -323,7 +322,7 @@ impl Component for ListItem {
         <div ref={self.node_ref.clone()}
             class={classes}
             {onclick}
-            title={props.name.clone()}
+            title={&props.name}
             {oncontextmenu}
             ontouchstart={touch_start}
             ontouchend={touch_end}>
@@ -340,7 +339,7 @@ impl Component for ListItem {
 impl ListItem {
     fn get_avatar(&self, ctx: &Context<Self>) -> Html {
         // deal with group avatars
-        let avatar_str = ctx.props().props.avatar.clone();
+        let avatar_str = &ctx.props().props.avatar;
 
         let mut avatar_style = "--avatar-column: 1";
         // trim spliter

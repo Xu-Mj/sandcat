@@ -361,7 +361,7 @@ impl Component for Contacts {
                     if self.is_add_friend {
                         html!{
                             <AddFriend
-                                user_id={ctx.props().user_id.clone()}
+                                user_id={&ctx.props().user_id}
                                 {plus_click}
                                 lang={self.lang_state.lang}/>
                         }
