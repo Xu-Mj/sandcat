@@ -54,6 +54,7 @@ cancel = 取消
 
 pub const CONVERSATION: &str = r#"
 search = 搜索
+no_result = 没有搜索结果
 # content type
 image = [图片]
 emoji = [表情]

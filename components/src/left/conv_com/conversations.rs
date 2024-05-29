@@ -3,6 +3,7 @@ use std::rc::Rc;
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
 use sandcat_sdk::model::page::Page;
+use utils::tr;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -311,7 +312,7 @@ impl Component for Chats {
         };
         let content = if self.is_searching {
             if self.result.is_empty() {
-                html! {<div class="no-result">{"没有搜索结果"}</div>}
+                html! {<div class="no-result">{tr!(self.i18n,"no_result")}</div>}
             } else {
                 self.render_result(ctx)
             }

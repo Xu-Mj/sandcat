@@ -40,6 +40,7 @@ logout = Logout
 
 pub const CONVERSATION: &str = r#"
 search = Search
+no_result = No Result
 # content type
 image = [Image]
 emoji = [Emoji]
