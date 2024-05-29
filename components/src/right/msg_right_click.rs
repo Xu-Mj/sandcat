@@ -41,8 +41,9 @@ impl Component for MsgRightClick {
     }
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        let node: HtmlDivElement = self.node.cast().unwrap();
-        node.focus().unwrap();
+        if let Some(node) = self.node.cast::<HtmlDivElement>() {
+            let _ = node.focus();
+        }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {

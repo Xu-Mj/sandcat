@@ -3,6 +3,7 @@ use std::mem::take;
 use base64::prelude::*;
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
+use log::error;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Blob, FileReader, HtmlDivElement, MediaRecorder, MediaRecorderOptions, MediaStream};
 use yew::{
@@ -17,6 +18,8 @@ use sandcat_sdk::{
     state::{I18nState, MobileState},
 };
 use utils::tr;
+
+use crate::dialog::Dialog;
 
 pub struct Recorder {
     mask_node: NodeRef,
@@ -123,7 +126,9 @@ impl Component for Recorder {
                 ) {
                     Ok(recorder) => recorder,
                     Err(e) => {
-                        ctx.link().send_message(RecorderMsg::PrepareError(e));
+                        // ctx.link().send_message(RecorderMsg::PrepareError(e));
+                        error!("recorder error: {:?}", e);
+                        Dialog::error("Recorder error");
                         return false;
                     }
                 };
@@ -166,7 +171,14 @@ impl Component for Recorder {
             }
             RecorderMsg::DataAvailable(blob) => {
                 let ctx = ctx.link().clone();
-                let file_reader = FileReader::new().unwrap();
+                let file_reader = match FileReader::new() {
+                    Ok(reader) => reader,
+                    Err(e) => {
+                        error!("Error creating FileReader: {:?}", e);
+                        Dialog::error("Error creating FileReader");
+                        return false;
+                    }
+                };
                 let onloadend_cb = Closure::wrap(Box::new(move |e: ProgressEvent| {
                     let file_reader: FileReader = e.target().unwrap().dyn_into().unwrap();
                     if let Ok(result) = file_reader.result() {
