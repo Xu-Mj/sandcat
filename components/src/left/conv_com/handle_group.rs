@@ -30,20 +30,20 @@ impl Chats {
 
             if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                 error!("Failed to store conversation: {:?}", e);
-                Dialog::error(AttrValue::from("Failed to store conversation"));
+                Dialog::error("Failed to store conversation");
                 return;
             }
 
             // store group information
             if let Err(err) = db::db_ins().groups.put(&info).await {
                 error!("store group error : {:?}", err);
-                return Dialog::error(AttrValue::from("Failed to store group"));
+                return Dialog::error("Failed to store group");
             };
 
             // store group members
             if let Err(e) = db::db_ins().group_members.put_list(msg.members).await {
                 error!("save group member error: {:?}", e);
-                return Dialog::error(AttrValue::from("Failed to store group members"));
+                return Dialog::error("Failed to store group member");
             }
 
             // send back received message
@@ -101,7 +101,7 @@ impl Chats {
                 Ok(mem) => mem,
                 Err(e) => {
                     error!("get user error:{:?}", e);
-                    Dialog::error(AttrValue::from("query user error"));
+                    Dialog::error("query user error");
                     return ChatsMsg::None;
                 }
             };
@@ -114,7 +114,7 @@ impl Chats {
                     // sotre the group info to database
                     if let Err(err) = db::db_ins().groups.put(&g).await {
                         log::error!("create group error: {:?}", err);
-                        Dialog::error(AttrValue::from("Failed to store group"));
+                        Dialog::error("Failed to store group");
                         return ChatsMsg::None;
                     }
 
@@ -123,7 +123,7 @@ impl Chats {
                         v.group_id = g.id.clone();
                         if let Err(e) = db::db_ins().group_members.put(v).await {
                             log::error!("save group member error: {:?}", e);
-                            Dialog::error(AttrValue::from("Failed to store group member"));
+                            Dialog::error("Failed to store group member");
                             continue;
                         }
                     }
@@ -136,7 +136,7 @@ impl Chats {
                     conv.unread_count = 0;
                     if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                         error!("failed to store conversation to db: {:?}", e);
-                        Dialog::error(AttrValue::from("Failed to store group"));
+                        Dialog::error("Failed to store group");
                         return ChatsMsg::None;
                     }
 
@@ -145,7 +145,7 @@ impl Chats {
                 }
                 Err(err) => {
                     log::error!("create group request error: {:?}", err);
-                    Dialog::error(AttrValue::from("Failed to create group"));
+                    Dialog::error("Failed to create group");
                     ChatsMsg::None
                 }
             }
@@ -163,7 +163,7 @@ impl Chats {
                     Ok(message) => ChatsMsg::DismissGroup(key, message),
                     Err(e) => {
                         error!("dismiss group error: {:?}", e);
-                        Dialog::error(AttrValue::from("Failed to dismiss group "));
+                        Dialog::error("Failed to dismiss group ");
                         ChatsMsg::None
                     }
                 }
@@ -209,7 +209,7 @@ impl Chats {
         spawn_local(async move {
             if let Err(err) = db::db_ins().groups.put(&group).await {
                 log::error!("update group fail:{:?}", err);
-                Dialog::error(AttrValue::from("Failed to update group"));
+                Dialog::error("Failed to update group");
             }
         });
     }

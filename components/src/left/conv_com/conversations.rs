@@ -80,7 +80,7 @@ impl Component for Chats {
     type Properties = ChatsProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        Dialog::loading(AttrValue::from("正在加载数据"));
+        Dialog::loading("正在加载数据");
         Self::new(ctx)
     }
 

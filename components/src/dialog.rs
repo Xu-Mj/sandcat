@@ -58,33 +58,41 @@ impl Default for DialogProps {
 }
 
 impl DialogProps {
-    pub fn loading(content: AttrValue) -> Self {
+    pub fn loading(content: &str) -> Self {
         Self {
             type_: DialogType::Loading,
-            content,
+            content: content.to_string().into(),
             ..Default::default()
         }
     }
 
-    pub fn info(content: AttrValue) -> Self {
+    pub fn info(content: &str) -> Self {
         Self {
-            content,
+            content: content.to_string().into(),
             ..Default::default()
         }
     }
 
-    pub fn warn(content: AttrValue) -> Self {
+    pub fn success(content: &str) -> Self {
+        Self {
+            type_: DialogType::Success,
+            content: content.to_string().into(),
+            ..Default::default()
+        }
+    }
+
+    pub fn warn(content: &str) -> Self {
         Self {
             type_: DialogType::Warn,
-            content,
+            content: content.to_string().into(),
             ..Default::default()
         }
     }
 
-    pub fn error(content: AttrValue) -> Self {
+    pub fn error(content: &str) -> Self {
         Self {
             type_: DialogType::Error,
-            content,
+            content: content.to_string().into(),
             ..Default::default()
         }
     }
@@ -198,7 +206,7 @@ impl Dialog {
         container
     }
 
-    pub fn loading(msg: AttrValue) {
+    pub fn loading(msg: &str) {
         let props = DialogProps::loading(msg);
         yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
     }
@@ -207,29 +215,23 @@ impl Dialog {
         Dispatch::<LoadingState>::global().reduce_mut(|s| s.is_loading = false);
     }
 
-    pub fn success(msg: AttrValue) {
+    pub fn success(msg: &str) {
         let container = Dialog::container();
-        let props = DialogProps {
-            container: container.clone(),
-            title: "成功".into(),
-            content: msg,
-            type_: DialogType::Success,
-            delay: 1000,
-        };
+        let props = DialogProps::success(msg);
         yew::Renderer::<Dialog>::with_root_and_props(container, props).render();
     }
 
-    pub fn info(msg: AttrValue) {
+    pub fn info(msg: &str) {
         let props = DialogProps::info(msg);
         yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
     }
 
-    pub fn warn(msg: AttrValue) {
+    pub fn warn(msg: &str) {
         let props = DialogProps::warn(msg);
         yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
     }
 
-    pub fn error(msg: AttrValue) {
+    pub fn error(msg: &str) {
         let props = DialogProps::error(msg);
         yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
     }
