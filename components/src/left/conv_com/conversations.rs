@@ -22,6 +22,7 @@ use sandcat_sdk::state::{
 use sandcat_sdk::state::{ConvState, UnreadState};
 
 use crate::call::PhoneCall;
+use crate::dialog::Dialog;
 use crate::left::right_click_panel::RightClickPanel;
 use crate::select_friends::SelectFriendList;
 use crate::top_bar::TopBar;
@@ -79,6 +80,7 @@ impl Component for Chats {
     type Properties = ChatsProps;
 
     fn create(ctx: &Context<Self>) -> Self {
+        Dialog::loading(AttrValue::from("正在加载数据"));
         Self::new(ctx)
     }
 
@@ -111,6 +113,8 @@ impl Component for Chats {
                 self.seq = seq;
                 // handle offline messages
                 self.handle_offline_messages(ctx, messages);
+                // unmount loading
+                Dialog::close_loading();
                 WebSocketManager::connect(self.ws.clone());
                 true
             }
