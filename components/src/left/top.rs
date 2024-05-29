@@ -196,7 +196,8 @@ impl Component for Top {
     }
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        let node: HtmlDivElement = self.node.cast().unwrap();
-        node.set_attribute("data-tauri-drag-region", "").unwrap();
+        if let Some(node) = self.node.cast::<HtmlDivElement>() {
+            let _ = node.set_attribute("data-tauri-drag-region", "");
+        }
     }
 }
