@@ -50,6 +50,8 @@ file = [File]
 text = [Text]
 video_call = [Video Call]
 audio_call = [Voice Call]
+knock_off_msg = Another device has logged in your account, if it is not you, please check your account password.
+ok = OK
 "#;
 
 pub const CONTACTS: &str = r#"

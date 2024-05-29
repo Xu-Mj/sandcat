@@ -10,7 +10,7 @@
 - we need to update user information when we click the conversation item
 - redesign the websocket reconnection logical,
 - adjust textarea dynamic height under the mobile mode
-- need to handle all types message about platform and if self msg
+- need to handle all types message about platform and if self msg -- done
 - **redesign the audio message type in indexeddb** -- done
 - phone call type need i18n -- done
 - voice data maybe need to select from db dynamically when user click the voice message -- done
@@ -20,9 +20,9 @@
 - decrease the state count; --every action will trigger a state change
 - message item right click menu: delete and resent -- delete done
 - receive voice message need to render the voice data download progress -- done
-- add loading animation for users
+- add loading animation for users -- done
 - need emoji in text message
 - phone call need duration on the panel -- done
 - reply busy when the user is in the call
-- knock off is not complete
+- knock off is not complete -- done
 - use &ctx.props().xxx instead clone method in view function -- done

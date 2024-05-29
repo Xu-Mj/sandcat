@@ -63,6 +63,8 @@ audio = [语音]
 file = [文件]
 video_call = [视频通话]
 audio_call = [语音通话]
+knock_off_msg = 另一个设备登录了你的账号，如果不是你本人，请检查账号密码。
+ok = 确定
 "#;
 
 pub const CONTACTS: &str = r#"

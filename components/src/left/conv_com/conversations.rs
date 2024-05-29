@@ -355,8 +355,8 @@ impl Component for Chats {
             warning = html! {
                 <div class="knock-off-warning">
                     <div class="warning-window box-shadow">
-                        <h2>{"GoodBye"}</h2>
-                        <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{"OK"}</button>
+                        <div>{tr!(self.i18n, "knock_off_msg")}</div>
+                        <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{tr!(self.i18n, "ok")}</button>
                     </div>
                 </div>
             }
