@@ -602,7 +602,7 @@ impl Component for MsgItem {
             friend_card = html! {
                 <FriendCard
                     friend_info={self.friend_info.as_ref().unwrap().clone()}
-                    user_id={ctx.props().user_id.clone()}
+                    user_id={&ctx.props().user_id}
                     lang={LanguageType::ZhCN}
                     close={ctx.link().callback(|_| MsgItemMsg::CloseFriendCard)}
                     is_self={ctx.props().msg.is_self}
@@ -613,9 +613,9 @@ impl Component for MsgItem {
         }
 
         let avatar = if ctx.props().msg.is_self {
-            html!(<img class="avatar" src={self.avatar.clone()} />)
+            html!(<img class="avatar" src={&self.avatar} />)
         } else {
-            html!(<img class="avatar pointer" src={self.avatar.clone()} onclick={_avatar_click} />)
+            html!(<img class="avatar pointer" src={&self.avatar} onclick={_avatar_click} />)
         };
 
         // context menu
