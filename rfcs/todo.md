@@ -25,3 +25,4 @@
 - phone call need duration on the panel -- done
 - reply busy when the user is in the call
 - knock off is not complete
+- use &ctx.props().xxx instead clone method in view function
