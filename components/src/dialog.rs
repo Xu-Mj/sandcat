@@ -158,6 +158,7 @@ impl Component for Dialog {
                 html! (<div class="content">{&ctx.props().content}</div>)
             }
             DialogType::Warn | DialogType::Error => {
+                class.push("notification");
                 class.push("error");
                 html! {
                     <>
@@ -184,7 +185,7 @@ impl Component for Dialog {
             }
         };
         html! {
-            <div tabindex="1" {class} >
+            <div {class} >
                 {content}
             </div>
         }
