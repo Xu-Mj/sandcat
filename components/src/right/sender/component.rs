@@ -133,8 +133,9 @@ impl Component for Sender {
                 true
             }
             SenderMsg::SendFileIconClicked => {
-                let file_input = self.file_input_ref.cast::<HtmlElement>().unwrap();
-                file_input.click();
+                if let Some(file_input) = self.file_input_ref.cast::<HtmlElement>() {
+                    file_input.click();
+                }
                 false
             }
             SenderMsg::FileInputChanged(event) => {
@@ -531,11 +532,10 @@ impl Component for Sender {
 
     fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
         if ctx.props().disable {
-            self.input_ref
+            let _ = self
+                .input_ref
                 .cast::<HtmlElement>()
-                .unwrap()
-                .blur()
-                .unwrap();
+                .map(|input| input.blur());
             return;
         }
         if !self.show_emoji && !ctx.props().disable && !self.is_mobile && !self.is_voice_mode {
@@ -555,7 +555,7 @@ impl Component for Sender {
                     format!("calc({}px + {})", sender.client_height(), gap).as_str(),
                 )
                 .unwrap();
-            wrapper.focus().unwrap();
+            let _ = wrapper.focus();
         }
     }
 }

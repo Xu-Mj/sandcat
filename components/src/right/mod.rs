@@ -228,7 +228,7 @@ impl Component for Right {
                             if animation.animation_name() != "right-in" {
                                 continue;
                             }
-                            animation.reverse().unwrap();
+                            let _ = animation.reverse();
                             let ctx = ctx.link().clone();
                             self.timeout = Some(Timeout::new(200, move || {
                                 Dispatch::<ShowRight>::global()

@@ -89,8 +89,10 @@ impl Component for FriendCard {
     }
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
-        let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
-        if first_render {
+        if !first_render {
+            return;
+        }
+        if let Some(node) = self.node_ref.cast::<HtmlDivElement>() {
             // calculate border boundary
             let height = window().inner_height().unwrap().as_f64().unwrap() as i32;
             let width = window().inner_width().unwrap().as_f64().unwrap() as i32;
@@ -104,13 +106,13 @@ impl Component for FriendCard {
             }
 
             log::debug!("x: {}, y: {}", x, y);
-            node.style()
-                .set_property("top", format!("{}px", y).as_str())
-                .unwrap();
-            node.style()
-                .set_property("left", format!("{}px", x).as_str())
-                .unwrap();
-            node.focus().unwrap();
+            let _ = node
+                .style()
+                .set_property("top", format!("{}px", y).as_str());
+            let _ = node
+                .style()
+                .set_property("left", format!("{}px", x).as_str());
+            let _ = node.focus();
         }
     }
 }

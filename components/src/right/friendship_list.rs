@@ -139,12 +139,11 @@ impl Component for FriendShipList {
             FriendShipListMsg::AgreeFriendShipRes(res) => {
                 match res {
                     RequestStatus::Success(friendship_id, friend) => {
-                        let pos = self
+                        if let Some(item) = self
                             .list
-                            .iter()
-                            .position(|item| item.fs_id == friendship_id);
-                        if pos.is_some() {
-                            let item = self.list.get_mut(pos.unwrap()).unwrap();
+                            .iter_mut()
+                            .find(|item| item.fs_id == friendship_id)
+                        {
                             item.status = FriendStatus::Accepted as i32;
                             item.read = ReadStatus::True;
                         }
@@ -188,9 +187,7 @@ impl Component for FriendShipList {
                         // 发送通知给contacts，刷新列表
                     }
                     RequestStatus::Failed(id) => {
-                        let pos = self.list.iter().position(|item| item.fs_id == id.clone());
-                        if pos.is_some() {
-                            let item = self.list.get_mut(pos.unwrap()).unwrap();
+                        if let Some(item) = self.list.iter_mut().find(|item| item.fs_id == id) {
                             // 000 标识请求失败
                             item.status = FriendStatus::Failed as i32;
                         }

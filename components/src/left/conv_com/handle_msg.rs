@@ -1,3 +1,4 @@
+use log::error;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -18,7 +19,7 @@ use sandcat_sdk::{
 
 use super::Chats;
 
-use crate::left::conv_com::conversations::ChatsMsg;
+use crate::{dialog::Dialog, left::conv_com::conversations::ChatsMsg};
 
 impl Chats {
     /// used to update the conversation list when a message is sent
@@ -116,9 +117,7 @@ impl Chats {
         let friend_id = conv.friend_id.clone();
         let mut clean = false;
         let unread_count = conv.unread_count;
-        let dest = self.list.shift_remove(&friend_id);
-        if dest.is_some() {
-            let mut old = dest.unwrap();
+        if let Some(mut old) = self.list.shift_remove(&friend_id) {
             // deal with unread message count
             if !old.mute && !is_self && self.conv_state.conv.item_id != friend_id {
                 Dispatch::<UnreadState>::global()
@@ -142,7 +141,10 @@ impl Chats {
                 if clean {
                     conv.unread_count = 0;
                 }
-                db::db_ins().convs.put_conv(&conv).await.unwrap();
+                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                    error!("put conv error:{:?}", e);
+                    Dialog::error("put conv error");
+                }
             });
             true
         } else {
@@ -161,9 +163,21 @@ impl Chats {
                 }
                 if is_self {
                     // we don't need to set the unread count if it is self message
-                    conv = db::db_ins().convs.self_update_conv(conv).await.unwrap();
+                    conv = match db::db_ins().convs.self_update_conv(conv).await {
+                        Ok(conv) => conv,
+                        Err(e) => {
+                            error!("failed to update conv: {:?}", e);
+                            Dialog::error("update conv error");
+                            return ChatsMsg::None;
+                        }
+                    };
                 } else {
-                    db::db_ins().convs.put_conv(&conv).await.unwrap();
+                    if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                        error!("failed to update conv: {:?}", e);
+                        Dialog::error("update conv error");
+                        return ChatsMsg::None;
+                    }
+
                     conv.unread_count = unread_count;
                 }
 
@@ -250,12 +264,23 @@ impl Chats {
         let seq = self.seq.clone();
 
         ctx.link().send_future(async move {
-            db::db_ins().seq.put(&seq).await.unwrap();
+            if let Err(e) = db::db_ins().seq.put(&seq).await {
+                error!("save seq error: {:?}", e);
+                Dialog::error("save seq error");
+                return ChatsMsg::None;
+            }
             if need_repull {
-                let messages = api::messages()
+                let messages = match api::messages()
                     .pull_offline_msg(user_id.as_str(), start, end)
                     .await
-                    .unwrap();
+                {
+                    Ok(messages) => messages,
+                    Err(e) => {
+                        error!("pull offline msg error: {:?}", e);
+                        Dialog::error("pull offline msg error");
+                        return ChatsMsg::None;
+                    }
+                };
                 ChatsMsg::HandleLackMessages(messages)
             } else {
                 ChatsMsg::None
@@ -263,6 +288,25 @@ impl Chats {
         });
     }
 
+    pub async fn download_voice_and_save(
+        url: &str,
+        local_id: &str,
+        duration: u8,
+    ) -> Result<(), String> {
+        // request from file server
+        let data = api::file().download_voice(url).await.map_err(|e| {
+            error!("download voice error: {:?}", e);
+            String::from("download voice error")
+        })?;
+        Dispatch::<AudioDownloadedState>::global()
+            .reduce_mut(|s| s.local_id = local_id.to_string().into());
+        let voice = Voice::new(local_id.to_string(), data, duration);
+        db::db_ins().voices.save(&voice).await.map_err(|e| {
+            log::error!("save voice to db error: {:?}", e);
+            String::from("save voice to db error")
+        })?;
+        Ok(())
+    }
     pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
         let conv_type = match message {
             Msg::Group(_) => RightContentType::Group,
@@ -308,17 +352,22 @@ impl Chats {
                     // split audio data
                     if msg.content_type == ContentType::Audio {
                         // request from file server
-                        let data = api::file().download_voice(&msg.content).await.unwrap();
-                        msg.audio_downloaded = true;
-                        Dispatch::<AudioDownloadedState>::global()
-                            .reduce_mut(|s| s.local_id = msg.local_id.clone());
-                        let voice = Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
-                        if let Err(e) = db::db_ins().voices.save(&voice).await {
-                            log::error!("save voice to db error: {:?}", e);
+                        if let Err(e) = Self::download_voice_and_save(
+                            &msg.content,
+                            &msg.local_id,
+                            msg.audio_duration,
+                        )
+                        .await
+                        {
+                            Dialog::error(&e);
                         }
+                        msg.audio_downloaded = true;
                     }
                     // save to db
-                    db::db_ins().messages.add_message(&mut msg).await.unwrap();
+                    if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
+                        error!("save message to db error: {:?}", e);
+                        Dialog::error("save message to db error");
+                    }
                     // ChatsMsg::None
                     // if let Err(err) = db::messages().await.add_message(&mut msg).await {
                     //     HomeMsg::Notification(Notification::error_from_content(
@@ -366,25 +415,22 @@ impl Chats {
                             // 数据入库
                             if msg.content_type == ContentType::Audio {
                                 // request from file server
-                                let data = api::file().download_voice(&msg.content).await.unwrap();
-                                msg.audio_downloaded = true;
-                                Dispatch::<AudioDownloadedState>::global()
-                                    .reduce_mut(|s| s.local_id = msg.local_id.clone());
-                                let voice =
-                                    Voice::new(msg.local_id.to_string(), data, msg.audio_duration);
-                                if let Err(e) = db::db_ins().voices.save(&voice).await {
-                                    log::error!("save voice to db error: {:?}", e);
+                                if let Err(e) = Self::download_voice_and_save(
+                                    &msg.content,
+                                    &msg.local_id,
+                                    msg.audio_duration,
+                                )
+                                .await
+                                {
+                                    Dialog::error(&e);
                                 }
+                                msg.audio_downloaded = true;
                             }
-                            db::db_ins().group_msgs.put(&msg).await.unwrap();
+                            if let Err(e) = db::db_ins().group_msgs.put(&msg).await {
+                                error!("save message to db error: {:?}", e);
+                                Dialog::error("save message to db error");
+                            }
                             ChatsMsg::None
-                            // if let Err(err) = db::group_msgs().await.put(&msg).await {
-                            //     HomeMsg::Notification(Notification::error_from_content(
-                            //         format!("内部错误:{:?}", err).into(),
-                            //     ))
-                            // } else {
-                            //     HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
-                            // }
                         });
 
                         if is_send {
@@ -404,24 +450,12 @@ impl Chats {
                             log::debug!(
                                 "received group member exits message {group_id} --> {mem_id}, delete member from group"
                             );
-                            db::db_ins()
-                                .group_members
-                                .delete(&group_id, &mem_id)
-                                .await
-                                .unwrap();
-                            // if let Err(err) =
-                            //     db::group_members().await.delete(&mem_id, &group_id).await
-                            // {
-                            //     log::error!("remove group member fail:{:?}", err);
-                            // } else {
-                            //     // send message received
-                            //     ctx.send_message(HomeMsg::SendBackMsg(Msg::Group(
-                            //         GroupMsg::DismissOrExitReceived((
-                            //             user_id.to_string(),
-                            //             group_id,
-                            //         )),
-                            //     )));
-                            // }
+                            if let Err(e) =
+                                db::db_ins().group_members.delete(&group_id, &mem_id).await
+                            {
+                                error!("delete members error: {:?}", e);
+                                Dialog::error("delete members error");
+                            }
                         });
                     }
                     GroupMsg::Dismiss((group_id, seq)) => {
@@ -438,6 +472,7 @@ impl Chats {
                         spawn_local(async move {
                             if let Err(err) = db::db_ins().groups.dismiss(&cloned_group_id).await {
                                 log::error!("remove group fail:{:?}", err);
+                                Dialog::error("remove group error");
                             } else {
                                 //     // send message to other component
                                 //     ctx.send_message(HomeMsg::RecSendMsgStateChange(message));
@@ -523,12 +558,10 @@ impl Chats {
                         is_self: true,
                         ..Default::default()
                     };
-                    db::db_ins()
-                        .messages
-                        .add_message(&mut msg)
-                        .await
-                        .map_err(|err| log::error!("save message fail:{:?}", err))
-                        .unwrap();
+                    if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
+                        log::error!("save message fail:{:?}", e);
+                        Dialog::error("save message error");
+                    }
 
                     // send message to contact component to update the friend list
                     Dispatch::<FriendShipState>::global().reduce_mut(|s| {
@@ -549,12 +582,14 @@ impl Chats {
                         RespMsgType::Single => {
                             if let Err(err) = db::db_ins().messages.update_msg_status(&msg).await {
                                 log::error!("update message fail:{:?}", err);
+                                Dialog::error("update message fail");
                             }
                         }
                         RespMsgType::Group => {
                             if let Err(err) = db::db_ins().group_msgs.update_msg_status(&msg).await
                             {
                                 log::error!("update message fail:{:?}", err);
+                                Dialog::error("update message fail");
                             }
                         }
                     }

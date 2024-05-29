@@ -123,7 +123,7 @@ impl Component for SetWindow {
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if first_render {
             if let Some(node) = self.node.cast::<HtmlDivElement>() {
-                node.focus().unwrap();
+                let _ = node.focus();
                 let onclose = ctx.props().close.clone();
                 // register click event to document
                 let func = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
