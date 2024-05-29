@@ -92,7 +92,7 @@ impl Component for Chats {
                 self.is_searching = true;
                 // filter message list
                 if pattern.is_empty() {
-                    self.result.clear();
+                    ctx.link().send_message(ChatsMsg::CleanupSearchResult);
                 } else {
                     self.list.iter().for_each(|(key, item)| {
                         if item.name.contains(pattern.as_str()) {

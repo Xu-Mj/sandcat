@@ -25,7 +25,6 @@ pub struct TopBarProps {
 
 pub struct TopBar {
     search_node: NodeRef,
-    search_value: AttrValue,
     i18n: FluentBundle<FluentResource>,
     is_mobile: bool,
 }
@@ -51,7 +50,6 @@ impl Component for TopBar {
         Self {
             i18n,
             search_node: NodeRef::default(),
-            search_value: AttrValue::default(),
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
@@ -59,9 +57,8 @@ impl Component for TopBar {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             // 搜索框输入事件
-            TopBarMsg::SearchInputChanged(e) => {
-                let input: HtmlInputElement = e.target_unchecked_into();
-                self.search_value = input.value().into();
+            TopBarMsg::SearchInputChanged(_) => {
+                ctx.link().send_message(TopBarMsg::SearchButtonClicked);
                 true
             }
             // 搜索框回车事件
@@ -87,9 +84,7 @@ impl Component for TopBar {
             }
             TopBarMsg::SearchButtonClicked => {
                 let input: HtmlInputElement = self.search_node.cast().unwrap();
-                self.search_value = input.value().into();
-                let search_value = self.search_value.clone();
-                ctx.props().search_callback.emit(search_value.clone());
+                ctx.props().search_callback.emit(input.value().into());
                 true
             }
         }
