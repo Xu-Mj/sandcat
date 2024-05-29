@@ -29,6 +29,7 @@ use sandcat_sdk::state::SendAudioMsgState;
 use sandcat_sdk::state::SendMessageState;
 use sandcat_sdk::state::SendResultState;
 
+use crate::dialog::Dialog;
 use crate::right::{msg_item::MsgItem, sender::Sender};
 
 pub struct MessageList {
@@ -291,7 +292,14 @@ impl MessageList {
                     return;
                 }
             };
-            let data_url = Url::create_object_url_with_blob(&blob).unwrap();
+            let data_url = match Url::create_object_url_with_blob(&blob) {
+                Ok(url) => url,
+                Err(e) => {
+                    log::error!("create data url error: {:?}", e);
+                    Dialog::error("play audio error");
+                    return;
+                }
+            };
 
             audio.set_src(&data_url);
 
@@ -309,6 +317,7 @@ impl MessageList {
             // todo handle error
             if let Err(e) = audio.play() {
                 log::error!("play audio error: {:?}", e);
+                Dialog::error("play audio error");
             };
         }
     }
@@ -361,9 +370,10 @@ impl Component for MessageList {
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
         if self.scroll_state == ScrollState::Bottom {
-            let node = self.node_ref.cast::<HtmlElement>().unwrap();
-            node.set_scroll_top(0);
-            self.scroll_state = ScrollState::Bottom;
+            if let Some(node) = self.node_ref.cast::<HtmlElement>() {
+                node.set_scroll_top(0);
+                self.scroll_state = ScrollState::Bottom;
+            }
         }
     }
 

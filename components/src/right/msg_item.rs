@@ -1,6 +1,7 @@
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
 use gloo::utils::{document, window};
+use log::error;
 use nanoid::nanoid;
 use utils::tr;
 use wasm_bindgen::JsCast;
@@ -316,14 +317,15 @@ impl Component for MsgItem {
             }
             MsgItemMsg::TextDoubleClick(event) => {
                 event.prevent_default();
-                let div = self.text_node.cast::<Node>().unwrap();
-                if let Some(selection) = window().get_selection().ok().flatten() {
+                if let Ok(Some(selection)) = window().get_selection() {
                     if selection.range_count() > 0 {
                         selection.remove_all_ranges().unwrap();
                     }
-                    let range = document().create_range().unwrap();
-                    range.select_node_contents(&div).unwrap();
-                    selection.add_range(&range).unwrap();
+                    if let Ok(range) = document().create_range() {
+                        let div = self.text_node.cast::<Node>().unwrap();
+                        let _ = range.select_node_contents(&div);
+                        let _ = selection.add_range(&range);
+                    }
                 }
                 false
             }
@@ -332,7 +334,14 @@ impl Component for MsgItem {
                     let voice_id = ctx.props().msg.local_id.clone();
                     self.play_audio_animation();
                     spawn_local(async move {
-                        let voice = db::db_ins().voices.get(&voice_id).await.unwrap();
+                        let voice = match db::db_ins().voices.get(&voice_id).await {
+                            Ok(voice) => voice,
+                            Err(e) => {
+                                error!("Failed to get voice: {:?}", e);
+                                // todo download voice again
+                                return;
+                            }
+                        };
                         paly_audio.emit((voice_id, voice.data));
                     });
                 }
