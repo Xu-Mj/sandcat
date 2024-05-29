@@ -72,6 +72,15 @@ impl DialogProps {
             ..Default::default()
         }
     }
+
+    pub fn warn(content: AttrValue) -> Self {
+        Self {
+            type_: DialogType::Warn,
+            content,
+            ..Default::default()
+        }
+    }
+
     pub fn error(content: AttrValue) -> Self {
         Self {
             type_: DialogType::Error,
@@ -212,6 +221,11 @@ impl Dialog {
 
     pub fn info(msg: AttrValue) {
         let props = DialogProps::info(msg);
+        yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
+    }
+
+    pub fn warn(msg: AttrValue) {
+        let props = DialogProps::warn(msg);
         yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
     }
 
