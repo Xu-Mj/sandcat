@@ -2,6 +2,7 @@ use gloo_net::http::Request;
 use wasm_bindgen::JsValue;
 
 use crate::api::group::GroupApi;
+use crate::pb::message::GroupInviteNew;
 use crate::{
     model::{
         group::{Group, GroupDelete, GroupFromServer, GroupRequest},
@@ -68,5 +69,17 @@ impl GroupApi for GroupHttp {
             .map_err(|err| JsValue::from(err.to_string()))?;
 
         Ok(Group::from(group))
+    }
+
+    async fn invite(&self, data: GroupInviteNew) -> Result<(), JsValue> {
+        Request::post("/api/group/invite")
+            .header(&self.auth_header, &self.token)
+            .json(&data)
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?;
+        Ok(())
     }
 }
