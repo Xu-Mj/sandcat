@@ -17,6 +17,7 @@ pub trait Friends: Debug {
     async fn get(&self, friend_id: &str) -> Friend;
 
     async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue>;
+    async fn get_list_by_ids(&self, ids: Vec<String>) -> Result<Vec<Friend>, JsValue>;
 
     async fn delete_friend(&self, id: &str) -> Result<(), JsValue>;
 }
