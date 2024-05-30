@@ -195,9 +195,7 @@ impl Component for Right {
             }
             RightMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
-                if nodes.is_empty() {
-                    return true;
-                }
+                // todo need to handle the group invitation or create group
                 // create group conversation and send 'create group' message
                 Dispatch::<CreateConvState>::global().reduce_mut(|s| s.create_group(nodes));
                 self.show_friend_list = false;

@@ -404,6 +404,7 @@ impl Component for MsgItem {
                 true
             }
             MsgItemMsg::ForwardMsg(list) => {
+                log::info!("forward msg: {:?}", list);
                 list.into_iter().for_each(|item| {
                     let mut msg = ctx.props().msg.clone();
                     msg.send_id.clone_from(&ctx.props().user_id);

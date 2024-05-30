@@ -42,6 +42,7 @@ pub enum QueryStatus<T> {
 #[derive(Properties, Clone, PartialEq)]
 pub struct AddConvProps {
     // 该排除一个用户呢还是排除多个？
+    #[prop_or_default]
     pub except: AttrValue,
     pub close_back: Callback<()>,
     pub submit_back: Callback<Vec<String>>,
@@ -83,6 +84,10 @@ impl Component for SelectFriendList {
                 // get selected checkbox value
                 match document().query_selector_all("input[type='checkbox']:checked") {
                     Ok(nodes) => {
+                        if nodes.length() == 0 {
+                            ctx.props().close_back.emit(());
+                            return false;
+                        }
                         let mut v = Vec::with_capacity(nodes.length() as usize);
                         for i in 0..nodes.length() {
                             if let Ok(node) = nodes.item(i).unwrap().dyn_into::<HtmlInputElement>()
@@ -90,9 +95,6 @@ impl Component for SelectFriendList {
                                 v.push(node.value());
                             };
                         }
-                        if !ctx.props().except.is_empty() {
-                            v.push(ctx.props().except.clone().to_string().clone().to_string())
-                        };
                         ctx.props().submit_back.emit(v);
                     }
                     Err(_) => {
