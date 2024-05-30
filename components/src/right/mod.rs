@@ -311,7 +311,6 @@ impl Component for Right {
                 RightMsg::ShowSetting
             });
             let close = ctx.link().callback(|_| RightMsg::ShowSelectFriendList);
-            let submit_back = ctx.link().callback(RightMsg::CreateGroup);
 
             if self.show_setting {
                 setting = html! (
@@ -324,11 +323,13 @@ impl Component for Right {
                         lang={self.lang_state.lang} />);
             }
             if self.show_friend_list {
-                friend_list = html!(<SelectFriendList
-                            except={info.id()}
-                            close_back={close}
-                            {submit_back}
-                            lang={self.lang_state.lang} />);
+                let submit_back = ctx.link().callback(RightMsg::CreateGroup);
+                friend_list = html!(
+                    <SelectFriendList
+                        except={info.id()}
+                        close_back={close}
+                        {submit_back}
+                        lang={self.lang_state.lang} />);
             }
             top_bar_info = html! {
                 <div class={right_top_bar_class}>
