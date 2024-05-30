@@ -29,3 +29,4 @@
 - add user avatar and name in the message
 - emoji style for mobile
 - need to handle the group invitation or create group in right mod com
+- we need to redesign the relation about friend with group

@@ -15,6 +15,8 @@ use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
+use log::error;
+use sandcat_sdk::pb::message::GroupInviteNew;
 use wasm_bindgen::JsCast;
 use web_sys::{CssAnimation, HtmlDivElement};
 use yew::platform::spawn_local;
@@ -23,15 +25,16 @@ use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{BackIcon, CatHeadIcon, CloseIcon, MaxIcon};
-use sandcat_sdk::db;
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
 use sandcat_sdk::state::{AppState, MobileState, ShowRight};
 use sandcat_sdk::state::{
     ComponentTypeState, ConvState, CreateConvState, FriendListState, I18nState,
 };
+use sandcat_sdk::{api, db};
 use utils::tr;
 
+use crate::dialog::Dialog;
 use crate::right::friendship_list::FriendShipList;
 use crate::right::set_window::SetWindow;
 use crate::right::setting::Setting;
@@ -197,7 +200,28 @@ impl Component for Right {
                 self.show_friend_list = false;
                 // todo need to handle the group invitation or create group
                 // create group conversation and send 'create group' message
-                Dispatch::<CreateConvState>::global().reduce_mut(|s| s.create_group(nodes));
+                if self.conv_state.conv.content_type == RightContentType::Friend {
+                    Dispatch::<CreateConvState>::global().reduce_mut(|s| s.create_group(nodes));
+                } else if self.conv_state.conv.content_type == RightContentType::Group {
+                    // invite the member
+                    let user_id = self.state.login_user.id.to_string();
+                    let group_id = self.conv_state.conv.item_id.to_string();
+                    spawn_local(async move {
+                        if let Err(e) = api::groups()
+                            .invite(GroupInviteNew {
+                                user_id,
+                                group_id,
+                                members: nodes,
+                            })
+                            .await
+                        {
+                            error!("invite member error:{:?}", e);
+                            Dialog::error("invite member error");
+                            // return;
+                        }
+                        // update local group member list
+                    })
+                }
                 self.show_friend_list = false;
                 self.show_setting = false;
                 true
