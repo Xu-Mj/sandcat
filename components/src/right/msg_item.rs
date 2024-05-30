@@ -66,6 +66,7 @@ pub enum MsgItemMsg {
     OnContextMenu(MouseEvent),
     CloseContextMenu,
     DeleteItem,
+    ShowForwardMsg,
 }
 
 enum AudioDownloadStage {
@@ -391,6 +392,11 @@ impl Component for MsgItem {
                 });
                 false
             }
+            MsgItemMsg::ShowForwardMsg => {
+                // Dispatch::<SendMessageState>::global()
+                //     .reduce_mut(|s| s.msg = Msg::Single(ctx.props().msg.clone()));
+                false
+            }
         }
     }
 
@@ -623,10 +629,12 @@ impl Component for MsgItem {
         if self.show_context_menu {
             context_menu = html! {
                 <MsgRightClick
+                    content_type={ctx.props().msg.content_type}
                     x={self.context_menu_pos.0}
                     y={self.context_menu_pos.1}
                     close={ctx.link().callback( |_|MsgItemMsg::CloseContextMenu)}
                     delete={ctx.link().callback(|_|MsgItemMsg::DeleteItem)}
+                    forward={ctx.link().callback(|_|MsgItemMsg::ShowForwardMsg)}
                     />
             }
         }
@@ -645,6 +653,7 @@ impl Component for MsgItem {
         }
     }
 }
+
 impl MsgItem {
     fn voice_in_msg_icon(&self) -> Html {
         html! {
