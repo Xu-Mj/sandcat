@@ -759,6 +759,8 @@ input {
 
         .content {
             width: 100%;
+            height: 2rem;
+            line-height: 2rem;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;

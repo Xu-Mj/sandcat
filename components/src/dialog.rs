@@ -162,9 +162,9 @@ impl Component for Dialog {
                 class.push("error");
                 html! {
                     <>
-                        <div class="header">{&ctx.props().title}</div>
+                        // <div class="header">{&ctx.props().title}</div>
                         <div class="content">{&ctx.props().content}</div>
-                        <div class="footer"><div class="button">{"got it"}</div></div>
+                        // <div class="footer"><div class="button">{"got it"}</div></div>
                     </>
                 }
             }

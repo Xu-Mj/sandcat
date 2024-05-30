@@ -126,9 +126,9 @@ impl Component for Recorder {
                 ) {
                     Ok(recorder) => recorder,
                     Err(e) => {
-                        // ctx.link().send_message(RecorderMsg::PrepareError(e));
                         error!("recorder error: {:?}", e);
-                        Dialog::error("Recorder error");
+                        ctx.link().send_message(RecorderMsg::PrepareError(e));
+                        // Dialog::error("Recorder error");
                         return false;
                     }
                 };
@@ -175,7 +175,8 @@ impl Component for Recorder {
                     Ok(reader) => reader,
                     Err(e) => {
                         error!("Error creating FileReader: {:?}", e);
-                        Dialog::error("Error creating FileReader");
+                        // Dialog::error("Error creating FileReader");
+                        ctx.send_message(RecorderMsg::PrepareError(e));
                         return false;
                     }
                 };
@@ -233,9 +234,21 @@ impl Component for Recorder {
                 self.clean();
                 true
             }
-            RecorderMsg::PrepareError(_) => {
+            RecorderMsg::PrepareError(e) => {
+                web_sys::console::log_1(&e);
                 log::error!("prepare error");
                 self.record_state = RecorderState::Error;
+                self.mask_node
+                    .cast::<HtmlDivElement>()
+                    .map(|div| div.style().set_property("display", "none"));
+                self.clean();
+                // Dialog::error(&tr!(self.i18n, "error"));
+                let msg = if let Some(err) = e.dyn_ref::<web_sys::DomException>() {
+                    err.name()
+                } else {
+                    tr!(self.i18n, "error")
+                };
+                Dialog::error(&msg);
                 true
             }
             RecorderMsg::TouchStart(event) => {
@@ -290,7 +303,7 @@ impl Component for Recorder {
                 self.record_state = RecorderState::Stop;
 
                 true
-            } // RecorderMsg::SendComplete => false,
+            }
         }
     }
 
@@ -399,16 +412,6 @@ impl Recorder {
         let duration = self.time;
         let voice = Voice::new(nanoid::nanoid!(), data, duration);
         send_voice.emit(voice);
-        // ctx.link().send_future(async move {
-        //     // store voice data
-        //     if let Err(e) = db::db_ins().voices.save(&voice).await {
-        //         return RecorderMsg::PrepareError(e);
-        //     }
-
-        //     // send voice
-        //     send_voice.emit(voice);
-        //     RecorderMsg::SendComplete
-        // });
     }
 
     fn clean(&mut self) {
