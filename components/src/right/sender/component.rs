@@ -396,7 +396,7 @@ impl Component for Sender {
             {emojis}
                 <div class="send-bar">
                     <div class="send-bar-left">
-                        <span onclick={ctx.link().callback(move |_| SenderMsg::ShowEmoji)}>
+                        <span onclick={ctx.link().callback(|event: MouseEvent| {event.stop_propagation();SenderMsg::ShowEmoji})}>
                             <SmileIcon />
                         </span>
                         <span >

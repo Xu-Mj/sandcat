@@ -121,6 +121,7 @@ impl Sender {
         let end = textarea.selection_end().unwrap().unwrap() as usize;
 
         let emoji_utf16: Vec<u16> = c.encode_utf16().collect();
+        let emoji_utf16_len = emoji_utf16.len();
 
         // insert new character
         utf16_value.splice(start..end, emoji_utf16);
@@ -131,7 +132,11 @@ impl Sender {
         textarea.set_value(&new_value);
 
         // update cursor position
-        let new_cursor_position = if &c == "\n" { start + 1 } else { start + 2 };
+        let new_cursor_position = if &c == "\n" {
+            start + 1
+        } else {
+            start + emoji_utf16_len
+        };
 
         textarea
             .set_selection_start(Some(new_cursor_position as u32))

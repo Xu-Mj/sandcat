@@ -1,13 +1,12 @@
 use gloo::utils::document;
 use indexmap::IndexMap;
-use log::debug;
-use sandcat_sdk::state::MobileState;
 use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
+use yewdux::Dispatch;
 
 use icons::{BiggerIcon, SmileIcon};
-use yewdux::Dispatch;
+use sandcat_sdk::state::MobileState;
 
 use crate::right::emoji::{get_emojis, get_unicode_emojis, Emoji, EmojiSpan};
 pub struct EmojiPanel {
@@ -90,7 +89,6 @@ impl Component for EmojiPanel {
         // up panel --> emoji
         // down panel --> emoji type
         let send = &ctx.link().callback(EmojiPanelMsg::Send);
-        debug!("EmojiPanel::view: {:?}", self.current_type);
         let mut up = html!();
         if let Some(emoji_type) = self.data.get(&self.current_type) {
             up = emoji_type
@@ -140,7 +138,7 @@ impl Component for EmojiPanel {
             let onclose = ctx.props().close.clone();
             let node = node.clone();
             // register click event to document
-            let func = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+            let func = Closure::wrap(Box::new(move |event: MouseEvent| {
                 if let Some(target) = event.target() {
                     let target_node = target.dyn_into::<web_sys::Node>().unwrap();
                     if !node.contains(Some(&target_node)) {
