@@ -21,8 +21,9 @@
 - message item right click menu: delete and resent -- delete done
 - receive voice message need to render the voice data download progress -- done
 - add loading animation for users -- done
-- need emoji in text message
+- need emoji in text message -- done
 - phone call need duration on the panel -- done
 - reply busy when the user is in the call
 - knock off is not complete -- done
 - use &ctx.props().xxx instead clone method in view function -- done
+- add user avatar and name in the message
