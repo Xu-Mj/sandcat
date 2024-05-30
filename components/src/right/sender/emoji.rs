@@ -98,18 +98,18 @@ impl Component for EmojiPanel {
                 .collect::<Html>();
         }
 
-        let mut class = classes!("emoji-panel-up");
+        let mut up_class = classes!("emoji-panel-up");
         if self.current_type == UNICODE_EMOJI {
-            class.push("unicode-emoji-wrapper");
+            up_class.push("unicode-emoji-wrapper");
         } else {
-            class.push("emoji-wrapper");
+            up_class.push("emoji-wrapper");
         }
 
-        if self.is_mobile {
-            class.push("emoji-wrapper-size-mobile");
+        let class = if self.is_mobile {
+            "emoji-panel emoji-panel-size-mobile"
         } else {
-            class.push("emoji-wrapper-size");
-        }
+            "emoji-panel emoji-panel-size"
+        };
         let on_unicode_click = ctx
             .link()
             .callback(|_| EmojiPanelMsg::ChangeEmojiType(UNICODE_EMOJI.to_owned()));
@@ -117,8 +117,8 @@ impl Component for EmojiPanel {
             .link()
             .callback(|_| EmojiPanelMsg::ChangeEmojiType(BIGGER_EMOJI.to_owned()));
         html! {
-            <div ref={self.node.clone()}  class="emoji-panel">
-                <div {class}>
+            <div ref={self.node.clone()}  {class}>
+                <div class={up_class}>
                     {up}
                 </div>
                 <div class="emoji-panel-footer">

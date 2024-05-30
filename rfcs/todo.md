@@ -30,3 +30,4 @@
 - emoji style for mobile
 - need to handle the group invitation or create group in right mod com
 - we need to redesign the relation about friend with group
+- need to test the invite new member for goup
