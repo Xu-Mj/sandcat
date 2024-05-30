@@ -1,14 +1,13 @@
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
-    ClipboardEvent, DataTransferItem, DataTransferItemList, File, HtmlElement, HtmlInputElement,
+    ClipboardEvent, DataTransferItem, DataTransferItemList, HtmlElement, HtmlInputElement,
     HtmlTextAreaElement,
 };
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{CloseIcon, ImageIcon, KeyboardIcon};
-use icons::{FileIcon, PhoneIcon, SmileIcon, VideoIcon, VoiceIcon};
+use icons::{FileIcon, KeyboardIcon, PhoneIcon, SmileIcon, VideoIcon, VoiceIcon};
 
 use sandcat_sdk::model::message::{InviteMsg, InviteType, SendStatus};
 use sandcat_sdk::model::voice::Voice;
@@ -22,17 +21,7 @@ use crate::right::recorder::Recorder;
 use crate::right::sender::emoji::EmojiPanel;
 use crate::right::sender::INPUT_MAX_LEN;
 
-use super::Sender;
-
-pub struct FileListItem {
-    file: File,
-    file_type: FileType,
-}
-
-pub enum FileType {
-    Image,
-    File,
-}
+use super::{FileListItem, FileType, Sender};
 
 pub enum SenderMsg {
     SendText,
@@ -247,11 +236,6 @@ impl Component for Sender {
                 }
                 let need_new_line = self.enter_key_down != 0
                     && chrono::Utc::now().timestamp_millis() - self.enter_key_down > 500;
-                log::debug!(
-                    "need_new_line: {}, event.shift_key: {}",
-                    need_new_line,
-                    event.shift_key()
-                );
 
                 self.is_key_down = false;
 
@@ -263,14 +247,13 @@ impl Component for Sender {
                 }
 
                 ctx.link().send_message(SenderMsg::SendText);
-
                 false
             }
             SenderMsg::OnEnterKeyDown(event) => {
                 if event.key() == "Enter" && !self.is_key_down {
-                    self.is_key_down = true; // 置标志变量为 true
-                    self.enter_key_down = chrono::Utc::now().timestamp_millis(); // 记录按键按下时间
-                    event.prevent_default(); // 阻止默认行为
+                    self.is_key_down = true;
+                    self.enter_key_down = chrono::Utc::now().timestamp_millis();
+                    event.prevent_default();
                 }
                 false
             }
@@ -354,76 +337,15 @@ impl Component for Sender {
         }
 
         let mut emojis = html!();
-        if !self.show_emoji {
+        if self.show_emoji {
             let callback = &ctx.link().callback(SenderMsg::SendEmoji);
             let onblur = &ctx.link().callback(move |_| SenderMsg::ShowEmoji);
-            // emojis = html! {
-            //     <div class={emoji_class} tabindex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
-            //         {
-            //             self.emoji_list.iter()
-            //             .map(|emoji| {html! (<EmojiSpan emoji={emoji.clone()} onclick={callback} />)})
-            //             .collect::<Html>()
-            //         }
-            //     </div>
-            // }
             emojis = html!(<EmojiPanel send={callback} close={onblur}/>);
         }
 
         // 文件发送窗口
         let file_sender = if self.show_file_sender {
-            let content = self
-                .file_list
-                .iter()
-                .map(|item| {
-                    let filename = item.file.name();
-                    let close = ctx
-                        .link()
-                        .callback(move |_| SenderMsg::DeleteFileInFileSender(filename.clone()));
-                    match item.file_type {
-                        FileType::Image => {
-                            html! {
-                                 <div class="file-sender-item" key={item.file.name()}>
-                                    <ImageIcon />
-                                    <span class="file-sender-name">
-                                        {item.file.name()}
-                                    </span>
-                                    <CloseIcon />
-                                </div>
-                            }
-                        }
-                        FileType::File => {
-                            html! {
-                                <div class="file-sender-item" key={item.file.name()}>
-                                    <FileIcon />
-                                    <span class="file-sender-name">
-                                        {item.file.name()}
-                                    </span>
-                                    <span onclick={close} >
-                                        <CloseIcon />
-                                    </span>
-                                </div>
-                            }
-                        }
-                    }
-                })
-                .collect::<Html>();
-            let onclick = ctx.link().callback(|_| SenderMsg::CloseFileSender);
-            let send = ctx.link().callback(|_| SenderMsg::SendFile);
-            html! {
-                <div class="file-sender">
-                    <div class="file-sender-content" >
-                        {content}
-                    </div>
-                    <div class="file-sender-footer">
-                        <button onclick={send} >
-                            {tr!(self.i18n, "submit")}
-                        </button>
-                        <button {onclick} >
-                            {tr!(self.i18n, "cancel")}
-                        </button>
-                    </div>
-                </div>
-            }
+            self.get_file_sender_html(ctx)
         } else {
             html! {}
         };
@@ -519,26 +441,11 @@ impl Component for Sender {
                 .map(|input| input.blur());
             return;
         }
-        if
-        /* !self.show_emoji &&  */
-        !ctx.props().disable && !self.is_mobile && !self.is_voice_mode {
+
+        if !ctx.props().disable && !self.is_mobile && !self.is_voice_mode {
             self.input_ref
                 .cast::<HtmlElement>()
                 .map(|input| input.focus());
-        }
-        if self.show_emoji {
-            // let wrapper = self.emoji_wrapper_ref.cast::<HtmlElement>().unwrap();
-            // // 设置表情面板位置
-            // let sender = self.sender_ref.cast::<HtmlElement>().unwrap();
-            // let gap = ".5rem";
-            // wrapper
-            //     .style()
-            //     .set_property(
-            //         "bottom",
-            //         format!("calc({}px + {})", sender.client_height(), gap).as_str(),
-            //     )
-            //     .unwrap();
-            // let _ = wrapper.focus();
         }
     }
 }

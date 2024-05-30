@@ -8,6 +8,7 @@ use fluent::FluentResource;
 use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
 use gloo::utils::window;
+use utils::tr;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
@@ -16,11 +17,14 @@ use web_sys::File;
 use web_sys::FileReader;
 use web_sys::HtmlElement;
 use web_sys::HtmlTextAreaElement;
+use yew::html;
 use yew::AttrValue;
 use yew::Context;
+use yew::Html;
 use yew::NodeRef;
 use yewdux::Dispatch;
 
+use icons::{CloseIcon, FileIcon, ImageIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::GroupMsg;
@@ -37,6 +41,15 @@ use sandcat_sdk::state::SendMessageState;
 use super::emoji::Emoji;
 
 const INPUT_MAX_LEN: usize = 5000;
+pub struct FileListItem {
+    file: File,
+    file_type: FileType,
+}
+
+pub enum FileType {
+    Image,
+    File,
+}
 
 /// 右侧发送组件
 /// 总体两排组件布局
@@ -96,24 +109,28 @@ impl Sender {
         true
     }
 
+    /// insert character before cursor like emoji and \n
+    /// use utf16
     fn insert_character_before_cursor(&self, c: String) {
         let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
         let value = textarea.value();
         let mut utf16_value: Vec<u16> = value.encode_utf16().collect();
 
+        // get the cursor position
         let start = textarea.selection_start().unwrap().unwrap() as usize;
         let end = textarea.selection_end().unwrap().unwrap() as usize;
 
-        // 在 UTF-16 编码中插入字符
         let emoji_utf16: Vec<u16> = c.encode_utf16().collect();
-        // 替换选中文本（如果有）或在光标处插入新字符
+
+        // insert new character
         utf16_value.splice(start..end, emoji_utf16);
 
-        // 将修改后的 UTF-16 代码单元序列转换回 String
+        // convert back to string
         let new_value = String::from_utf16(&utf16_value).unwrap();
 
-        // 设置新值并更新光标位置
         textarea.set_value(&new_value);
+
+        // update cursor position
         let new_cursor_position = if &c == "\n" { start + 1 } else { start + 2 };
 
         textarea
@@ -145,7 +162,6 @@ impl Sender {
         textarea.set_scroll_top(textarea.scroll_height() + padding_bottom);
     }
 
-    // fixme need to wait message store success
     fn store_send_msg(&self, ctx: &Context<Self>, msg: Message) {
         let conv_type = ctx.props().conv_type.clone();
         spawn_local(async move {
@@ -168,19 +184,61 @@ impl Sender {
         }
     }
 
-    // fn send_msg(&self, ctx: &Context<Self>, msg: Message) {
-    //     log::debug!("send message state in sender");
-    //     match ctx.props().conv_type {
-    //         RightContentType::Friend => {
-    //             Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
-    //         }
-    //         RightContentType::Group => {
-    //             Dispatch::<SendMessageState>::global()
-    //                 .reduce_mut(|s| s.msg = Msg::Group(GroupMsg::Message(msg)));
-    //         }
-    //         _ => {}
-    //     }
-    // }
+    fn get_file_sender_html(&self, ctx: &Context<Self>) -> Html {
+        let content = self
+            .file_list
+            .iter()
+            .map(|item| {
+                let filename = item.file.name();
+                let close = ctx
+                    .link()
+                    .callback(move |_| SenderMsg::DeleteFileInFileSender(filename.clone()));
+                match item.file_type {
+                    FileType::Image => {
+                        html! {
+                             <div class="file-sender-item" key={item.file.name()}>
+                                <ImageIcon />
+                                <span class="file-sender-name">
+                                    {item.file.name()}
+                                </span>
+                                <CloseIcon />
+                            </div>
+                        }
+                    }
+                    FileType::File => {
+                        html! {
+                            <div class="file-sender-item" key={item.file.name()}>
+                                <FileIcon />
+                                <span class="file-sender-name">
+                                    {item.file.name()}
+                                </span>
+                                <span onclick={close} >
+                                    <CloseIcon />
+                                </span>
+                            </div>
+                        }
+                    }
+                }
+            })
+            .collect::<Html>();
+        let onclick = ctx.link().callback(|_| SenderMsg::CloseFileSender);
+        let send = ctx.link().callback(|_| SenderMsg::SendFile);
+        html! {
+            <div class="file-sender">
+                <div class="file-sender-content" >
+                    {content}
+                </div>
+                <div class="file-sender-footer">
+                    <button onclick={send} >
+                        {tr!(self.i18n, "submit")}
+                    </button>
+                    <button {onclick} >
+                        {tr!(self.i18n, "cancel")}
+                    </button>
+                </div>
+            </div>
+        }
+    }
 
     // todo upload file by behind task and update the upload state
     fn send_file(&self, ctx: &Context<Self>, file: File) {
@@ -227,11 +285,6 @@ impl Sender {
     }
 
     fn send_text(&mut self, ctx: &Context<Self>) -> bool {
-        log::info!(
-            "send text, platform: {:?}, {}",
-            self.get_platform(),
-            self.is_mobile
-        );
         if let Some(input) = self.input_ref.cast::<HtmlTextAreaElement>() {
             let content: AttrValue = input.value().into();
             // 如果为空那么 提示不能发送空消息
@@ -251,7 +304,7 @@ impl Sender {
             if content.chars().count() > INPUT_MAX_LEN {
                 self.is_warn_needed = true;
                 self.warn_msg = "input_max_len".to_string();
-                // 输入框立即获取焦点
+                // get focus
                 input.focus().unwrap();
                 // 给提示框添加一个定时器，1s后消失
                 let ctx = ctx.link().clone();
@@ -281,8 +334,7 @@ impl Sender {
                 ..Default::default()
             };
             self.store_send_msg(ctx, msg);
-            // self.send_msg(ctx, msg);
-            // 清空输入框
+            // clean the input
             input.set_value("");
             if self.is_mobile {
                 // reset the mobile textarea height
@@ -294,7 +346,6 @@ impl Sender {
 
     fn handle_input(&self) -> bool {
         let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
-        // textarea.style().set_property("height", "auto").unwrap();
         let document = window().document().unwrap();
         let html = document
             .document_element()
@@ -302,7 +353,6 @@ impl Sender {
             .dyn_into::<HtmlElement>()
             .unwrap();
         let html_style = window().get_computed_style(&html).unwrap().unwrap();
-        // let html_style = html.style();
 
         let font_size = html_style
             .get_property_value("font-size")
