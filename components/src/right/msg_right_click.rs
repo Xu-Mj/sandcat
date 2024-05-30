@@ -1,4 +1,5 @@
 use fluent::{FluentBundle, FluentResource};
+use sandcat_sdk::model::ContentType;
 use sandcat_sdk::state::I18nState;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
@@ -15,10 +16,12 @@ pub struct MsgRightClick {
 
 #[derive(Debug, Clone, Properties, PartialEq)]
 pub struct RightClickPanelProps {
+    pub content_type: ContentType,
     pub x: i32,
     pub y: i32,
     pub close: Callback<()>,
     pub delete: Callback<()>,
+    pub forward: Callback<()>,
 }
 
 pub enum RightClickPanelMsg {}
@@ -49,6 +52,17 @@ impl Component for MsgRightClick {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let style = format!("left: {}px; top: {}px;", ctx.props().x, ctx.props().y);
 
+        let mut forward = html!();
+        if ctx.props().content_type != ContentType::Audio
+            || ctx.props().content_type != ContentType::AudioCall
+            || ctx.props().content_type != ContentType::VideoCall
+        {
+            forward = html!(
+                 <div class="right-click-panel-item hover" onclick={ctx.props().forward.reform(|_|())}>
+                     {tr!(self.i18n, "forward")}
+                 </div>
+            );
+        };
         html! {
             <div ref={self.node.clone()}
                 {style}
@@ -58,9 +72,7 @@ impl Component for MsgRightClick {
                 <div class="right-click-panel-item hover" onclick={ctx.props().delete.reform(|_|())}>
                     {tr!(self.i18n, "delete")}
                 </div>
-                // <div class="right-click-panel-item hover" onclick={ctx.props().mute.reform(|_|())}>
-                //     {mute_str}
-                // </div>
+                {forward}
             </div>
         }
     }

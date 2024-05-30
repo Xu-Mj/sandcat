@@ -27,3 +27,5 @@
 - knock off is not complete -- done
 - use &ctx.props().xxx instead clone method in view function -- done
 - add user avatar and name in the message
+- emoji style for mobile
+- need to handle the group invitation or create group in right mod com

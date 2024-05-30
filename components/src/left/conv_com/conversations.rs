@@ -329,7 +329,6 @@ impl Component for Chats {
         if self.show_friend_list {
             friend_list = html! {
                 <SelectFriendList
-                    except={AttrValue::default()}
                     close_back={plus_click.clone()}
                     {submit_back}
                     lang={self.lang_state.lang}/>

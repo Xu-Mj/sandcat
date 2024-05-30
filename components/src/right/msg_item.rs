@@ -24,10 +24,13 @@ use sandcat_sdk::state::{I18nState, MobileState, SendCallState, SendMessageState
 use crate::get_platform;
 use crate::right::friend_card::FriendCard;
 use crate::right::msg_right_click::MsgRightClick;
+use crate::select_friends::SelectFriendList;
+
 pub struct MsgItem {
     avatar: AttrValue,
     show_img_preview: bool,
     show_friend_card: bool,
+    show_friendlist: bool,
     // timeout for sending message
     timeout: Option<Timeout>,
     show_send_fail: bool,
@@ -66,6 +69,8 @@ pub enum MsgItemMsg {
     OnContextMenu(MouseEvent),
     CloseContextMenu,
     DeleteItem,
+    ShowForwardMsg,
+    ForwardMsg(Vec<String>),
 }
 
 enum AudioDownloadStage {
@@ -138,6 +143,7 @@ impl Component for MsgItem {
             timeout,
             show_img_preview: false,
             show_friend_card: false,
+            show_friendlist: false,
             avatar,
             show_send_fail: ctx.props().msg.send_status == SendStatus::Failed,
             show_sending: false,
@@ -391,6 +397,27 @@ impl Component for MsgItem {
                 });
                 false
             }
+            MsgItemMsg::ShowForwardMsg => {
+                // Dispatch::<SendMessageState>::global()
+                //     .reduce_mut(|s| s.msg = Msg::Single(ctx.props().msg.clone()));
+                self.show_friendlist = !self.show_friendlist;
+                true
+            }
+            MsgItemMsg::ForwardMsg(list) => {
+                log::info!("forward msg: {:?}", list);
+                list.into_iter().for_each(|item| {
+                    let mut msg = ctx.props().msg.clone();
+                    msg.send_id.clone_from(&ctx.props().user_id);
+                    msg.friend_id = item.into();
+                    msg.server_id = AttrValue::default();
+                    msg.local_id = nanoid::nanoid!().into();
+                    msg.is_read = 1;
+                    msg.is_self = true;
+                    Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
+                });
+                self.show_friendlist = false;
+                true
+            }
         }
     }
 
@@ -623,17 +650,33 @@ impl Component for MsgItem {
         if self.show_context_menu {
             context_menu = html! {
                 <MsgRightClick
+                    content_type={ctx.props().msg.content_type}
                     x={self.context_menu_pos.0}
                     y={self.context_menu_pos.1}
                     close={ctx.link().callback( |_|MsgItemMsg::CloseContextMenu)}
                     delete={ctx.link().callback(|_|MsgItemMsg::DeleteItem)}
+                    forward={ctx.link().callback(|_|MsgItemMsg::ShowForwardMsg)}
                     />
             }
+        }
+
+        // forward msg
+        let mut friendlist = html!();
+        if self.show_friendlist {
+            let close_back = ctx.link().callback(|_| MsgItemMsg::ShowForwardMsg);
+            let submit_back = ctx.link().callback(MsgItemMsg::ForwardMsg);
+            friendlist = html!(
+                <SelectFriendList
+                    except={&ctx.props().friend_id}
+                    {close_back}
+                    {submit_back}
+                    lang={Dispatch::<I18nState>::global().get().lang} />)
         }
         html! {
             <>
             {friend_card}
             {context_menu}
+            {friendlist}
             <div class={classes} id={id.to_string()} >
                 <div class="msg-item-avatar">
                     {avatar}
@@ -645,6 +688,7 @@ impl Component for MsgItem {
         }
     }
 }
+
 impl MsgItem {
     fn voice_in_msg_icon(&self) -> Html {
         html! {

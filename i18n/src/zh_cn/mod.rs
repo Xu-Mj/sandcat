@@ -77,6 +77,7 @@ pub const RIGHT_CLICK_PANEL: &str = r#"
 delete = 删除
 mute = 消息免打扰
 un_mute = 取消免打扰
+forward = 转发
 "#;
 
 pub const MSG_ITEM: &str = r#"
