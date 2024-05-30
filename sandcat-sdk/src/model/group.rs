@@ -89,6 +89,24 @@ pub struct GroupMemberFromServer {
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,
 }
+
+impl GroupMemberFromServer {
+    pub fn from_friend(group: &Group, value: Friend, time: i64) -> Self {
+        Self {
+            age: value.age,
+            group_id: group.id.clone(),
+            user_id: value.friend_id,
+            group_name: group.name.clone(),
+            avatar: value.avatar,
+            joined_at: time,
+            region: value.region,
+            gender: value.gender,
+            is_friend: true,
+            remark: value.remark,
+            signature: value.signature,
+        }
+    }
+}
 /// Group member information
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMember {

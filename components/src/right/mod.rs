@@ -16,6 +16,7 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
 use log::error;
+use sandcat_sdk::model::group::GroupMemberFromServer;
 use sandcat_sdk::pb::message::GroupInviteNew;
 use wasm_bindgen::JsCast;
 use web_sys::{CssAnimation, HtmlDivElement};
@@ -207,11 +208,24 @@ impl Component for Right {
                     let user_id = self.state.login_user.id.to_string();
                     let group_id = self.conv_state.conv.item_id.to_string();
                     spawn_local(async move {
+                        let group = match db::db_ins().groups.get(&group_id).await {
+                            Ok(Some(group)) => group,
+                            Ok(None) => {
+                                Dialog::error("get group info error");
+                                return;
+                            }
+                            Err(e) => {
+                                error!("get group info error:{:?}", e);
+                                Dialog::error("get group info error");
+                                return;
+                            }
+                        };
+
                         if let Err(e) = api::groups()
                             .invite(GroupInviteNew {
                                 user_id,
                                 group_id,
-                                members: nodes,
+                                members: nodes.clone(),
                             })
                             .await
                         {
@@ -219,8 +233,15 @@ impl Component for Right {
                             Dialog::error("invite member error");
                             // return;
                         }
+                        let time = chrono::Utc::now().timestamp_millis();
                         // update local group member list
-                    })
+                        let friends = db::db_ins().friends.get_list_by_ids(nodes).await.unwrap();
+                        let members = friends
+                            .into_iter()
+                            .map(|friend| GroupMemberFromServer::from_friend(&group, friend, time))
+                            .collect();
+                        db::db_ins().group_members.put_list(members).await.unwrap();
+                    });
                 }
                 self.show_friend_list = false;
                 self.show_setting = false;
