@@ -1,8 +1,7 @@
 mod component;
+mod emoji;
 pub use component::*;
 use log::error;
-
-use std::cmp::Ordering;
 
 use fluent::FluentBundle;
 use fluent::FluentResource;
@@ -47,12 +46,10 @@ pub struct Sender {
     is_warn_needed: bool,
     warn_msg: String,
     timer: Option<Timeout>,
-    emoji_list: Vec<Emoji>,
     show_emoji: bool,
     sender_ref: NodeRef,
     input_ref: NodeRef,
     file_input_ref: NodeRef,
-    emoji_wrapper_ref: NodeRef,
     show_file_sender: bool,
     i18n: FluentBundle<FluentResource>,
     file_list: Vec<FileListItem>,
@@ -70,47 +67,70 @@ impl Sender {
             MobileState::Desktop as i32
         }
     }
-    fn handle_new_line(&self, ctx: &Context<Self>) -> bool {
+
+    fn send_emoji(&self, ctx: &Context<Self>, emoji: Emoji) -> bool {
+        if emoji.is_inline {
+            // insert to the textarea
+            self.insert_character_before_cursor(emoji.url.clone());
+            return true;
+        }
+        // 存储消息、发送消息
+        let friend_id = ctx.props().friend_id.clone();
+        let time = chrono::Utc::now().timestamp_millis();
+        let send_id = ctx.props().cur_user_id.clone();
+        let msg = Message {
+            local_id: nanoid::nanoid!().into(),
+            server_id: AttrValue::default(),
+            send_id,
+            friend_id,
+            content_type: ContentType::Emoji,
+            content: emoji.url.clone().into(),
+            create_time: time,
+            is_read: 1,
+            is_self: true,
+            platform: self.get_platform(),
+            send_status: SendStatus::Sending,
+            ..Default::default()
+        };
+        self.store_send_msg(ctx, msg);
+        true
+    }
+
+    fn insert_character_before_cursor(&self, c: String) {
         let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
-        let mut value = textarea.value();
-        let char_count = value.chars().count();
+        let value = textarea.value();
+        let mut utf16_value: Vec<u16> = value.encode_utf16().collect();
 
         let start = textarea.selection_start().unwrap().unwrap() as usize;
         let end = textarea.selection_end().unwrap().unwrap() as usize;
 
-        // 保护性检查以确保start和end不越界
-        if start > char_count || end > char_count || start > end {
-            return false; // 越界，直接返回
-        }
+        // 在 UTF-16 编码中插入字符
+        let emoji_utf16: Vec<u16> = c.encode_utf16().collect();
+        // 替换选中文本（如果有）或在光标处插入新字符
+        utf16_value.splice(start..end, emoji_utf16);
 
-        let v: Vec<(usize, char)> = value.char_indices().collect();
-        let start_index = v.get(start).map_or(start, |&(i, _)| i);
+        // 将修改后的 UTF-16 代码单元序列转换回 String
+        let new_value = String::from_utf16(&utf16_value).unwrap();
 
-        match end.cmp(&char_count) {
-            Ordering::Equal => value.push('\n'),
-            Ordering::Less => {
-                let end_index = v.get(end).map_or(end, |&(i, _)| i);
-                if end_index == start_index {
-                    value.insert(start_index, '\n');
-                } else {
-                    let selected_text = &value[start_index..end_index];
-                    let new_text = "\n";
-                    value = value.replacen(selected_text, new_text, 1);
-                }
-            }
-            Ordering::Greater => {}
-        };
+        // 设置新值并更新光标位置
+        textarea.set_value(&new_value);
+        let new_cursor_position = if &c == "\n" { start + 1 } else { start + 2 };
 
-        textarea.set_value(&value);
         textarea
-            .set_selection_start(Some((start + 1) as u32))
+            .set_selection_start(Some(new_cursor_position as u32))
             .unwrap();
         textarea
-            .set_selection_end(Some((start + 1) as u32))
+            .set_selection_end(Some(new_cursor_position as u32))
             .unwrap();
+    }
 
+    fn handle_new_line(&self, ctx: &Context<Self>) {
+        let textarea: HtmlTextAreaElement = self.input_ref.cast().unwrap();
+        self.insert_character_before_cursor("\n".to_string());
         // handle textarea height
-        ctx.link().send_message(SenderMsg::OnTextInput);
+        if self.is_mobile {
+            ctx.link().send_message(SenderMsg::OnTextInput);
+        }
 
         // scroll to bottom
         let style = window().get_computed_style(&textarea).unwrap().unwrap();
@@ -123,7 +143,6 @@ impl Sender {
             .unwrap_or(8);
 
         textarea.set_scroll_top(textarea.scroll_height() + padding_bottom);
-        false
     }
 
     // fixme need to wait message store success
