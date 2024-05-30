@@ -347,12 +347,13 @@
             }
         }
 
-        #exclamation{
+        #exclamation {
             path {
                 stroke: #e11d48;
                 fill: #e11d48;
             }
         }
+
         /* 消息组件,对方消息 */
 
         .msg-item {
@@ -545,55 +546,6 @@
         display: none;
     }
 
-    .emoji-wrapper-size {
-        width: 25rem;
-        height: 15rem;
-    }
-
-    .emoji-wrapper-size-mobile {
-        width: 100%;
-        height: 15rem;
-    }
-
-    .emoji-wrapper {
-        display: grid;
-        grid-template-columns: repeat(5, minmax(0, 1fr));
-        grid-auto-rows: min-content;
-        /*将每行的高度设置为其内容的最小高度*/
-        justify-content: center;
-        justify-items: center;
-        position: absolute;
-        bottom: 20%;
-        left: .5rem;
-        border-radius: .5rem;
-        overflow-y: auto;
-        background-color: var(--color-background);
-        padding: .5rem;
-        filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
-        /*box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),*/
-        /*10px 10px 10px rgba(60, 60, 60, 0.12),*/
-        /*-10px -10px 15px rgba(60, 60, 60, 0.12),*/
-        /*-10px -10px 15px rgba(60, 60, 60, 0.12);*/
-
-        .emoji {
-            width: 100%;
-            padding: .7rem;
-        }
-
-        .emoji img {
-            width: 100%;
-            height: auto;
-            object-fit: contain;
-            object-position: center;
-        }
-
-    }
-
-    /* 隐藏聚焦时的外边框 */
-
-    .emoji-wrapper[tabindex] {
-        outline: none;
-    }
 
     /* 右侧底部发送框 */
 
@@ -611,7 +563,7 @@
         /* flex: 1; */
         /* flex-grow: 1; */
         padding: .3rem;
-        overflow: hidden;
+        /* overflow: hidden; */
         position: relative;
         border-top: 1px solid var(--color-border);
 
@@ -1019,6 +971,95 @@
 
 }
 
+/* emoji start */
+.emoji-panel {
+    position: absolute;
+    bottom: calc(100% + 1rem);
+    left: 1rem;
+    padding-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    border-radius: .3rem;
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, .3);
+    background-color: var(--color-background);
+
+    & ::-webkit-scrollbar {
+        width: 3px;
+    }
+}
+
+
+.emoji-panel-up {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.emoji-panel-footer {
+    width: 100%;
+    height: 2rem;
+    padding: .5rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1rem;
+
+    span {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+}
+
+.unicode-emoji-wrapper {
+    letter-spacing: 1rem;
+    line-height: 2rem;
+    text-align: justify;
+    padding-left: 1rem;
+}
+
+.emoji-wrapper-size {
+    width: 25rem;
+    height: 15rem;
+}
+
+.emoji-wrapper-size-mobile {
+    width: 100%;
+    height: 15rem;
+}
+
+.emoji-wrapper {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-auto-rows: min-content;
+    /*将每行的高度设置为其内容的最小高度*/
+    justify-content: center;
+    justify-items: center;
+    padding: 0 .3rem;
+
+    .emoji {
+        width: 100%;
+        padding: .7rem;
+    }
+
+    .emoji img {
+        width: 100%;
+        height: auto;
+        object-fit: contain;
+        object-position: center;
+    }
+
+}
+
+/* 隐藏聚焦时的外边框 */
+
+.emoji-wrapper[tabindex] {
+    outline: none;
+}
+
+/* emoji end */
+/* recorder start */
 .recorder {
     width: 100%;
     height: 100%;
@@ -1111,7 +1152,7 @@
     position: fixed;
     top: 0;
     left: 0;
-    background: linear-gradient(to top,  rgba(62, 62, 62, 0.8) 0%, rgba(62, 62, 62, 0.5) 100%);
+    background: linear-gradient(to top, rgba(62, 62, 62, 0.8) 0%, rgba(62, 62, 62, 0.5) 100%);
 
     .recorder-mobile-hint {
         width: 100%;

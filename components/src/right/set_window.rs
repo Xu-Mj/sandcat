@@ -123,16 +123,15 @@ impl Component for SetWindow {
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if first_render {
             if let Some(node) = self.node.cast::<HtmlDivElement>() {
-                let _ = node.focus();
                 let onclose = ctx.props().close.clone();
+                let node = node.clone();
                 // register click event to document
                 let func = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
                     if let Some(target) = event.target() {
                         let target_node = target.dyn_into::<web_sys::Node>().unwrap();
-                        let node = document().get_element_by_id("setting-window").unwrap();
                         if !node.contains(Some(&target_node)) {
                             onclose.emit(());
-                            // 卸载这个onclick 事件
+                            // remove onclick event
                             document().set_onclick(None);
                         }
                     }

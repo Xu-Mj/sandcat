@@ -17,8 +17,9 @@ use sandcat_sdk::state::{MobileState, SendCallState};
 use sandcat_sdk::{model::message::Message, model::ContentType};
 use utils::tr;
 
-use crate::right::emoji::{get_emojis, Emoji, EmojiSpan};
+use crate::right::emoji::Emoji;
 use crate::right::recorder::Recorder;
+use crate::right::sender::emoji::EmojiPanel;
 use crate::right::sender::INPUT_MAX_LEN;
 
 use super::Sender;
@@ -81,12 +82,10 @@ impl Component for Sender {
             is_warn_needed: false,
             warn_msg: String::new(),
             timer: None,
-            emoji_list: get_emojis(),
             show_emoji: false,
             input_ref: NodeRef::default(),
             file_input_ref: NodeRef::default(),
             sender_ref: NodeRef::default(),
-            emoji_wrapper_ref: NodeRef::default(),
             show_file_sender: false,
             i18n,
             file_list: vec![],
@@ -105,29 +104,7 @@ impl Component for Sender {
                 self.timer = None;
                 true
             }
-            SenderMsg::SendEmoji(emoji) => {
-                // 存储消息、发送消息
-                let friend_id = ctx.props().friend_id.clone();
-                let time = chrono::Utc::now().timestamp_millis();
-                let send_id = ctx.props().cur_user_id.clone();
-                let msg = Message {
-                    local_id: nanoid::nanoid!().into(),
-                    server_id: AttrValue::default(),
-                    send_id,
-                    friend_id,
-                    content_type: ContentType::Emoji,
-                    content: emoji.url.clone(),
-                    create_time: time,
-                    is_read: 1,
-                    is_self: true,
-                    platform: self.get_platform(),
-                    send_status: SendStatus::Sending,
-                    ..Default::default()
-                };
-                self.store_send_msg(ctx, msg);
-                // self.send_msg(ctx, msg);
-                true
-            }
+            SenderMsg::SendEmoji(emoji) => self.send_emoji(ctx, emoji),
             SenderMsg::ShowEmoji => {
                 self.show_emoji = !self.show_emoji;
                 true
@@ -270,14 +247,19 @@ impl Component for Sender {
                 }
                 let need_new_line = self.enter_key_down != 0
                     && chrono::Utc::now().timestamp_millis() - self.enter_key_down > 500;
-                log::debug!("need_new_line: {}", need_new_line);
+                log::debug!(
+                    "need_new_line: {}, event.shift_key: {}",
+                    need_new_line,
+                    event.shift_key()
+                );
 
                 self.is_key_down = false;
 
                 if event.shift_key() || need_new_line {
                     self.enter_key_down = 0;
                     event.prevent_default();
-                    return self.handle_new_line(ctx);
+                    self.handle_new_line(ctx);
+                    return false;
                 }
 
                 ctx.link().send_message(SenderMsg::SendText);
@@ -323,10 +305,9 @@ impl Component for Sender {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let (sender_class, emoji_class, input_class, warn_class, send_btn) = if self.is_mobile {
+        let (sender_class, input_class, warn_class, send_btn) = if self.is_mobile {
             (
                 "sender",
-                "emoji-wrapper emoji-wrapper-size-mobile",
                 "msg-input msg-input-size-mobile",
                 "empty-msg-tip-mobile box-shadow",
                 html!(),
@@ -334,14 +315,13 @@ impl Component for Sender {
         } else {
             (
                 "sender sender-size",
-                "emoji-wrapper emoji-wrapper-size",
                 "msg-input msg-input-size",
                 "empty-msg-tip box-shadow",
                 html!(
-                        <button class="send-btn"
-                            onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
-                            {tr!(self.i18n, "send")}
-                        </button>),
+                    <button class="send-btn"
+                        onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
+                        {tr!(self.i18n, "send")}
+                    </button>),
             )
         };
         // spawn disable layer
@@ -374,18 +354,19 @@ impl Component for Sender {
         }
 
         let mut emojis = html!();
-        if self.show_emoji {
+        if !self.show_emoji {
             let callback = &ctx.link().callback(SenderMsg::SendEmoji);
             let onblur = &ctx.link().callback(move |_| SenderMsg::ShowEmoji);
-            emojis = html! {
-                <div class={emoji_class} tabindex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
-                    {
-                        self.emoji_list.iter()
-                        .map(|emoji| {html! (<EmojiSpan emoji={emoji.clone()} onclick={callback} />)})
-                        .collect::<Html>()
-                    }
-                </div>
-            }
+            // emojis = html! {
+            //     <div class={emoji_class} tabindex="-1" ref={self.emoji_wrapper_ref.clone()} {onblur}>
+            //         {
+            //             self.emoji_list.iter()
+            //             .map(|emoji| {html! (<EmojiSpan emoji={emoji.clone()} onclick={callback} />)})
+            //             .collect::<Html>()
+            //         }
+            //     </div>
+            // }
+            emojis = html!(<EmojiPanel send={callback} close={onblur}/>);
         }
 
         // 文件发送窗口
@@ -488,9 +469,9 @@ impl Component for Sender {
 
         html! {
             <>
-            {emojis}
             {file_sender}
             <div class={sender_class} ref={self.sender_ref.clone()}>
+            {emojis}
                 <div class="send-bar">
                     <div class="send-bar-left">
                         <span onclick={ctx.link().callback(move |_| SenderMsg::ShowEmoji)}>
@@ -538,24 +519,26 @@ impl Component for Sender {
                 .map(|input| input.blur());
             return;
         }
-        if !self.show_emoji && !ctx.props().disable && !self.is_mobile && !self.is_voice_mode {
+        if
+        /* !self.show_emoji &&  */
+        !ctx.props().disable && !self.is_mobile && !self.is_voice_mode {
             self.input_ref
                 .cast::<HtmlElement>()
                 .map(|input| input.focus());
         }
         if self.show_emoji {
-            let wrapper = self.emoji_wrapper_ref.cast::<HtmlElement>().unwrap();
-            // 设置表情面板位置
-            let sender = self.sender_ref.cast::<HtmlElement>().unwrap();
-            let gap = ".5rem";
-            wrapper
-                .style()
-                .set_property(
-                    "bottom",
-                    format!("calc({}px + {})", sender.client_height(), gap).as_str(),
-                )
-                .unwrap();
-            let _ = wrapper.focus();
+            // let wrapper = self.emoji_wrapper_ref.cast::<HtmlElement>().unwrap();
+            // // 设置表情面板位置
+            // let sender = self.sender_ref.cast::<HtmlElement>().unwrap();
+            // let gap = ".5rem";
+            // wrapper
+            //     .style()
+            //     .set_property(
+            //         "bottom",
+            //         format!("calc({}px + {})", sender.client_height(), gap).as_str(),
+            //     )
+            //     .unwrap();
+            // let _ = wrapper.focus();
         }
     }
 }
