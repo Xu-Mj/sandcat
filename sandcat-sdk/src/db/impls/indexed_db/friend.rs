@@ -1,6 +1,8 @@
 use futures_channel::oneshot;
 use indexmap::IndexMap;
+use std::cell::RefCell;
 use std::ops::Deref;
+use std::rc::Rc;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbCursorWithValue, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
@@ -85,7 +87,7 @@ impl Friends for FriendRepo {
             web_sys::console::log_1(&event.into());
         });
 
-        let convs = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
+        let convs = Rc::new(RefCell::new(IndexMap::new()));
         let convs = convs.clone();
         let mut tx = Some(tx);
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
@@ -121,6 +123,55 @@ impl Friends for FriendRepo {
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
         success.forget();
         Ok(rx.await.unwrap())
+    }
+
+    async fn get_list_by_ids(&self, ids: Vec<String>) -> Result<Vec<Friend>, JsValue> {
+        let (tx, rx) = oneshot::channel::<Vec<Friend>>();
+        let store = self.store(FRIEND_TABLE_NAME).await?;
+        let request = store.open_cursor().map_err(JsValue::from)?;
+
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_2(&"读取数据失败".into(), &event.into());
+        });
+
+        let friends = Rc::new(RefCell::new(Vec::new()));
+        let mut tx_clone = Some(tx);
+
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        on_add_error.forget();
+
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("event should have target");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("target should be an IdbRequest");
+            if let Ok(result) = req.result() {
+                if let Ok(cursor) = result.dyn_into::<IdbCursorWithValue>() {
+                    let value = cursor.value().unwrap();
+                    let friend: Friend = serde_wasm_bindgen::from_value(value).unwrap();
+
+                    // 只有当ID匹配时才添加到结果列表中
+                    if ids.contains(&friend.friend_id.to_string()) {
+                        friends.borrow_mut().push(friend);
+                    }
+
+                    cursor.continue_().unwrap();
+                } else {
+                    // 遍历完成后发送结果并清理闭包
+                    let result = friends.borrow();
+                    if let Some(sender) = tx_clone.take() {
+                        sender
+                            .send(result.to_vec())
+                            .expect("Failed to send results");
+                    }
+                }
+            }
+        }) as Box<dyn FnMut(&Event)>);
+
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        success.forget(); // 避免内存泄漏
+
+        rx.await.map_err(|e| JsValue::from(&e.to_string()))
     }
 
     /// delete friend by id; need to delete message data
