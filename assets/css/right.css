@@ -974,14 +974,11 @@
 /* emoji start */
 .emoji-panel {
     position: absolute;
-    bottom: calc(100% + 1rem);
-    left: 1rem;
+
     padding-top: 1rem;
     display: flex;
     flex-direction: column;
     border-radius: .3rem;
-    filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
-    box-shadow: 0 0 10px 0 rgba(0, 0, 0, .3);
     background-color: var(--color-background);
 
     & ::-webkit-scrollbar {
@@ -989,6 +986,22 @@
     }
 }
 
+.emoji-panel-size {
+    width: 25rem;
+    height: 15rem;
+    bottom: calc(100% + 1rem);
+    left: 1rem;
+
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, .3);
+}
+
+.emoji-panel-size-mobile {
+    width: 100%;
+    bottom: 100%;
+    left: 0;
+    height: 15rem;
+}
 
 .emoji-panel-up {
     width: 100%;
@@ -1019,19 +1032,9 @@
     padding-left: 1rem;
 }
 
-.emoji-wrapper-size {
-    width: 25rem;
-    height: 15rem;
-}
-
-.emoji-wrapper-size-mobile {
-    width: 100%;
-    height: 15rem;
-}
-
 .emoji-wrapper {
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     grid-auto-rows: min-content;
     /*将每行的高度设置为其内容的最小高度*/
     justify-content: center;
@@ -1050,12 +1053,6 @@
         object-position: center;
     }
 
-}
-
-/* 隐藏聚焦时的外边框 */
-
-.emoji-wrapper[tabindex] {
-    outline: none;
 }
 
 /* emoji end */
