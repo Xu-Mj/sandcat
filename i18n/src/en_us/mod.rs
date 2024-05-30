@@ -88,6 +88,7 @@ pub const RIGHT_CLICK_PANEL: &str = r#"
 delete = Delete
 mute = Mute
 un_mute = Un-mute
+forward = Forward
 "#;
 
 pub const SELECT_FRIENDS: &str = r#"
