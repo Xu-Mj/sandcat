@@ -150,7 +150,7 @@ impl Component for EmojiPanel {
                     }
                 }
             }) as Box<dyn FnMut(MouseEvent)>);
-            // document().set_onclick(Some(func.as_ref().unchecked_ref()));
+            document().set_onclick(Some(func.as_ref().unchecked_ref()));
             self.click_closure = Some(func);
         }
     }
