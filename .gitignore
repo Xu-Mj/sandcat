@@ -6,4 +6,3 @@ trunk.exe
 .vscode
 ./tauri-src/target/
 ./tauri-src/gen/schemas
-Cargo.lock
