@@ -180,7 +180,13 @@ impl MessageList {
             return false;
         }
         let is_self = msg.is_self;
-        self.list.shift_insert(0, msg.local_id.clone(), msg);
+        // there is only one possible situation about we can get the msg through local_id:
+        // user send msg but failed and resend again
+        if let Some(item) = self.list.get_mut(&msg.local_id) {
+            item.send_status = msg.send_status;
+        } else {
+            self.list.shift_insert(0, msg.local_id.clone(), msg);
+        }
 
         if is_self {
             self.new_msg_count = 0;
