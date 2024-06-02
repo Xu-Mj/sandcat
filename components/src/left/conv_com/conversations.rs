@@ -219,6 +219,7 @@ impl Component for Chats {
             ChatsMsg::SendMsg(state) => {
                 log::debug!("send message from sender in conversation");
                 let msg = state.msg.clone();
+                log::debug!("message: {:?}", msg);
                 self.handle_sent_msg(ctx, &msg);
                 self.send_msg(msg);
                 true

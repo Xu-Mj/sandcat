@@ -281,13 +281,7 @@ impl Component for Sender {
             }
             SenderMsg::SendVoice(voice) => {
                 log::debug!("send voice");
-                Self::send_voice_msg(
-                    self.get_platform(),
-                    ctx.props().friend_id.clone(),
-                    ctx.props().cur_user_id.clone(),
-                    voice,
-                    ctx.props().conv_type.clone(),
-                );
+                self.send_voice_msg(ctx, voice);
                 false
             }
         }
