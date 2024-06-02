@@ -72,6 +72,8 @@ impl Friends for FriendRepo {
             web_sys::console::log_1(&event.into());
         });
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        on_add_error.forget();
+        onsuccess.forget();
         Ok(())
     }
 
