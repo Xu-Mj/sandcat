@@ -28,6 +28,8 @@ use crate::{left::list_item::ListItem, top_bar::TopBar};
 #[derive(Properties, PartialEq, Debug)]
 pub struct ContactsProps {
     pub user_id: AttrValue,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
 }
 
 /// listen group invitation state to add group to group list
@@ -362,6 +364,8 @@ impl Component for Contacts {
                         html!{
                             <AddFriend
                                 user_id={&ctx.props().user_id}
+                                avatar={&ctx.props().avatar}
+                                nickname={&ctx.props().nickname}
                                 {plus_click}
                                 lang={self.lang_state.lang}/>
                         }

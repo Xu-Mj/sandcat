@@ -50,6 +50,8 @@ pub struct SenderProps {
     pub friend_id: AttrValue,
     pub conv_type: RightContentType,
     pub cur_user_id: AttrValue,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
     pub disable: bool,
     pub lang: LanguageType,
     pub on_file_send: Callback<Message>,
@@ -210,6 +212,8 @@ impl Component for Sender {
                         send_id: ctx.props().cur_user_id.clone(),
                         invite_type: InviteType::Video,
                         platform: self.get_platform(),
+                        avatar: ctx.props().avatar.clone(),
+                        nickname: ctx.props().nickname.clone(),
                     }
                 });
                 false
@@ -224,6 +228,8 @@ impl Component for Sender {
                         send_id: ctx.props().cur_user_id.clone(),
                         invite_type: InviteType::Audio,
                         platform: self.get_platform(),
+                        avatar: ctx.props().avatar.clone(),
+                        nickname: ctx.props().nickname.clone(),
                     }
                 });
                 false

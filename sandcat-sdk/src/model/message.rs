@@ -48,6 +48,10 @@ pub struct Message {
     pub is_self: bool,
     #[serde(default)]
     pub platform: i32,
+    #[serde(default)]
+    pub avatar: AttrValue,
+    #[serde(default)]
+    pub nickname: AttrValue,
     pub audio_duration: u8,
     #[serde(default)]
     pub audio_downloaded: bool,
@@ -94,6 +98,8 @@ impl From<InviteCancelMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            avatar: AttrValue::default(),
+            nickname: AttrValue::default(),
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
@@ -127,6 +133,8 @@ impl From<InviteAnswerMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            avatar: value.avatar,
+            nickname: value.nickname,
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
@@ -156,6 +164,8 @@ impl From<InviteNotAnswerMsg> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            avatar: AttrValue::default(),
+            nickname: AttrValue::default(),
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
@@ -186,6 +196,8 @@ impl From<Hangup> for Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            avatar: AttrValue::default(),
+            nickname: AttrValue::default(),
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
@@ -216,6 +228,8 @@ impl Message {
             is_read: 0,
             is_self: value.is_self,
             platform: value.platform,
+            avatar: AttrValue::default(),
+            nickname: AttrValue::default(),
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
@@ -242,6 +256,8 @@ impl Message {
             is_read: 0,
             is_self: msg.is_self,
             platform: msg.platform,
+            avatar: AttrValue::default(),
+            nickname: AttrValue::default(),
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
@@ -294,6 +310,8 @@ impl Msg {
             is_read: msg.is_read,
             is_self: msg.is_self,
             platform: msg.platform,
+            avatar: msg.avatar.clone(),
+            nickname: msg.nickname.clone(),
             audio_duration: msg.audio_duration,
             audio_downloaded: false,
             file_content: msg.file_content.clone(),
@@ -389,6 +407,8 @@ pub struct InviteMsg {
     pub invite_type: InviteType,
     #[serde(default)]
     pub platform: i32,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -449,6 +469,8 @@ pub struct InviteAnswerMsg {
     pub is_self: bool,
     #[serde(default)]
     pub platform: i32,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -560,6 +582,8 @@ impl TryFrom<pb::message::Msg> for Message {
             is_read: 0,
             is_self: false,
             platform: value.platform,
+            avatar: value.avatar.into(),
+            nickname: value.nickname.into(),
             audio_duration: duration,
             audio_downloaded: false,
             file_content: AttrValue::default(),
@@ -615,6 +639,8 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 create_time: msg.send_time,
                 invite_type,
                 platform: msg.platform,
+                avatar: msg.avatar.into(),
+                nickname: msg.nickname.into(),
             })))
         }
         MsgType::RejectSingleCall => {
@@ -632,6 +658,8 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 send_time: msg.send_time,
                 send_status: SendStatus::Success,
                 platform: msg.platform,
+                avatar: msg.avatar.into(),
+                nickname: msg.nickname.into(),
             })))
         }
         MsgType::SingleCallInviteNotAnswer => {
@@ -707,6 +735,8 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 send_time: msg.send_time,
                 send_status: SendStatus::Success,
                 platform: msg.platform,
+                avatar: msg.avatar.into(),
+                nickname: msg.nickname.into(),
             })))
         }
         MsgType::ConnectSingleCall => Ok(Msg::SingleCall(SingleCall::Agree(Agree {
@@ -762,6 +792,7 @@ fn get_invite_type(t: i32) -> Result<InviteType, String> {
         _ => Err("Invalid content type".to_string()),
     }
 }
+
 impl From<Msg> for PbMsg {
     fn from(value: Msg) -> Self {
         match value {
@@ -782,6 +813,8 @@ impl From<Msg> for PbMsg {
                     content_type: msg.content_type as i32,
                     content,
                     platform: msg.platform,
+                    avatar: msg.avatar.to_string(),
+                    nickname: msg.nickname.to_string(),
                     ..Default::default()
                 }
             }
@@ -805,6 +838,8 @@ impl From<Msg> for PbMsg {
                         pb_msg.content_type = msg.content_type as i32;
                         pb_msg.content = content;
                         pb_msg.platform = msg.platform;
+                        pb_msg.avatar = msg.avatar.to_string();
+                        pb_msg.nickname = msg.nickname.to_string();
                     }
                     GroupMsg::Invitation(info) => {
                         pb_msg.msg_type = MsgType::GroupInvitation as i32;
@@ -841,6 +876,8 @@ impl From<Msg> for PbMsg {
                             InviteType::Audio => ContentType::AudioCall as i32,
                         };
                         pb_msg.platform = invite.platform;
+                        pb_msg.avatar = invite.avatar.to_string();
+                        pb_msg.nickname = invite.nickname.to_string();
                     }
                     SingleCall::InviteAnswer(answer) => {
                         pb_msg.msg_type = MsgType::RejectSingleCall as i32;
@@ -856,6 +893,8 @@ impl From<Msg> for PbMsg {
                             InviteType::Audio => ContentType::AudioCall as i32,
                         };
                         pb_msg.platform = answer.platform;
+                        pb_msg.avatar = answer.avatar.to_string();
+                        pb_msg.nickname = answer.nickname.to_string();
                     }
                     SingleCall::NotAnswer(not_answer) => {
                         pb_msg.msg_type = MsgType::SingleCallInviteNotAnswer as i32;

@@ -90,6 +90,7 @@ pub struct MessageListProps {
     pub conv_type: RightContentType,
     pub cur_user_avatar: AttrValue,
     pub cur_user_id: AttrValue,
+    pub nickname: AttrValue,
     pub lang: LanguageType,
 }
 
@@ -539,6 +540,7 @@ impl Component for MessageList {
                             friend_id={&props.friend_id}
                             msg={msg.clone()}
                             avatar={avatar}
+                            nickname={&msg.nickname}
                             conv_type={conv_type.clone()}
                             {play_audio}
                             del_item={del_item.clone()}
@@ -565,6 +567,8 @@ impl Component for MessageList {
                 <Sender
                     friend_id={&props.friend_id}
                     cur_user_id={&props.cur_user_id}
+                    avatar={&ctx.props().cur_user_avatar}
+                    nickname={&ctx.props().nickname}
                     conv_type={ctx.props().conv_type.clone()}
                     disable = {self.is_black}
                     {on_file_send}

@@ -89,7 +89,10 @@ impl Component for Left {
                     <div class={classes}>
                     <Chats user_id={&ctx.props().user_id}
                             avatar={&self.app_state.login_user.avatar} />
-                    <Contacts user_id={&ctx.props().user_id}/>
+                    <Contacts
+                        user_id={&ctx.props().user_id}
+                        avatar={&self.app_state.login_user.avatar}
+                        nickname={&self.app_state.login_user.name}/>
                     </div>
                 </div>
             </div>

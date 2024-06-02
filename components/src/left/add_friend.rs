@@ -15,11 +15,12 @@ use crate::top_bar::TopBar;
 pub struct AddFriendProps {
     pub plus_click: Callback<()>,
     pub user_id: AttrValue,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
     pub lang: LanguageType,
 }
 
 pub struct AddFriend {
-    // 维护一个查询结果集
     result: Option<UserWithMatchType>,
     // 是否正在搜索
     is_searching: bool,
@@ -134,6 +135,8 @@ impl Component for AddFriend {
             html! {
                 <UserInfoCom
                     user_id={&ctx.props().user_id}
+                    avatar={&ctx.props().avatar}
+                    nickname={&ctx.props().nickname}
                     info={self.result.as_ref().unwrap().clone()}
                     lang={ctx.props().lang} />
             }

@@ -85,6 +85,7 @@ pub struct MsgItemProps {
     pub user_id: AttrValue,
     pub friend_id: AttrValue,
     pub avatar: AttrValue,
+    pub nickname: AttrValue,
     pub msg: Message,
     pub conv_type: RightContentType,
     pub del_item: Callback<AttrValue>,
@@ -231,6 +232,8 @@ impl Component for MsgItem {
                         create_time: chrono::Utc::now().timestamp_millis(),
                         invite_type: InviteType::Video,
                         platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
+                        avatar: ctx.props().avatar.clone(),
+                        nickname: ctx.props().nickname.clone(),
                     }
                 });
                 false
@@ -245,6 +248,8 @@ impl Component for MsgItem {
                         create_time: chrono::Utc::now().timestamp_millis(),
                         invite_type: InviteType::Audio,
                         platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
+                        avatar: ctx.props().avatar.clone(),
+                        nickname: ctx.props().nickname.clone(),
                     }
                 });
                 false
@@ -630,6 +635,8 @@ impl Component for MsgItem {
                 <FriendCard
                     friend_info={self.friend_info.as_ref().unwrap().clone()}
                     user_id={&ctx.props().user_id}
+                    avatar={&ctx.props().avatar}
+                    nickname={&ctx.props().nickname}
                     lang={LanguageType::ZhCN}
                     close={ctx.link().callback(|_| MsgItemMsg::CloseFriendCard)}
                     is_self={ctx.props().msg.is_self}

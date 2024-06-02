@@ -25,6 +25,8 @@ pub struct Msg {
     pub is_self: bool,
     #[serde(default)]
     pub platform: i32,
+    pub avatar: String,
+    pub nickname: String,
 }
 
 impl Into<Message> for Msg {
@@ -47,6 +49,8 @@ impl Into<Message> for Msg {
             audio_duration: 0,
             audio_downloaded: false,
             file_content: AttrValue::default(),
+            avatar: self.avatar.into(),
+            nickname: self.nickname.into(),
         }
     }
 }

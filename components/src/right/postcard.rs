@@ -20,6 +20,8 @@ use crate::right::set_drawer::SetDrawer;
 pub struct PostCardProps {
     pub id: AttrValue,
     pub user_id: AttrValue,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
     pub conv_type: RightContentType,
     pub lang: LanguageType,
 }
@@ -350,6 +352,8 @@ impl PostCard {
 
                 <Action friend_id={&friend.friend_id}
                     user_id={&ctx.props().user_id}
+                    avatar={&ctx.props().avatar}
+                    nickname={&ctx.props().nickname}
                     conv_type={ctx.props().conv_type.clone()}
                     lang={ctx.props().lang} />
             </div>
@@ -393,6 +397,8 @@ impl PostCard {
 
                 <Action friend_id={&group.id}
                     user_id={&ctx.props().user_id}
+                    avatar={&ctx.props().avatar}
+                    nickname={&ctx.props().nickname}
                     conv_type={ctx.props().conv_type.clone()}
                     lang={ctx.props().lang} />
             </div>
