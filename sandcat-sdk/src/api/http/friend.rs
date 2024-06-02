@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::JsValue;
 
 use crate::api::friend::FriendApi;
+use crate::model::friend::FriendshipWithUser4Response;
 use crate::{
     model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
     pb::message::UpdateRemarkRequest,
@@ -28,7 +29,7 @@ impl FriendApi for FriendHttp {
         &self,
         new_friend: FriendShipRequest,
     ) -> Result<FriendShipWithUser, JsValue> {
-        let friendship: FriendShipWithUser = Request::post("/api/friend")
+        let friendship: FriendshipWithUser4Response = Request::post("/api/friend")
             .header(&self.auth_header, &self.token)
             .json(&new_friend)
             .map_err(|err| JsValue::from(err.to_string()))?
@@ -39,7 +40,7 @@ impl FriendApi for FriendHttp {
             .json()
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
-        Ok(friendship)
+        Ok(FriendShipWithUser::from(friendship))
     }
 
     // 同意好友请求
