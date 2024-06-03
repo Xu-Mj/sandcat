@@ -124,6 +124,7 @@ impl Right {
         }
     }
 }
+
 impl Component for Right {
     type Message = RightMsg;
 

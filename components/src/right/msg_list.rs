@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
+use sandcat_sdk::api;
 use sandcat_sdk::state::AudioDownloadedState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
@@ -152,11 +153,35 @@ impl MessageList {
                 let mut friend: Option<Box<dyn ItemInfo>> = None;
                 match conv_type {
                     RightContentType::Friend => {
-                        friend = Some(Box::new(db::db_ins().friends.get(id.as_str()).await));
+                        let mut result = db::db_ins().friends.get(&id).await;
+                        // update friend info
+
+                        // todo optimize query time
+                        if let Ok(user) = api::friends().query_friend(&id).await {
+                            if user.id == id {
+                                let mut need_update = false;
+                                if user.name != result.name {
+                                    result.name = user.name.into();
+                                    need_update = true;
+                                }
+                                if user.avatar != result.avatar {
+                                    result.avatar = user.avatar.into();
+                                    need_update = true;
+                                }
+                                result.region = user.region.map(|r| r.into());
+                                if user.signature != result.signature {
+                                    result.signature = user.signature.into();
+                                }
+                                if need_update {
+                                    db::db_ins().friends.put_friend(&result).await;
+                                }
+                            }
+                        }
+                        friend = Some(Box::new(result));
                     }
                     RightContentType::Group => {
                         friend = Some(Box::new(
-                            db::db_ins().groups.get(id.as_str()).await.unwrap().unwrap(),
+                            db::db_ins().groups.get(&id).await.unwrap().unwrap(),
                         ));
                     }
                     _ => {}
