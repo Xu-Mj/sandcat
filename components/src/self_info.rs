@@ -3,9 +3,13 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
 
+use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::Event;
+use web_sys::File;
+use web_sys::FileReader;
+use web_sys::HtmlImageElement;
 use web_sys::HtmlInputElement;
 use yew::{html, Callback, Component, NodeRef, Properties};
 use yew_router::scope_ext::RouterScopeExt;
@@ -27,8 +31,12 @@ pub struct SelfInfo {
     name_node: NodeRef,
     email_node: NodeRef,
     addr_node: NodeRef,
+    avatar_node: NodeRef,
+    avatar_reader: Option<FileReader>,
+    avatar_onload: Option<Closure<dyn FnMut()>>,
     signature_node: NodeRef,
     avatar: String,
+    avatar_file: Option<File>,
     gender: String,
     _dispatch: Dispatch<I18nState>,
     is_mobile: bool,
@@ -40,6 +48,7 @@ pub enum SelfInfoMsg {
     I18nStateChanged(Rc<I18nState>),
     GenderChange(Event),
     Logout,
+    AvatarChange(Event),
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -68,9 +77,13 @@ impl Component for SelfInfo {
             email_node: NodeRef::default(),
             addr_node: NodeRef::default(),
             name_node: NodeRef::default(),
+            avatar_node: NodeRef::default(),
+            avatar_reader: None,
+            avatar_onload: None,
             signature_node: NodeRef::default(),
             gender: ctx.props().user.gender.to_string(),
             avatar: ctx.props().user.avatar.to_string(),
+            avatar_file: None,
             _dispatch: dispatch,
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
@@ -144,6 +157,30 @@ impl Component for SelfInfo {
                 ctx.link().navigator().unwrap().push(&Page::Login);
                 false
             }
+            SelfInfoMsg::AvatarChange(event) => {
+                let file_input: HtmlInputElement = event.target().unwrap().dyn_into().unwrap();
+                let file_list = file_input.files();
+                if let Some(file_list) = file_list {
+                    let file_list = file_list;
+                    if file_list.length() > 0 {
+                        let file = file_list.get(0).unwrap();
+                        let file_reader = FileReader::new().unwrap();
+                        let reader = file_reader.clone();
+                        let img_node = self.avatar_node.cast::<HtmlImageElement>().unwrap();
+                        let on_load = Closure::wrap(Box::new(move || {
+                            let result = reader.result().unwrap();
+                            img_node.set_src(result.as_string().unwrap().as_str());
+                        }) as Box<dyn FnMut()>);
+                        file_reader.set_onload(Some(on_load.as_ref().unchecked_ref()));
+                        file_reader.read_as_data_url(&file).unwrap();
+                        self.avatar_reader = Some(file_reader);
+                        self.avatar_file = Some(file_list.get(0).unwrap());
+                        self.avatar_onload = Some(on_load);
+                    }
+                }
+
+                false
+            }
         }
     }
     fn view(&self, ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
@@ -157,15 +194,24 @@ impl Component for SelfInfo {
         } else {
             "info-panel info-panel-size box-shadow"
         };
+        let on_file_change = ctx.link().callback(SelfInfoMsg::AvatarChange);
         html! {
             <div {class}>
                 <div class="info-panel-item-avatar">
-                    <input type="file" id="avatar" name="avatar" hidden={true} accept="image/*"/>
+                    <input type="file"
+                        id="avatar"
+                        name="avatar"
+                        hidden={true}
+                        onchange={on_file_change}
+                        accept="image/*"/>
                     <label for="avatar">
                         <span>
                             {tr!(self.i18n, "set_avatar")}
                         </span>
-                        <img src={user.avatar} alt="avatar" class="info-panel-avatar" />
+                        <img ref={self.avatar_node.clone()}
+                            src={user.avatar}
+                            alt="avatar"
+                            class="info-panel-avatar" />
                     </label>
                 </div>
                 <div class="info-panel-item">
