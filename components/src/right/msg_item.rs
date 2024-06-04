@@ -650,9 +650,9 @@ impl Component for MsgItem {
         }
 
         let avatar = if ctx.props().msg.is_self {
-            html!(<img class="avatar" src={format!("/api/file/get/{}", &self.avatar)} />)
+            html!(<img class="avatar" src={format!("/api/file/avatar/get/{}", &self.avatar)} />)
         } else {
-            html!(<img class="avatar pointer" src={format!("/api/file/get/{}", &self.avatar)} onclick={_avatar_click} />)
+            html!(<img class="avatar pointer" src={format!("/api/file/avatar/get/{}", &self.avatar)} onclick={_avatar_click} />)
         };
 
         // context menu

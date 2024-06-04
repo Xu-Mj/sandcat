@@ -188,7 +188,7 @@ impl Component for Top {
                         <img
                             class="avatar"
                             title={&self.app_state.login_user.name}
-                            src={format!("/api/file/get/{}", &self.app_state.login_user.avatar)} />
+                            src={format!("/api/file/avatar/get/{}", &self.app_state.login_user.avatar)} />
                         <span><b>{&self.app_state.login_user.name}</b></span>
                     </div>
                     {top_right}

@@ -224,7 +224,7 @@ impl Component for SelfInfo {
                             {tr!(self.i18n, "set_avatar")}
                         </span>
                         <img ref={self.avatar_node.clone()}
-                            src={format!("/api/file/get/{}", user.avatar)}
+                            src={format!("/api/file/avatar/get/{}", user.avatar)}
                             alt="avatar"
                             class="info-panel-avatar" />
                     </label>
