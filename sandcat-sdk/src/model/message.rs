@@ -50,9 +50,9 @@ pub struct Message {
     pub is_resend: bool,
     #[serde(default)]
     pub platform: i32,
-    #[serde(default)]
+    #[serde(default, skip)]
     pub avatar: AttrValue,
-    #[serde(default)]
+    #[serde(default, skip)]
     pub nickname: AttrValue,
     pub audio_duration: u8,
     #[serde(default)]
