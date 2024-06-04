@@ -25,6 +25,8 @@ use sandcat_sdk::state::I18nState;
 use sandcat_sdk::state::MobileState;
 use utils::tr;
 
+use crate::dialog::Dialog;
+
 pub struct SelfInfo {
     i18n: FluentBundle<FluentResource>,
     phone_node: NodeRef,
@@ -102,7 +104,7 @@ impl Component for SelfInfo {
                     .unwrap()
                     .value();
                 log::debug!("update user info: name: {:?}; email: {:?}; address: {:?}; signature: {:?}; phone: {:?};",name, email, address, signature, phone );
-                let user = UserUpdate {
+                let mut user = UserUpdate {
                     id: ctx.props().user.id.to_string(),
                     name,
                     avatar: self.avatar.clone(),
@@ -114,7 +116,19 @@ impl Component for SelfInfo {
                 };
                 let close = ctx.props().close.clone();
                 let submit = ctx.props().submit.clone();
+                let avatar = self.avatar_file.clone();
                 spawn_local(async move {
+                    // upload avatar image
+                    if let Some(avatar) = avatar {
+                        match api::file().upload_file(&avatar).await {
+                            Ok(name) => user.avatar = name,
+                            Err(e) => {
+                                log::error!("upload avatar error: {:?}", e);
+                                Dialog::error("upload avatar error");
+                                return;
+                            }
+                        }
+                    }
                     match api::users().update(user).await {
                         Ok(user) => {
                             db::db_ins().users.add(&user).await;
@@ -122,6 +136,7 @@ impl Component for SelfInfo {
                         }
                         Err(e) => {
                             log::error!("{:?}", e);
+                            Dialog::error("update user info failed");
                             close.emit(());
                         }
                     }
@@ -209,7 +224,7 @@ impl Component for SelfInfo {
                             {tr!(self.i18n, "set_avatar")}
                         </span>
                         <img ref={self.avatar_node.clone()}
-                            src={user.avatar}
+                            src={format!("/api/file/get/{}", user.avatar)}
                             alt="avatar"
                             class="info-panel-avatar" />
                     </label>

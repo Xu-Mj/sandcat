@@ -185,7 +185,10 @@ impl Component for Top {
                 <div class="top-up">
                     {info_panel}
                     <div class="top-left pointer" {onclick}>
-                        <img class="avatar" title={&self.app_state.login_user.name} src={&self.app_state.login_user.avatar} />
+                        <img
+                            class="avatar"
+                            title={&self.app_state.login_user.name}
+                            src={format!("/api/file/get/{}", &self.app_state.login_user.avatar)} />
                         <span><b>{&self.app_state.login_user.name}</b></span>
                     </div>
                     {top_right}
