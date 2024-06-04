@@ -120,7 +120,7 @@ impl Component for SelfInfo {
                 spawn_local(async move {
                     // upload avatar image
                     if let Some(avatar) = avatar {
-                        match api::file().upload_file(&avatar).await {
+                        match api::file().upload_avatar(&avatar).await {
                             Ok(name) => user.avatar = name,
                             Err(e) => {
                                 log::error!("upload avatar error: {:?}", e);
