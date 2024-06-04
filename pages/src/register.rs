@@ -125,18 +125,18 @@ impl Component for Register {
                 }
                 let email: HtmlInputElement = self.email_node.cast().unwrap();
                 let pwd: HtmlInputElement = self.pwd_node.cast().unwrap();
-                if email.value().is_empty() || pwd.value().is_empty() {
+                if email.value().is_empty() || pwd.value().is_empty() || pwd.value().len() < 8 {
                     return false;
                 }
 
                 let code: HtmlInputElement = self.code_node.cast().unwrap();
                 let ctx = ctx.link().clone();
                 let register = UserRegister {
-                    name: name.value().into(),
-                    password: pwd.value().into(),
-                    email: email.value().into(),
-                    avatar: self.avatar.clone(),
-                    code: code.value().into(),
+                    name: name.value(),
+                    password: pwd.value(),
+                    email: email.value(),
+                    avatar: self.avatar.clone().to_string(),
+                    code: code.value(),
                 };
                 spawn_local(async move {
                     ctx.send_message(RegisterMsg::Request(RequestStatus::Pendding));

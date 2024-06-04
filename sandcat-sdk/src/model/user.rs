@@ -163,9 +163,9 @@ impl From<Friend> for User {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct UserRegister {
-    pub avatar: AttrValue,
-    pub name: AttrValue,
-    pub password: AttrValue,
-    pub email: AttrValue,
-    pub code: AttrValue,
+    pub avatar: String,
+    pub name: String,
+    pub password: String,
+    pub email: String,
+    pub code: String,
 }
