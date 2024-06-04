@@ -27,7 +27,7 @@
 - knock off is not complete -- done
 - use &ctx.props().xxx instead clone method in view function -- done
 - add user avatar and name in the message -- done
-- emoji style for mobile
+- emoji style for mobile -- done
 - need to handle the group invitation or create group in right mod com
 - we need to redesign the relation about friend with group
 - need to test the invite new member for goup

@@ -156,7 +156,7 @@ impl MessageList {
                         let mut result = db::db_ins().friends.get(&id).await;
                         // update friend info
 
-                        // todo optimize query time
+                        // todo optimize query time, we should load the friend info asynchronously
                         if let Ok(user) = api::friends().query_friend(&id).await {
                             if user.id == id {
                                 let mut need_update = false;

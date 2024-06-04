@@ -1,5 +1,7 @@
 use fluent::{FluentBundle, FluentResource};
+use log::error;
 use sandcat_sdk::model::friend::Friend;
+use sandcat_sdk::pb::message::FriendInfo;
 use sandcat_sdk::state::MobileState;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -31,6 +33,7 @@ pub enum PostCardMsg {
     QueryGroup(QueryState<Option<Group>>),
     Delete,
     ShowSetDrawer,
+    QueryFriendByHttp(QueryState<FriendInfo>),
 }
 
 pub enum QueryState<T> {
@@ -97,6 +100,11 @@ impl Component for PostCard {
                     self.group = info;
                     true
                 }
+                QueryState::Failed => false,
+            },
+            PostCardMsg::QueryFriendByHttp(state) => match state {
+                QueryState::Querying => true,
+                QueryState::Success(info) => self.update_friend(info),
                 QueryState::Failed => false,
             },
             PostCardMsg::ShowSetDrawer => {
@@ -192,11 +200,24 @@ impl PostCard {
                 RightContentType::Friend => {
                     ctx.link()
                         .send_message(PostCardMsg::QueryFriend(QueryState::Querying));
+                    let clone_id = id.clone();
                     ctx.link().send_future(async move {
-                        let user_info = db::db_ins().friends.get(id.as_str()).await;
+                        let user_info = db::db_ins().friends.get(&clone_id).await;
                         log::debug!("user info :{:?}", user_info);
                         PostCardMsg::QueryFriend(QueryState::Success(Some(user_info)))
                     });
+                    ctx.link().send_future(async move {
+                        // send http request
+                        match api::friends().query_friend(&id).await {
+                            Ok(friend) => {
+                                PostCardMsg::QueryFriendByHttp(QueryState::Success(friend))
+                            }
+                            Err(e) => {
+                                error!("query friend error: {:?}", e);
+                                PostCardMsg::QueryFriendByHttp(QueryState::Failed)
+                            }
+                        }
+                    })
                 }
                 RightContentType::Group => {
                     ctx.link()
@@ -221,6 +242,39 @@ impl PostCard {
         self.friend = None;
     }
 
+    fn update_friend(&mut self, info: FriendInfo) -> bool {
+        let mut need_update = false;
+        if let Some(ref mut friend) = self.friend {
+            if friend.friend_id == info.id {
+                let email = info.email.map(|v| v.into());
+                let region = info.region.map(|v| v.into());
+                if friend.name != info.name
+                    || friend.account != info.account
+                    || friend.avatar != info.avatar
+                    || friend.gender != info.gender
+                    || friend.signature != info.signature
+                    || friend.email != email
+                    || friend.region != region
+                {
+                    need_update = true;
+                }
+                if need_update {
+                    friend.account = info.account.into();
+                    friend.name = info.name.into();
+                    friend.avatar = info.avatar.into();
+                    friend.email = email;
+                    friend.gender = info.gender.into();
+                    friend.region = region;
+                    friend.signature = info.signature.into();
+                    let friend = friend.clone();
+                    spawn_local(async move {
+                        db::db_ins().friends.put_friend(&friend).await;
+                    });
+                }
+            }
+        }
+        need_update
+    }
     fn delete_friend(&self, user_id: String, id: AttrValue) {
         spawn_local(async move {
             // send delete friend request
