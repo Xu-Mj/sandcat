@@ -47,10 +47,12 @@ pub struct Message {
     #[serde(default)]
     pub is_self: bool,
     #[serde(default)]
+    pub is_resend: bool,
+    #[serde(default)]
     pub platform: i32,
-    #[serde(default)]
+    #[serde(default, skip)]
     pub avatar: AttrValue,
-    #[serde(default)]
+    #[serde(default, skip)]
     pub nickname: AttrValue,
     pub audio_duration: u8,
     #[serde(default)]
@@ -103,6 +105,7 @@ impl From<InviteCancelMsg> for Message {
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
+            is_resend: value.is_resend,
         }
     }
 }
@@ -138,6 +141,7 @@ impl From<InviteAnswerMsg> for Message {
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
+            is_resend: value.is_resend,
         }
     }
 }
@@ -169,6 +173,7 @@ impl From<InviteNotAnswerMsg> for Message {
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
+            is_resend: value.is_resend,
         }
     }
 }
@@ -201,6 +206,7 @@ impl From<Hangup> for Message {
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
+            is_resend: value.is_resend,
         }
     }
 }
@@ -233,6 +239,7 @@ impl Message {
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
+            is_resend: value.is_resend,
         }
     }
     pub fn from_not_answer(msg: InviteNotAnswerMsg) -> Self {
@@ -261,6 +268,7 @@ impl Message {
             audio_duration: 0,
             audio_downloaded: false,
             file_content: Default::default(),
+            is_resend: msg.is_resend,
         }
     }
 }
@@ -315,6 +323,7 @@ impl Msg {
             audio_duration: msg.audio_duration,
             audio_downloaded: false,
             file_content: msg.file_content.clone(),
+            is_resend: msg.is_resend,
         }
     }
 
@@ -426,6 +435,8 @@ pub struct InviteNotAnswerMsg {
     pub is_self: bool,
     #[serde(default)]
     pub platform: i32,
+    #[serde(default)]
+    pub is_resend: bool,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -443,6 +454,8 @@ pub struct InviteCancelMsg {
     pub is_self: bool,
     #[serde(default)]
     pub platform: i32,
+    #[serde(default)]
+    pub is_resend: bool,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -471,6 +484,8 @@ pub struct InviteAnswerMsg {
     pub platform: i32,
     pub avatar: AttrValue,
     pub nickname: AttrValue,
+    #[serde(default)]
+    pub is_resend: bool,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -516,6 +531,8 @@ pub struct Hangup {
     pub is_self: bool,
     #[serde(default)]
     pub platform: i32,
+    #[serde(default)]
+    pub is_resend: bool,
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
@@ -587,6 +604,7 @@ impl TryFrom<pb::message::Msg> for Message {
             audio_duration: duration,
             audio_downloaded: false,
             file_content: AttrValue::default(),
+            is_resend: false,
         })
     }
 }
@@ -660,6 +678,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 platform: msg.platform,
                 avatar: msg.avatar.into(),
                 nickname: msg.nickname.into(),
+                is_resend: false,
             })))
         }
         MsgType::SingleCallInviteNotAnswer => {
@@ -676,6 +695,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 send_time: msg.send_time,
                 send_status: SendStatus::Success,
                 platform: msg.platform,
+                is_resend: false,
             })))
         }
         MsgType::SingleCallInviteCancel => {
@@ -692,6 +712,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 send_time: msg.send_time,
                 send_status: SendStatus::Success,
                 platform: msg.platform,
+                is_resend: false,
             })))
         }
         MsgType::SingleCallOffer => Ok(Msg::SingleCall(SingleCall::Offer(Offer {
@@ -719,6 +740,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             is_self: false,
             send_status: SendStatus::Success,
             platform: msg.platform,
+            is_resend: false,
         }))),
         MsgType::AgreeSingleCall => {
             let invite_type = get_invite_type(msg.content_type)?;
@@ -737,6 +759,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 platform: msg.platform,
                 avatar: msg.avatar.into(),
                 nickname: msg.nickname.into(),
+                is_resend: false,
             })))
         }
         MsgType::ConnectSingleCall => Ok(Msg::SingleCall(SingleCall::Agree(Agree {

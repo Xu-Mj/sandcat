@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use indexmap::IndexMap;
 use sandcat_sdk::api;
+use sandcat_sdk::model::message::SendStatus;
 use sandcat_sdk::state::AudioDownloadedState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
@@ -76,6 +77,7 @@ pub enum MessageListMsg {
     AudioOnStop,
     AudioDownloaded(Rc<AudioDownloadedState>),
     DelItem(AttrValue),
+    MsgSendTimeout(AttrValue),
 }
 
 /// 接收对方用户信息即可，
@@ -518,6 +520,14 @@ impl Component for MessageList {
 
                 true
             }
+            MessageListMsg::MsgSendTimeout(id) => {
+                log::debug!("msg send timeout: {}", id);
+                if let Some(item) = self.list.get_mut(&id) {
+                    item.send_status = SendStatus::Failed;
+                    return true;
+                }
+                false
+            }
         }
     }
 
@@ -550,7 +560,7 @@ impl Component for MessageList {
 
         let mut list = html!();
         if let Some(friend) = self.friend.as_ref() {
-            let conv_type = props.conv_type.clone();
+            let conv_type = &props.conv_type;
             list = self
                 .list
                 .iter()
@@ -565,6 +575,7 @@ impl Component for MessageList {
                     }
                     let del_item = ctx.link().callback(MessageListMsg::DelItem);
 
+                    let send_timeout = ctx.link().callback(MessageListMsg::MsgSendTimeout);
                     html! {
                         <MsgItem
                             user_id={&props.cur_user_id}
@@ -574,7 +585,8 @@ impl Component for MessageList {
                             nickname={&msg.nickname}
                             conv_type={conv_type.clone()}
                             {play_audio}
-                            del_item={del_item.clone()}
+                            {del_item}
+                            {send_timeout}
                             key={msg.id}
                         />
                     }

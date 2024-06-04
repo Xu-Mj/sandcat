@@ -90,6 +90,7 @@ pub struct MsgItemProps {
     pub conv_type: RightContentType,
     pub del_item: Callback<AttrValue>,
     pub play_audio: Option<Callback<(AttrValue, Vec<u8>)>>,
+    pub send_timeout: Callback<AttrValue>,
 }
 
 impl Component for MsgItem {
@@ -162,7 +163,7 @@ impl Component for MsgItem {
     }
 
     fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if ctx.props().msg.send_status != SendStatus::Sending {
+        if ctx.props().msg.send_status == SendStatus::Success {
             self.show_send_fail = false;
             self.timeout = None;
             self.show_sending = false;
@@ -267,6 +268,7 @@ impl Component for MsgItem {
                 }
                 let msg_id = ctx.props().msg.local_id.clone();
 
+                ctx.props().send_timeout.emit(msg_id.clone());
                 let conv_type = ctx.props().conv_type.clone();
                 spawn_local(async move {
                     let msg = ServerResponse {
@@ -297,6 +299,7 @@ impl Component for MsgItem {
             MsgItemMsg::ReSendMessage => {
                 let mut msg = ctx.props().msg.clone();
                 msg.send_status = SendStatus::Sending;
+                msg.is_resend = true;
                 let msg = match ctx.props().conv_type {
                     RightContentType::Friend => Msg::Single(msg),
                     RightContentType::Group => Msg::Group(GroupMsg::Message(msg)),

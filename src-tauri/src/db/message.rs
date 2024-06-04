@@ -27,6 +27,7 @@ pub struct Msg {
     pub platform: i32,
     pub avatar: String,
     pub nickname: String,
+    pub is_resend: bool,
 }
 
 impl Into<Message> for Msg {
@@ -51,6 +52,7 @@ impl Into<Message> for Msg {
             file_content: AttrValue::default(),
             avatar: self.avatar.into(),
             nickname: self.nickname.into(),
+            is_resend: self.is_resend,
         }
     }
 }
