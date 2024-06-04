@@ -11,6 +11,7 @@ use super::message::InviteCancelMsg;
 use super::message::InviteMsg;
 use super::message::InviteNotAnswerMsg;
 use super::message::InviteType;
+use super::message::Message;
 
 pub fn attr_value_is_empty(value: &AttrValue) -> bool {
     value.is_empty()
@@ -32,6 +33,22 @@ pub struct Conversation {
     pub last_msg_type: ContentType,
     pub unread_count: usize,
     pub mute: bool,
+}
+
+impl From<Message> for Conversation {
+    fn from(msg: Message) -> Self {
+        Self {
+            last_msg: msg.content,
+            last_msg_time: msg.send_time,
+            last_msg_type: msg.content_type,
+            conv_type: RightContentType::Default,
+            friend_id: msg.friend_id,
+            unread_count: 1,
+            avatar: msg.avatar,
+            name: msg.nickname,
+            mute: false,
+        }
+    }
 }
 
 impl From<Hangup> for Conversation {
@@ -84,6 +101,7 @@ impl From<InviteMsg> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            avatar: msg.avatar,
             unread_count: 1,
             ..Default::default()
         }
@@ -99,6 +117,7 @@ impl From<InviteAnswerMsg> for Conversation {
             last_msg_time: msg.create_time,
             last_msg_type,
             unread_count: 1,
+            avatar: msg.avatar,
             ..Default::default()
         }
     }

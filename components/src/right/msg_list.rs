@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
+use sandcat_sdk::api;
 use sandcat_sdk::state::AudioDownloadedState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
@@ -90,6 +91,7 @@ pub struct MessageListProps {
     pub conv_type: RightContentType,
     pub cur_user_avatar: AttrValue,
     pub cur_user_id: AttrValue,
+    pub nickname: AttrValue,
     pub lang: LanguageType,
 }
 
@@ -151,11 +153,35 @@ impl MessageList {
                 let mut friend: Option<Box<dyn ItemInfo>> = None;
                 match conv_type {
                     RightContentType::Friend => {
-                        friend = Some(Box::new(db::db_ins().friends.get(id.as_str()).await));
+                        let mut result = db::db_ins().friends.get(&id).await;
+                        // update friend info
+
+                        // todo optimize query time, we should load the friend info asynchronously
+                        if let Ok(user) = api::friends().query_friend(&id).await {
+                            if user.id == id {
+                                let mut need_update = false;
+                                if user.name != result.name {
+                                    result.name = user.name.into();
+                                    need_update = true;
+                                }
+                                if user.avatar != result.avatar {
+                                    result.avatar = user.avatar.into();
+                                    need_update = true;
+                                }
+                                result.region = user.region.map(|r| r.into());
+                                if user.signature != result.signature {
+                                    result.signature = user.signature.into();
+                                }
+                                if need_update {
+                                    db::db_ins().friends.put_friend(&result).await;
+                                }
+                            }
+                        }
+                        friend = Some(Box::new(result));
                     }
                     RightContentType::Group => {
                         friend = Some(Box::new(
-                            db::db_ins().groups.get(id.as_str()).await.unwrap().unwrap(),
+                            db::db_ins().groups.get(&id).await.unwrap().unwrap(),
                         ));
                     }
                     _ => {}
@@ -179,7 +205,13 @@ impl MessageList {
             return false;
         }
         let is_self = msg.is_self;
-        self.list.shift_insert(0, msg.local_id.clone(), msg);
+        // there is only one possible situation about we can get the msg through local_id:
+        // user send msg but failed and resend again
+        if let Some(item) = self.list.get_mut(&msg.local_id) {
+            item.send_status = msg.send_status;
+        } else {
+            self.list.shift_insert(0, msg.local_id.clone(), msg);
+        }
 
         if is_self {
             self.new_msg_count = 0;
@@ -539,6 +571,7 @@ impl Component for MessageList {
                             friend_id={&props.friend_id}
                             msg={msg.clone()}
                             avatar={avatar}
+                            nickname={&msg.nickname}
                             conv_type={conv_type.clone()}
                             {play_audio}
                             del_item={del_item.clone()}
@@ -565,6 +598,8 @@ impl Component for MessageList {
                 <Sender
                     friend_id={&props.friend_id}
                     cur_user_id={&props.cur_user_id}
+                    avatar={&ctx.props().cur_user_avatar}
+                    nickname={&ctx.props().nickname}
                     conv_type={ctx.props().conv_type.clone()}
                     disable = {self.is_black}
                     {on_file_send}

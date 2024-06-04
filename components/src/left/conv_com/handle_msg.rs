@@ -130,8 +130,15 @@ impl Chats {
                 old.unread_count = 0;
                 clean = true;
             }
+            let mut need_update_friend_info = false;
+            let new_name = conv.name.clone();
+            if conv.avatar.is_empty() || conv.conv_type != RightContentType::Friend {
+                conv.avatar = old.avatar;
+            } else if conv.avatar != old.avatar || conv.name != old.name {
+                // update friend info
+                need_update_friend_info = true;
+            }
             conv.name = old.name;
-            conv.avatar = old.avatar;
             // conv.id = old.id;
             conv.unread_count = old.unread_count;
             conv.mute = old.mute;
@@ -144,6 +151,27 @@ impl Chats {
                 if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                     error!("put conv error:{:?}", e);
                     Dialog::error("put conv error");
+                }
+
+                // update friend info about avatar and nickname
+                if need_update_friend_info {
+                    match conv.conv_type {
+                        RightContentType::Friend => {
+                            if let Err(e) = db::db_ins()
+                                .friends
+                                .update_friend_avatar_nickname(
+                                    &conv.friend_id,
+                                    conv.avatar.clone(),
+                                    new_name,
+                                )
+                                .await
+                            {
+                                error!("update friend info error:{:?}", e);
+                            }
+                        }
+                        RightContentType::Group => {}
+                        _ => {}
+                    }
                 }
             });
             true
@@ -307,6 +335,8 @@ impl Chats {
         })?;
         Ok(())
     }
+
+    // fn handle_avatar_nickname(&mut self, ctx: &Context<Self>, msg: &mut Msg)
     pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
         let conv_type = match message {
             Msg::Group(_) => RightContentType::Group,
@@ -327,15 +357,8 @@ impl Chats {
                     msg.is_self = false;
                 }
 
-                let conv = Conversation {
-                    last_msg: msg.content.clone(),
-                    last_msg_time: msg.send_time,
-                    last_msg_type: msg.content_type,
-                    conv_type,
-                    friend_id: msg.friend_id.clone(),
-                    unread_count: 1,
-                    ..Default::default()
-                };
+                let mut conv = Conversation::from(msg.clone());
+                conv.conv_type = conv_type;
                 let is_self = msg.is_self;
 
                 let mut msg = msg.clone();
@@ -401,6 +424,7 @@ impl Chats {
                             conv_type,
                             friend_id: msg.friend_id.clone(),
                             unread_count: 1,
+                            avatar: msg.avatar.clone(),
                             ..Default::default()
                         };
                         let is_self = msg.send_id == ctx.props().user_id;

@@ -26,6 +26,8 @@ pub struct UserInfoCom {
 #[derive(Properties, PartialEq)]
 pub struct UserInfoComProps {
     pub user_id: AttrValue,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
     pub lang: LanguageType,
     pub info: UserWithMatchType,
 }
@@ -142,6 +144,8 @@ impl Component for UserInfoCom {
             html!(<Action
                     friend_id={&ctx.props().info.id}
                     user_id={&ctx.props().user_id}
+                    avatar={&ctx.props().avatar}
+                    nickname={&ctx.props().nickname}
                     conv_type={RightContentType::Friend}
                     lang={ctx.props().lang}/>)
         } else {

@@ -26,8 +26,11 @@
 - reply busy when the user is in the call
 - knock off is not complete -- done
 - use &ctx.props().xxx instead clone method in view function -- done
-- add user avatar and name in the message
-- emoji style for mobile
+- add user avatar and name in the message -- done
+- emoji style for mobile -- done
 - need to handle the group invitation or create group in right mod com
 - we need to redesign the relation about friend with group
 - need to test the invite new member for goup
+- need to add resend flag for message, that we can use is update conversation list.
+- need to hold the closure about db,
+- add remark attribute for conversation, so that we can update conversation item if the friend update his nickname and user not remark his friend.

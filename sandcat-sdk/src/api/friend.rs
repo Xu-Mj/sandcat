@@ -1,6 +1,9 @@
 use wasm_bindgen::JsValue;
 
-use crate::model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser};
+use crate::{
+    model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
+    pb::message::FriendInfo,
+};
 
 #[async_trait::async_trait(?Send)]
 pub trait FriendApi {
@@ -8,6 +11,8 @@ pub trait FriendApi {
         &self,
         new_friend: FriendShipRequest,
     ) -> Result<FriendShipWithUser, JsValue>;
+
+    async fn query_friend(&self, friend_id: &str) -> Result<FriendInfo, JsValue>;
 
     async fn agree_friend(&self, friendship: FriendShipAgree) -> Result<Friend, JsValue>;
 

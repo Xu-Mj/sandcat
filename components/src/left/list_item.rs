@@ -132,7 +132,7 @@ impl Component for ListItem {
                     // return false;
                 }
                 if self.friend_state.friend.item_id == ctx.props().props.id {
-                    // return false;
+                    return false;
                 }
 
                 self.friend_dispatch.reduce_mut(|s| {
@@ -229,7 +229,7 @@ impl Component for ListItem {
             ComponentType::Contacts => {
                 onclick = ctx.link().callback(move |_| ListItemMsg::FriendItemClicked);
                 if !self.is_mobile {
-                    if self.conv_state.conv.item_id == props.id {
+                    if self.friend_state.friend.item_id == props.id {
                         classes.push("selected");
                     } else {
                         classes.push("hover")

@@ -28,6 +28,8 @@ pub enum ActionMsg {
 pub struct ActionProps {
     pub friend_id: AttrValue,
     pub user_id: AttrValue,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
     pub conv_type: RightContentType,
     pub lang: LanguageType,
 }
@@ -71,6 +73,8 @@ impl Component for Action {
                         create_time: chrono::Utc::now().timestamp_millis(),
                         invite_type: t,
                         platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
+                        avatar: ctx.props().avatar.clone(),
+                        nickname: ctx.props().nickname.clone(),
                     }
                 });
             }

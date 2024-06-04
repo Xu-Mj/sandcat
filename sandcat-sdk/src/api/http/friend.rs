@@ -4,6 +4,7 @@ use wasm_bindgen::JsValue;
 
 use crate::api::friend::FriendApi;
 use crate::model::friend::FriendshipWithUser4Response;
+use crate::pb::message::FriendInfo;
 use crate::{
     model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
     pb::message::UpdateRemarkRequest,
@@ -63,6 +64,19 @@ impl FriendApi for FriendHttp {
                 JsValue::from(err.to_string())
             })?;
         Ok(friend)
+    }
+
+    async fn query_friend(&self, friend_id: &str) -> Result<FriendInfo, JsValue> {
+        let user: FriendInfo = Request::get(format!("/api/friend/query/{}", friend_id).as_str())
+            .header(&self.auth_header, &self.token)
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
+            .json()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?;
+        Ok(user)
     }
 
     // 获取好友列表, 服务端需要增加好友表及其逻辑，包括好友请求表，实际好友关系表（因为需要额外字段：备注，添加时间等）

@@ -103,6 +103,8 @@ impl Sender {
             is_self: true,
             platform: self.get_platform(),
             send_status: SendStatus::Sending,
+            avatar: ctx.props().avatar.clone(),
+            nickname: ctx.props().nickname.clone(),
             ..Default::default()
         };
         self.store_send_msg(ctx, msg);
@@ -336,6 +338,8 @@ impl Sender {
                 is_self: true,
                 platform,
                 send_status: SendStatus::Sending,
+                avatar: ctx.props().avatar.clone(),
+                nickname: ctx.props().nickname.clone(),
                 ..Default::default()
             };
             self.store_send_msg(ctx, msg);
@@ -394,13 +398,13 @@ impl Sender {
         true
     }
 
-    fn send_voice_msg(
-        platform: i32,
-        friend_id: AttrValue,
-        user_id: AttrValue,
-        voice: Voice,
-        conv_type: RightContentType,
-    ) {
+    fn send_voice_msg(&self, ctx: &Context<Self>, voice: Voice) {
+        let conv_type = ctx.props().conv_type.clone();
+        let friend_id = ctx.props().friend_id.clone();
+        let avatar = ctx.props().avatar.clone();
+        let nickname = ctx.props().nickname.clone();
+        let user_id = ctx.props().cur_user_id.clone();
+        let platform = self.get_platform();
         spawn_local(async move {
             if let Err(e) = db::db_ins().voices.save(&voice).await {
                 error!("save voice error:{:?}", e);
@@ -411,14 +415,16 @@ impl Sender {
                 local_id: voice.local_id.into(),
                 is_self: true,
                 create_time: time,
-                friend_id: friend_id.clone(),
-                send_id: user_id.clone(),
+                friend_id,
+                send_id: user_id,
                 is_read: 1,
                 content_type: ContentType::Audio,
                 platform,
                 send_status: SendStatus::Sending,
                 audio_duration: voice.duration,
                 audio_downloaded: true,
+                avatar,
+                nickname,
                 ..Default::default()
             };
             Dispatch::<SendAudioMsgState>::global().set(SendAudioMsgState { msg: msg.clone() });

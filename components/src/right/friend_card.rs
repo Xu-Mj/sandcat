@@ -25,6 +25,8 @@ pub struct FriendCardProps {
     // container: Element,
     pub friend_info: UserWithMatchType,
     pub user_id: AttrValue,
+    pub avatar: AttrValue,
+    pub nickname: AttrValue,
     pub lang: LanguageType,
     pub close: Callback<()>,
     pub is_self: bool,
@@ -81,6 +83,8 @@ impl Component for FriendCard {
                     <Action
                         friend_id={&ctx.props().friend_info.id}
                         user_id={&ctx.props().user_id}
+                        avatar={&ctx.props().avatar}
+                        nickname={&ctx.props().nickname}
                         conv_type={RightContentType::Friend}
                         lang={ctx.props().lang}/>
                 </div>

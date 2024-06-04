@@ -124,6 +124,7 @@ impl Right {
         }
     }
 }
+
 impl Component for Right {
     type Message = RightMsg;
 
@@ -398,6 +399,7 @@ impl Component for Right {
                     <MessageList
                         friend_id={&self.conv_state.conv.item_id}
                         cur_user_avatar={&self.state.login_user.avatar}
+                        nickname={&self.state.login_user.name}
                         conv_type={self.conv_state.conv.content_type.clone()}
                         cur_user_id={&self.state.login_user.id}
                         lang={self.lang_state.lang}/>
@@ -411,10 +413,13 @@ impl Component for Right {
                     | RightContentType::Group
                     | RightContentType::UserInfo => {
                         html! {
-                            <PostCard user_id={&self.state.login_user.id}
-                            id={&self.friend_list_state.friend.item_id}
-                            conv_type={self.friend_list_state.friend.content_type.clone()}
-                            lang={self.lang_state.lang}/>
+                            <PostCard
+                                user_id={&self.state.login_user.id}
+                                id={&self.friend_list_state.friend.item_id}
+                                avatar={&self.state.login_user.avatar}
+                                nickname={&self.state.login_user.name}
+                                conv_type={self.friend_list_state.friend.content_type.clone()}
+                                lang={self.lang_state.lang}/>
                         }
                     }
                     RightContentType::FriendShipList => {

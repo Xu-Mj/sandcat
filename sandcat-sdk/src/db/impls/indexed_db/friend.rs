@@ -39,6 +39,44 @@ impl Friends for FriendRepo {
         store.put(&value).unwrap();
     }
 
+    async fn update_friend_avatar_nickname(
+        &self,
+        id: &str,
+        avatar: AttrValue,
+        nickname: AttrValue,
+    ) -> Result<(), JsValue> {
+        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
+        let request = store
+            .get(&JsValue::from(id))
+            .expect("friend select get error");
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            if !result.is_undefined() && !result.is_null() {
+                let mut friend: Friend = serde_wasm_bindgen::from_value(result).unwrap();
+                friend.avatar = avatar;
+                friend.name = nickname;
+                store
+                    .put(&serde_wasm_bindgen::to_value(&friend).unwrap())
+                    .unwrap();
+            }
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        let on_add_error = Closure::once(move |event: &Event| {
+            web_sys::console::log_1(&String::from("读取数据失败").into());
+            web_sys::console::log_1(&event.into());
+        });
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        on_add_error.forget();
+        onsuccess.forget();
+        Ok(())
+    }
+
     async fn put_friend_list(&self, friends: &[Friend]) {
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
         friends.iter().for_each(|item| {
