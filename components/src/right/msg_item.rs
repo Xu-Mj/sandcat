@@ -297,6 +297,7 @@ impl Component for MsgItem {
             MsgItemMsg::ReSendMessage => {
                 let mut msg = ctx.props().msg.clone();
                 msg.send_status = SendStatus::Sending;
+                msg.is_resend = true;
                 let msg = match ctx.props().conv_type {
                     RightContentType::Friend => Msg::Single(msg),
                     RightContentType::Group => Msg::Group(GroupMsg::Message(msg)),

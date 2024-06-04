@@ -42,7 +42,10 @@ impl Chats {
                     ..Default::default()
                 };
                 let is_self = msg.is_self;
-                self.operate_msg(ctx, conv, is_self)
+                if !msg.is_resend {
+                    return self.operate_msg(ctx, conv, is_self);
+                }
+                false
             }
             Msg::Group(group_msg) => {
                 match group_msg {

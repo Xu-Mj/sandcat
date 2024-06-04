@@ -7,7 +7,7 @@
 - to sync the contacts list and apply list and apply response list
 - delete message after handled group operation
 - we need to update user information when we look up the friend info
-- we need to update user information when we click the conversation item
+- we need to update user information when we click the conversation item -- need to optimize update time and use synchroniza way to update ui
 - redesign the websocket reconnection logical,
 - adjust textarea dynamic height under the mobile mode
 - need to handle all types message about platform and if self msg -- done
