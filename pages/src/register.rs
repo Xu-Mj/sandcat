@@ -1,5 +1,6 @@
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::{Interval, Timeout};
+use gloo::utils::window;
 use regex::Regex;
 use wasm_bindgen::JsValue;
 use web_sys::HtmlInputElement;
@@ -13,7 +14,7 @@ use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::UserRegister;
-use sandcat_sdk::state::I18nState;
+use sandcat_sdk::state::{I18nState, MobileState};
 use utils::tr;
 
 #[derive(Default)]
@@ -40,6 +41,7 @@ pub struct Register {
     avatar: AttrValue,
     pwd: AttrValue,
     i18n: FluentBundle<FluentResource>,
+    is_mobile: bool,
 }
 
 pub enum RegisterMsg {
@@ -80,7 +82,21 @@ impl Component for Register {
             // "./images/avatars/avatar6.png".into(),
         ];
         let avatar = avatars[0].clone();
+        // query device info
+        let mut pf = MobileState::Desktop;
+        if let Ok(platform) = window().navigator().user_agent() {
+            log::debug!("platform: {:?}", platform);
 
+            if platform.contains("Mobile")
+                || platform.contains("Android")
+                || platform.contains("iPhone")
+            {
+                pf = MobileState::Mobile;
+                Dispatch::<MobileState>::global().set(MobileState::Mobile);
+            } else {
+                Dispatch::<MobileState>::global().set(MobileState::Desktop);
+            }
+        }
         // load the i18n bundle
         let lang = Dispatch::<I18nState>::global().get().lang;
         let res = match lang {
@@ -92,6 +108,7 @@ impl Component for Register {
             i18n,
             avatars,
             avatar,
+            is_mobile: pf.is_mobile(),
             ..Default::default()
         }
     }
@@ -99,9 +116,7 @@ impl Component for Register {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             RegisterMsg::Register => {
-                log::debug!("register1");
                 if !self.pwd_is_same {
-                    log::debug!("register2");
                     return false;
                 }
                 let name: HtmlInputElement = self.name_node.cast().unwrap();
@@ -111,13 +126,10 @@ impl Component for Register {
                 let email: HtmlInputElement = self.email_node.cast().unwrap();
                 let pwd: HtmlInputElement = self.pwd_node.cast().unwrap();
                 if email.value().is_empty() || pwd.value().is_empty() {
-                    log::debug!("register3");
-
                     return false;
                 }
 
                 let code: HtmlInputElement = self.code_node.cast().unwrap();
-                log::debug!("register4");
                 let ctx = ctx.link().clone();
                 let register = UserRegister {
                     name: name.value().into(),
@@ -127,7 +139,6 @@ impl Component for Register {
                     code: code.value().into(),
                 };
                 spawn_local(async move {
-                    log::debug!("register5");
                     ctx.send_message(RegisterMsg::Request(RequestStatus::Pendding));
                     // 注册请求
                     match api::users().register(register).await {
@@ -314,10 +325,15 @@ impl Component for Register {
         } else {
             html!()
         };
+        let class = if self.is_mobile {
+            "register-wrapper size-mobile"
+        } else {
+            "register-wrapper size"
+        };
         html! {
             <div class="register-container">
                 {req_status}
-                <div class="register-wrapper"
+                <div {class}
                     // onkeydown={ctx.link().callback(RegisterMsg::OnFormKeyDown)}
                     // onsubmit={ctx.link().callback(RegisterMsg::OnEnterKeyDown)}>
                     >
@@ -406,16 +422,14 @@ impl Component for Register {
                             placeholder={tr!(self.i18n, "code")}/>
                     </div>
 
-                    <div>
-                        <span>
-                        </span>
-                        <input type="submit" class="register-button" onclick={onsubmit} value={tr!(self.i18n, "submit")}/>
-                    </div>
-                </div>
-                    <div class="login-register">
+                    <p class="register-login">
+                        <div>
+                            <input type="submit" class="register-button" onclick={onsubmit} value={tr!(self.i18n, "submit")}/>
+                        </div>
                         {tr!(self.i18n, "to_login_prefix")}
                         <a href="/">{tr!(self.i18n, "to_login")}</a>
-                    </div>
+                    </p>
+                </div>
             </div>
         }
     }
