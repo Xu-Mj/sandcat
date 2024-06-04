@@ -20,11 +20,8 @@ impl FileHttp {
     pub fn new(token: String, auth_header: String) -> Self {
         Self { token, auth_header }
     }
-}
 
-#[async_trait(?Send)]
-impl FileApi for FileHttp {
-    async fn upload_file(&self, file: &File) -> Result<String, JsValue> {
+    async fn upload_file_inner(&self, url: &str, file: &File) -> Result<String, JsValue> {
         let form = FormData::new().unwrap();
         form.append_with_blob("file", file).unwrap();
 
@@ -34,7 +31,6 @@ impl FileApi for FileHttp {
         opts.body(Some(&form));
 
         // 创建请求
-        let url = "/api/file/upload";
         let request = web_sys::Request::new_with_str_and_init(url, &opts).unwrap();
 
         // 发送网络请求
@@ -44,6 +40,19 @@ impl FileApi for FileHttp {
         let text = JsFuture::from(res.text().unwrap()).await.unwrap();
 
         Ok(text.as_string().unwrap())
+    }
+}
+
+#[async_trait(?Send)]
+impl FileApi for FileHttp {
+    async fn upload_file(&self, file: &File) -> Result<String, JsValue> {
+        let url = "/api/file/upload";
+        self.upload_file_inner(url, file).await
+    }
+
+    async fn upload_avatar(&self, file: &File) -> Result<String, JsValue> {
+        let url = "/api/file/avatar/upload";
+        self.upload_file_inner(url, file).await
     }
 
     // todo add auth header
