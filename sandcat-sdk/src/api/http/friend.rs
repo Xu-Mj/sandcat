@@ -4,7 +4,7 @@ use wasm_bindgen::JsValue;
 
 use crate::api::friend::FriendApi;
 use crate::model::friend::FriendshipWithUser4Response;
-use crate::pb::message::User;
+use crate::pb::message::FriendInfo;
 use crate::{
     model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
     pb::message::UpdateRemarkRequest,
@@ -66,8 +66,8 @@ impl FriendApi for FriendHttp {
         Ok(friend)
     }
 
-    async fn query_friend(&self, friend_id: &str) -> Result<User, JsValue> {
-        let user: User = Request::get(format!("/api/friend/query/{}", friend_id).as_str())
+    async fn query_friend(&self, friend_id: &str) -> Result<FriendInfo, JsValue> {
+        let user: FriendInfo = Request::get(format!("/api/friend/query/{}", friend_id).as_str())
             .header(&self.auth_header, &self.token)
             .send()
             .await

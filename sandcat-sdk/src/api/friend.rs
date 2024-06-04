@@ -2,7 +2,7 @@ use wasm_bindgen::JsValue;
 
 use crate::{
     model::friend::{Friend, FriendShipAgree, FriendShipRequest, FriendShipWithUser},
-    pb::message::User,
+    pb::message::FriendInfo,
 };
 
 #[async_trait::async_trait(?Send)]
@@ -12,7 +12,7 @@ pub trait FriendApi {
         new_friend: FriendShipRequest,
     ) -> Result<FriendShipWithUser, JsValue>;
 
-    async fn query_friend(&self, friend_id: &str) -> Result<User, JsValue>;
+    async fn query_friend(&self, friend_id: &str) -> Result<FriendInfo, JsValue>;
 
     async fn agree_friend(&self, friendship: FriendShipAgree) -> Result<Friend, JsValue>;
 
