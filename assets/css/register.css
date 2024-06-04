@@ -6,15 +6,12 @@
     user-select: none;
     /* Standard syntax */
     width: 100%;
-    height: 33rem;
+    height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     position: relative;
-    background-color: white;
-    padding: 2rem;
-    border-radius: .5rem;
 
     .register-info {
         position: absolute;
@@ -52,15 +49,26 @@
         align-items: center;
     }
 
-    .register-wrapper {
+    .size {
         width: 100%;
         max-width: 25rem;
-        height: 20rem;
+        height: 31rem;
+    }
+
+    .size-mobile {
+        width: 100%;
+        height: 100%;
+    }
+
+    .register-wrapper {
+        padding: 1rem;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         gap: 1rem;
+        background-color: var(--color-background);
+        border-radius: .3rem;
 
         &>div {
             width: 100%;
@@ -136,7 +144,6 @@
     }
 
     .register-button {
-        margin-top: 40px;
         width: 70px;
         height: 40px;
         padding: 0;
@@ -191,5 +198,19 @@
 
     ::-webkit-meter-optimum-value {
         background: linear-gradient(to right, red var(--size), orange 0 calc(2 * var(--size)), green 0);
+    }
+}
+
+.register-login {
+    width: 100%;
+    height: auto;
+    font-size: small;
+    text-align: center;
+
+    &>div {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 }

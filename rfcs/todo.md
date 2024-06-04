@@ -34,3 +34,4 @@
 - need to add resend flag for message, that we can use is update conversation list.
 - need to hold the closure about db,
 - add remark attribute for conversation, so that we can update conversation item if the friend update his nickname and user not remark his friend.
+- register page need to add check failed message for user input.
