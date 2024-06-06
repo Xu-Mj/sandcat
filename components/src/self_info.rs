@@ -1,14 +1,17 @@
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
+use gloo::utils::document;
 use gloo::utils::window;
-
-use wasm_bindgen::closure::Closure;
+use js_sys::Array;
 use wasm_bindgen::JsCast;
+use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::spawn_local;
+use wasm_bindgen_futures::JsFuture;
 use web_sys::Event;
 use web_sys::File;
-use web_sys::FileReader;
+use web_sys::FilePropertyBag;
+use web_sys::HtmlCanvasElement;
 use web_sys::HtmlImageElement;
 use web_sys::HtmlInputElement;
 use yew::{html, Callback, Component, NodeRef, Properties};
@@ -25,6 +28,8 @@ use sandcat_sdk::state::I18nState;
 use sandcat_sdk::state::MobileState;
 use utils::tr;
 
+use crate::avatar::Avatar;
+use crate::avatar::SubmitOption;
 use crate::dialog::Dialog;
 
 pub struct SelfInfo {
@@ -34,14 +39,13 @@ pub struct SelfInfo {
     email_node: NodeRef,
     addr_node: NodeRef,
     avatar_node: NodeRef,
-    avatar_reader: Option<FileReader>,
-    avatar_onload: Option<Closure<dyn FnMut()>>,
+    avatar_url: Option<String>,
     signature_node: NodeRef,
     avatar: String,
-    avatar_file: Option<File>,
     gender: String,
     _dispatch: Dispatch<I18nState>,
     is_mobile: bool,
+    show_avatar_setter: bool,
 }
 
 #[derive(Debug)]
@@ -50,7 +54,8 @@ pub enum SelfInfoMsg {
     I18nStateChanged(Rc<I18nState>),
     GenderChange(Event),
     Logout,
-    AvatarChange(Event),
+    ShowAvatarSetter,
+    SetAvatar(String),
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -80,12 +85,11 @@ impl Component for SelfInfo {
             addr_node: NodeRef::default(),
             name_node: NodeRef::default(),
             avatar_node: NodeRef::default(),
-            avatar_reader: None,
-            avatar_onload: None,
+            avatar_url: None,
             signature_node: NodeRef::default(),
             gender: ctx.props().user.gender.to_string(),
             avatar: ctx.props().user.avatar.to_string(),
-            avatar_file: None,
+            show_avatar_setter: false,
             _dispatch: dispatch,
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
@@ -116,11 +120,14 @@ impl Component for SelfInfo {
                 };
                 let close = ctx.props().close.clone();
                 let submit = ctx.props().submit.clone();
-                let avatar = self.avatar_file.clone();
+                let avatar = self.avatar_url.clone();
                 spawn_local(async move {
                     // upload avatar image
                     if let Some(avatar) = avatar {
-                        match api::file().upload_avatar(&avatar).await {
+                        // convert to file
+                        let file = data_url_to_file(avatar, "avatar.png").await.unwrap();
+
+                        match api::file().upload_avatar(&file).await {
                             Ok(name) => user.avatar = name,
                             Err(e) => {
                                 log::error!("upload avatar error: {:?}", e);
@@ -172,29 +179,17 @@ impl Component for SelfInfo {
                 ctx.link().navigator().unwrap().push(&Page::Login);
                 false
             }
-            SelfInfoMsg::AvatarChange(event) => {
-                let file_input: HtmlInputElement = event.target().unwrap().dyn_into().unwrap();
-                let file_list = file_input.files();
-                if let Some(file_list) = file_list {
-                    let file_list = file_list;
-                    if file_list.length() > 0 {
-                        let file = file_list.get(0).unwrap();
-                        let file_reader = FileReader::new().unwrap();
-                        let reader = file_reader.clone();
-                        let img_node = self.avatar_node.cast::<HtmlImageElement>().unwrap();
-                        let on_load = Closure::wrap(Box::new(move || {
-                            let result = reader.result().unwrap();
-                            img_node.set_src(result.as_string().unwrap().as_str());
-                        }) as Box<dyn FnMut()>);
-                        file_reader.set_onload(Some(on_load.as_ref().unchecked_ref()));
-                        file_reader.read_as_data_url(&file).unwrap();
-                        self.avatar_reader = Some(file_reader);
-                        self.avatar_file = Some(file_list.get(0).unwrap());
-                        self.avatar_onload = Some(on_load);
-                    }
+            SelfInfoMsg::ShowAvatarSetter => {
+                self.show_avatar_setter = !self.show_avatar_setter;
+                true
+            }
+            SelfInfoMsg::SetAvatar(url) => {
+                if let Some(img) = self.avatar_node.cast::<HtmlImageElement>() {
+                    img.set_src(&url);
+                    self.avatar_url = Some(url);
                 }
-
-                false
+                self.show_avatar_setter = false;
+                true
             }
         }
     }
@@ -203,23 +198,25 @@ impl Component for SelfInfo {
         let on_cancel = ctx.props().close.reform(|_| ());
         let onchange = ctx.link().callback(SelfInfoMsg::GenderChange);
         let user = ctx.props().user.clone();
-        // log::debug!("user: {:?}", user);
         let class = if self.is_mobile {
             "info-panel info-panel-size-mobile"
         } else {
             "info-panel info-panel-size box-shadow"
         };
-        let on_file_change = ctx.link().callback(SelfInfoMsg::AvatarChange);
+        let onclick = ctx.link().callback(|_| SelfInfoMsg::ShowAvatarSetter);
+        let mut avatar_setter = html!();
+        if self.show_avatar_setter {
+            let submit = ctx.link().callback(SelfInfoMsg::SetAvatar);
+            let close = ctx.link().callback(|_| SelfInfoMsg::ShowAvatarSetter);
+            avatar_setter = html!(<Avatar submit={SubmitOption::DataUrl(submit)} {close} avatar_url={self.get_avatar_url()}/>)
+        }
+
         html! {
+            <>
+            {avatar_setter}
             <div {class}>
                 <div class="info-panel-item-avatar">
-                    <input type="file"
-                        id="avatar"
-                        name="avatar"
-                        hidden={true}
-                        onchange={on_file_change}
-                        accept="image/*"/>
-                    <label for="avatar">
+                    <label for="avatar" {onclick}>
                         <span>
                             {tr!(self.i18n, "set_avatar")}
                         </span>
@@ -351,6 +348,45 @@ impl Component for SelfInfo {
                     <button type="button" onclick={ctx.link().callback(|_| SelfInfoMsg::Logout)}>{tr!(self.i18n, "logout")}</button>
                 </div>
             </div>
+            </>
         }
     }
+}
+
+impl SelfInfo {
+    fn get_avatar_url(&self) -> String {
+        if let Some(image) = self.avatar_node.cast::<HtmlImageElement>() {
+            let canvas = document().create_element("canvas").unwrap();
+            let canvas: HtmlCanvasElement = canvas.dyn_into().unwrap();
+            canvas.set_width(image.width());
+            canvas.set_height(image.height());
+            let ctx = canvas
+                .get_context("2d")
+                .unwrap()
+                .unwrap()
+                .dyn_into::<web_sys::CanvasRenderingContext2d>()
+                .unwrap();
+            ctx.draw_image_with_html_image_element(&image, 0.0, 0.0)
+                .unwrap();
+            canvas.to_data_url().unwrap()
+        } else {
+            String::new()
+        }
+    }
+}
+
+async fn data_url_to_file(data_url: String, file_name: &str) -> Result<File, JsValue> {
+    // fetch the Data URL
+    let response = JsFuture::from(window().fetch_with_str(&data_url)).await?;
+    let response: web_sys::Response = response.dyn_into()?;
+
+    // get the Blob from the response
+    let blob = JsFuture::from(response.blob()?).await?;
+    let blob: web_sys::Blob = blob.dyn_into()?;
+
+    // create a File from the Blob
+    let mut property_bag = FilePropertyBag::new();
+    property_bag.type_("image/png");
+
+    File::new_with_blob_sequence_and_options(&Array::of1(&blob), file_name, &property_bag)
 }
