@@ -107,7 +107,8 @@ impl Component for SelfInfo {
                     .cast::<HtmlInputElement>()
                     .unwrap()
                     .value();
-                log::debug!("update user info: name: {:?}; email: {:?}; address: {:?}; signature: {:?}; phone: {:?};",name, email, address, signature, phone );
+                log::debug!("update user info: name: {:?}; email: {:?}; address: {:?}; signature: {:?}; phone: {:?};"
+                    ,name, email, address, signature, phone );
                 let mut user = UserUpdate {
                     id: ctx.props().user.id.to_string(),
                     name,
@@ -358,16 +359,22 @@ impl SelfInfo {
         if let Some(image) = self.avatar_node.cast::<HtmlImageElement>() {
             let canvas = document().create_element("canvas").unwrap();
             let canvas: HtmlCanvasElement = canvas.dyn_into().unwrap();
-            canvas.set_width(image.width());
-            canvas.set_height(image.height());
+            canvas.set_width(image.natural_width());
+            canvas.set_height(image.natural_height());
             let ctx = canvas
                 .get_context("2d")
                 .unwrap()
                 .unwrap()
                 .dyn_into::<web_sys::CanvasRenderingContext2d>()
                 .unwrap();
-            ctx.draw_image_with_html_image_element(&image, 0.0, 0.0)
-                .unwrap();
+            ctx.draw_image_with_html_image_element_and_dw_and_dh(
+                &image,
+                0.0,
+                0.0,
+                image.natural_width() as f64,
+                image.natural_height() as f64,
+            )
+            .unwrap();
             canvas.to_data_url().unwrap()
         } else {
             String::new()
