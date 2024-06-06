@@ -209,13 +209,20 @@ impl Component for SelfInfo {
         if self.show_avatar_setter {
             let submit = ctx.link().callback(SelfInfoMsg::SetAvatar);
             let close = ctx.link().callback(|_| SelfInfoMsg::ShowAvatarSetter);
-            avatar_setter = html!(<Avatar submit={SubmitOption::DataUrl(submit)} {close} avatar_url={self.get_avatar_url()}/>)
+            avatar_setter = html!(
+                <div class="avatar-setter" style="position: absolute; width: 100%; height: 100%; left: 0; top: 0; z-index: 888;">
+                <Avatar
+                    submit={SubmitOption::DataUrl(submit)}
+                    {close}
+                    avatar_url={self.get_avatar_url()}/>
+                </div>
+            )
         }
 
         html! {
             <>
-            {avatar_setter}
             <div {class}>
+                {avatar_setter}
                 <div class="info-panel-item-avatar">
                     <label for="avatar" {onclick}>
                         <span>

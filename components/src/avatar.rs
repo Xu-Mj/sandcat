@@ -78,7 +78,6 @@ impl Component for Avatar {
                     if let Some(file) = file_list.get(0) {
                         let file_reader = FileReader::new().unwrap();
                         let reader = file_reader.clone();
-                        // let img_node = self.avatar_node.cast::<HtmlImageElement>().unwrap();
                         let ctx = ctx.link().clone();
                         let on_load = Closure::wrap(Box::new(move || {
                             let result = reader.result().unwrap();
@@ -110,6 +109,7 @@ impl Component for Avatar {
                 false
             }
             Msg::Wheel(event) => {
+                event.prevent_default();
                 event.stop_propagation();
                 let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
                 if let Some(img) = &self.img {
@@ -147,6 +147,7 @@ impl Component for Avatar {
                 false
             }
             Msg::MouseDown(event) => {
+                event.stop_propagation();
                 self.dragging = true;
                 self.start_x = event.client_x() as f64;
                 self.start_y = event.client_y() as f64;
@@ -157,6 +158,7 @@ impl Component for Avatar {
                 true
             }
             Msg::MouseMove(event) => {
+                event.stop_propagation();
                 if self.dragging {
                     let dx = event.client_x() as f64 - self.start_x;
                     let dy = event.client_y() as f64 - self.start_y;
@@ -215,6 +217,10 @@ impl Component for Avatar {
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
         if first_render {
+            if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
+                canvas.set_width(canvas.parent_element().unwrap().client_width() as u32);
+                canvas.set_height(canvas.parent_element().unwrap().client_height() as u32);
+            }
             if let Some(ref url) = ctx.props().avatar_url {
                 self.load_img(ctx, url);
             }
@@ -233,19 +239,26 @@ impl Component for Avatar {
             .callback(|e: web_sys::MouseEvent| Msg::MouseMove(e));
         let on_submit = ctx.link().callback(|_| Msg::SubmitSelection);
         html! {
-            <div style="width: 100%;
+            <div style="display: flex;
+                        flex-direction: column;
+                        width: 100%;
                         height:100%;
                         background-color: white;">
                 <div style="position: absolute;
                             top: 0;
                             left: 0;
                             width: 100%;
-                            padding: 1rem;
+                            padding: .5rem;
                             display: flex;
                             justify-content: space-between;
                             align-items: center;">
                     <label for="avatar-setter"
-                        style="width: 5rem; height: 2rem; text-align: center; border: 1px solid gray; border-radius: .3rem;">
+                        style="width: 5rem;
+                            height: 2rem;
+                            text-align: center;
+                            background-color: #fefefe;
+                            border-radius: .3rem;
+                            color: white">
                         {"Choose"}
                         <input id="avatar-setter"
                             type="file"
@@ -255,12 +268,12 @@ impl Component for Avatar {
                             onchange={ctx.link().callback(Msg::Files)}/>
                     </label>
                     <div
-                        style="width: 5rem; height: 2rem; text-align: center; border: 1px solid gray; border-radius: .3rem;"
+                        style="width: 5rem; height: 2rem; text-align: center; background-color: green; color: white; border-radius: .3rem;"
                         onclick={on_submit}>
                         { "Submit" }
                     </div>
                     <div
-                        style="width: 5rem; height: 2rem; text-align: center; border: 1px solid gray; border-radius: .3rem;"
+                        style="width: 5rem; height: 2rem; text-align: center; background-color: white; border-radius: .3rem;"
                         onclick={ctx.props().close.reform(|_|{})}>
                         { "Cancel" }
                     </div>
@@ -290,7 +303,7 @@ impl Avatar {
         img.set_onload(Some(closure.as_ref().unchecked_ref()));
         self.img = Some(img);
         self.avatar_onload = Some(closure);
-        self.redraw();
+        // self.redraw();
     }
 
     fn adjust_image_position(
@@ -319,7 +332,12 @@ impl Avatar {
             .unwrap()
             .dyn_into::<web_sys::CanvasRenderingContext2d>()
             .unwrap();
-
+        log::info!(
+            "redraw; canvas width: {}, {}, {}",
+            canvas.client_width(),
+            canvas.height(),
+            canvas.client_height()
+        );
         if let Some(img) = &self.img {
             context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
             context.save();
@@ -335,8 +353,24 @@ impl Avatar {
             let overlay_width = canvas.width() as f64;
             let overlay_height = canvas.height() as f64;
             let selection_size = self.selection_size;
-            let selection_x = (overlay_width - selection_size) / 2.0;
-            let selection_y = (overlay_height - selection_size) / 2.0;
+            let selection_x = if overlay_width < selection_size {
+                0.
+            } else {
+                (overlay_width - selection_size) / 2.0
+            };
+            let selection_y = if overlay_height < selection_size {
+                0.
+            } else {
+                (overlay_height - selection_size) / 2.0
+            };
+            log::info!(
+                "selection_x: {}, selection_y: {}, selection_size: {}; overlay_width: {}, overlay_height: {}",
+                selection_x,
+                selection_y,
+                selection_size,
+                overlay_width,
+                overlay_height
+            );
 
             // 上边的遮盖层
             context.fill_rect(0.0, 0.0, overlay_width, selection_y);
