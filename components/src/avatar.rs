@@ -110,6 +110,7 @@ impl Component for Avatar {
                 false
             }
             Msg::Wheel(event) => {
+                event.stop_propagation();
                 let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
                 if let Some(img) = &self.img {
                     let delta = event.delta_y();
@@ -232,26 +233,20 @@ impl Component for Avatar {
             .callback(|e: web_sys::MouseEvent| Msg::MouseMove(e));
         let on_submit = ctx.link().callback(|_| Msg::SubmitSelection);
         html! {
-            <div style="position: fixed;
-                        z-index: 1000;
-                        left:0;
-                        top:0;
-                        width: 100%;
+            <div style="width: 100%;
                         height:100%;
-                        background-color: white;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;">
+                        background-color: white;">
                 <div style="position: absolute;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    padding: 1rem;
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: center;">
-                    <label for="avatar-setter" style="width: 5rem; height: 1rem; text-align: center; border: 1px solid gray;">
-                        {"Choose Avatar"}
+                            top: 0;
+                            left: 0;
+                            width: 100%;
+                            padding: 1rem;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;">
+                    <label for="avatar-setter"
+                        style="width: 5rem; height: 2rem; text-align: center; border: 1px solid gray; border-radius: .3rem;">
+                        {"Choose"}
                         <input id="avatar-setter"
                             type="file"
                             accept="image/*"
@@ -260,20 +255,19 @@ impl Component for Avatar {
                             onchange={ctx.link().callback(Msg::Files)}/>
                     </label>
                     <div
-                        style="width: 5rem; height: 1rem; text-align: center; border: 1px solid gray;"
+                        style="width: 5rem; height: 2rem; text-align: center; border: 1px solid gray; border-radius: .3rem;"
                         onclick={on_submit}>
-                        { "提交选区" }
+                        { "Submit" }
                     </div>
                     <div
-                        style="width: 5rem; height: 1rem; text-align: center; border: 1px solid gray;"
+                        style="width: 5rem; height: 2rem; text-align: center; border: 1px solid gray; border-radius: .3rem;"
                         onclick={ctx.props().close.reform(|_|{})}>
-                        { "取消" }
+                        { "Cancel" }
                     </div>
                 </div>
                 <canvas
+                    style="width: 100%; height: 100%;"
                     ref={self.canvas_ref.clone()}
-                    width="512"
-                    height="512"
                     onwheel={on_wheel}
                     onmousedown={on_mousedown}
                     onmouseup={on_mouseup}
