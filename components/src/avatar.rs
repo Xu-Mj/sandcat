@@ -44,7 +44,7 @@ pub enum Msg {
     MouseUp(web_sys::MouseEvent),
     MouseMove(web_sys::MouseEvent),
     SubmitSelection,
-    Redraw,
+    ImageLoaded,
 }
 
 impl Component for Avatar {
@@ -94,18 +94,6 @@ impl Component for Avatar {
             }
             Msg::Loaded(url) => {
                 self.load_img(ctx, &url);
-                false
-            }
-            Msg::Redraw => {
-                if let Some(img) = &self.img {
-                    let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
-
-                    // 限制图片位置保持在选区内部
-                    let result = self.adjust_image_position(img, &canvas);
-                    self.x = result.0;
-                    self.y = result.1;
-                }
-                self.redraw();
                 false
             }
             Msg::Wheel(event) => {
@@ -212,6 +200,35 @@ impl Component for Avatar {
                 }
                 false
             }
+            Msg::ImageLoaded => {
+                if let Some(img) = &self.img {
+                    if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
+                        let image_width = img.width() as f64;
+                        let image_height = img.height() as f64;
+                        let canvas_width = canvas.width() as f64;
+                        let canvas_height = canvas.height() as f64;
+
+                        // 宽高比
+                        let scale_height = canvas_height / image_height;
+                        let scale_width = if image_height <= self.selection_size {
+                            1.0
+                        } else {
+                            canvas_width / image_width
+                        };
+
+                        // 使用canvas高度调整比例，确保能看到整个选区
+                        let scale = scale_height
+                            .min(scale_width)
+                            .max(self.selection_size / image_height);
+
+                        self.scale = scale;
+                        self.x = (canvas_width - image_width * scale) / 2.0;
+                        self.y = (canvas_height - image_height * scale) / 2.0;
+                    }
+                }
+                self.redraw();
+                false
+            }
         }
     }
 
@@ -226,6 +243,7 @@ impl Component for Avatar {
             }
         }
     }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         let on_wheel = ctx.link().callback(|e: web_sys::WheelEvent| Msg::Wheel(e));
         let on_mousedown = ctx
@@ -255,10 +273,10 @@ impl Component for Avatar {
                     <label for="avatar-setter"
                         style="width: 5rem;
                             height: 2rem;
+                            line-height: 2rem;
                             text-align: center;
                             background-color: #fefefe;
-                            border-radius: .3rem;
-                            color: white">
+                            border-radius: .3rem;">
                         {"Choose"}
                         <input id="avatar-setter"
                             type="file"
@@ -268,12 +286,12 @@ impl Component for Avatar {
                             onchange={ctx.link().callback(Msg::Files)}/>
                     </label>
                     <div
-                        style="width: 5rem; height: 2rem; text-align: center; background-color: green; color: white; border-radius: .3rem;"
+                        style="width: 5rem; height: 2rem; line-height: 2rem; text-align: center; background-color: green; color: white; border-radius: .3rem;"
                         onclick={on_submit}>
                         { "Submit" }
                     </div>
                     <div
-                        style="width: 5rem; height: 2rem; text-align: center; background-color: white; border-radius: .3rem;"
+                        style="width: 5rem; height: 2rem; line-height: 2rem; text-align: center; background-color: white; border-radius: .3rem;"
                         onclick={ctx.props().close.reform(|_|{})}>
                         { "Cancel" }
                     </div>
@@ -298,12 +316,11 @@ impl Avatar {
         img.set_src(url);
         let ctx = ctx.link().clone();
         let closure = Closure::wrap(Box::new(move || {
-            ctx.send_message(Msg::Redraw); // 通知重绘
+            ctx.send_message(Msg::ImageLoaded); // 通知重绘
         }) as Box<dyn FnMut()>);
         img.set_onload(Some(closure.as_ref().unchecked_ref()));
         self.img = Some(img);
         self.avatar_onload = Some(closure);
-        // self.redraw();
     }
 
     fn adjust_image_position(
