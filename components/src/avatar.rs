@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use gloo::utils::document;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::{closure::Closure, JsValue};
@@ -18,14 +20,23 @@ pub struct Avatar {
     start_x: f64,
     start_y: f64,
     selection_size: f64,
+    touches: HashMap<i32, (f64, f64)>,
 }
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct Props {
     pub submit: SubmitOption,
     pub close: Callback<()>,
+    #[prop_or(256.0)]
+    pub selection_size: f64,
     #[prop_or_default]
     pub avatar_url: Option<String>,
+    #[prop_or("Choose".to_string())]
+    pub choose_text: String,
+    #[prop_or("Submit".to_string())]
+    pub submit_text: String,
+    #[prop_or("Cancel".to_string())]
+    pub cancel_text: String,
 }
 
 #[allow(dead_code)]
@@ -39,10 +50,13 @@ pub enum SubmitOption {
 pub enum Msg {
     Files(Event),
     Loaded(String),
-    Wheel(web_sys::WheelEvent),
-    MouseDown(web_sys::MouseEvent),
-    MouseUp(web_sys::MouseEvent),
-    MouseMove(web_sys::MouseEvent),
+    Wheel(WheelEvent),
+    MouseDown(MouseEvent),
+    MouseUp(MouseEvent),
+    MouseMove(MouseEvent),
+    TouchStart(TouchEvent),
+    TouchMove(TouchEvent),
+    TouchEnd(TouchEvent),
     SubmitSelection,
     ImageLoaded,
 }
@@ -52,7 +66,8 @@ impl Component for Avatar {
 
     type Properties = Props;
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
+        let selection_size = ctx.props().selection_size;
         Self {
             canvas_ref: NodeRef::default(),
             reader: None,
@@ -65,7 +80,8 @@ impl Component for Avatar {
             dragging: false,
             start_x: 0.0,
             start_y: 0.0,
-            selection_size: 256.0,
+            selection_size,
+            touches: HashMap::new(),
         }
     }
 
@@ -106,7 +122,7 @@ impl Component for Avatar {
                     let mouse_y = event.client_y() as f64;
 
                     // 计算新的缩放比例
-                    let new_scale = (self.scale + delta * -0.001).max(0.1);
+                    let new_scale = (self.scale + delta * -0.0001).max(0.05);
 
                     // 确保最小缩放比例不小于选区大小
                     let img_width = img.width() as f64;
@@ -229,6 +245,24 @@ impl Component for Avatar {
                 self.redraw();
                 false
             }
+            Msg::TouchStart(event) => {
+                event.stop_propagation();
+                self.update_touches(&event);
+                false
+            }
+            Msg::TouchMove(event) => {
+                event.stop_propagation();
+                event.prevent_default();
+                self.handle_touch_move(&event);
+                self.update_touches(&event);
+                false
+            }
+            Msg::TouchEnd(event) => {
+                event.stop_propagation();
+                event.prevent_default();
+                self.update_touches(&event);
+                false
+            }
         }
     }
 
@@ -255,6 +289,9 @@ impl Component for Avatar {
         let on_mousemove = ctx
             .link()
             .callback(|e: web_sys::MouseEvent| Msg::MouseMove(e));
+        let ontouchstart = ctx.link().callback(Msg::TouchStart);
+        let ontouchmove = ctx.link().callback(Msg::TouchMove);
+        let ontouchend = ctx.link().callback(Msg::TouchEnd);
         let on_submit = ctx.link().callback(|_| Msg::SubmitSelection);
         html! {
             <div style="display: flex;
@@ -277,7 +314,7 @@ impl Component for Avatar {
                             text-align: center;
                             background-color: #fefefe;
                             border-radius: .3rem;">
-                        {"Choose"}
+                        { &ctx.props().choose_text }
                         <input id="avatar-setter"
                             type="file"
                             accept="image/*"
@@ -288,12 +325,12 @@ impl Component for Avatar {
                     <div
                         style="width: 5rem; height: 2rem; line-height: 2rem; text-align: center; background-color: green; color: white; border-radius: .3rem;"
                         onclick={on_submit}>
-                        { "Submit" }
+                        { &ctx.props().submit_text }
                     </div>
                     <div
                         style="width: 5rem; height: 2rem; line-height: 2rem; text-align: center; background-color: white; border-radius: .3rem;"
                         onclick={ctx.props().close.reform(|_|{})}>
-                        { "Cancel" }
+                        { &ctx.props().cancel_text }
                     </div>
                 </div>
                 <canvas
@@ -303,6 +340,9 @@ impl Component for Avatar {
                     onmousedown={on_mousedown}
                     onmouseup={on_mouseup}
                     onmousemove={on_mousemove}
+                    {ontouchstart}
+                    {ontouchmove}
+                    {ontouchend}
                 >
                 </canvas>
             </div>
@@ -341,6 +381,92 @@ impl Avatar {
         (self.x.min(max_x).max(min_x), self.y.min(max_y).max(min_y))
     }
 
+    fn update_touches(&mut self, event: &TouchEvent) {
+        self.touches.clear();
+        for i in 0..event.touches().length() {
+            if let Some(touch) = event.touches().item(i) {
+                self.touches.insert(
+                    touch.identifier(),
+                    (touch.client_x() as f64, touch.client_y() as f64),
+                );
+            }
+        }
+    }
+
+    fn handle_touch_move(&mut self, event: &TouchEvent) {
+        let touches: Vec<_> = self.touches.values().cloned().collect();
+        if touches.len() == 2 {
+            let new_touches: Vec<_> = (0..event.touches().length())
+                .map(|i| {
+                    let touch = event.touches().item(i).unwrap();
+                    (touch.client_x() as f64, touch.client_y() as f64)
+                })
+                .collect();
+
+            let old_distance = ((touches[0].0 - touches[1].0).powi(2)
+                + (touches[0].1 - touches[1].1).powi(2))
+            .sqrt();
+            let new_distance = ((new_touches[0].0 - new_touches[1].0).powi(2)
+                + (new_touches[1].1 - new_touches[0].1).powi(2))
+            .sqrt();
+
+            let delta = new_distance - old_distance;
+            if delta.abs() > 1.0 {
+                // 增加一个基本的阈值，避免误判
+                self.zoom(
+                    delta,
+                    (new_touches[0].0 + new_touches[1].0) / 2.0,
+                    (new_touches[0].1 + new_touches[1].1) / 2.0,
+                );
+            }
+        } else if touches.len() == 1 {
+            if let Some((sx, sy)) = self.touches.values().next() {
+                if let Some(touch) = event.touches().item(0) {
+                    let dx = touch.client_x() as f64 - sx;
+                    let dy = touch.client_y() as f64 - sy;
+
+                    self.x += dx;
+                    self.y += dy;
+
+                    if let Some(img) = &self.img {
+                        let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
+                        let result = self.adjust_image_position(img, &canvas);
+                        self.x = result.0;
+                        self.y = result.1;
+                    }
+
+                    self.redraw();
+                }
+            }
+        }
+    }
+
+    fn zoom(&mut self, delta: f64, center_x: f64, center_y: f64) {
+        let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
+        if let Some(img) = &self.img {
+            let factor = 0.01; // 移动端缩放灵敏度，调整值避免过于灵敏
+            let delta = delta * factor;
+            let new_scale = (self.scale + delta).max(0.1);
+
+            let img_width = img.width() as f64;
+            let img_height = img.height() as f64;
+            let min_scale = (self.selection_size / img_width).max(self.selection_size / img_height);
+            let new_scale = new_scale.max(min_scale);
+
+            let scale_ratio = new_scale / self.scale;
+            let new_x = center_x - canvas.get_bounding_client_rect().left() - self.x;
+            let new_y = center_y - canvas.get_bounding_client_rect().top() - self.y;
+
+            self.x = center_x - new_x * scale_ratio - canvas.get_bounding_client_rect().left();
+            self.y = center_y - new_y * scale_ratio - canvas.get_bounding_client_rect().top();
+            self.scale = new_scale;
+
+            let result = self.adjust_image_position(img, &canvas);
+            self.x = result.0;
+            self.y = result.1;
+            self.redraw();
+        }
+    }
     fn redraw(&self) {
         let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
         let context = canvas
