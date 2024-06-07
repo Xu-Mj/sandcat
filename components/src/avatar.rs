@@ -476,12 +476,7 @@ impl Avatar {
             .unwrap()
             .dyn_into::<web_sys::CanvasRenderingContext2d>()
             .unwrap();
-        log::info!(
-            "redraw; canvas width: {}, {}, {}",
-            canvas.client_width(),
-            canvas.height(),
-            canvas.client_height()
-        );
+
         if let Some(img) = &self.img {
             context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
             context.save();
