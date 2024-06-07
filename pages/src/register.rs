@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::{Interval, Timeout};
 use gloo::utils::window;
@@ -37,7 +39,7 @@ pub struct Register {
     code_timer: Option<Interval>,
     time: u8,
     req_status: RequestStatus,
-    avatars: Vec<AttrValue>,
+    avatars: HashMap<AttrValue, AttrValue>,
     avatar: AttrValue,
     pwd: AttrValue,
     i18n: FluentBundle<FluentResource>,
@@ -54,7 +56,7 @@ pub enum RegisterMsg {
     SendCodeFailed(JsValue),
     UpdateTime,
     Request(RequestStatus),
-    OnAvatarClick(usize),
+    OnAvatarClick(AttrValue),
     OnPwdInput(InputEvent),
     OnRePwdInput(InputEvent),
 }
@@ -73,15 +75,24 @@ impl Component for Register {
     type Properties = ();
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let avatars = vec![
-            AttrValue::from("./images/avatars/avatar1.png"),
-            AttrValue::from("./images/avatars/avatar2.png"),
-            AttrValue::from("./images/avatars/avatar3.png"),
-            // "./images/avatars/avatar4.png".into(),
-            // "./images/avatars/avatar5.png".into(),
-            // "./images/avatars/avatar6.png".into(),
-        ];
-        let avatar = avatars[0].clone();
+        let avatars = HashMap::from([
+            (
+                AttrValue::from("/api/file/avatar/get/avatar1.png"),
+                AttrValue::from("avatar1"),
+            ),
+            (
+                AttrValue::from("/api/file/avatar/get/avatar2.png"),
+                AttrValue::from("avatar2"),
+            ),
+            (
+                AttrValue::from("/api/file/avatar/get/avatar3.png"),
+                AttrValue::from("avatar3"),
+            ),
+        ]);
+        let avatar = avatars
+            .get("/api/file/avatar/get/avatar1.png")
+            .unwrap()
+            .clone();
         // query device info
         let mut pf = MobileState::Desktop;
         if let Ok(platform) = window().navigator().user_agent() {
@@ -222,9 +233,8 @@ impl Component for Register {
                 }
                 true
             }
-            RegisterMsg::OnAvatarClick(index) => {
-                log::debug!("index: {}", index);
-                self.avatar = self.avatars[index].clone();
+            RegisterMsg::OnAvatarClick(avatar) => {
+                self.avatar = avatar;
                 true
             }
             RegisterMsg::OnPwdInput(event) => {
@@ -258,14 +268,15 @@ impl Component for Register {
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let avatars = self.avatars.iter().enumerate().map(|(index,avatar)| {
-        let on_avatar_click = ctx.link().callback(move |_| RegisterMsg::OnAvatarClick(index));
+        let avatars = self.avatars.iter().map(|(path,avatar)| {
             let mut classes = classes!("register-avatar");
             if avatar == &self.avatar {
-               classes.push( "avatar-active");
+                classes.push( "avatar-active");
             }
+            let avatar = avatar.clone();
+            let on_avatar_click = ctx.link().callback(move |_| RegisterMsg::OnAvatarClick(avatar.clone()));
             html! {
-                <img src={avatar.to_owned()} class={classes} alt="avatar" onclick={on_avatar_click} />
+                <img src={path.to_owned()} class={classes} alt="avatar" onclick={on_avatar_click} />
             }
         }).collect::<Html>();
 

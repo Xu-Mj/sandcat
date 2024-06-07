@@ -16,7 +16,7 @@ serde = "1"
 serde_json = "1"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 wasm-logger = "0.2.0"
-yewdux = {version = "0.10.0", features = ["doctests"]}
+yewdux = { version = "0.10.0", features = ["doctests"] }
 yew = { version = "0.21", features = ["csr"] }
 yew-router = "0.18"
 # password strong level
@@ -26,7 +26,7 @@ components = { path = "../components" }
 sandcat-sdk = { path = "../sandcat-sdk" }
 i18n = { path = "../i18n" }
 icons = { path = "../icons" }
-utils ={ path = "../utils" }
+utils = { path = "../utils" }
 
 [dependencies.web-sys]
 version = "0.3"

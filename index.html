@@ -1,8 +1,10 @@
 <!DOCTYPE html>
-<html lang="en"  theme="light">
+<html lang="en" theme="light">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0,maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <link data-trunk rel="css" href="./assets/css/index.css">
     <link data-trunk rel="css" href="./assets/css/login.css">
     <link data-trunk rel="css" href="./assets/css/home.css">
@@ -13,8 +15,31 @@
     <link data-trunk rel="rust" href="pages" />
 
     <title>IM</title>
+    <script>
+        window.onload = function () {
+            document.addEventListener('touchstart', function (event) {
+                if (event.touches.length > 1) {
+                    event.preventDefault();
+                }
+            });
+            var lastTouchEnd = 0;
+            document.addEventListener('touchend', function (event) {
+                var now = (new Date()).getTime();
+                if (now - lastTouchEnd <= 300) {
+                    event.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, false);
+            document.addEventListener('gesturestart', function (event) {
+                event.preventDefault();
+            });
+        }
+    </script>
+
 </head>
+
 <body>
 
 </body>
+
 </html>
