@@ -127,3 +127,7 @@ pub fn set_font_size(size: &str) {
         .set_property("font-size", size)
         .unwrap()
 }
+
+pub fn get_avatar_url(avatar_id: &str) -> String {
+    format!("/api/file/avatar/get/{avatar_id}")
+}

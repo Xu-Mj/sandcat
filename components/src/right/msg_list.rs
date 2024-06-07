@@ -48,6 +48,7 @@ pub struct MessageList {
     is_black: bool,
     audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
     audio_data_url: Option<String>,
+    is_mobile: bool,
 
     // listen sync offline message, query message list
     _sync_msg_dis: Dispatch<RefreshMsgListState>,
@@ -389,6 +390,7 @@ impl Component for MessageList {
             is_black: false,
             audio_on_stop: None,
             audio_data_url: None,
+            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
 
             _sync_msg_dis,
             _rec_msg_dis,
@@ -483,13 +485,8 @@ impl Component for MessageList {
                 false
             }
             MessageListMsg::SendResultCallback(state) => {
-                let msg = state.msg.clone();
-                /*  let mut result = self.list.iter_mut().filter(|v| *v.local_id == msg.local_id);
-                result.next().map(|v| {
-                    v.send_status = msg.send_status;
-                }); */
-                if let Some(v) = self.list.get_mut(&msg.local_id) {
-                    v.send_status = msg.send_status;
+                if let Some(v) = self.list.get_mut(&state.msg.local_id) {
+                    v.send_status = state.msg.send_status.clone();
                 }
                 true
             }
@@ -532,8 +529,13 @@ impl Component for MessageList {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if self.friend.is_none() {
+            return html!();
+        }
+
         let props = ctx.props();
         let is_all = self.is_all;
+
         let onscroll = ctx.link().callback(move |event: Event| {
             let node: HtmlElement = event.target().unwrap().dyn_into().unwrap();
             let height = node.client_height() - node.scroll_height() + 1;
@@ -544,6 +546,7 @@ impl Component for MessageList {
             }
             MessageListMsg::NextPageNone
         });
+
         let on_file_send = ctx.link().callback(MessageListMsg::SendFile);
 
         // 未读消息数量
@@ -558,45 +561,47 @@ impl Component for MessageList {
             html!()
         };
 
-        let mut list = html!();
-        if let Some(friend) = self.friend.as_ref() {
-            let conv_type = &props.conv_type;
-            list = self
-                .list
-                .iter()
-                .map(|(_, msg)| {
-                    let mut avatar = friend.avatar().clone();
-                    if msg.is_self {
-                        avatar = props.cur_user_avatar.clone();
-                    }
-                    let mut play_audio = None;
-                    if msg.content_type == ContentType::Audio {
-                        play_audio = Some(ctx.link().callback(MessageListMsg::PlayAudio));
-                    }
-                    let del_item = ctx.link().callback(MessageListMsg::DelItem);
+        let conv_type = &props.conv_type;
+        let list = self
+            .list
+            .iter()
+            .map(|(_, msg)| {
+                // let mut avatar = friend.avatar().clone();
+                let avatar = if msg.is_self {
+                    &props.cur_user_avatar
+                } else {
+                    &msg.avatar
+                };
+                log::info!("msg avatar: {:?}", avatar);
+                let mut play_audio = None;
+                if msg.content_type == ContentType::Audio {
+                    play_audio = Some(ctx.link().callback(MessageListMsg::PlayAudio));
+                }
+                let del_item = ctx.link().callback(MessageListMsg::DelItem);
 
-                    let send_timeout = ctx.link().callback(MessageListMsg::MsgSendTimeout);
-                    html! {
-                        <MsgItem
-                            user_id={&props.cur_user_id}
-                            friend_id={&props.friend_id}
-                            msg={msg.clone()}
-                            avatar={avatar}
-                            nickname={&msg.nickname}
-                            conv_type={conv_type.clone()}
-                            {play_audio}
-                            {del_item}
-                            {send_timeout}
-                            key={msg.id}
-                        />
-                    }
-                })
-                .collect::<Html>()
-        }
-        let mut class = "resize resize-size";
-        if Dispatch::<MobileState>::global().get().is_mobile() {
-            class = "resize";
-        }
+                let send_timeout = ctx.link().callback(MessageListMsg::MsgSendTimeout);
+                html! {
+                    <MsgItem
+                        user_id={&props.cur_user_id}
+                        friend_id={&props.friend_id}
+                        msg={msg.clone()}
+                        {avatar}
+                        nickname={&msg.nickname}
+                        conv_type={conv_type.clone()}
+                        {play_audio}
+                        {del_item}
+                        {send_timeout}
+                        key={msg.id}
+                    />
+                }
+            })
+            .collect::<Html>();
+
+        let class = if self.is_mobile {
+            "resize"
+        } else {
+            "resize resize-size"
+        };
 
         html! {
             <>

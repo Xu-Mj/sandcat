@@ -356,7 +356,7 @@ impl ListItem {
         let avatar = iter
             .map(|v| {
                 html! {
-                    <img class="avatar" src={v.to_owned()} />
+                    <img class="avatar" src={utils::get_avatar_url(v)} />
                 }
             })
             .collect::<Html>();
