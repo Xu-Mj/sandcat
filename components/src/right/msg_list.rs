@@ -573,7 +573,6 @@ impl Component for MessageList {
                 } else {
                     &friend_avatar
                 };
-                log::info!("msg avatar: {:?}", avatar);
                 let mut play_audio = None;
                 if msg.content_type == ContentType::Audio {
                     play_audio = Some(ctx.link().callback(MessageListMsg::PlayAudio));
