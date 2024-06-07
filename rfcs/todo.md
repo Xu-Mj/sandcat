@@ -31,7 +31,8 @@
 - need to handle the group invitation or create group in right mod com
 - we need to redesign the relation about friend with group
 - need to test the invite new member for goup
-- need to add resend flag for message, that we can use is update conversation list.
+- need to add resend flag for message, that we can use is update conversation list. -- done
 - need to hold the closure about db,
 - add remark attribute for conversation, so that we can update conversation item if the friend update his nickname and user not remark his friend.
 - register page need to add check failed message for user input.
+- need to update group member info when we received a group message

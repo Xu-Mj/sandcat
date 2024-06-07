@@ -373,6 +373,7 @@ impl Chats {
                         Conversation {
                             // id: 0,
                             name: friend.name,
+                            remark: friend.remark,
                             avatar: friend.avatar,
                             last_msg: content,
                             last_msg_time: result.create_time,
@@ -404,6 +405,7 @@ impl Chats {
                         Conversation {
                             // id: 0,
                             name: group.name,
+                            remark: group.remark,
                             avatar: group.avatar,
                             last_msg: content,
                             last_msg_time: result.create_time,

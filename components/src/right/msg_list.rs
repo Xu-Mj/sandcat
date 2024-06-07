@@ -562,6 +562,7 @@ impl Component for MessageList {
         };
 
         let conv_type = &props.conv_type;
+        let friend_avatar = self.friend.as_ref().unwrap().avatar();
         let list = self
             .list
             .iter()
@@ -570,7 +571,7 @@ impl Component for MessageList {
                 let avatar = if msg.is_self {
                     &props.cur_user_avatar
                 } else {
-                    &msg.avatar
+                    &friend_avatar
                 };
                 log::info!("msg avatar: {:?}", avatar);
                 let mut play_audio = None;
