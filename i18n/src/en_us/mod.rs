@@ -36,6 +36,7 @@ region = region
 submit = Submit
 cancel = Cancel
 logout = Logout
+choose_avatar = Choose
 "#;
 
 pub const CONVERSATION: &str = r#"
