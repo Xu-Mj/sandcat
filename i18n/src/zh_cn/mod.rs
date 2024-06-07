@@ -31,6 +31,7 @@ region = 地区
 submit = 保存
 cancel = 取消
 logout = 退出登录
+choose_avatar = 添加头像
 "#;
 
 pub const TOP: &str = r#"

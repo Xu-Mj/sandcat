@@ -122,7 +122,8 @@ impl Component for Avatar {
                     let mouse_y = event.client_y() as f64;
 
                     // 计算新的缩放比例
-                    let new_scale = (self.scale + delta * -0.0001).max(0.05);
+                    let new_scale =
+                        (self.scale + delta * -1_f64 / (img.width() * 5) as f64).max(0.05);
 
                     // 确保最小缩放比例不小于选区大小
                     let img_width = img.width() as f64;
@@ -475,12 +476,7 @@ impl Avatar {
             .unwrap()
             .dyn_into::<web_sys::CanvasRenderingContext2d>()
             .unwrap();
-        log::info!(
-            "redraw; canvas width: {}, {}, {}",
-            canvas.client_width(),
-            canvas.height(),
-            canvas.client_height()
-        );
+
         if let Some(img) = &self.img {
             context.clear_rect(0.0, 0.0, canvas.width() as f64, canvas.height() as f64);
             context.save();
@@ -506,14 +502,6 @@ impl Avatar {
             } else {
                 (overlay_height - selection_size) / 2.0
             };
-            log::info!(
-                "selection_x: {}, selection_y: {}, selection_size: {}; overlay_width: {}, overlay_height: {}",
-                selection_x,
-                selection_y,
-                selection_size,
-                overlay_width,
-                overlay_height
-            );
 
             // 上边的遮盖层
             context.fill_rect(0.0, 0.0, overlay_width, selection_y);

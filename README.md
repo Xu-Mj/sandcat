@@ -7,7 +7,7 @@ git clone https://github.com/Xu-Mj/sandcat.git
 cd sandcat
 ```
 
-1.  use trunk
+1. use trunk
 
    ```shell
    # install trunk
@@ -31,9 +31,6 @@ cd sandcat
    if you need to change the backend proxy or something else, change the Trunk.toml
 
 **important:** you need to run the backend service [sandcat-backend](https://github.com/Xu-Mj/sandcat-backend)
-
-
-
 
 ## Technical Implementation
 
@@ -100,8 +97,6 @@ Existing group chat members can invite more friends to join through an "Invite M
 
 - **Exiting a Group Chat**: Users can opt to leave a group chat, prompting the client to send a request to the server. After processing, the server removes the member from the list and notifies the remaining group members via WebSocket.
 - **Disbanding a Group Chat**: The group owner has the authority to disband the group. Upon executing the disbandment, the server deletes all records of the chat and notifies all members of its dissolution via WebSocket. Clients remove the group chat information from their local databases upon notification.
-
-
 
 ### Audio/Video Calls
 
