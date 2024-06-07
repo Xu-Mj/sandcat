@@ -300,10 +300,15 @@ impl Chats {
         oncontextmenu: Callback<((i32, i32), AttrValue, bool)>,
     ) -> Html {
         let remark = get_msg_type(&self.i18n, item.last_msg_type, &item.last_msg);
+        let name = if let Some(remark) = &item.remark {
+            remark.clone()
+        } else {
+            item.name.clone()
+        };
         html!(
             <ListItem
                 component_type={ComponentType::Messages}
-                props={CommonProps{name:item.name.clone().into(),
+                props={CommonProps{name,
                     avatar:item.avatar.clone().into(),
                     time:item.last_msg_time,
                     remark,
@@ -373,6 +378,7 @@ impl Chats {
                         Conversation {
                             // id: 0,
                             name: friend.name,
+                            remark: friend.remark,
                             avatar: friend.avatar,
                             last_msg: content,
                             last_msg_time: result.create_time,
@@ -404,6 +410,7 @@ impl Chats {
                         Conversation {
                             // id: 0,
                             name: group.name,
+                            remark: group.remark,
                             avatar: group.avatar,
                             last_msg: content,
                             last_msg_time: result.create_time,

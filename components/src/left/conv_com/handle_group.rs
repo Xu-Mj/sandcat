@@ -80,14 +80,25 @@ impl Chats {
                     if friend.remark.is_some() {
                         name = friend.remark.as_ref().unwrap().clone();
                     }
-                    group_name.push_str(name.as_str());
+                    group_name.push_str(&name);
                     if i < 8 {
-                        avatar.push(friend.avatar.clone().to_string());
+                        avatar.push(friend.avatar.to_string());
                     }
                     values.push(GroupMember::from(friend));
                 }
             }
 
+            // push self
+            let user = match db::db_ins().users.get(user_id.as_str()).await {
+                Ok(user) => user,
+                Err(e) => {
+                    error!("get user error:{:?}", e);
+                    Dialog::error("query user error");
+                    return ChatsMsg::None;
+                }
+            };
+
+            group_name.push_str(&user.name);
             group_name.push_str("、Group");
             let group_req = GroupRequest {
                 owner: user_id.to_string(),
@@ -96,15 +107,7 @@ impl Chats {
                 members_id: nodes,
                 id: String::new(),
             };
-            // push self
-            let user = match db::db_ins().users.get(user_id.as_str()).await {
-                Ok(mem) => mem,
-                Err(e) => {
-                    error!("get user error:{:?}", e);
-                    Dialog::error("query user error");
-                    return ChatsMsg::None;
-                }
-            };
+
             values.push(GroupMember::from(user));
             // send create request
             match api::groups().create(group_req, user_id.as_str()).await {

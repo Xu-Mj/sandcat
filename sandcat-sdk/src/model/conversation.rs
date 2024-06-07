@@ -23,9 +23,11 @@ pub fn attr_value_is_empty(value: &AttrValue) -> bool {
 pub struct Conversation {
     pub conv_type: RightContentType,
     pub friend_id: AttrValue,
-    #[serde(skip_serializing_if = "attr_value_is_empty")]
+    #[serde(default)]
     pub name: AttrValue,
-    #[serde(skip_serializing_if = "attr_value_is_empty")]
+    #[serde(default)]
+    pub remark: Option<AttrValue>,
+    #[serde(default)]
     pub avatar: AttrValue,
     pub last_msg: AttrValue,
     // 需要根据时间来排序
@@ -46,6 +48,7 @@ impl From<Message> for Conversation {
             unread_count: 1,
             avatar: msg.avatar,
             name: msg.nickname,
+            remark: None,
             mute: false,
         }
     }

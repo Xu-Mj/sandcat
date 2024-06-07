@@ -187,11 +187,8 @@ impl Chats {
                     return ChatsMsg::None;
                 }
                 conv.avatar = friend.avatar;
-                if let Some(name) = friend.remark {
-                    conv.name = name;
-                } else {
-                    conv.name = friend.name;
-                }
+                conv.name = friend.name;
+                conv.remark = friend.remark;
                 if is_self {
                     // we don't need to set the unread count if it is self message
                     conv = match db::db_ins().convs.self_update_conv(conv).await {
