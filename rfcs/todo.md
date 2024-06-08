@@ -36,3 +36,4 @@
 - add remark attribute for conversation, so that we can update conversation item if the friend update his nickname and user not remark his friend.
 - register page need to add check failed message for user input.
 - need to update group member info when we received a group message
+- need to forbid the user to send message after group is dismissed

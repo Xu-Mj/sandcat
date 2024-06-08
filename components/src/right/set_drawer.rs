@@ -6,6 +6,7 @@ use yew::{Component, Properties};
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::model::RightContentType;
 use utils::tr;
+
 pub struct SetDrawer {
     node: NodeRef,
     i18n: FluentBundle<FluentResource>,

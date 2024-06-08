@@ -45,9 +45,7 @@ pub enum QueryState<T> {
 pub struct PostCard {
     group: Option<Group>,
     friend: Option<Friend>,
-    info: Option<Box<dyn ItemInfo>>,
     is_group_owner: bool,
-    // user_info: User,
     show_set_drawer: bool,
     i18n: FluentBundle<FluentResource>,
 }
@@ -66,7 +64,6 @@ impl Component for PostCard {
         let i18n = utils::create_bundle(res);
 
         PostCard {
-            info: None,
             show_set_drawer: false,
             is_group_owner: false,
             i18n,
@@ -113,19 +110,17 @@ impl Component for PostCard {
             }
             PostCardMsg::Delete => {
                 // delete data from local database
-                if self.info.is_none() {
-                    return false;
-                }
-                let info = self.info.as_ref().unwrap();
                 let user_id = ctx.props().user_id.clone().to_string();
-                let id = info.id();
-
-                match info.get_type() {
+                match ctx.props().conv_type {
                     RightContentType::Friend => {
-                        self.delete_friend(user_id, id);
+                        if let Some(ref friend) = self.friend {
+                            self.delete_friend(user_id, friend.friend_id.clone());
+                        }
                     }
                     RightContentType::Group => {
-                        self.delete_group(user_id, id);
+                        if let Some(ref group) = self.group {
+                            self.delete_group(user_id, group.id.clone());
+                        }
                     }
                     _ => {}
                 }
@@ -225,6 +220,7 @@ impl PostCard {
                     ctx.link().send_future(async move {
                         match db::db_ins().groups.get(id.as_str()).await {
                             Ok(Some(group)) => {
+                                log::debug!("group info :{:?}", group);
                                 PostCardMsg::QueryGroup(QueryState::Success(Some(group)))
                             }
                             _ => PostCardMsg::QueryGroup(QueryState::Failed),
@@ -237,7 +233,6 @@ impl PostCard {
     }
 
     fn reset(&mut self) {
-        self.info = None;
         self.group = None;
         self.friend = None;
     }
