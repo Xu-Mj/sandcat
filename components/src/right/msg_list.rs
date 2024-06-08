@@ -240,7 +240,6 @@ impl MessageList {
         true
     }
     fn handle_rec_msg(&mut self, ctx: &Context<Self>, msg: Msg, friend_id: AttrValue) -> bool {
-        log::debug!("handle_rec_msg: {:?}", msg);
         match msg {
             Msg::Single(msg) => self.insert_msg(msg, friend_id),
             Msg::Group(msg) => {

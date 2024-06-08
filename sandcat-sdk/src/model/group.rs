@@ -265,7 +265,7 @@ impl ItemInfo for Group {
 
     fn status(&self) -> FriendStatus {
         if self.deleted {
-            FriendStatus::Blacked
+            FriendStatus::Delete
         } else {
             FriendStatus::Accepted
         }
