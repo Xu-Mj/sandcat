@@ -12,7 +12,7 @@ js-sys = { version = "0.3" }
 log = "0.4.6"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 yew = { version = "0.21", features = ["csr"] }
-
+yewdux = { version = "0.10.0", features = ["doctests"] }
 sandcat-sdk = { path = "../sandcat-sdk" }
 
 [dependencies.web-sys]
