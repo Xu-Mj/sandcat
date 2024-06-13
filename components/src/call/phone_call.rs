@@ -948,7 +948,7 @@ impl Component for PhoneCall {
             video_or_audio_notify = html! {
                 <div class="video-or-audio-notify box-shadow" >
                     // 头像。昵称。挂断。接听
-                    <img src={info.avatar()}/>
+                    <img src={utils::get_avatar_url(&info.avatar())}/>
                     <span class="video-or-audio-notify-text" >
                         {format!("{} 来电", info.name())}
                     </span>
@@ -1064,7 +1064,11 @@ impl Component for PhoneCall {
                     let mut background = AttrValue::default();
                     if let Some(info) = self.call_friend_info.as_ref() {
                         avatar = info.avatar();
-                        background = format!("background-image: url('{}')", info.avatar()).into();
+                        background = format!(
+                            "background-image: url('{}')",
+                            utils::get_avatar_url(&avatar)
+                        )
+                        .into();
                     }
 
                     // let zoom_in_click = ctx.link().callback(|_|PhoneCallMsg::AudioZoomIn);
@@ -1078,12 +1082,7 @@ impl Component for PhoneCall {
                             {ontouchmove}
                             {ontouchend}>
                             {zoom}
-                            // <div class="audio-zoom">
-                            //     <span click={zoom_in_click}>
-                            //     <AudioZoomInIcon/>
-                            //     </span>
-                            // </div>
-                            <img class="audio-avatar" src={avatar} />
+                            <img class="audio-avatar" src={utils::get_avatar_url(&avatar)} />
                             <audio ref={self.friend_audio_node.clone()}/>
                             <div class={call_duration_class}>{duration}</div>
                             <div class="call-operate" >
