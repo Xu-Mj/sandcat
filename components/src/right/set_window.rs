@@ -282,7 +282,7 @@ impl Component for SetWindow {
                 if let Some(friend) = self.friend.as_ref() {
                     avatars = html! {
                         <div class="avatar-name">
-                            <img src={&friend.avatar} />
+                            <img src={utils::get_avatar_url(&friend.avatar)} />
                             <span>{&friend.name}</span>
                         </div>
                     };
@@ -292,7 +292,7 @@ impl Component for SetWindow {
                             <div>
                                 {tr!(self.i18n, "remark")}
                             </div>
-                            <input type="text" value={friend.remark.clone()} onchange={on_name_change} />
+                            <input type="text" value={&friend.remark} onchange={on_name_change} />
                         </div>
                     };
                 }
@@ -304,8 +304,8 @@ impl Component for SetWindow {
                     .map(|item| {
                         html! {
                             <div class="avatar-name">
-                                <img src={item.avatar()} />
-                                <span>{item.name()}</span>
+                                <img src={utils::get_avatar_url(&item.avatar)} />
+                                <span>{&item.group_name}</span>
                             </div>
                         }
                     })

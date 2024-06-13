@@ -41,6 +41,8 @@ use sandcat_sdk::state::SendMessageState;
 use super::emoji::Emoji;
 
 const INPUT_MAX_LEN: usize = 5000;
+const NO_EMPTY_WARN: &str = "no_empty";
+const INPUT_MAX_LEN_WARN: &str = "input_max_len";
 pub struct FileListItem {
     file: File,
     file_type: FileType,
@@ -293,11 +295,12 @@ impl Sender {
 
     fn send_text(&mut self, ctx: &Context<Self>) -> bool {
         if let Some(input) = self.input_ref.cast::<HtmlTextAreaElement>() {
-            let content: AttrValue = input.value().into();
+            let value = input.value();
+            let content: AttrValue = value.trim().to_string().into();
             // 如果为空那么 提示不能发送空消息
-            if content.is_empty() || content.trim().is_empty() {
+            if content.is_empty() {
                 self.is_warn_needed = true;
-                self.warn_msg.clone_from(&"no_empty".to_string());
+                self.warn_msg = NO_EMPTY_WARN.to_string();
                 // 输入框立即获取焦点
                 input.focus().unwrap();
                 // 给提示框添加一个定时器，1s后消失
@@ -310,7 +313,7 @@ impl Sender {
 
             if content.chars().count() > INPUT_MAX_LEN {
                 self.is_warn_needed = true;
-                self.warn_msg = "input_max_len".to_string();
+                self.warn_msg = INPUT_MAX_LEN_WARN.to_string();
                 // get focus
                 input.focus().unwrap();
                 // 给提示框添加一个定时器，1s后消失

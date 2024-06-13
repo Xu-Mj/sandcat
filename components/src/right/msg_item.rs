@@ -300,6 +300,7 @@ impl Component for MsgItem {
                 let mut msg = ctx.props().msg.clone();
                 msg.send_status = SendStatus::Sending;
                 msg.is_resend = true;
+                msg.send_time = chrono::Utc::now().timestamp_millis();
                 let msg = match ctx.props().conv_type {
                     RightContentType::Friend => Msg::Single(msg),
                     RightContentType::Group => Msg::Group(GroupMsg::Message(msg)),
