@@ -5,7 +5,6 @@
 - modify the friend remark
 - modify the group info
 - to sync the contacts list and apply list and apply response list
-- delete message after handled group operation
 - we need to update user information when we look up the friend info
 - we need to update user information when we click the conversation item -- need to optimize update time and use synchroniza way to update ui
 - redesign the websocket reconnection logical,
@@ -18,4 +17,3 @@
 - need to hold the closure about db,
 - register page need to add check failed message for user input.
 - need to update group member info when we received a group message
-- need to forbid the user to send message after group is dismissed

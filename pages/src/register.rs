@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use components::dialog::Dialog;
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::{Interval, Timeout};
 use gloo::utils::window;
@@ -44,6 +45,8 @@ pub struct Register {
     pwd: AttrValue,
     i18n: FluentBundle<FluentResource>,
     is_mobile: bool,
+    is_send: bool,
+    jump_timer: Option<Timeout>,
 }
 
 pub enum RegisterMsg {
@@ -177,6 +180,7 @@ impl Component for Register {
             }
             RegisterMsg::SendCode => {
                 log::debug!("send code");
+                self.is_send = true;
                 // 获取邮件
                 let email: HtmlInputElement = self.email_node.cast().unwrap();
                 if !self.email_format {
@@ -190,7 +194,7 @@ impl Component for Register {
                         Err(e) => RegisterMsg::SendCodeFailed(e),
                     }
                 });
-                false
+                true
             }
             RegisterMsg::SendCodeSuccess => {
                 log::debug!("send code success");
@@ -201,11 +205,14 @@ impl Component for Register {
                 }));
                 self.time = 60;
                 self.is_code_send = true;
+                self.is_send = false;
                 true
             }
             RegisterMsg::SendCodeFailed(e) => {
                 log::error!("send code failed: {:?}", e);
-                false
+                Dialog::error("code send failed");
+                self.is_send = false;
+                true
             }
             RegisterMsg::UpdateTime => {
                 log::debug!("update time");
@@ -226,7 +233,7 @@ impl Component for Register {
                         let ctx = ctx.link().clone();
                         let timer =
                             Timeout::new(2000, move || ctx.navigator().unwrap().push(&Page::Login));
-                        timer.forget();
+                        self.jump_timer = Some(timer);
                     }
                     RequestStatus::Failed => self.req_status = RequestStatus::Failed,
                     RequestStatus::Default => self.req_status = RequestStatus::Default,
@@ -414,7 +421,7 @@ impl Component for Register {
                             onchange={ctx.link().callback(|_|RegisterMsg::OnEmailChange)} />
                         <button
                             class="register-code-btn"
-                            disabled={self.time != 0}
+                            disabled={self.time != 0 && self.is_send}
                             onclick={ctx.link().callback(|_| RegisterMsg::SendCode)}
                             >
                             {code_button}
