@@ -7,12 +7,14 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
-use icons::{ContactsIcon, MessagesIcon, SettingIcon};
+use icons::{
+    ConnectedIcon, ContactsIcon, DisconnectIcon, HangUpLoadingIcon, MessagesIcon, SettingIcon,
+};
 use sandcat_sdk::{
     model::{user::User, ComponentType},
     state::{
-        AppState, ComponentTypeState, ConvState, FriendListState, I18nState, MobileState,
-        ShowRight, UnreadState,
+        AppState, ComponentTypeState, ConnectState, ConvState, FriendListState, I18nState,
+        MobileState, ShowRight, UnreadState,
     },
 };
 
@@ -28,6 +30,8 @@ pub struct Top {
     com_s_dis: Dispatch<ComponentTypeState>,
     unread_state: Rc<UnreadState>,
     _unread_dis: Dispatch<UnreadState>,
+    connect_state: Rc<ConnectState>,
+    _conn_dis: Dispatch<ConnectState>,
     i18n: FluentBundle<FluentResource>,
     is_mobile: bool,
 }
@@ -42,6 +46,8 @@ pub enum TopMsg {
     SubmitInfo(Box<User>),
     AppStateChanged(Rc<AppState>),
     ComStateChanged(Rc<ComponentTypeState>),
+    // listen the connection state
+    ConnectionStateChanged(Rc<ConnectState>),
 }
 
 impl Component for Top {
@@ -52,6 +58,8 @@ impl Component for Top {
     fn create(ctx: &Context<Self>) -> Self {
         let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
         let com_s_dis = Dispatch::global().subscribe(ctx.link().callback(TopMsg::ComStateChanged));
+        let _conn_dis =
+            Dispatch::global().subscribe(ctx.link().callback(TopMsg::ConnectionStateChanged));
         let unread_dis =
             Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
         let res = match Dispatch::<I18nState>::global().get().lang {
@@ -68,6 +76,8 @@ impl Component for Top {
             _unread_dis: unread_dis,
             com_state: com_s_dis.get(),
             com_s_dis,
+            connect_state: _conn_dis.get(),
+            _conn_dis,
             i18n,
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
@@ -84,6 +94,7 @@ impl Component for Top {
                 self.show_info = !self.show_info;
                 self.app_s_dis.reduce_mut(|s| s.login_user = *user);
             }
+            TopMsg::ConnectionStateChanged(state) => self.connect_state = state,
         }
         true
     }
@@ -179,8 +190,32 @@ impl Component for Top {
                 </div>
             };
         }
-        html! {
 
+        // connection state
+        let connection_state = match *self.connect_state {
+            ConnectState::DisConnect => {
+                html!(
+                    <div class="connection-state">
+                        <DisconnectIcon />
+                    </div>
+                )
+            }
+            ConnectState::Connecting => {
+                html!(
+                    <div class="connection-state">
+                        <HangUpLoadingIcon fill={AttrValue::from("var(--color-text)")} />
+                    </div>
+                )
+            }
+            ConnectState::Connected => {
+                html!(
+                    <div class="connection-state">
+                        <ConnectedIcon />
+                    </div>
+                )
+            }
+        };
+        html! {
             <div class="top" ref={self.node.clone()}>
                 <div class="top-up">
                     {info_panel}
@@ -189,7 +224,10 @@ impl Component for Top {
                             class="avatar"
                             title={&self.app_state.login_user.name}
                             src={utils::get_avatar_url(&self.app_state.login_user.avatar)} />
-                        <span><b>{&self.app_state.login_user.name}</b></span>
+                        <div class="top-left-name">
+                            <span><b>{&self.app_state.login_user.name}</b></span>
+                            {connection_state}
+                        </div>
                     </div>
                     {top_right}
                 </div>
