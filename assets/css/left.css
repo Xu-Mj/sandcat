@@ -45,7 +45,7 @@
     border-right: 1px solid var(--color-border);
 }
 
-.knock-off-warning{
+.knock-off-warning {
     width: 100%;
     height: 100%;
     position: fixed;
@@ -56,7 +56,7 @@
     align-items: center;
     z-index: 999;
 
-    .warning-window{
+    .warning-window {
         width: 20rem;
         height: 10rem;
         padding: 1rem;
@@ -67,7 +67,7 @@
         justify-content: space-around;
         align-items: center;
 
-        button{
+        button {
             width: 6rem;
             height: 2rem;
             border: none;
@@ -78,6 +78,7 @@
         }
     }
 }
+
 /* 顶部导航栏 */
 
 .top {
@@ -93,9 +94,22 @@
     }
 
     .top-left {
+        position: relative;
         display: flex;
         align-items: center;
         gap: .5rem;
+
+        .top-left-name{
+            display: flex;
+            flex-direction: column;
+            /* align-items: center; */
+            justify-content: center;
+        }
+        .connection-state {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     }
 
     .top-right {

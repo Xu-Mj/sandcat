@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use sandcat_sdk::state::ConnectState;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
@@ -9,8 +10,10 @@ use yew::Callback;
 use sandcat_sdk::model::message::convert_server_msg;
 use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::pb::message::Msg as PbMsg;
+use yewdux::Dispatch;
 
 const KNOCKOFF_CODE: u16 = 4001;
+pub const UNAUTHORIZED_CODE: u16 = 4002;
 
 #[derive(Debug)]
 pub struct WebSocketManager {
@@ -66,6 +69,8 @@ impl WebSocketManager {
 
         let ws = WebSocket::new(ws_manager.borrow().url.as_str()).unwrap();
 
+        // send connecting state
+        Dispatch::<ConnectState>::global().set(ConnectState::Connecting);
         // set default binary type
         ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
         let cloned_ws = ws_manager.clone();
@@ -74,6 +79,7 @@ impl WebSocketManager {
             log::info!("WebSocket connection opened");
             // set the count of reconnect to 0
             cloned_ws.borrow_mut().reconnect_attempts = 0;
+            Dispatch::<ConnectState>::global().set(ConnectState::Connected);
         }) as Box<dyn FnMut()>);
 
         let ws_manager_clone = ws_manager.clone();
@@ -110,17 +116,27 @@ impl WebSocketManager {
         }) as Box<dyn FnMut(MessageEvent)>);
 
         let on_error = Closure::wrap(Box::new(move |e: ErrorEvent| {
-            log::error!("WebSocket error: {:?}", e);
+            log::error!("WebSocket error: {:?}", e.message());
+            Dispatch::<ConnectState>::global().set(ConnectState::DisConnect);
         }) as Box<dyn FnMut(ErrorEvent)>);
 
         let ws_manager_clone = ws_manager.clone();
         let on_close = Closure::wrap(Box::new(move |e: CloseEvent| {
-            if e.code() == KNOCKOFF_CODE {
-                log::info!("Knocked off by another client");
-                ws_manager_clone.borrow().knockoff_callback.emit(());
-                return;
+            match e.code() {
+                KNOCKOFF_CODE => {
+                    log::info!("Knocked off by another client");
+                    ws_manager_clone.borrow().knockoff_callback.emit(());
+                    return;
+                }
+                UNAUTHORIZED_CODE => {
+                    log::warn!("Unauthorized access");
+                    // todo need to reauthorize
+                    return;
+                }
+                _ => {
+                    log::warn!("WebSocket closed: {:?}", e);
+                }
             }
-            log::warn!("WebSocket closed: {:?}", e);
             // reconnect
             ws_manager_clone
                 .borrow_mut()
@@ -172,6 +188,7 @@ impl WebSocketManager {
             closure.forget();
         } else {
             log::error!("Reached maximum reconnect attempts");
+            Dispatch::<ConnectState>::global().set(ConnectState::DisConnect);
         }
     }
 

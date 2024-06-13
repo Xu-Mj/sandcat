@@ -325,3 +325,11 @@ impl Display for ShowRight {
         }
     }
 }
+
+#[derive(Default, Debug, Clone, PartialEq, Store)]
+pub enum ConnectState {
+    #[default]
+    DisConnect,
+    Connecting,
+    Connected,
+}
