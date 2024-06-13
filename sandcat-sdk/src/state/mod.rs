@@ -332,5 +332,4 @@ pub enum ConnectState {
     DisConnect,
     Connecting,
     Connected,
-    Reconnecting,
 }
