@@ -113,6 +113,10 @@ impl<'a> UserApi for UserHttp<'a> {
             .success()?;
         Ok(())
     }
+
+    async fn refresh_token(&self, _user_id: &str) -> Result<String, JsValue> {
+        Ok(String::new())
+    }
 }
 
 /* // 根据id查询用户信息

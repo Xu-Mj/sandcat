@@ -19,5 +19,8 @@ pub trait UserApi {
     ) -> Result<Option<UserWithMatchType>, JsValue>;
 
     async fn signin(&self, req: LoginRequest) -> Result<LoginResp, JsValue>;
+
     async fn signout(&self, user_id: &str) -> Result<(), JsValue>;
+
+    async fn refresh_token(&self, user_id: &str) -> Result<String, JsValue>;
 }

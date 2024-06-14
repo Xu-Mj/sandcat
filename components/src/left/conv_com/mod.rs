@@ -5,8 +5,9 @@ mod handle_offline_msg;
 
 use std::{cell::RefCell, rc::Rc};
 
+use base64::prelude::*;
 use fluent::{FluentBundle, FluentResource};
-// use gloo::timers::callback::Interval;
+use gloo::timers::callback::Timeout;
 use indexmap::IndexMap;
 use log::error;
 use wasm_bindgen_futures::spawn_local;
@@ -19,10 +20,12 @@ use i18n::{
 };
 use sandcat_sdk::{
     api,
+    db::{REFRESH_TOKEN, TOKEN},
     model::{
         conversation::Conversation,
         message::{Msg, SingleCall},
         seq::Seq,
+        user::Claims,
         CommonProps, ComponentType, ContentType, CurrentItem, RightContentType,
     },
     state::{
@@ -90,8 +93,8 @@ pub struct Chats {
     touch_start: i32,
     is_mobile: bool,
     is_knocked: bool,
-    // token_getter: Option<Interval>,
-    // refresh_token_getter: Option<Interval>,
+    token_getter: Option<Timeout>,
+    refresh_token_getter: Option<Timeout>,
 }
 
 impl Chats {
@@ -174,6 +177,11 @@ impl Chats {
 
         let _update_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(ChatsMsg::UpdateConvStateChanged));
+
+        // validate token
+        Self::validate_token(ctx, false);
+        Self::validate_token(ctx, true);
+
         Self {
             call_msg: SingleCall::default(),
             ws,
@@ -199,9 +207,56 @@ impl Chats {
             touch_start: 0,
             is_mobile,
             is_knocked: false,
-            // token_getter: None,
-            // refresh_token_getter: None,
+            token_getter: None,
+            refresh_token_getter: None,
         }
+    }
+
+    fn validate_token(ctx: &Context<Self>, is_refresh: bool) {
+        let key = if is_refresh { REFRESH_TOKEN } else { TOKEN };
+        let token = utils::get_local_storage(key).unwrap();
+        if let Some(claim) = Self::decode_jwt(&token) {
+            if Self::should_refresh(claim.exp) {
+                // refresh token
+                let user_id = ctx.props().user_id.clone();
+                ctx.link().send_future(async move {
+                    match api::users().refresh_token(&user_id).await {
+                        Ok(token) => {
+                            utils::set_local_storage(key, &token).unwrap();
+                            ChatsMsg::UpdateToken(token, is_refresh)
+                        }
+                        Err(e) => {
+                            error!("refresh token error: {:?}", e);
+                            ChatsMsg::None
+                        }
+                    }
+                });
+            } else {
+                ctx.link()
+                    .send_message(ChatsMsg::UpdateToken(token, is_refresh))
+            }
+        }
+    }
+
+    fn should_refresh(exp: u64) -> bool {
+        let now = chrono::Utc::now().timestamp() as u64;
+        if exp - now < 60 {
+            return true;
+        }
+        false
+    }
+
+    fn decode_jwt(token: &str) -> Option<Claims> {
+        let parts: Vec<&str> = token.split('.').collect();
+        if parts.len() != 3 {
+            return None;
+        }
+
+        BASE64_STANDARD_NO_PAD
+            .decode(parts[1])
+            .map_err(|e| log::error!("decode jwt error: {:?}", e))
+            .ok()
+            .and_then(|decoded| serde_json::from_slice::<Claims>(&decoded).ok())
     }
 
     pub fn send_msg(&self, msg: Msg) {
@@ -446,5 +501,23 @@ fn get_msg_type(
         ContentType::AudioCall => AttrValue::from(tr!(bundle, "audio_call")),
         ContentType::Audio => AttrValue::from(tr!(bundle, "audio")),
         ContentType::Error => AttrValue::from(tr!(bundle, "error")),
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use base64::Engine;
+    use sandcat_sdk::model::user::Claims;
+
+    #[test]
+    fn test_get_msg_type() {
+        let s = "eyJzdWIiOiJ4bWoiLCJleHAiOjE3MTg1MDMyMjc3NTcsImlhdCI6MTcxODMzMDQyNzc1N30";
+        let claims = base64::engine::general_purpose::URL_SAFE
+            .decode(s)
+            .map_err(|e| println!("decode jwt error: {:?}", e))
+            .ok()
+            .and_then(|decoded| serde_json::from_slice::<Claims>(&decoded).ok());
+
+        println!("claims: {:?}", claims);
     }
 }

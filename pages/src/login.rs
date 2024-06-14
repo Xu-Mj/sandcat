@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use base64::engine::general_purpose::STANDARD;
+use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use fluent::{FluentBundle, FluentResource};
 use icons::{MoonIcon, SunIcon};
@@ -93,7 +93,7 @@ impl Component for Login {
                 let pwd = self.pwd_ref.cast::<HtmlInputElement>().unwrap().value();
 
                 ctx.link().send_future(async move {
-                    let password = STANDARD.encode(pwd);
+                    let password = BASE64_STANDARD_NO_PAD.encode(pwd);
                     let resp = api::users()
                         .signin(LoginRequest { account, password })
                         .await;
