@@ -1,6 +1,8 @@
 use wasm_bindgen::JsValue;
 
-use crate::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
+use crate::model::user::{
+    LoginRequest, LoginResp, User, UserRegister, UserUpdate, UserWithMatchType,
+};
 
 #[async_trait::async_trait(?Send)]
 pub trait UserApi {
@@ -15,4 +17,10 @@ pub trait UserApi {
         pattern: String,
         search_user: &str,
     ) -> Result<Option<UserWithMatchType>, JsValue>;
+
+    async fn signin(&self, req: LoginRequest) -> Result<LoginResp, JsValue>;
+
+    async fn signout(&self, user_id: &str) -> Result<(), JsValue>;
+
+    async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String, JsValue>;
 }

@@ -169,3 +169,24 @@ pub struct UserRegister {
     pub email: String,
     pub code: String,
 }
+
+#[derive(Deserialize)]
+pub struct LoginResp {
+    pub user: User,
+    pub token: String,
+    pub refresh_token: String,
+    pub ws_addr: String,
+}
+
+#[derive(Serialize)]
+pub struct LoginRequest {
+    pub account: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String,
+    pub exp: u64,
+    pub iat: u64,
+}

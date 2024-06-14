@@ -1,12 +1,10 @@
 use std::rc::Rc;
 
-use base64::engine::general_purpose::STANDARD;
+use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use fluent::{FluentBundle, FluentResource};
-use gloo::utils::window;
 use icons::{MoonIcon, SunIcon};
-use serde::{Deserialize, Serialize};
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -14,9 +12,9 @@ use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
-use sandcat_sdk::db::{self, DB_NAME, TOKEN, WS_ADDR};
+use sandcat_sdk::db::{self, DB_NAME, REFRESH_TOKEN, TOKEN, WS_ADDR};
 use sandcat_sdk::model::page::Page;
-use sandcat_sdk::model::user::User;
+use sandcat_sdk::model::user::LoginRequest;
 use sandcat_sdk::state::{I18nState, ThemeState};
 use utils::tr;
 
@@ -44,40 +42,6 @@ pub enum LoginState {
     Nothing,
 }
 
-async fn login_simulate(account: String, mut password: String) -> Result<Response, JsValue> {
-    password = STANDARD.encode(password);
-    let body = serde_json::to_string(&LoginRequest { account, password }).unwrap();
-    let res = reqwasm::http::Request::post("/api/user/login")
-        .header("Content-Type", "application/json")
-        .body(body)
-        .send()
-        .await
-        .map_err(|err| {
-            log::error!("send request error: {:?}", err);
-            JsValue::from(err.to_string())
-        })?
-        .json()
-        .await
-        .map_err(|err| {
-            log::error!("send request error: {:?}", err);
-            JsValue::from(err.to_string())
-        })?;
-    Ok(res)
-}
-
-#[derive(Deserialize)]
-pub struct Response {
-    user: User,
-    token: String,
-    ws_addr: String,
-}
-
-#[derive(Serialize)]
-pub struct LoginRequest {
-    pub account: String,
-    pub password: String,
-}
-
 // 模拟输入写入数据库
 async fn init_db(id: AttrValue) {
     // 拉取联系人
@@ -98,10 +62,10 @@ impl Component for Login {
 
     type Properties = ();
 
-    fn create(_ctx: &Context<Self>) -> Self {
+    fn create(ctx: &Context<Self>) -> Self {
         // load theme
         let theme =
-            Dispatch::<ThemeState>::global().subscribe(_ctx.link().callback(LoginMsg::SwitchTheme));
+            Dispatch::<ThemeState>::global().subscribe(ctx.link().callback(LoginMsg::SwitchTheme));
         // load the i18n bundle
         let lang = Dispatch::<I18nState>::global().get().lang;
         let res = match lang {
@@ -129,11 +93,14 @@ impl Component for Login {
                 let pwd = self.pwd_ref.cast::<HtmlInputElement>().unwrap().value();
 
                 ctx.link().send_future(async move {
-                    let res = login_simulate(account, pwd).await;
-                    if res.is_err() {
+                    let password = BASE64_STANDARD_NO_PAD.encode(pwd);
+                    let resp = api::users()
+                        .signin(LoginRequest { account, password })
+                        .await;
+                    if resp.is_err() {
                         return LoginMsg::Failed;
                     }
-                    let res = res.unwrap();
+                    let res = resp.unwrap();
                     let user = res.user;
                     // user.login = true;
 
@@ -144,18 +111,10 @@ impl Component for Login {
                     // 将用户id写入本地文件
                     //登录成功，初始化数据库
 
-                    window()
-                        .local_storage()
-                        .unwrap()
-                        .unwrap()
-                        .set(WS_ADDR, res.ws_addr.as_str())
-                        .unwrap();
-                    window()
-                        .local_storage()
-                        .unwrap()
-                        .unwrap()
-                        .set(TOKEN, res.token.as_str())
-                        .unwrap();
+                    utils::set_local_storage(WS_ADDR, &res.ws_addr).unwrap();
+                    utils::set_local_storage(TOKEN, &res.token).unwrap();
+                    utils::set_local_storage(REFRESH_TOKEN, &res.refresh_token).unwrap();
+
                     // 初始化数据库
                     db::init_db().await;
                     init_db(id.clone()).await;

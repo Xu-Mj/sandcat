@@ -131,3 +131,20 @@ pub fn set_font_size(size: &str) {
 pub fn get_avatar_url(avatar_id: &str) -> String {
     format!("/api/file/avatar/get/{avatar_id}")
 }
+
+pub fn set_local_storage(name: &str, value: &str) -> Result<(), JsValue> {
+    window()
+        .local_storage()?
+        .ok_or(JsValue::from("localStorage is not available."))?
+        .set(name, value)?;
+    Ok(())
+}
+
+pub fn get_local_storage(name: &str) -> Result<String, JsValue> {
+    let value = window()
+        .local_storage()?
+        .ok_or(JsValue::from("localStorage is not available."))?
+        .get(name)?
+        .ok_or(JsValue::from("Token not found."))?;
+    Ok(value)
+}

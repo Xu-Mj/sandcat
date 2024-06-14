@@ -52,7 +52,7 @@ pub enum Msg {
     Loaded(String),
     Wheel(WheelEvent),
     MouseDown(MouseEvent),
-    MouseUp(MouseEvent),
+    MouseUp,
     MouseMove(MouseEvent),
     TouchStart(TouchEvent),
     TouchMove(TouchEvent),
@@ -158,7 +158,7 @@ impl Component for Avatar {
                 self.start_y = event.client_y() as f64;
                 true
             }
-            Msg::MouseUp(_) => {
+            Msg::MouseUp => {
                 self.dragging = false;
                 true
             }
@@ -284,9 +284,7 @@ impl Component for Avatar {
         let on_mousedown = ctx
             .link()
             .callback(|e: web_sys::MouseEvent| Msg::MouseDown(e));
-        let on_mouseup = ctx
-            .link()
-            .callback(|e: web_sys::MouseEvent| Msg::MouseUp(e));
+        let on_mouseup = ctx.link().callback(|_: web_sys::MouseEvent| Msg::MouseUp);
         let on_mousemove = ctx
             .link()
             .callback(|e: web_sys::MouseEvent| Msg::MouseMove(e));

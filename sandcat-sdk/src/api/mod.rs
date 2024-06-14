@@ -1,6 +1,8 @@
 use gloo::utils::window;
 use std::sync::OnceLock;
 
+use crate::db::TOKEN;
+
 use self::{
     file::FileApi,
     friend::FriendApi,
@@ -19,7 +21,7 @@ mod message;
 mod seq;
 mod user;
 
-pub static TOKEN: &str = "ACCESS_TOKEN";
+// pub static TOKEN: &str = "ACCESS_TOKEN";
 pub const AUTHORIZE_HEADER: &str = "Authorization";
 pub static TOKEN_VALUE: OnceLock<String> = OnceLock::new();
 

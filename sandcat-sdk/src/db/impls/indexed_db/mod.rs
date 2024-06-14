@@ -21,6 +21,7 @@ use std::{
 // 用户登录时检查对应的数据库是否存在，不存在则创建
 pub static WS_ADDR: &str = "WS_ADDR";
 pub static TOKEN: &str = "ACCESS_TOKEN";
+pub static REFRESH_TOKEN: &str = "REFRESH_TOKEN";
 pub static DB_NAME: OnceLock<String> = OnceLock::new();
 // 定义表名常量
 pub const FRIEND_TABLE_NAME: &str = "friends";

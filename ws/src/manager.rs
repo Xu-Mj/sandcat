@@ -1,6 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use sandcat_sdk::db::TOKEN;
 use sandcat_sdk::state::ConnectState;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
@@ -67,7 +68,15 @@ impl WebSocketManager {
             return;
         }
 
-        let ws = WebSocket::new(ws_manager.borrow().url.as_str()).unwrap();
+        let ws = WebSocket::new(
+            format!(
+                "{}/{}",
+                ws_manager.borrow().url,
+                utils::get_local_storage(TOKEN).unwrap()
+            )
+            .as_str(),
+        )
+        .unwrap();
 
         // send connecting state
         Dispatch::<ConnectState>::global().set(ConnectState::Connecting);

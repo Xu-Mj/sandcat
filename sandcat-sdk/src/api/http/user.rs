@@ -2,7 +2,9 @@ use gloo_net::http::Request;
 use serde::Serialize;
 use wasm_bindgen::JsValue;
 
-use crate::model::user::{User, UserRegister, UserUpdate, UserWithMatchType};
+use crate::model::user::{
+    LoginRequest, LoginResp, User, UserRegister, UserUpdate, UserWithMatchType,
+};
 
 use crate::api::user::UserApi;
 
@@ -86,6 +88,42 @@ impl<'a> UserApi for UserHttp<'a> {
             .await
             .map_err(|err| JsValue::from(err.to_string()))?;
         Ok(user)
+    }
+
+    async fn signin(&self, req: LoginRequest) -> Result<LoginResp, JsValue> {
+        let resp = Request::post("/api/user/login")
+            .json(&req)
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
+            .json()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?;
+        Ok(resp)
+    }
+
+    async fn signout(&self, user_id: &str) -> Result<(), JsValue> {
+        Request::delete(format!("/api/user/{}", user_id).as_str())
+            .header(&self.auth_header, &self.get_token())
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?;
+        Ok(())
+    }
+
+    async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String, JsValue> {
+        let token = Request::get(format!("/api/user/refresh_token/{token}/{is_refresh}").as_ref())
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
+            .text()
+            .await
+            .map_err(|e| JsValue::from(e.to_string()))?;
+        Ok(token)
     }
 }
 

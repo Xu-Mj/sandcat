@@ -1,7 +1,9 @@
 use std::rc::Rc;
 
+use gloo::timers::callback::Timeout;
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
+use sandcat_sdk::api;
 use sandcat_sdk::model::page::Page;
 use utils::tr;
 use wasm_bindgen_futures::spawn_local;
@@ -9,7 +11,7 @@ use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
-use sandcat_sdk::db;
+use sandcat_sdk::db::{self, REFRESH_TOKEN, TOKEN};
 use sandcat_sdk::model::conversation::Conversation;
 use sandcat_sdk::model::group::Group;
 use sandcat_sdk::model::message::Msg;
@@ -67,6 +69,8 @@ pub enum ChatsMsg {
     OnTouchEnd(TouchEvent),
     KnockOff,
     Logout,
+    UpdateToken(String, bool),
+    RefreshToken(bool),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -297,6 +301,42 @@ impl Component for Chats {
                 if let Some(navigator) = ctx.link().navigator() {
                     navigator.push(&Page::Login);
                 }
+                false
+            }
+            ChatsMsg::UpdateToken(token, is_refresh) => {
+                // set refresh timer
+                if let Some(claims) = Self::decode_jwt(&token) {
+                    let ctx = ctx.link().clone();
+                    let timeout = claims.exp - chrono::Utc::now().timestamp() as u64 - 60;
+                    if is_refresh {
+                        self.refresh_token_getter =
+                            Some(Timeout::new((timeout as u32) * 1000, move || {
+                                ctx.send_message(ChatsMsg::RefreshToken(is_refresh));
+                            }));
+                    } else {
+                        self.token_getter =
+                            Some(Timeout::new((timeout as u32) * 1000, move || {
+                                ctx.send_message(ChatsMsg::RefreshToken(is_refresh));
+                            }));
+                    }
+                }
+                false
+            }
+            ChatsMsg::RefreshToken(is_refresh) => {
+                ctx.link().send_future(async move {
+                    let refresh_token = utils::get_local_storage(REFRESH_TOKEN).unwrap();
+                    match api::users().refresh_token(&refresh_token, is_refresh).await {
+                        Ok(token) => {
+                            let key = if is_refresh { REFRESH_TOKEN } else { TOKEN };
+                            utils::set_local_storage(key, &token).unwrap();
+                            ChatsMsg::UpdateToken(token, is_refresh)
+                        }
+                        Err(err) => {
+                            log::error!("refresh token error: {:?}", err);
+                            ChatsMsg::None
+                        }
+                    }
+                });
                 false
             }
         }
