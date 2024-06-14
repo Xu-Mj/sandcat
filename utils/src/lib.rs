@@ -132,7 +132,7 @@ pub fn get_avatar_url(avatar_id: &str) -> String {
     format!("/api/file/avatar/get/{avatar_id}")
 }
 
-pub fn set_token(name: &str, value: &str) -> Result<(), JsValue> {
+pub fn set_local_storage(name: &str, value: &str) -> Result<(), JsValue> {
     window()
         .local_storage()?
         .ok_or(JsValue::from("localStorage is not available."))?
@@ -140,28 +140,11 @@ pub fn set_token(name: &str, value: &str) -> Result<(), JsValue> {
     Ok(())
 }
 
-pub fn get_token(name: &str) -> Result<String, JsValue> {
-    let token = window()
+pub fn get_local_storage(name: &str) -> Result<String, JsValue> {
+    let value = window()
         .local_storage()?
         .ok_or(JsValue::from("localStorage is not available."))?
         .get(name)?
         .ok_or(JsValue::from("Token not found."))?;
-    Ok(token)
-}
-
-pub fn get_ws_addr(name: &str) -> Result<String, JsValue> {
-    let addr = window()
-        .local_storage()?
-        .ok_or(JsValue::from("localStorage is not available."))?
-        .get(name)?
-        .ok_or(JsValue::from("Token not found."))?;
-    Ok(addr)
-}
-
-pub fn set_ws_addr(name: &str, value: &str) -> Result<(), JsValue> {
-    window()
-        .local_storage()?
-        .ok_or(JsValue::from("localStorage is not available."))?
-        .set(name, value)?;
-    Ok(())
+    Ok(value)
 }

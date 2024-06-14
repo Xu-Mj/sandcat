@@ -6,7 +6,6 @@ mod handle_offline_msg;
 use std::{cell::RefCell, rc::Rc};
 
 use fluent::{FluentBundle, FluentResource};
-use gloo::utils::window;
 use indexmap::IndexMap;
 use log::error;
 use wasm_bindgen_futures::spawn_local;
@@ -148,20 +147,8 @@ impl Chats {
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SwitchLanguage));
         let lang_state = lang_dispatch.get();
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
-        let token = window()
-            .local_storage()
-            .unwrap()
-            .unwrap()
-            .get(TOKEN)
-            .unwrap()
-            .unwrap();
-        let addr = window()
-            .local_storage()
-            .unwrap()
-            .unwrap()
-            .get(WS_ADDR)
-            .unwrap()
-            .unwrap();
+        let token = utils::get_local_storage(TOKEN).unwrap();
+        let addr = utils::get_local_storage(WS_ADDR).unwrap();
         let platform = Dispatch::<MobileState>::global().get();
         let is_mobile = platform.is_mobile();
         let url = format!(
