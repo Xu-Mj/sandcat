@@ -114,8 +114,17 @@ impl<'a> UserApi for UserHttp<'a> {
         Ok(())
     }
 
-    async fn refresh_token(&self, _user_id: &str) -> Result<String, JsValue> {
-        Ok(String::new())
+    async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String, JsValue> {
+        let token = Request::get(format!("/api/user/refresh_token/{token}/{is_refresh}").as_ref())
+            .header(&self.auth_header, &self.get_token())
+            .send()
+            .await
+            .map_err(|err| JsValue::from(err.to_string()))?
+            .success()?
+            .text()
+            .await
+            .map_err(|e| JsValue::from(e.to_string()))?;
+        Ok(token)
     }
 }
 

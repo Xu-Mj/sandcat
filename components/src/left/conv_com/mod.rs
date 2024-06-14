@@ -218,9 +218,14 @@ impl Chats {
         if let Some(claim) = Self::decode_jwt(&token) {
             if Self::should_refresh(claim.exp) {
                 // refresh token
-                let user_id = ctx.props().user_id.clone();
                 ctx.link().send_future(async move {
-                    match api::users().refresh_token(&user_id).await {
+                    match api::users()
+                        .refresh_token(
+                            &utils::get_local_storage(REFRESH_TOKEN).unwrap(),
+                            is_refresh,
+                        )
+                        .await
+                    {
                         Ok(token) => {
                             utils::set_local_storage(key, &token).unwrap();
                             ChatsMsg::UpdateToken(token, is_refresh)

@@ -308,7 +308,6 @@ impl Component for Chats {
                 if let Some(claims) = Self::decode_jwt(&token) {
                     let ctx = ctx.link().clone();
                     let timeout = claims.exp - chrono::Utc::now().timestamp() as u64 - 60;
-                    log::debug!("refresh token timeout: {}", timeout);
                     if is_refresh {
                         self.refresh_token_getter =
                             Some(Timeout::new((timeout as u32) * 1000, move || {
@@ -324,9 +323,9 @@ impl Component for Chats {
                 false
             }
             ChatsMsg::RefreshToken(is_refresh) => {
-                let user_id = ctx.props().user_id.clone();
                 ctx.link().send_future(async move {
-                    match api::users().refresh_token(&user_id).await {
+                    let refresh_token = utils::get_local_storage(REFRESH_TOKEN).unwrap();
+                    match api::users().refresh_token(&refresh_token, is_refresh).await {
                         Ok(token) => {
                             let key = if is_refresh { REFRESH_TOKEN } else { TOKEN };
                             utils::set_local_storage(key, &token).unwrap();

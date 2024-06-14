@@ -22,5 +22,5 @@ pub trait UserApi {
 
     async fn signout(&self, user_id: &str) -> Result<(), JsValue>;
 
-    async fn refresh_token(&self, user_id: &str) -> Result<String, JsValue>;
+    async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String, JsValue>;
 }
