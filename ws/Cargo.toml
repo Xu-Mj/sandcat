@@ -13,8 +13,9 @@ log = "0.4.6"
 wasm-bindgen = { version = "0.2", features = ["serde-serialize"] }
 yew = { version = "0.21", features = ["csr"] }
 yewdux = { version = "0.10.0", features = ["doctests"] }
-sandcat-sdk = { path = "../sandcat-sdk" }
 
+sandcat-sdk = { path = "../sandcat-sdk" }
+utils = { path = "../utils" }
 [dependencies.web-sys]
 version = "0.3"
 # We need to enable all the web-sys features we want to use!

@@ -6,6 +6,7 @@ mod handle_offline_msg;
 use std::{cell::RefCell, rc::Rc};
 
 use fluent::{FluentBundle, FluentResource};
+// use gloo::timers::callback::Interval;
 use indexmap::IndexMap;
 use log::error;
 use wasm_bindgen_futures::spawn_local;
@@ -30,7 +31,7 @@ use sandcat_sdk::{
     },
 };
 use sandcat_sdk::{
-    db::{self, TOKEN, WS_ADDR},
+    db::{self, WS_ADDR},
     state::MobileState,
 };
 use utils::tr;
@@ -89,6 +90,8 @@ pub struct Chats {
     touch_start: i32,
     is_mobile: bool,
     is_knocked: bool,
+    // token_getter: Option<Interval>,
+    // refresh_token_getter: Option<Interval>,
 }
 
 impl Chats {
@@ -147,15 +150,13 @@ impl Chats {
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SwitchLanguage));
         let lang_state = lang_dispatch.get();
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
-        let token = utils::get_local_storage(TOKEN).unwrap();
         let addr = utils::get_local_storage(WS_ADDR).unwrap();
         let platform = Dispatch::<MobileState>::global().get();
         let is_mobile = platform.is_mobile();
         let url = format!(
-            "{}/{}/conn/{}/{}/{}",
+            "{}/{}/conn/{}/{}",
             addr,
             id.clone(),
-            token,
             id,
             (*platform).clone() as i32
         );
@@ -198,6 +199,8 @@ impl Chats {
             touch_start: 0,
             is_mobile,
             is_knocked: false,
+            // token_getter: None,
+            // refresh_token_getter: None,
         }
     }
 
