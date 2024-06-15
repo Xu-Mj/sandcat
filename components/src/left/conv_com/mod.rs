@@ -164,10 +164,12 @@ impl Chats {
             (*platform).clone() as i32
         );
         let knockoff = ctx.link().callback(|_| ChatsMsg::KnockOff);
+        let logout = ctx.link().callback(|_| ChatsMsg::Unauthorized);
         let ws = Rc::new(RefCell::new(WebSocketManager::new(
             url,
             rec_msg_listener,
             knockoff,
+            logout,
         )));
         let res = match lang_state.lang {
             LanguageType::ZhCN => zh_cn::CONVERSATION,
