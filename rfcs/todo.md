@@ -17,3 +17,4 @@
 - need to hold the closure about db,
 - register page need to add check failed message for user input.
 - need to update group member info when we received a group message
+- custom error type

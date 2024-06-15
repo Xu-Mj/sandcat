@@ -25,7 +25,8 @@ pub struct WebSocketManager {
     reconnect_interval: i32,
     receive_callback: Callback<Msg>,
     knockoff_callback: Callback<()>,
-    // in case of memory leaks
+    logout_callback: Callback<()>,
+    // prevent memory leaks
     on_open: Option<Closure<dyn FnMut()>>,
     on_close: Option<Closure<dyn FnMut(CloseEvent)>>,
     on_error: Option<Closure<dyn FnMut(ErrorEvent)>>,
@@ -43,6 +44,7 @@ impl WebSocketManager {
         url: String,
         receive_callback: Callback<Msg>,
         knockoff_callback: Callback<()>,
+        logout_callback: Callback<()>,
     ) -> Self {
         Self {
             url,
@@ -52,6 +54,7 @@ impl WebSocketManager {
             reconnect_interval: 1000, // 初始重连间隔为1000毫秒
             receive_callback,
             knockoff_callback,
+            logout_callback,
             on_open: None,
             on_close: None,
             on_error: None,
@@ -140,6 +143,7 @@ impl WebSocketManager {
                 UNAUTHORIZED_CODE => {
                     log::warn!("Unauthorized access");
                     // todo need to reauthorize
+                    ws_manager_clone.borrow().logout_callback.emit(());
                     return;
                 }
                 _ => {

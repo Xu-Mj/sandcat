@@ -71,6 +71,8 @@ pub enum ChatsMsg {
     Logout,
     UpdateToken(String, bool),
     RefreshToken(bool),
+    // unauthorized, go to login page
+    Unauthorized,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -337,6 +339,12 @@ impl Component for Chats {
                         }
                     }
                 });
+                false
+            }
+            ChatsMsg::Unauthorized => {
+                if let Some(navigator) = ctx.link().navigator() {
+                    navigator.push(&Page::Login);
+                }
                 false
             }
         }

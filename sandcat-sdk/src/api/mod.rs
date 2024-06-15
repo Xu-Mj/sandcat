@@ -1,6 +1,3 @@
-use gloo::utils::window;
-use std::sync::OnceLock;
-
 use crate::db::TOKEN;
 
 use self::{
@@ -21,22 +18,10 @@ mod message;
 mod seq;
 mod user;
 
-// pub static TOKEN: &str = "ACCESS_TOKEN";
 pub const AUTHORIZE_HEADER: &str = "Authorization";
-pub static TOKEN_VALUE: OnceLock<String> = OnceLock::new();
 
 pub fn token() -> String {
-    let token = TOKEN_VALUE
-        .get_or_init(|| {
-            window()
-                .local_storage()
-                .unwrap()
-                .unwrap()
-                .get(TOKEN)
-                .unwrap()
-                .unwrap()
-        })
-        .to_string();
+    let token = utils::get_local_storage(TOKEN).unwrap();
     format!("Bearer {}", token)
 }
 
