@@ -293,7 +293,7 @@ input {
 
 .friend-card {
     width: 18rem;
-    height: 22rem;
+    height: 16rem;
     display: flex;
     flex-direction: column;
     padding: 1rem;
