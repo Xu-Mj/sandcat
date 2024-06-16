@@ -668,7 +668,6 @@
         height: 100%;
         position: absolute;
         background-color: rgba(255, 255, 255, .6);
-        padding: auto;
         text-align: center;
     }
 
@@ -711,7 +710,6 @@
                 color: var(--color-text);
                 width: 6rem;
                 height: 2rem;
-                padding: auto;
                 cursor: pointer;
             }
         }
@@ -766,7 +764,6 @@
                     color: var(--color-text);
                     width: 6rem;
                     height: 2rem;
-                    padding: auto;
                     cursor: pointer;
                 }
             }
@@ -860,7 +857,7 @@
         position: relative;
 
         & > *:not(:last-child, :first-child, :nth-child(2)) {
-            border-bottom: 1px solid gray;
+            border-bottom: 1px solid var(--color-border);
         }
 
         .postcard-setting {
