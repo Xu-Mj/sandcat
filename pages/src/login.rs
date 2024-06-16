@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
+use components::dialog::Dialog;
 use fluent::{FluentBundle, FluentResource};
 use icons::{MoonIcon, SunIcon};
 use wasm_bindgen::JsCast;
@@ -94,13 +95,16 @@ impl Component for Login {
 
                 ctx.link().send_future(async move {
                     let password = BASE64_STANDARD_NO_PAD.encode(pwd);
-                    let resp = api::users()
+                    let res = match api::users()
                         .signin(LoginRequest { account, password })
-                        .await;
-                    if resp.is_err() {
-                        return LoginMsg::Failed;
-                    }
-                    let res = resp.unwrap();
+                        .await
+                    {
+                        Ok(resp) => resp,
+                        Err(err) => {
+                            Dialog::error(&err.as_string().unwrap_or_default());
+                            return LoginMsg::Failed;
+                        }
+                    };
                     let user = res.user;
                     // user.login = true;
 

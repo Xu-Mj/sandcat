@@ -41,12 +41,6 @@ impl Component for RightClickPanel {
         }
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        if let Some(node) = self.node.cast::<HtmlDivElement>() {
-            let _ = node.focus();
-        }
-    }
-
     fn view(&self, ctx: &Context<Self>) -> Html {
         let style = format!("left: {}px; top: {}px;", ctx.props().x, ctx.props().y);
         let mute_str = if ctx.props().is_mute {
@@ -67,6 +61,12 @@ impl Component for RightClickPanel {
                     {mute_str}
                 </div>
             </div>
+        }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        if let Some(node) = self.node.cast::<HtmlDivElement>() {
+            let _ = node.focus();
         }
     }
 }

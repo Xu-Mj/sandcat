@@ -294,11 +294,13 @@ impl Chats {
             }
         }
 
+        // set right content type
+        if Dispatch::<ConvState>::global().get().conv.item_id == self.context_menu_pos.2 {
+            Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = CurrentItem::default());
+        }
+
         self.show_context_menu = false;
         self.context_menu_pos = (0, 0, AttrValue::default(), false);
-
-        // set right content type
-        Dispatch::<ConvState>::global().reduce_mut(|s| s.conv = CurrentItem::default());
     }
 
     fn mute(&mut self) -> bool {
