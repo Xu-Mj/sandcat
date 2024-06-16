@@ -23,6 +23,11 @@
         justify-content: center;
         align-items: center;
     }
+    .sign {
+        font-size: xx-large;
+        font-weight: bolder;
+        margin-bottom: 20px;
+    }
 
     .login-wrapper {
         width: 100%;
@@ -118,14 +123,6 @@
         transform: rotate(360deg);
     }
 }
-
-.sign {
-    font-size: xx-large;
-    font-weight: bolder;
-    margin-bottom: 20px;
-}
-
-
 
 /* 注册链接 */
 .login-register {
