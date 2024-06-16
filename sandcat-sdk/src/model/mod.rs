@@ -95,8 +95,6 @@ pub enum RightContentType {
     Friend,
     // 群组，包括会话与群组信息
     Group,
-    // 用户信息，todo考虑查找好友时使用浮窗的方式
-    UserInfo,
     // 好友请求列表
     FriendShipList,
     // 其他服务消息
@@ -129,8 +127,7 @@ impl Display for RightContentType {
             RightContentType::Friend => write!(f, "friend"),
             RightContentType::Group => write!(f, "group"),
             RightContentType::Default => write!(f, "default"),
-            RightContentType::UserInfo => write!(f, "user_info"),
-            RightContentType::FriendShipList => write!(f, "frienship_list"),
+            RightContentType::FriendShipList => write!(f, "friendship_list"),
             RightContentType::Service => write!(f, "service"),
         }
     }

@@ -838,25 +838,27 @@
     .pc-wrapper-size-mobile {
         width: 100%;
         height: 100%;
-        padding: 2rem 1rem 1rem;
+        padding: 5rem 1rem 1rem;
         justify-content: flex-start;
         align-items: center;
         gap: 1rem;
+
+        .postcard-setting {
+            width: 2rem;
+            height: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+            cursor: pointer;
+        }
     }
 
     .pc-wrapper-size {
         justify-content: center;
         align-items: center;
-    }
-
-    .pc-wrapper {
-        display: flex;
-        flex-direction: column;
-        position: relative;
-
-        & > *:not(:last-child, :first-child, :nth-child(2)) {
-            border-bottom: 1px solid var(--color-border);
-        }
 
         .postcard-setting {
             width: 2rem;
@@ -869,6 +871,17 @@
             top: -1rem;
             cursor: pointer;
         }
+    }
+
+    .pc-wrapper {
+        display: flex;
+        flex-direction: column;
+        position: relative;
+
+        & > *:not(:last-child, :first-child, :nth-child(2)) {
+            border-bottom: 1px solid var(--color-border);
+        }
+
 
         .set-drawer {
             position: absolute;

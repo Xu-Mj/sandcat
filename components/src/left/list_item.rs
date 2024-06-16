@@ -122,11 +122,6 @@ impl Component for ListItem {
                 true
             }
             ListItemMsg::FriendItemClicked => {
-                if ctx.props().conv_type == RightContentType::UserInfo {
-                    // 展示卡片
-
-                    return false;
-                }
                 if self.is_mobile {
                     Dispatch::<ShowRight>::global().set(ShowRight::Show);
                     // return false;

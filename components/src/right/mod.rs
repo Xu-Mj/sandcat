@@ -93,32 +93,27 @@ impl Right {
             self.cur_conv_info = None;
             return;
         }
-        match self.com_state.component_type {
-            ComponentType::Messages => {
-                log::debug!(
-                    "right conv content type:{:?}",
-                    self.conv_state.conv.content_type
-                );
-                match self.conv_state.conv.content_type {
-                    RightContentType::Default => {}
-                    RightContentType::Friend => {
-                        ctx.link().send_future(async move {
-                            let friend = db::db_ins().friends.get(id.as_str()).await;
-                            RightMsg::ContentChange(Some(Box::new(friend)))
-                        });
-                    }
-                    RightContentType::Group => {
-                        let ctx = ctx.link().clone();
-                        spawn_local(async move {
-                            if let Ok(Some(group)) = db::db_ins().groups.get(id.as_str()).await {
-                                ctx.send_message(RightMsg::ContentChange(Some(Box::new(group))));
-                            }
-                        });
-                    }
 
-                    _ => {}
+        match self.com_state.component_type {
+            ComponentType::Messages => match self.conv_state.conv.content_type {
+                RightContentType::Default => {}
+                RightContentType::Friend => {
+                    ctx.link().send_future(async move {
+                        let friend = db::db_ins().friends.get(id.as_str()).await;
+                        RightMsg::ContentChange(Some(Box::new(friend)))
+                    });
                 }
-            }
+                RightContentType::Group => {
+                    let ctx = ctx.link().clone();
+                    spawn_local(async move {
+                        if let Ok(Some(group)) = db::db_ins().groups.get(id.as_str()).await {
+                            ctx.send_message(RightMsg::ContentChange(Some(Box::new(group))));
+                        }
+                    });
+                }
+
+                _ => {}
+            },
 
             _ => self.cur_conv_info = None,
         }
@@ -409,9 +404,7 @@ impl Component for Right {
             ComponentType::Contacts => {
                 // 要根据右部内容类型绘制页面
                 match self.friend_list_state.friend.content_type {
-                    RightContentType::Friend
-                    | RightContentType::Group
-                    | RightContentType::UserInfo => {
+                    RightContentType::Friend | RightContentType::Group => {
                         html! {
                             <PostCard
                                 user_id={&self.state.login_user.id}
