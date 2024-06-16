@@ -383,7 +383,7 @@ impl Component for Recorder {
             let on_recorder_click = ctx.link().callback(|_| RecorderMsg::Prepare);
             html! {
                 <div class="recorder">
-                    <button class="btn" disabled={record_btn} onclick={on_recorder_click}>{tr!(self.i18n, "recorde")}</button>
+                    <button class="btn" disabled={record_btn} onclick={on_recorder_click}>{tr!(self.i18n, "record")}</button>
                     {error}
                     {voice}
                     {audio}

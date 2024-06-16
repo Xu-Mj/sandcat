@@ -167,7 +167,7 @@ verify_needed = FRIEND ENABLED THE FRIEND VERIFICATION, PLEASE PASS IT FIRST
 
 pub const RECORDER: &str = r#"
 press = press to speak
-recorde = rc
+record = record
 stop = stop
 send = send
 send_mobile = Release to send
