@@ -127,7 +127,7 @@ impl Component for AddFriend {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let content = if !self.is_searching {
             html! {
-                <div>{tr!(self.i18n, "search_prompt")}</div>
+                <div class="hint">{tr!(self.i18n, "search_prompt")}</div>
             }
         } else if self.result.is_none() {
             html! {<div class="no-result">{tr!(self.i18n, "no_result")}</div>}
