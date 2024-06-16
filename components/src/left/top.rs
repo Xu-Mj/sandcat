@@ -100,7 +100,6 @@ impl Component for Top {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        log::debug!("top view:{:?}", self.unread_state);
         let mut msg_class = "top-icon-selected";
         let msg_onclick = if self.com_state.component_type != ComponentType::Messages {
             msg_class = "hover top-icon";
@@ -161,15 +160,15 @@ impl Component for Top {
             top_right = html! {
                 <div class="top-right">
                     <span class={msg_class} onclick={msg_onclick}>
-                        <MessagesIcon />
+                        <MessagesIcon fill={"var(--color-text)"}/>
                         {msg_count}
                     </span>
                     <span class={contact_class} onclick={contact_onclick}>
-                        <ContactsIcon/>
+                        <ContactsIcon fill={"var(--color-text)"}/>
                         {contact_count}
                     </span>
                     <span class={setting_class} onclick={setting_onclick}>
-                        <SettingIcon />
+                        <SettingIcon fill={"var(--color-text)"}/>
                     </span>
                 </div>
             };
