@@ -133,7 +133,14 @@ impl Component for TopBar {
                    <label /* for={id} */ class="search-icon" {onclick}>
                     <SearchIcon />
                     </label>
-                   <input id={id} ref={self.search_node.clone()} class="search-input" type="search" placeholder={tr!(self.i18n, "search")} {onchange} {onkeydown} />
+                   <input
+                        id={id}
+                        ref={self.search_node.clone()}
+                        class="search-input"
+                        type="search"
+                        placeholder={tr!(self.i18n, "search")}
+                        {onchange}
+                        {onkeydown} />
                 </div>
                 <div class={plus_class} onclick={click_plus}>
                     {icon}

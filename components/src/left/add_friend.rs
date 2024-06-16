@@ -150,7 +150,7 @@ impl Component for AddFriend {
         html! {
             <>
                 <TopBar
-                    components_type={ComponentType::Setting}
+                    components_type={ComponentType::Default}
                     {search_callback}
                     {clean_callback}
                     {plus_click}

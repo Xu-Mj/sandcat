@@ -204,7 +204,6 @@ impl Component for Contacts {
                 true
             }
             ContactsMsg::NewFriendClicked => {
-                log::debug!("new friend clicked");
                 self.friendships_unread_count = 0;
                 // send friendship list event
                 self.friend_dispatch.reduce_mut(|s| {
