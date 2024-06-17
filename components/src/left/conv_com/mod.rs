@@ -245,8 +245,8 @@ impl Chats {
         }
     }
 
-    fn should_refresh(exp: u64) -> bool {
-        let now = chrono::Utc::now().timestamp() as u64;
+    fn should_refresh(exp: i64) -> bool {
+        let now = chrono::Utc::now().timestamp();
         if exp - now < 60 {
             return true;
         }

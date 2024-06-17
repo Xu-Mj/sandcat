@@ -309,7 +309,7 @@ impl Component for Chats {
                 // set refresh timer
                 if let Some(claims) = Self::decode_jwt(&token) {
                     let ctx = ctx.link().clone();
-                    let timeout = claims.exp - chrono::Utc::now().timestamp() as u64 - 60;
+                    let timeout = claims.exp - chrono::Utc::now().timestamp() - 60;
                     if is_refresh {
                         self.refresh_token_getter =
                             Some(Timeout::new((timeout as u32) * 1000, move || {

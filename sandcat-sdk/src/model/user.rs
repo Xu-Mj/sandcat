@@ -187,6 +187,6 @@ pub struct LoginRequest {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
-    pub exp: u64,
-    pub iat: u64,
+    pub exp: i64,
+    pub iat: i64,
 }
