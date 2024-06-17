@@ -32,7 +32,7 @@
     --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
     --vt-c-text-dark-1: var(--vt-c-white);
     --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
-
+    scrollbar-gutter: stable;
 }
 
 /* semantic color variables for this project */
@@ -767,12 +767,6 @@ input {
         }
 
         .button {
-            /* width: 6rem;
-            height: 1.5rem;
-            background-color: inherit;
-            color: inherit;
-            border: none;
-            cursor: pointer; */
             display: flex;
             justify-content: center;
             align-items: center;

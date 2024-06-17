@@ -6,30 +6,19 @@ use sandcat_sdk::model::message::SendStatus;
 use sandcat_sdk::state::AudioDownloadedState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
-use web_sys::Blob;
-use web_sys::BlobPropertyBag;
-use web_sys::HtmlAudioElement;
-use web_sys::HtmlElement;
-use web_sys::Url;
+use web_sys::{Blob, BlobPropertyBag, HtmlAudioElement, HtmlElement, Url};
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::LanguageType;
 use sandcat_sdk::db;
 use sandcat_sdk::model::friend::FriendStatus;
-use sandcat_sdk::model::message::GroupMsg;
-use sandcat_sdk::model::message::Message;
-use sandcat_sdk::model::message::Msg;
-use sandcat_sdk::model::message::SingleCall;
-use sandcat_sdk::model::ContentType;
-use sandcat_sdk::model::ItemInfo;
-use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::MobileState;
-use sandcat_sdk::state::RecMessageState;
-use sandcat_sdk::state::RefreshMsgListState;
-use sandcat_sdk::state::SendAudioMsgState;
-use sandcat_sdk::state::SendMessageState;
-use sandcat_sdk::state::SendResultState;
+use sandcat_sdk::model::message::{GroupMsg, Message, Msg, SingleCall};
+use sandcat_sdk::model::{ContentType, ItemInfo, RightContentType};
+use sandcat_sdk::state::{
+    MobileState, RecMessageState, RefreshMsgListState, SendAudioMsgState, SendMessageState,
+    SendResultState,
+};
 
 use crate::dialog::Dialog;
 use crate::right::{msg_item::MsgItem, sender::Sender};
@@ -403,25 +392,6 @@ impl Component for MessageList {
         self_
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        if self.scroll_state == ScrollState::Bottom {
-            if let Some(node) = self.node_ref.cast::<HtmlElement>() {
-                node.set_scroll_top(0);
-                self.scroll_state = ScrollState::Bottom;
-            }
-        }
-    }
-
-    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        self.reset();
-        self.query_friend(ctx);
-        self.query(ctx);
-        // 这里不能让组件重新绘制，
-        // 因为query方法会触发组件的渲染，
-        // 重复渲染会导致页面出现难以预料的问题
-        false
-    }
-
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         let friend_id = ctx.props().friend_id.clone();
         match msg {
@@ -527,6 +497,16 @@ impl Component for MessageList {
         }
     }
 
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+        self.reset();
+        self.query_friend(ctx);
+        self.query(ctx);
+        // 这里不能让组件重新绘制，
+        // 因为query方法会触发组件的渲染，
+        // 重复渲染会导致页面出现难以预料的问题
+        false
+    }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         if self.friend.is_none() {
             return html!();
@@ -622,6 +602,15 @@ impl Component for MessageList {
                     lang={ctx.props().lang}
                 />
             </>
+        }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        if self.scroll_state == ScrollState::Bottom {
+            if let Some(node) = self.node_ref.cast::<HtmlElement>() {
+                node.set_scroll_top(0);
+                self.scroll_state = ScrollState::Bottom;
+            }
         }
     }
 }
