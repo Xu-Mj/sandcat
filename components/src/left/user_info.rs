@@ -40,7 +40,7 @@ pub enum UserInfoComMsg {
 #[derive(Debug, Clone, PartialEq)]
 pub enum FriendShipRequestState {
     NotApply,
-    Pendding,
+    Pending,
     Success,
     Fail,
 }
@@ -57,8 +57,8 @@ impl Component for UserInfoCom {
         };
         let i18n = utils::create_bundle(res);
         Self {
-            node: Default::default(),
             i18n,
+            node: Default::default(),
             apply_node: NodeRef::default(),
             remark_node: NodeRef::default(),
             apply_state: FriendShipRequestState::NotApply,
@@ -92,7 +92,7 @@ impl Component for UserInfoCom {
 
                 log::debug!("发送好友申请:{:?}", &new_friend);
                 ctx.link().send_message(UserInfoComMsg::ApplyFriendResult(
-                    FriendShipRequestState::Pendding,
+                    FriendShipRequestState::Pending,
                 ));
 
                 // send friendship state to friendship list
@@ -115,8 +115,8 @@ impl Component for UserInfoCom {
                 false
             }
             UserInfoComMsg::ApplyFriendResult(state) => match state {
-                FriendShipRequestState::Pendding => {
-                    self.apply_state = FriendShipRequestState::Pendding;
+                FriendShipRequestState::Pending => {
+                    self.apply_state = FriendShipRequestState::Pending;
                     true
                 }
                 FriendShipRequestState::Fail => {
@@ -136,7 +136,7 @@ impl Component for UserInfoCom {
         // 根据参数渲染组件
         let apply_btn = match self.apply_state {
             FriendShipRequestState::NotApply => tr!(self.i18n, "apply"),
-            FriendShipRequestState::Pendding => tr!(self.i18n, "applying"),
+            FriendShipRequestState::Pending => tr!(self.i18n, "applying"),
             FriendShipRequestState::Success => tr!(self.i18n, "applied"),
             FriendShipRequestState::Fail => tr!(self.i18n, "apply_failed"),
         };
