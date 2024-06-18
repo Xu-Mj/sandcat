@@ -81,7 +81,7 @@ impl<'a> UserApi for UserHttp<'a> {
         Ok(friend)
     }
 
-    async fn signin(&self, req: LoginRequest) -> Result<LoginResp, Error> {
+    async fn sign_in(&self, req: LoginRequest) -> Result<LoginResp, Error> {
         let resp = Request::post("/api/user/login")
             .json(&req)?
             .send()
@@ -92,7 +92,7 @@ impl<'a> UserApi for UserHttp<'a> {
         Ok(resp)
     }
 
-    async fn signout(&self, user_id: &str) -> Result<(), Error> {
+    async fn sign_out(&self, user_id: &str) -> Result<(), Error> {
         Request::delete(format!("/api/user/{}", user_id).as_str())
             .header(&self.auth_header, &self.get_token())
             .send()

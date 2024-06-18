@@ -96,7 +96,7 @@ impl Component for Login {
                 ctx.link().send_future(async move {
                     let password = BASE64_STANDARD_NO_PAD.encode(pwd);
                     let res = match api::users()
-                        .signin(LoginRequest { account, password })
+                        .sign_in(LoginRequest { account, password })
                         .await
                     {
                         Ok(resp) => resp,

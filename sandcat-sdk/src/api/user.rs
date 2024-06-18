@@ -17,9 +17,9 @@ pub trait UserApi {
         search_user: &str,
     ) -> Result<Option<UserWithMatchType>, Error>;
 
-    async fn signin(&self, req: LoginRequest) -> Result<LoginResp, Error>;
+    async fn sign_in(&self, req: LoginRequest) -> Result<LoginResp, Error>;
 
-    async fn signout(&self, user_id: &str) -> Result<(), Error>;
+    async fn sign_out(&self, user_id: &str) -> Result<(), Error>;
 
     async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String, Error>;
 }
