@@ -101,7 +101,7 @@ impl Component for Login {
                     {
                         Ok(resp) => resp,
                         Err(err) => {
-                            Dialog::error(&err.as_string().unwrap_or_default());
+                            Dialog::error(&err.to_string());
                             return LoginMsg::Failed;
                         }
                     };

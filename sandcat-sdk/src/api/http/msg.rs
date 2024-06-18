@@ -1,9 +1,9 @@
 use async_trait::async_trait;
 use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsValue;
 
 use crate::api::message::MsgApi;
+use crate::error::Error;
 use crate::pb::message::Msg;
 
 use super::RespStatus;
@@ -39,41 +39,34 @@ impl MsgApi for MsgHttp {
         user_id: &str,
         start: i64,
         end: i64,
-    ) -> Result<Vec<Msg>, JsValue> {
-        let requset = PullOfflineMsgReq {
+    ) -> Result<Vec<Msg>, Error> {
+        let request = PullOfflineMsgReq {
             user_id: user_id.to_string(),
             start,
             end,
         };
         let messages = Request::post("/api/message")
             .header(&self.auth_header, &self.token)
-            .json(&requset)
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .json(&request)?
             .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .await?
             .success()?
             .json()
-            .await
-            .map_err(|e| JsValue::from(e.to_string()))?;
+            .await?;
         Ok(messages)
     }
 
-    async fn del_msg(&self, user_id: &str, msg_id: Vec<String>) -> Result<(), JsValue> {
-        let requset = DelMsgReq {
+    async fn del_msg(&self, user_id: &str, msg_id: Vec<String>) -> Result<(), Error> {
+        let request = DelMsgReq {
             user_id: user_id.to_string(),
             msg_id,
         };
         Request::delete("/api/message")
             .header(&self.auth_header, &self.token)
-            .json(&requset)
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .json(&request)?
             .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
-            .success()?
-            .json()
-            .await
-            .map_err(|e| JsValue::from(e.to_string()))
+            .await?
+            .success()?;
+        Ok(())
     }
 }

@@ -5,7 +5,6 @@ use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::{Interval, Timeout};
 use gloo::utils::window;
 use regex::Regex;
-use wasm_bindgen::JsValue;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -15,6 +14,7 @@ use zxcvbn::zxcvbn;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
+use sandcat_sdk::error::Error;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::UserRegister;
 use sandcat_sdk::state::{I18nState, MobileState};
@@ -56,7 +56,7 @@ pub enum RegisterMsg {
     OnEmailChange,
     SendCode,
     SendCodeSuccess,
-    SendCodeFailed(JsValue),
+    SendCodeFailed(Error),
     UpdateTime,
     Request(RequestStatus),
     OnAvatarClick(AttrValue),

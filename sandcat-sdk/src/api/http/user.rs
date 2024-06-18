@@ -1,12 +1,12 @@
 use gloo_net::http::Request;
 use serde::Serialize;
-use wasm_bindgen::JsValue;
 
 use crate::model::user::{
     LoginRequest, LoginResp, User, UserRegister, UserUpdate, UserWithMatchType,
 };
 
 use crate::api::user::UserApi;
+use crate::error::Error;
 
 use super::RespStatus;
 pub struct UserHttp<'a> {
@@ -33,96 +33,81 @@ pub struct MailRequest {
 
 #[async_trait::async_trait(?Send)]
 impl<'a> UserApi for UserHttp<'a> {
-    // 查找好友
-    async fn search_friend(
-        &self,
-        pattern: String,
-        search_user: &str,
-    ) -> Result<Option<UserWithMatchType>, JsValue> {
-        let friend = Request::get(format!("/api/user/{}/search/{}", search_user, pattern).as_str())
-            .header(&self.auth_header, &self.get_token())
-            .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
-            .success()?
-            .json()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
-        Ok(friend)
-    }
-
     /// 向指定邮箱中发送邮件
-    async fn send_mail(&self, email: String) -> Result<(), JsValue> {
+    async fn send_mail(&self, email: String) -> Result<(), Error> {
         log::debug!("send mail to {:?}", &email);
         Request::post("/api/user/mail/send")
-            .json(&MailRequest { email })
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .json(&MailRequest { email })?
             .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .await?
             .success()?;
         Ok(())
     }
 
     /// 用户注册
-    async fn register(&self, register: UserRegister) -> Result<(), JsValue> {
+    async fn register(&self, register: UserRegister) -> Result<(), Error> {
         Request::post("/api/user")
-            .json(&register)
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .json(&register)?
             .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .await?
             .success()?;
         Ok(())
     }
 
-    async fn update(&self, user: UserUpdate) -> Result<User, JsValue> {
+    async fn update(&self, user: UserUpdate) -> Result<User, Error> {
         let user = Request::put("/api/user")
-            .json(&user)
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .json(&user)?
             .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .await?
             .success()?
             .json()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
+            .await?;
         Ok(user)
     }
 
-    async fn signin(&self, req: LoginRequest) -> Result<LoginResp, JsValue> {
-        let resp = Request::post("/api/user/login")
-            .json(&req)
-            .map_err(|err| JsValue::from(err.to_string()))?
+    // 查找好友
+    async fn search_friend(
+        &self,
+        pattern: String,
+        search_user: &str,
+    ) -> Result<Option<UserWithMatchType>, Error> {
+        let friend = Request::get(format!("/api/user/{}/search/{}", search_user, pattern).as_str())
+            .header(&self.auth_header, &self.get_token())
             .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .await?
             .success()?
             .json()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?;
+            .await?;
+        Ok(friend)
+    }
+
+    async fn signin(&self, req: LoginRequest) -> Result<LoginResp, Error> {
+        let resp = Request::post("/api/user/login")
+            .json(&req)?
+            .send()
+            .await?
+            .success()?
+            .json()
+            .await?;
         Ok(resp)
     }
 
-    async fn signout(&self, user_id: &str) -> Result<(), JsValue> {
+    async fn signout(&self, user_id: &str) -> Result<(), Error> {
         Request::delete(format!("/api/user/{}", user_id).as_str())
             .header(&self.auth_header, &self.get_token())
             .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .await?
             .success()?;
         Ok(())
     }
 
-    async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String, JsValue> {
+    async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String, Error> {
         let token = Request::get(format!("/api/user/refresh_token/{token}/{is_refresh}").as_ref())
             .send()
-            .await
-            .map_err(|err| JsValue::from(err.to_string()))?
+            .await?
             .success()?
             .text()
-            .await
-            .map_err(|e| JsValue::from(e.to_string()))?;
+            .await?;
         Ok(token)
     }
 }
