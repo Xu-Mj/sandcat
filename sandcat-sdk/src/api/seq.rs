@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
-use wasm_bindgen::JsValue;
+
+use crate::error::Error;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Seq {
@@ -9,5 +10,5 @@ pub struct Seq {
 
 #[async_trait(?Send)]
 pub trait SeqApi {
-    async fn get_seq(&self, user_id: &str) -> Result<Seq, JsValue>;
+    async fn get_seq(&self, user_id: &str) -> Result<Seq, Error>;
 }

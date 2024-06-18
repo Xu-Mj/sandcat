@@ -1,5 +1,4 @@
-use wasm_bindgen::JsValue;
-
+use crate::error::Error;
 use crate::pb::message::Msg;
 
 #[async_trait::async_trait(?Send)]
@@ -9,7 +8,7 @@ pub trait MsgApi {
         user_id: &str,
         start: i64,
         end: i64,
-    ) -> Result<Vec<Msg>, JsValue>;
+    ) -> Result<Vec<Msg>, Error>;
 
-    async fn del_msg(&self, user_id: &str, msg_id: Vec<String>) -> Result<(), JsValue>;
+    async fn del_msg(&self, user_id: &str, msg_id: Vec<String>) -> Result<(), Error>;
 }

@@ -1,12 +1,12 @@
 use async_trait::async_trait;
 use gloo_net::http::Request;
-use log::info;
-use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{Blob, BlobPropertyBag, FormData};
 use web_sys::{File, Response};
 
 use crate::api::file::FileApi;
+use crate::error::Error;
 
 use super::RespStatus;
 
@@ -21,9 +21,9 @@ impl FileHttp {
         Self { token, auth_header }
     }
 
-    async fn upload_file_inner(&self, url: &str, file: &File) -> Result<String, JsValue> {
-        let form = FormData::new().unwrap();
-        form.append_with_blob("file", file).unwrap();
+    async fn upload_file_inner(&self, url: &str, file: &File) -> Result<String, Error> {
+        let form = FormData::new()?;
+        form.append_with_blob("file", file)?;
 
         // 创建请求体
         let mut opts = web_sys::RequestInit::new();
@@ -31,32 +31,32 @@ impl FileHttp {
         opts.body(Some(&form));
 
         // 创建请求
-        let request = web_sys::Request::new_with_str_and_init(url, &opts).unwrap();
+        let request = web_sys::Request::new_with_str_and_init(url, &opts)?;
 
         // 发送网络请求
-        let window = web_sys::window().unwrap();
+        let window = web_sys::window().ok_or(Error::NoWindow)?;
         let request_promise = window.fetch_with_request(&request);
         let res: Response = JsFuture::from(request_promise).await?.dyn_into()?;
-        let text = JsFuture::from(res.text().unwrap()).await.unwrap();
+        let text = JsFuture::from(res.text()?).await?;
 
-        Ok(text.as_string().unwrap())
+        text.as_string().ok_or(Error::JsToStr)
     }
 }
 
 #[async_trait(?Send)]
 impl FileApi for FileHttp {
-    async fn upload_file(&self, file: &File) -> Result<String, JsValue> {
+    async fn upload_file(&self, file: &File) -> Result<String, Error> {
         let url = "/api/file/upload";
         self.upload_file_inner(url, file).await
     }
 
-    async fn upload_avatar(&self, file: &File) -> Result<String, JsValue> {
+    async fn upload_avatar(&self, file: &File) -> Result<String, Error> {
         let url = "/api/file/avatar/upload";
         self.upload_file_inner(url, file).await
     }
 
     // todo add auth header
-    async fn upload_voice(&self, data: &[u8]) -> Result<String, JsValue> {
+    async fn upload_voice(&self, data: &[u8]) -> Result<String, Error> {
         // convert Vec<u8> to Blob
         // we can't use Uint8Array type to set Blob because it will change the data
         let u8_array = js_sys::Uint8Array::from(data);
@@ -66,37 +66,25 @@ impl FileApi for FileHttp {
         let mut options = BlobPropertyBag::new();
         options.type_("audio/webm;codecs=opus");
         let blob = Blob::new_with_u8_array_sequence_and_options(&array, &options)?;
-        info!("blob: {}", blob.size());
         web_sys::console::log_1(&blob);
-        let form = FormData::new().unwrap();
-        form.append_with_blob_and_filename("file", &blob, "audio.webm")
-            .unwrap();
+        let form = FormData::new()?;
+        form.append_with_blob_and_filename("file", &blob, "audio.webm")?;
 
         let url = "/api/file/upload";
         let text = Request::post(url)
-            .body(form)
-            .map_err(|e| e.to_string())?
+            .body(form)?
             .send()
-            .await
-            .map_err(|err| err.to_string())?
+            .await?
             .success()?
             .text()
-            .await
-            .map_err(|err| err.to_string())?;
+            .await?;
 
         Ok(text)
     }
 
-    async fn download_voice(&self, name: &str) -> Result<Vec<u8>, JsValue> {
+    async fn download_voice(&self, name: &str) -> Result<Vec<u8>, Error> {
         let url = format!("/api/file/get/{}", name);
-        let result = Request::get(&url)
-            .send()
-            .await
-            .map_err(|err| err.to_string())?
-            .success()?
-            .binary()
-            .await
-            .map_err(|e| e.to_string())?;
+        let result = Request::get(&url).send().await?.success()?.binary().await?;
         Ok(result)
     }
 }
