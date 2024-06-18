@@ -24,7 +24,8 @@ use yew::Html;
 use yew::NodeRef;
 use yewdux::Dispatch;
 
-use icons::{CloseIcon, FileIcon, ImageIcon};
+use crate::right::sender::emoji::EmojiPanel;
+use icons::{CloseIcon, FileIcon, ImageIcon, PhoneIcon, VideoIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::GroupMsg;
@@ -444,5 +445,72 @@ impl Sender {
             // send to message server
             Self::store_send_msg_(conv_type, msg).await;
         });
+    }
+
+    fn get_sender_classes(
+        &self,
+        ctx: &Context<Self>,
+        is_mobile: bool,
+    ) -> (&'static str, &'static str, &'static str, Html) {
+        if is_mobile {
+            (
+                "sender",
+                "msg-input msg-input-size-mobile",
+                "empty-msg-tip-mobile box-shadow",
+                html!(),
+            )
+        } else {
+            (
+                "sender sender-size",
+                "msg-input msg-input-size",
+                "empty-msg-tip box-shadow",
+                html!(
+                    <button class="send-btn" onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
+                        {tr!(self.i18n, "send")}
+                    </button>
+                ),
+            )
+        }
+    }
+
+    fn get_disable_html(&self, ctx: &Context<Self>) -> Html {
+        if ctx.props().disable {
+            let message = match ctx.props().conv_type {
+                RightContentType::Friend => tr!(self.i18n, "verify_needed"),
+                RightContentType::Group => tr!(self.i18n, "group_dismissed"),
+                _ => tr!(self.i18n, "disabled"),
+            };
+            html!(<div class="sender-disabled">{message}</div>)
+        } else {
+            html!()
+        }
+    }
+
+    fn get_phone_call_icons(&self, ctx: &Context<Self>, conv_type: &RightContentType) -> Html {
+        if *conv_type == RightContentType::Friend {
+            html!(
+                <>
+                    <span onclick={ctx.link().callback(|_| SenderMsg::SendAudioCall)}>
+                        <PhoneIcon />
+                    </span>
+                    <span onclick={ctx.link().callback(|_| SenderMsg::SendVideoCall)}>
+                        <VideoIcon />
+                    </span>
+                </>
+            )
+        } else {
+            html!()
+        }
+    }
+
+    // Extract the emoji panel logic
+    fn get_emoji_panel(&self, ctx: &Context<Self>) -> Html {
+        if self.show_emoji {
+            let callback = ctx.link().callback(SenderMsg::SendEmoji);
+            let onblur = ctx.link().callback(|_| SenderMsg::ShowEmoji);
+            html!(<EmojiPanel send={callback} close={onblur}/>)
+        } else {
+            html!()
+        }
     }
 }

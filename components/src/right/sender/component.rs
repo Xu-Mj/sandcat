@@ -7,18 +7,17 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{FileIcon, KeyboardIcon, PhoneIcon, SmileIcon, VideoIcon, VoiceIcon};
-
-use sandcat_sdk::model::message::{InviteMsg, InviteType, SendStatus};
+use icons::{FileIcon, KeyboardIcon, SmileIcon, VoiceIcon};
 use sandcat_sdk::model::voice::Voice;
-use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::{MobileState, SendCallState};
-use sandcat_sdk::{model::message::Message, model::ContentType};
+use sandcat_sdk::{
+    model::message::{InviteMsg, InviteType, Message, SendStatus},
+    model::{ContentType, RightContentType},
+    state::{MobileState, SendCallState},
+};
 use utils::tr;
 
 use crate::right::emoji::Emoji;
 use crate::right::recorder::Recorder;
-use crate::right::sender::emoji::EmojiPanel;
 use crate::right::sender::INPUT_MAX_LEN;
 
 use super::{FileListItem, FileType, Sender};
@@ -28,7 +27,6 @@ pub enum SenderMsg {
     CleanEmptyMsgWarn,
     SendEmoji(Emoji),
     ShowEmoji,
-    // SenderResize(MouseEvent),
     SendFileIconClicked,
     FileInputChanged(Event),
     SendFile,
@@ -151,7 +149,6 @@ impl Component for Sender {
                 };
 
                 self.store_send_msg(ctx, msg);
-                // self.send_msg(ctx, msg);
                 true
             }
 
@@ -267,7 +264,7 @@ impl Component for Sender {
                 // keyboard clicked
                 if self.is_mobile && self.is_voice_mode {
                     if let Some(input) = self.input_ref.cast::<HtmlTextAreaElement>() {
-                        // igonre error
+                        // ignore error
                         let _ = input.style().remove_property("display");
                         let _ = input.focus();
                     }
@@ -288,148 +285,90 @@ impl Component for Sender {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let (sender_class, input_class, warn_class, send_btn) = if self.is_mobile {
-            (
-                "sender",
-                "msg-input msg-input-size-mobile",
-                "empty-msg-tip-mobile box-shadow",
-                html!(),
-            )
-        } else {
-            (
-                "sender sender-size",
-                "msg-input msg-input-size",
-                "empty-msg-tip box-shadow",
-                html!(
-                    <button class="send-btn"
-                        onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
-                        {tr!(self.i18n, "send")}
-                    </button>),
-            )
-        };
-        // spawn disable layer
-        let mut disable = html!();
-        if ctx.props().disable {
-            let message = match ctx.props().conv_type {
-                RightContentType::Friend => tr!(self.i18n, "verify_needed"),
-                RightContentType::Group => tr!(self.i18n, "group_dismissed"),
-                _ => tr!(self.i18n, "disabled"),
-            };
-            disable = html! {
-                <div class="sender-disabled">
-                    {message}
-                </div>
-            }
-        }
-        // spawn warn tip
-        let mut warn = html!();
-        if self.is_warn_needed {
+        let (sender_class, input_class, warn_class, send_btn) =
+            self.get_sender_classes(ctx, self.is_mobile);
+
+        let disable_html = self.get_disable_html(ctx);
+
+        let warn_html = if self.is_warn_needed {
             let msg = if self.warn_msg == "input_max_len" {
                 format!("{} {}", tr!(self.i18n, &self.warn_msg), INPUT_MAX_LEN)
             } else {
                 tr!(self.i18n, &self.warn_msg)
             };
-            warn = html! {
-                <span class={warn_class}>
-                    {msg}
-                </span>
-            }
-        }
+            html!(<span class={warn_class}>{msg}</span>)
+        } else {
+            html!()
+        };
 
-        let mut emojis = html!();
-        if self.show_emoji {
-            let callback = &ctx.link().callback(SenderMsg::SendEmoji);
-            let onblur = &ctx.link().callback(move |_| SenderMsg::ShowEmoji);
-            emojis = html!(<EmojiPanel send={callback} close={onblur}/>);
-        }
+        let emojis = self.get_emoji_panel(ctx);
 
-        // 文件发送窗口
-        let file_sender = if self.show_file_sender {
+        let file_sender_html = if self.show_file_sender {
             self.get_file_sender_html(ctx)
         } else {
-            html! {}
+            html!()
         };
 
-        let onkeydown = ctx.link().callback(SenderMsg::OnEnterKeyDown);
-        let onkeyup = ctx.link().callback(SenderMsg::OnEnterKeyUp);
-        let onpaste = ctx.link().callback(SenderMsg::OnPaste);
-        let video_click = ctx.link().callback(|_| SenderMsg::SendVideoCall);
-        let audio_click = ctx.link().callback(|_| SenderMsg::SendAudioCall);
+        let phone_call_icons = self.get_phone_call_icons(ctx, &ctx.props().conv_type);
 
-        let mut phone_call = html!();
-        if ctx.props().conv_type == RightContentType::Friend {
-            phone_call = html! {
-                <>
-                    <span onclick={audio_click}>
-                        <PhoneIcon />
-                    </span>
-                    <span onclick={video_click} >
-                        <VideoIcon />
-                    </span>
-                </>
-            }
-        }
-
-        let oninput = if self.is_mobile {
-            Some(ctx.link().callback(|_| SenderMsg::OnTextInput))
-        } else {
-            None
-        };
-
-        // voice icon
-        let voice_icon = if self.is_voice_mode {
+        let oninput = self
+            .is_mobile
+            .then(|| ctx.link().callback(|_| SenderMsg::OnTextInput));
+        let voice_icon_html = if self.is_voice_mode {
             html!(<KeyboardIcon />)
         } else {
             html!(<VoiceIcon />)
         };
 
-        let mut recorder = html!();
-        if self.is_voice_mode {
-            recorder = html!(<Recorder send_voice={ctx.link().callback(SenderMsg::SendVoice)} />);
-        }
-        let voice_icon_click = ctx.link().callback(|_| SenderMsg::VoiceIconClicked);
+        let recorder_html = if self.is_voice_mode {
+            html!(<Recorder send_voice={ctx.link().callback(SenderMsg::SendVoice)} />)
+        } else {
+            html!()
+        };
 
         html! {
             <>
-            {file_sender}
-            <div class={sender_class} ref={self.sender_ref.clone()}>
-            {emojis}
-                <div class="send-bar">
-                    <div class="send-bar-left">
-                        <span onclick={ctx.link().callback(|event: MouseEvent| {event.stop_propagation();SenderMsg::ShowEmoji})}>
-                            <SmileIcon />
-                        </span>
-                        <span >
-                            <input type="file" hidden={true} ref={self.file_input_ref.clone()}
-                                onchange={ctx.link().callback(SenderMsg::FileInputChanged)}/>
-                            <span onclick={ctx.link().callback(|_| SenderMsg::SendFileIconClicked)}>
-                                <FileIcon />
+                {file_sender_html}
+                <div class={sender_class} ref={self.sender_ref.clone()} >
+                    {emojis}
+                    <div class="send-bar">
+                        <div class="send-bar-left">
+                            <span onclick={ctx.link().callback(|event: MouseEvent| {
+                                event.stop_propagation();
+                                SenderMsg::ShowEmoji
+                            })}>
+                                <SmileIcon />
                             </span>
-                        </span>
-                        <span onclick={voice_icon_click}>
-                            {voice_icon}
-                        </span>
+                            <span>
+                                <input type="file" hidden=true ref={self.file_input_ref.clone()}
+                                    onchange={ctx.link().callback(SenderMsg::FileInputChanged)} />
+                                <span onclick={ctx.link().callback(|_| SenderMsg::SendFileIconClicked)}>
+                                    <FileIcon />
+                                </span>
+                            </span>
+                            <span onclick={ctx.link().callback(|_| SenderMsg::VoiceIconClicked)}>
+                                {voice_icon_html}
+                            </span>
+                        </div>
+                        <div class="send-bar-right">
+                            {phone_call_icons}
+                        </div>
                     </div>
-                    <div class="send-bar-right" >
-                        {phone_call}
+                    <div class="msg-input-wrapper">
+                        {recorder_html}
+                        <textarea class={input_class}
+                            ref={self.input_ref.clone()}
+                            {oninput}
+                            onpaste={ctx.link().callback(SenderMsg::OnPaste)}
+                            onkeydown={ctx.link().callback(SenderMsg::OnEnterKeyDown)}
+                            onkeyup={ctx.link().callback(SenderMsg::OnEnterKeyUp)}>
+                        </textarea>
+                        {warn_html}
+                        {send_btn}
                     </div>
+                    {disable_html}
                 </div>
-                <div class="msg-input-wrapper">
-                    {recorder}
-                    <textarea class={input_class}
-                        ref={self.input_ref.clone()}
-                        {oninput}
-                        {onpaste}
-                        {onkeydown}
-                        {onkeyup}>
-                    </textarea>
-                    {warn}
-                    {send_btn}
-                </div>
-                {disable}
-            </div>
             </>
-
         }
     }
 

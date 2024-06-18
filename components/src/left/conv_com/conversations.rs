@@ -3,18 +3,17 @@ use std::rc::Rc;
 use gloo::timers::callback::Timeout;
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
-use sandcat_sdk::api;
-use sandcat_sdk::model::page::Page;
-use utils::tr;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
+use sandcat_sdk::api;
 use sandcat_sdk::db::{self, REFRESH_TOKEN, TOKEN};
 use sandcat_sdk::model::conversation::Conversation;
 use sandcat_sdk::model::group::Group;
 use sandcat_sdk::model::message::Msg;
+use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::seq::Seq;
 use sandcat_sdk::model::{ComponentType, CurrentItem, RightContentType};
 use sandcat_sdk::pb::message::Msg as PbMsg;
@@ -23,55 +22,80 @@ use sandcat_sdk::state::{
     RemoveConvState, SendMessageState, UpdateConvState,
 };
 use sandcat_sdk::state::{ConvState, UnreadState};
+use utils::tr;
+use ws::WebSocketManager;
 
 use crate::call::PhoneCall;
 use crate::dialog::Dialog;
 use crate::left::right_click_panel::RightClickPanel;
 use crate::select_friends::SelectFriendList;
 use crate::top_bar::TopBar;
-use ws::WebSocketManager;
 
 use super::Chats;
 
 #[derive(Debug)]
 pub enum ChatsMsg {
-    FilterContact(AttrValue),
+    /// filter conversations for local data
+    FilterConv(AttrValue),
+    /// clean filter result
     CleanupSearchResult,
-    QueryConvs((IndexMap<AttrValue, Conversation>, Vec<PbMsg>, Seq)),
-    // ReceiveMessage(Rc<RecSendMessageState>),
+    /// query conversation list from db
+    QueryConvList((IndexMap<AttrValue, Conversation>, Vec<PbMsg>, Seq)),
+    /// receive a message from server
     ReceiveMsg(Msg),
-    // send message from sender
+    /// send message from sender component
     SendMsg(Rc<SendMessageState>),
-    // send message for self
+    /// send message for self
     SendMessage(Msg),
+    /// insert a conversation item to list
     InsertConv(Conversation),
     InsertConvWithoutUpdate(Conversation),
+    /// conversation state changed -- change the current conv
     ConvStateChanged(Rc<ConvState>),
+    /// show friend list while we want to create a group
     ShowSelectFriendList,
+    /// create group by selected friend id
     CreateGroup(Vec<String>),
     SendBackGroupInvitation(AttrValue),
+    /// right click menu, contains click position, conv id and if mute
     ShowContextMenu((i32, i32), AttrValue, bool),
     CloseContextMenu,
+    /// delete conversation
     DeleteItem,
+    /// mute conversation
     Mute,
+    /// do nothing
     None,
-    RemoveConvStateChanged(Rc<RemoveConvState>),
+    /// create a conversation item by received state
     CreateConvStateChanged(Rc<CreateConvState>),
+    /// update a conversation item by received state
+    UpdateConvStateChanged(Rc<UpdateConvState>),
+    /// remove a conversation item by received state
+    RemoveConvStateChanged(Rc<RemoveConvState>),
+    /// receive mute message from right component
     MuteStateChanged(Rc<MuteState>),
+    /// send create group message to contacts component
+    /// after we receive a group creation message
     SendCreateGroupToContacts(Group),
+    /// dismiss group positive
     DismissGroup(AttrValue, String),
     RecMsgNotify(Msg),
     /// handle the lack messages
     HandleLackMessages(Vec<PbMsg>),
+    /// switch language by received state
     SwitchLanguage(Rc<I18nState>),
-    UpdateConvStateChanged(Rc<UpdateConvState>),
+    /// handle touch event for mobile
     OnTouchStart(TouchEvent),
     OnTouchEnd(TouchEvent),
+    /// this client is knocked off by another client with same platform
     KnockOff,
+    /// sign out
     Logout,
+    /// need to update token in local storage
     UpdateToken(String, bool),
+    /// send refresh token request
     RefreshToken(bool),
-    // unauthorized, go to login page
+    /// unauthorized, go to login page
     Unauthorized,
 }
 
@@ -94,7 +118,7 @@ impl Component for Chats {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         log::debug!("Chats update:{:?}", msg);
         match msg {
-            ChatsMsg::FilterContact(pattern) => {
+            ChatsMsg::FilterConv(pattern) => {
                 self.is_searching = true;
                 // filter message list
                 if pattern.is_empty() {
@@ -113,7 +137,7 @@ impl Component for Chats {
                 self.result.clear();
                 true
             }
-            ChatsMsg::QueryConvs((convs, messages, seq)) => {
+            ChatsMsg::QueryConvList((convs, messages, seq)) => {
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
@@ -368,7 +392,7 @@ impl Component for Chats {
         } else {
             self.render_list(ctx)
         };
-        let search_callback = ctx.link().callback(ChatsMsg::FilterContact);
+        let search_callback = ctx.link().callback(ChatsMsg::FilterConv);
         let clean_callback = ctx.link().callback(move |_| ChatsMsg::CleanupSearchResult);
         let plus_click = ctx.link().callback(|_| ChatsMsg::ShowSelectFriendList);
         let submit_back = ctx.link().callback(ChatsMsg::CreateGroup);

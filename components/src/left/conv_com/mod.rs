@@ -132,7 +132,7 @@ impl Chats {
                     return ChatsMsg::None;
                 }
             }
-            ChatsMsg::QueryConvs((convs, messages, local_seq))
+            ChatsMsg::QueryConvList((convs, messages, local_seq))
         });
         // we need use conv state to rerender the chats component, so use subscribe in create
         let conv_dispatch =

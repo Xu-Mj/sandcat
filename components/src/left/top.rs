@@ -1,22 +1,19 @@
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
-use i18n::{en_us, zh_cn, LanguageType};
-use utils::tr;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
+use i18n::{en_us, zh_cn, LanguageType};
 use icons::{
     ConnectedIcon, ContactsIcon, DisconnectIcon, HangUpLoadingIcon, MessagesIcon, SettingIcon,
 };
 use sandcat_sdk::{
     model::{user::User, ComponentType},
-    state::{
-        AppState, ComponentTypeState, ConnectState, ConvState, FriendListState, I18nState,
-        MobileState, ShowRight, UnreadState,
-    },
+    state::{AppState, ComponentTypeState, ConnectState, I18nState, MobileState, UnreadState},
 };
+use utils::tr;
 
 use crate::self_info::SelfInfo;
 
@@ -100,124 +97,74 @@ impl Component for Top {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        let mut msg_class = "top-icon-selected";
-        let msg_onclick = if self.com_state.component_type != ComponentType::Messages {
-            msg_class = "hover top-icon";
-            self.com_s_dis
-                .reduce_mut_callback(|s| s.component_type = ComponentType::Messages)
-        } else {
-            ctx.link().callback(move |_| TopMsg::EmptyCallback)
-        };
-        let mut contact_class = "top-icon-selected";
-        let contact_onclick = if self.com_state.component_type != ComponentType::Contacts {
-            contact_class = "hover top-icon";
-            self.com_s_dis
-                .reduce_mut_callback(|s| s.component_type = ComponentType::Contacts)
-        } else {
-            ctx.link().callback(move |_| TopMsg::EmptyCallback)
-        };
-        let mut setting_class = "top-icon-selected";
-        let setting_onclick = if self.com_state.component_type != ComponentType::Setting {
-            setting_class = "hover";
-            self.com_s_dis.reduce_mut_callback(|s| {
-                Dispatch::<ShowRight>::global().reduce_mut(|s| *s = ShowRight::Show);
-                Dispatch::<ConvState>::global().set(ConvState::default());
-                Dispatch::<FriendListState>::global().set(FriendListState::default());
-                s.component_type = ComponentType::Setting;
-            })
-        } else {
-            ctx.link().callback(move |_| TopMsg::EmptyCallback)
-        };
-        let mut msg_count = html!();
-        if self.unread_state.msg_count > 0 {
-            msg_count = html! {
-                <span class="unread-count">
-                    {self.unread_state.msg_count}
-                </span>
-            };
-        }
+        let (msg_class, msg_onclick) = self.get_top_icon_class_and_callback(
+            ctx,
+            ComponentType::Messages,
+            "top-icon-selected",
+            "hover top-icon",
+        );
+        let (contact_class, contact_onclick) = self.get_top_icon_class_and_callback(
+            ctx,
+            ComponentType::Contacts,
+            "top-icon-selected",
+            "hover top-icon",
+        );
+        let (setting_class, setting_onclick) = self.get_top_icon_class_and_callback(
+            ctx,
+            ComponentType::Setting,
+            "top-icon-selected",
+            "hover",
+        );
 
-        let mut contact_count = html!();
-        if self.unread_state.contacts_count > 0 {
-            contact_count = html! {
-                <span class="unread-count">
-                    {self.unread_state.contacts_count}
-                </span>
-            };
-        }
-
-        let mut info_panel = html!();
-        if self.show_info {
+        let msg_count = self.get_unread_count(self.unread_state.msg_count);
+        let contact_count = self.get_unread_count(self.unread_state.contacts_count);
+        let info_panel = if self.show_info {
             let close = ctx.link().callback(|_| TopMsg::ShowInfoPanel);
             let submit = ctx.link().callback(TopMsg::SubmitInfo);
-            info_panel =
-                html!(<SelfInfo user={self.app_state.login_user.clone()} {close} {submit} />)
-        }
+            html!(<SelfInfo user={self.app_state.login_user.clone()} {close} {submit} />)
+        } else {
+            html!()
+        };
+
         let onclick = ctx.link().callback(|_| TopMsg::ShowInfoPanel);
-        let mut top_right = html!();
-        let mut top_down = html!();
-        if !self.is_mobile {
-            top_right = html! {
+
+        let top_right = if !self.is_mobile {
+            html! {
                 <div class="top-right">
-                    <span class={msg_class} onclick={msg_onclick}>
+                    <span class={msg_class.clone()} onclick={msg_onclick.clone()}>
                         <MessagesIcon fill={"var(--color-text)"}/>
-                        {msg_count}
+                        { msg_count.clone() }
                     </span>
-                    <span class={contact_class} onclick={contact_onclick}>
+                    <span class={contact_class.clone()} onclick={contact_onclick.clone()}>
                         <ContactsIcon fill={"var(--color-text)"}/>
-                        {contact_count}
+                        { contact_count.clone() }
                     </span>
-                    <span class={setting_class} onclick={setting_onclick}>
+                    <span class={setting_class.clone()} onclick={setting_onclick.clone()}>
                         <SettingIcon fill={"var(--color-text)"}/>
                     </span>
                 </div>
-            };
+            }
         } else {
-            let mut msg_class = classes!(msg_class);
-            msg_class.push("top-down-style");
-            let mut contact_class = classes!(contact_class);
-            contact_class.push("top-down-style");
-            top_down = html! {
+            html! {
                 <div class="top-down">
-                    <div class={msg_class} onclick={msg_onclick}>
-                        {tr!(self.i18n, "msg")}
-                        {msg_count}
+                    <div class={classes!(msg_class.clone(), "top-down-style")} onclick={msg_onclick.clone()}>
+                        { tr!(self.i18n, "msg") }
+                        { msg_count.clone() }
                     </div>
-                    <div class={contact_class} onclick={contact_onclick}>
-                        {tr!(self.i18n, "contact")}
+                    <div class={classes!(contact_class.clone(), "top-down-style")} onclick={contact_onclick.clone()}>
+                        { tr!(self.i18n, "contact") }
+                        { contact_count.clone() }
                     </div>
                 </div>
-            };
-        }
-
-        // connection state
-        let connection_state = match *self.connect_state {
-            ConnectState::DisConnect => {
-                html!(
-                    <div class="connection-state">
-                        <DisconnectIcon />
-                    </div>
-                )
-            }
-            ConnectState::Connecting => {
-                html!(
-                    <div class="connection-state">
-                        <HangUpLoadingIcon fill={AttrValue::from("var(--color-text)")} />
-                    </div>
-                )
-            }
-            ConnectState::Connected => {
-                html!(
-                    <div class="connection-state">
-                        <ConnectedIcon />
-                    </div>
-                )
             }
         };
+
+        let connection_state = self.render_connection_state();
+
         html! {
             <div class="top" ref={self.node.clone()}>
                 <div class="top-up">
-                    {info_panel}
+                    { info_panel }
                     <div class="top-left pointer" {onclick}>
                         <img
                             class="avatar"
@@ -225,12 +172,11 @@ impl Component for Top {
                             src={utils::get_avatar_url(&self.app_state.login_user.avatar)} />
                         <div class="top-left-name">
                             <span><b>{&self.app_state.login_user.name}</b></span>
-                            {connection_state}
+                            { connection_state }
                         </div>
                     </div>
-                    {top_right}
+                    { top_right }
                 </div>
-                {top_down}
             </div>
         }
     }
@@ -238,6 +184,48 @@ impl Component for Top {
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
         if let Some(node) = self.node.cast::<HtmlDivElement>() {
             let _ = node.set_attribute("data-tauri-drag-region", "");
+        }
+    }
+}
+
+impl Top {
+    fn render_connection_state(&self) -> Html {
+        match *self.connect_state {
+            ConnectState::DisConnect => {
+                html!(<div class="connection-state"><DisconnectIcon /></div>)
+            }
+            ConnectState::Connecting => {
+                html!(<div class="connection-state"><HangUpLoadingIcon fill={AttrValue::from("var(--color-text)")} /></div>)
+            }
+            ConnectState::Connected => html!(<div class="connection-state"><ConnectedIcon /></div>),
+        }
+    }
+
+    fn get_top_icon_class_and_callback(
+        &self,
+        ctx: &Context<Self>,
+        component_type: ComponentType,
+        default_class: &str,
+        active_class: &str,
+    ) -> (String, Callback<MouseEvent>) {
+        if self.com_state.component_type != component_type {
+            let callback = self
+                .com_s_dis
+                .reduce_mut_callback(move |s| s.component_type = component_type);
+            (active_class.to_string(), callback)
+        } else {
+            let callback = ctx.link().callback(move |_| TopMsg::EmptyCallback);
+            (default_class.to_string(), callback)
+        }
+    }
+
+    fn get_unread_count(&self, count: usize) -> Html {
+        if count > 0 {
+            html! {
+                <span class="unread-count">{ count }</span>
+            }
+        } else {
+            html!()
         }
     }
 }
