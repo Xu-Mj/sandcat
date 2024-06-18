@@ -527,11 +527,11 @@
         display: none;
     }
 
-    .msg-list::-webkit-scrollbar-thumb {
+    .scrollbar::-webkit-scrollbar-thumb {
         display: none;
     }
 
-    .msg-list:hover::-webkit-scrollbar-thumb {
+    .scrollbar:hover::-webkit-scrollbar-thumb {
         display: block;
     }
 

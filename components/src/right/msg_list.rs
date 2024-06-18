@@ -576,10 +576,10 @@ impl Component for MessageList {
             })
             .collect::<Html>();
 
-        let class = if self.is_mobile {
-            "resize"
+        let (class, msg_list_class) = if self.is_mobile {
+            ("resize", "msg-list")
         } else {
-            "resize resize-size"
+            ("resize resize-size", "msg-list scrollbar")
         };
 
         html! {
@@ -587,7 +587,7 @@ impl Component for MessageList {
                 <div {class}>
                     <audio ref={self.audio_ref.clone()}/>
                     {new_msg_count}
-                    <div ref={self.node_ref.clone()} class="msg-list"  {onscroll}>
+                    <div ref={self.node_ref.clone()} class={msg_list_class} {onscroll}>
                         {list}
                     </div>
                 </div>
