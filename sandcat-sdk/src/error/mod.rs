@@ -29,6 +29,12 @@ pub enum Error {
     JsToStr,
 }
 
+impl From<serde_wasm_bindgen::Error> for Error {
+    fn from(value: serde_wasm_bindgen::Error) -> Self {
+        Self::Convert(value.to_string())
+    }
+}
+
 impl From<gloo_net::Error> for Error {
     fn from(err: gloo_net::Error) -> Self {
         Self::Network(err.to_string())
