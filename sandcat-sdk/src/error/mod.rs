@@ -2,9 +2,11 @@ use js_sys::{Error as JsError, JsString};
 use thiserror::Error as ThisError;
 use wasm_bindgen::{JsCast, JsValue};
 
-pub type Reason = String;
+pub type Result<T> = std::result::Result<T, Error>;
 
-#[derive(Debug, ThisError)]
+type Reason = String;
+
+#[derive(Debug, Clone, ThisError)]
 pub enum Error {
     /// convert server message to local error
     #[error("Convert message error {0}")]
@@ -27,6 +29,12 @@ pub enum Error {
     NoWindow,
     #[error("JsValue to string error")]
     JsToStr,
+}
+
+impl From<serde_wasm_bindgen::Error> for Error {
+    fn from(value: serde_wasm_bindgen::Error) -> Self {
+        Self::Convert(value.to_string())
+    }
 }
 
 impl From<gloo_net::Error> for Error {

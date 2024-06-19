@@ -6,12 +6,12 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
+use crate::db::groups::GroupInterface;
+use crate::error::Result;
 use crate::model::{
     group::{Group, GroupMember},
     message::Message,
 };
-
-use crate::db::groups::GroupInterface;
 
 use super::{
     repository::Repository, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,
@@ -36,14 +36,14 @@ impl GroupRepo {
 
 #[async_trait::async_trait(?Send)]
 impl GroupInterface for GroupRepo {
-    async fn put(&self, group: &Group) -> Result<(), JsValue> {
+    async fn put(&self, group: &Group) -> Result<()> {
         let store = self.store(GROUP_TABLE_NAME).await?;
         let value = serde_wasm_bindgen::to_value(group)?;
         store.put(&value)?;
         Ok(())
     }
 
-    async fn get(&self, id: &str) -> Result<Option<Group>, JsValue> {
+    async fn get(&self, id: &str) -> Result<Option<Group>> {
         let (tx, rx) = oneshot::channel::<Option<Group>>();
         let store = self.store(GROUP_TABLE_NAME).await?;
         let request = store.get(&JsValue::from(id))?;
@@ -70,7 +70,7 @@ impl GroupInterface for GroupRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_list(&self) -> Result<IndexMap<AttrValue, Group>, JsValue> {
+    async fn get_list(&self) -> Result<IndexMap<AttrValue, Group>> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Group>>();
         let store = self.store(GROUP_TABLE_NAME).await?;
         let request = store.open_cursor()?;
@@ -118,7 +118,7 @@ impl GroupInterface for GroupRepo {
     }
 
     // delete group and related group members
-    async fn delete(&self, id: &str) -> Result<(), JsValue> {
+    async fn delete(&self, id: &str) -> Result<()> {
         let store = self.store(GROUP_TABLE_NAME).await?;
         store.delete(&JsValue::from(id))?;
 
@@ -188,7 +188,7 @@ impl GroupInterface for GroupRepo {
         Ok(())
     }
 
-    async fn dismiss(&self, id: &str) -> Result<(), JsValue> {
+    async fn dismiss(&self, id: &str) -> Result<()> {
         if let Ok(Some(mut group)) = self.get(id).await {
             group.deleted = true;
             return self.put(&group).await;

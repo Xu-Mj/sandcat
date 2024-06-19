@@ -2,9 +2,7 @@ use fluent::FluentBundle;
 use fluent::FluentResource;
 use gloo::utils::document;
 use indexmap::IndexMap;
-use sandcat_sdk::state::MobileState;
 use wasm_bindgen::JsCast;
-use wasm_bindgen::JsValue;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -12,14 +10,16 @@ use i18n::en_us;
 use i18n::zh_cn;
 use i18n::LanguageType;
 use sandcat_sdk::db;
+use sandcat_sdk::error::Error;
 use sandcat_sdk::model::friend::Friend;
+use sandcat_sdk::state::MobileState;
 use utils::tr;
 use yewdux::Dispatch;
 
 pub struct SelectFriendList {
     data: IndexMap<AttrValue, Friend>,
     querying: bool,
-    err: JsValue,
+    err: Option<Error>,
     i18n: FluentBundle<FluentResource>,
     is_mobile: bool,
 }
@@ -36,7 +36,7 @@ pub enum QueryStatus<T> {
     // 查询成功
     Success(T),
     // 查询失败
-    Fail(JsValue),
+    Fail(Error),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -73,7 +73,7 @@ impl Component for SelectFriendList {
             i18n,
             data: IndexMap::new(),
             querying: false,
-            err: JsValue::NULL,
+            err: None,
             is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
         }
     }
@@ -114,7 +114,7 @@ impl Component for SelectFriendList {
                     }
                     QueryStatus::Fail(err) => {
                         self.querying = false;
-                        self.err = err;
+                        self.err = Some(err);
                     }
                 }
                 true
@@ -154,7 +154,7 @@ impl Component for SelectFriendList {
                         }
 
                     }).collect::<Html>()
-        } else if !self.err.is_null() {
+        } else if self.err.is_some() {
             content = html!(<div>{format!("查询出错{:?}", self.err)}</div>)
         }
         let submit = ctx.link().callback(|_| AddConvMsg::Add);

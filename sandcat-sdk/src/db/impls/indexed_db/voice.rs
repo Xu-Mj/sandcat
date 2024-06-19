@@ -5,7 +5,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::IdbRequest;
 use yew::Event;
 
-use crate::{db::voice::Voices, model::voice::Voice};
+use crate::{db::voice::Voices, error::Result, model::voice::Voice};
 
 use super::{repository::Repository, VOICE_TABLE_NAME};
 
@@ -31,13 +31,13 @@ impl VoiceRepo {
 
 #[async_trait::async_trait(?Send)]
 impl Voices for VoiceRepo {
-    async fn save(&self, voice: &Voice) -> Result<(), JsValue> {
+    async fn save(&self, voice: &Voice) -> Result<()> {
         let db = self.store(VOICE_TABLE_NAME).await?;
         db.put(&serde_wasm_bindgen::to_value(voice).unwrap())?;
         Ok(())
     }
 
-    async fn get(&self, local_id: &str) -> Result<Voice, JsValue> {
+    async fn get(&self, local_id: &str) -> Result<Voice> {
         let db = self.store(VOICE_TABLE_NAME).await?;
         let request = db.get(&JsValue::from(local_id))?;
 
@@ -63,7 +63,7 @@ impl Voices for VoiceRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn del(&self, local_id: &str) -> Result<(), JsValue> {
+    async fn del(&self, local_id: &str) -> Result<()> {
         let store = self.store(VOICE_TABLE_NAME).await?;
         store.delete(&JsValue::from(local_id))?;
         Ok(())

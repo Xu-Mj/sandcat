@@ -7,7 +7,7 @@ pub use msg::*;
 pub use seq::*;
 pub use user::*;
 
-use crate::error::Error;
+use crate::error::{Error, Result};
 
 mod file;
 mod friend;
@@ -17,11 +17,11 @@ mod seq;
 mod user;
 
 pub trait RespStatus: Sized {
-    fn success(self) -> Result<Self, Error>;
+    fn success(self) -> Result<Self>;
 }
 
 impl RespStatus for Response {
-    fn success(self) -> Result<Self, Error> {
+    fn success(self) -> Result<Self> {
         if (200..=299).contains(&self.status()) {
             Ok(self)
         } else {

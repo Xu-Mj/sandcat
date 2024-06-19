@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 
-use crate::error::Error;
+use crate::error::Result;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Seq {
@@ -10,5 +10,5 @@ pub struct Seq {
 
 #[async_trait(?Send)]
 pub trait SeqApi {
-    async fn get_seq(&self, user_id: &str) -> Result<Seq, Error>;
+    async fn get_seq(&self, user_id: &str) -> Result<Seq>;
 }

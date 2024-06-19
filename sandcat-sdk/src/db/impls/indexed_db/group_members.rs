@@ -6,9 +6,9 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::Event;
 
-use crate::model::group::{GroupMember, GroupMemberFromServer};
-
 use crate::db::group_members::GroupMembers;
+use crate::error::Result;
+use crate::model::group::{GroupMember, GroupMemberFromServer};
 
 use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
 
@@ -31,14 +31,14 @@ impl GroupMembersRepo {
 
 #[async_trait::async_trait(?Send)]
 impl GroupMembers for GroupMembersRepo {
-    async fn put(&self, mem: &GroupMember) -> Result<(), JsValue> {
+    async fn put(&self, mem: &GroupMember) -> Result<()> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         let value = serde_wasm_bindgen::to_value(mem)?;
         store.put(&value)?;
         Ok(())
     }
 
-    async fn put_list(&self, members: Vec<GroupMemberFromServer>) -> Result<(), JsValue> {
+    async fn put_list(&self, members: Vec<GroupMemberFromServer>) -> Result<()> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         for member in members {
             let value = serde_wasm_bindgen::to_value(&member)?;
@@ -47,7 +47,7 @@ impl GroupMembers for GroupMembersRepo {
         Ok(())
     }
 
-    async fn get(&self, id: i64) -> Result<Option<GroupMember>, JsValue> {
+    async fn get(&self, id: i64) -> Result<Option<GroupMember>> {
         let (tx, rx) = oneshot::channel::<Option<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         let request = store.get(&JsValue::from(id))?;
@@ -78,7 +78,7 @@ impl GroupMembers for GroupMembersRepo {
         &self,
         group_id: &str,
         friend_id: &str,
-    ) -> Result<Option<GroupMember>, JsValue> {
+    ) -> Result<Option<GroupMember>> {
         let (tx, rx) = oneshot::channel::<Option<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         let index = store.index(GROUP_ID_AND_USER_ID)?;
@@ -109,7 +109,7 @@ impl GroupMembers for GroupMembersRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_list_by_group_id(&self, group_id: &str) -> Result<Vec<GroupMember>, JsValue> {
+    async fn get_list_by_group_id(&self, group_id: &str) -> Result<Vec<GroupMember>> {
         let (tx, rx) = oneshot::channel::<Vec<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         let index = store.index("group_id")?;
@@ -156,7 +156,7 @@ impl GroupMembers for GroupMembersRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn delete(&self, group_id: &str, user_id: &str) -> Result<(), JsValue> {
+    async fn delete(&self, group_id: &str, user_id: &str) -> Result<()> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         let index = store.index(GROUP_ID_AND_USER_ID)?;
         let indices = Array::new();

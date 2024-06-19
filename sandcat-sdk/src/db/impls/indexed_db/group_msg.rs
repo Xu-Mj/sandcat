@@ -6,9 +6,9 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
-use crate::model::message::{Message, ServerResponse};
-
 use crate::db::group_msg::GroupMessages;
+use crate::error::Result;
+use crate::model::message::{Message, ServerResponse};
 
 use super::{
     repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
@@ -30,7 +30,7 @@ impl GroupMsgRepo {
 }
 #[async_trait::async_trait(?Send)]
 impl GroupMessages for GroupMsgRepo {
-    async fn put(&self, group: &Message) -> Result<(), JsValue> {
+    async fn put(&self, group: &Message) -> Result<()> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
         let value = serde_wasm_bindgen::to_value(group)?;
         store.put(&value)?;
@@ -44,7 +44,7 @@ impl GroupMessages for GroupMsgRepo {
         friend_id: &str,
         page: u32,
         page_size: u32,
-    ) -> Result<IndexMap<AttrValue, Message>, JsValue> {
+    ) -> Result<IndexMap<AttrValue, Message>> {
         let mut counter = 0;
         let mut advanced = true;
         // use channel to get messages
@@ -110,7 +110,7 @@ impl GroupMessages for GroupMsgRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_last_msg(&self, group_id: &str) -> Result<Message, JsValue> {
+    async fn get_last_msg(&self, group_id: &str) -> Result<Message> {
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<Message>();
         let store = self.store(GROUP_MSG_TABLE_NAME).await.unwrap();
@@ -159,7 +159,7 @@ impl GroupMessages for GroupMsgRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn update_msg_status(&self, msg: &ServerResponse) -> Result<(), JsValue> {
+    async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await.unwrap();
         let index = store.index(MESSAGE_ID_INDEX).unwrap();
         let req = index.get(&JsValue::from(msg.local_id.as_str()))?;
@@ -194,7 +194,7 @@ impl GroupMessages for GroupMsgRepo {
         Ok(())
     }
 
-    async fn batch_delete(&self, group_id: &str) -> Result<(), JsValue> {
+    async fn batch_delete(&self, group_id: &str) -> Result<()> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
         let range = IdbKeyRange::only(&JsValue::from(group_id))?;

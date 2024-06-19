@@ -3,9 +3,9 @@ use std::ops::Deref;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
 
-use crate::model::friend::{FriendShipWithUser, FriendStatus, ReadStatus};
-
 use crate::db::friendships::Friendships;
+use crate::error::Result;
+use crate::model::friend::{FriendShipWithUser, FriendStatus, ReadStatus};
 
 use super::{
     repository::Repository, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_USER_ID_INDEX,
@@ -164,7 +164,7 @@ impl Friendships for FriendShipRepo {
         rx.await.unwrap()
     }
 
-    async fn clean_unread_count(&self) -> Result<Vec<String>, JsValue> {
+    async fn clean_unread_count(&self) -> Result<Vec<String>> {
         let (tx, rx) = oneshot::channel::<Vec<String>>();
         let store = self
             .store(&String::from(FRIENDSHIP_TABLE_NAME))
