@@ -13,7 +13,7 @@
 - reply busy when the user is in the call
 - need to handle the group invitation or create group in right mod com
 - we need to redesign the relation about friend with group
-- need to test the invite new member for goup
+- need to test the invite new member for group
 - need to hold the closure about db,
 - register page need to add check failed message for user input.
 - need to update group member info when we received a group message

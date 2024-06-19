@@ -1,4 +1,3 @@
-use impls::indexed_db;
 pub use impls::indexed_db::*;
 use once_cell::sync::OnceCell;
 
@@ -70,7 +69,7 @@ pub struct Db {
 
 impl Db {
     pub async fn new() -> Self {
-        let repo = indexed_db::repository::Repository::new().await;
+        let repo = repository::Repository::new().await;
         Self {
             convs: Box::new(ConvRepo::new(repo.clone())),
             groups: Box::new(GroupRepo::new(repo.clone())),
