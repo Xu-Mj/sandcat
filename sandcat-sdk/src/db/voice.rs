@@ -1,14 +1,12 @@
 use std::fmt::Debug;
 
-use wasm_bindgen::JsValue;
-
-use crate::model::voice::Voice;
+use crate::{error::Error, model::voice::Voice};
 
 #[async_trait::async_trait(?Send)]
 pub trait Voices: Debug {
-    async fn save(&self, voice: &Voice) -> Result<(), JsValue>;
+    async fn save(&self, voice: &Voice) -> Result<(), Error>;
 
-    async fn get(&self, local_id: &str) -> Result<Voice, JsValue>;
+    async fn get(&self, local_id: &str) -> Result<Voice, Error>;
 
-    async fn del(&self, local_id: &str) -> Result<(), JsValue>;
+    async fn del(&self, local_id: &str) -> Result<(), Error>;
 }
