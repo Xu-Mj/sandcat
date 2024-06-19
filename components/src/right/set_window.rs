@@ -100,7 +100,12 @@ impl Component for SetWindow {
                 _ => {}
             }
             // qeury conversation is mute
-            let conv = db::db_ins().convs.get_by_frined_id(id.as_str()).await;
+            let conv = db::db_ins()
+                .convs
+                .get_by_frined_id(id.as_str())
+                .await
+                .unwrap()
+                .unwrap();
             SetWindowMsg::QueryInfo(Box::new(group), Box::new(friend), members, conv)
         });
         let res = match ctx.props().lang {
