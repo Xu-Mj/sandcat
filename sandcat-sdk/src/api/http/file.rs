@@ -2,10 +2,11 @@ use async_trait::async_trait;
 use gloo_net::http::Request;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
-use web_sys::{Blob, BlobPropertyBag, FormData};
+use web_sys::{Blob, BlobPropertyBag, FormData, Headers};
 use web_sys::{File, Response};
 
 use crate::api::file::FileApi;
+use crate::api::{token, AUTHORIZE_HEADER};
 use crate::error::{Error, Result};
 
 use super::RespStatus;
@@ -17,15 +18,21 @@ impl FileHttp {
         let form = FormData::new()?;
         form.append_with_blob("file", file)?;
 
-        // 创建请求体
+        // create request body
         let mut opts = web_sys::RequestInit::new();
         opts.method("POST");
         opts.body(Some(&form));
 
-        // 创建请求
+        // set auth header
+        let header = Headers::new()?;
+        header.set(AUTHORIZE_HEADER, &token())?;
+
+        opts.headers(&header.into());
+
+        // create request
         let request = web_sys::Request::new_with_str_and_init(url, &opts)?;
 
-        // 发送网络请求
+        // send request
         let window = web_sys::window().ok_or(Error::NoWindow)?;
         let request_promise = window.fetch_with_request(&request);
         let res: Response = JsFuture::from(request_promise).await?.dyn_into()?;
@@ -64,6 +71,7 @@ impl FileApi for FileHttp {
 
         let url = "/api/file/upload";
         let text = Request::post(url)
+            .header(AUTHORIZE_HEADER, &token())
             .body(form)?
             .send()
             .await?
@@ -76,7 +84,13 @@ impl FileApi for FileHttp {
 
     async fn download_voice(&self, name: &str) -> Result<Vec<u8>> {
         let url = format!("/api/file/get/{}", name);
-        let result = Request::get(&url).send().await?.success()?.binary().await?;
+        let result = Request::get(&url)
+            .header(AUTHORIZE_HEADER, &token())
+            .send()
+            .await?
+            .success()?
+            .binary()
+            .await?;
         Ok(result)
     }
 }
