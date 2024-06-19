@@ -7,7 +7,6 @@
 - we need to update user information when we look up the friend info
 - we need to update user information when we click the conversation item -- need to optimize update time and use synchroniza way to update ui
 - redesign the websocket reconnection logical,
-- adjust textarea dynamic height under the mobile mode
 - decrease the state count; --every action will trigger a state change
 - reply busy when the user is in the call
 - need to handle the group invitation or create group in right mod com
