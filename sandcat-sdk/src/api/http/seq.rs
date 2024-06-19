@@ -2,7 +2,7 @@ use async_trait::async_trait;
 use gloo_net::http::Request;
 
 use crate::api::seq::{Seq, SeqApi};
-use crate::error::Error;
+use crate::error::Result;
 
 use super::RespStatus;
 
@@ -19,7 +19,7 @@ impl SeqHttp {
 
 #[async_trait(?Send)]
 impl SeqApi for SeqHttp {
-    async fn get_seq(&self, user_id: &str) -> Result<Seq, Error> {
+    async fn get_seq(&self, user_id: &str) -> Result<Seq> {
         let seq = Request::get(format!("/api/message/seq/{}", user_id).as_str())
             .header(&self.auth_header, &self.token)
             .send()

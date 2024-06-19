@@ -1,7 +1,7 @@
 use gloo_net::http::Request;
 
 use crate::api::group::GroupApi;
-use crate::error::Error;
+use crate::error::Result;
 use crate::pb::message::GroupInviteNew;
 use crate::{
     model::{
@@ -26,7 +26,7 @@ impl GroupHttp {
 
 #[async_trait::async_trait(?Send)]
 impl GroupApi for GroupHttp {
-    async fn create(&self, data: GroupRequest, user_id: &str) -> Result<Group, Error> {
+    async fn create(&self, data: GroupRequest, user_id: &str) -> Result<Group> {
         let response: GroupInvitation = Request::post(format!("/api/group/{}", user_id).as_str())
             .header(&self.auth_header, &self.token)
             .json(&data)?
@@ -38,7 +38,7 @@ impl GroupApi for GroupHttp {
         Ok(Group::from(response.info.unwrap()))
     }
 
-    async fn invite(&self, data: GroupInviteNew) -> Result<(), Error> {
+    async fn invite(&self, data: GroupInviteNew) -> Result<()> {
         Request::post("/api/group/invite")
             .header(&self.auth_header, &self.token)
             .json(&data)?
@@ -48,7 +48,7 @@ impl GroupApi for GroupHttp {
         Ok(())
     }
 
-    async fn delete(&self, data: GroupDelete) -> Result<(), Error> {
+    async fn delete(&self, data: GroupDelete) -> Result<()> {
         Request::delete("/api/group")
             .header(&self.auth_header, &self.token)
             .json(&data)?
@@ -59,7 +59,7 @@ impl GroupApi for GroupHttp {
         Ok(())
     }
 
-    async fn update(&self, user_id: &str, data: GroupUpdate) -> Result<Group, Error> {
+    async fn update(&self, user_id: &str, data: GroupUpdate) -> Result<Group> {
         let group: GroupFromServer = Request::put(format!("/api/group/{}", user_id).as_str())
             .header(&self.auth_header, &self.token)
             .json(&data)?

@@ -6,7 +6,7 @@ use web_sys::{Blob, BlobPropertyBag, FormData};
 use web_sys::{File, Response};
 
 use crate::api::file::FileApi;
-use crate::error::Error;
+use crate::error::{Error, Result};
 
 use super::RespStatus;
 
@@ -21,7 +21,7 @@ impl FileHttp {
         Self { token, auth_header }
     }
 
-    async fn upload_file_inner(&self, url: &str, file: &File) -> Result<String, Error> {
+    async fn upload_file_inner(&self, url: &str, file: &File) -> Result<String> {
         let form = FormData::new()?;
         form.append_with_blob("file", file)?;
 
@@ -45,18 +45,18 @@ impl FileHttp {
 
 #[async_trait(?Send)]
 impl FileApi for FileHttp {
-    async fn upload_file(&self, file: &File) -> Result<String, Error> {
+    async fn upload_file(&self, file: &File) -> Result<String> {
         let url = "/api/file/upload";
         self.upload_file_inner(url, file).await
     }
 
-    async fn upload_avatar(&self, file: &File) -> Result<String, Error> {
+    async fn upload_avatar(&self, file: &File) -> Result<String> {
         let url = "/api/file/avatar/upload";
         self.upload_file_inner(url, file).await
     }
 
     // todo add auth header
-    async fn upload_voice(&self, data: &[u8]) -> Result<String, Error> {
+    async fn upload_voice(&self, data: &[u8]) -> Result<String> {
         // convert Vec<u8> to Blob
         // we can't use Uint8Array type to set Blob because it will change the data
         let u8_array = js_sys::Uint8Array::from(data);
@@ -82,7 +82,7 @@ impl FileApi for FileHttp {
         Ok(text)
     }
 
-    async fn download_voice(&self, name: &str) -> Result<Vec<u8>, Error> {
+    async fn download_voice(&self, name: &str) -> Result<Vec<u8>> {
         let url = format!("/api/file/get/{}", name);
         let result = Request::get(&url).send().await?.success()?.binary().await?;
         Ok(result)
