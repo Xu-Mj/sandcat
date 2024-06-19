@@ -10,17 +10,9 @@ use crate::error::{Error, Result};
 
 use super::RespStatus;
 
-#[allow(dead_code)]
-pub struct FileHttp {
-    token: String,
-    auth_header: String,
-}
+pub struct FileHttp;
 
 impl FileHttp {
-    pub fn new(token: String, auth_header: String) -> Self {
-        Self { token, auth_header }
-    }
-
     async fn upload_file_inner(&self, url: &str, file: &File) -> Result<String> {
         let form = FormData::new()?;
         form.append_with_blob("file", file)?;

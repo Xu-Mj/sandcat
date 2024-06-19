@@ -1,6 +1,7 @@
 use gloo_net::http::Request;
 use serde::Serialize;
 
+use crate::api::{token, AUTHORIZE_HEADER};
 use crate::model::user::{
     LoginRequest, LoginResp, User, UserRegister, UserUpdate, UserWithMatchType,
 };
@@ -9,22 +10,7 @@ use crate::api::user::UserApi;
 use crate::error::Result;
 
 use super::RespStatus;
-pub struct UserHttp<'a> {
-    token: Box<dyn Fn() -> String + 'a>,
-    auth_header: String,
-}
-
-impl<'a> UserHttp<'a> {
-    pub fn new(token: impl Fn() -> String + 'a, auth_header: String) -> Self {
-        Self {
-            token: Box::new(token),
-            auth_header,
-        }
-    }
-    pub fn get_token(&self) -> String {
-        (self.token)()
-    }
-}
+pub struct UserHttp;
 
 #[derive(Serialize, Debug)]
 pub struct MailRequest {
@@ -32,7 +18,7 @@ pub struct MailRequest {
 }
 
 #[async_trait::async_trait(?Send)]
-impl<'a> UserApi for UserHttp<'a> {
+impl UserApi for UserHttp {
     /// 向指定邮箱中发送邮件
     async fn send_mail(&self, email: String) -> Result<()> {
         log::debug!("send mail to {:?}", &email);
@@ -56,6 +42,7 @@ impl<'a> UserApi for UserHttp<'a> {
 
     async fn update(&self, user: UserUpdate) -> Result<User> {
         let user = Request::put("/api/user")
+            .header(AUTHORIZE_HEADER, &token())
             .json(&user)?
             .send()
             .await?
@@ -72,7 +59,7 @@ impl<'a> UserApi for UserHttp<'a> {
         search_user: &str,
     ) -> Result<Option<UserWithMatchType>> {
         let friend = Request::get(format!("/api/user/{}/search/{}", search_user, pattern).as_str())
-            .header(&self.auth_header, &self.get_token())
+            .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
             .success()?
@@ -94,7 +81,7 @@ impl<'a> UserApi for UserHttp<'a> {
 
     async fn sign_out(&self, user_id: &str) -> Result<()> {
         Request::delete(format!("/api/user/{}", user_id).as_str())
-            .header(&self.auth_header, &self.get_token())
+            .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
             .success()?;

@@ -26,25 +26,25 @@ pub fn token() -> String {
 }
 
 pub fn users() -> Box<dyn UserApi> {
-    Box::new(UserHttp::new(token, AUTHORIZE_HEADER.to_string()))
+    Box::new(UserHttp)
 }
 
 pub fn groups() -> Box<dyn GroupApi> {
-    Box::new(GroupHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+    Box::new(GroupHttp)
 }
 
 pub fn friends() -> Box<dyn FriendApi> {
-    Box::new(FriendHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+    Box::new(FriendHttp)
 }
 
 pub fn messages() -> Box<dyn MsgApi> {
-    Box::new(MsgHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+    Box::new(MsgHttp)
 }
 
 pub fn seq() -> Box<dyn SeqApi> {
-    Box::new(SeqHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+    Box::new(SeqHttp)
 }
 
 pub fn file() -> Box<dyn FileApi> {
-    Box::new(FileHttp::new(token(), AUTHORIZE_HEADER.to_string()))
+    Box::new(FileHttp)
 }

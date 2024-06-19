@@ -3,21 +3,13 @@ use gloo_net::http::Request;
 use serde::{Deserialize, Serialize};
 
 use crate::api::message::MsgApi;
+use crate::api::{token, AUTHORIZE_HEADER};
 use crate::error::Result;
 use crate::pb::message::Msg;
 
 use super::RespStatus;
 
-pub struct MsgHttp {
-    token: String,
-    auth_header: String,
-}
-
-impl MsgHttp {
-    pub fn new(token: String, auth_header: String) -> Self {
-        Self { token, auth_header }
-    }
-}
+pub struct MsgHttp;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PullOfflineMsgReq {
@@ -41,7 +33,7 @@ impl MsgApi for MsgHttp {
             end,
         };
         let messages = Request::post("/api/message")
-            .header(&self.auth_header, &self.token)
+            .header(AUTHORIZE_HEADER, &token())
             .json(&request)?
             .send()
             .await?
@@ -57,7 +49,7 @@ impl MsgApi for MsgHttp {
             msg_id,
         };
         Request::delete("/api/message")
-            .header(&self.auth_header, &self.token)
+            .header(AUTHORIZE_HEADER, &token())
             .json(&request)?
             .send()
             .await?
