@@ -1,11 +1,11 @@
 use fluent::{FluentBundle, FluentResource};
-use sandcat_sdk::model::ContentType;
-use sandcat_sdk::state::I18nState;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yew::{Component, Properties};
 
 use i18n::{en_us, zh_cn, LanguageType};
+use sandcat_sdk::model::ContentType;
+use sandcat_sdk::state::I18nState;
 use utils::tr;
 use yewdux::Dispatch;
 
@@ -43,12 +43,6 @@ impl Component for MsgRightClick {
         }
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
-        if let Some(node) = self.node.cast::<HtmlDivElement>() {
-            let _ = node.focus();
-        }
-    }
-
     fn view(&self, ctx: &Context<Self>) -> Html {
         let style = format!("left: {}px; top: {}px;", ctx.props().x, ctx.props().y);
 
@@ -74,6 +68,12 @@ impl Component for MsgRightClick {
                 </div>
                 {forward}
             </div>
+        }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        if let Some(node) = self.node.cast::<HtmlDivElement>() {
+            let _ = node.focus();
         }
     }
 }

@@ -31,7 +31,7 @@ pub struct MsgItem {
     show_img_preview: bool,
     show_friend_card: bool,
     show_friendlist: bool,
-    // timeout for sending message
+    /// timeout for sending message
     timeout: Option<Timeout>,
     show_send_fail: bool,
     show_sending: bool,
@@ -39,9 +39,9 @@ pub struct MsgItem {
     friend_info: Option<UserWithMatchType>,
     text_node: NodeRef,
     audio_icon_node: NodeRef,
-    // if timeout then show downloading icon
+    /// if timeout then show downloading icon
     show_audio_download_timer: Option<Timeout>,
-    // if timeout then show download timeout icon
+    /// if timeout then show download timeout icon
     audio_download_timeout: Option<Timeout>,
     download_stage: AudioDownloadStage,
     i18n: Option<FluentBundle<FluentResource>>,
@@ -162,15 +162,6 @@ impl Component for MsgItem {
         }
     }
 
-    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
-        if ctx.props().msg.send_status == SendStatus::Success {
-            self.show_send_fail = false;
-            self.timeout = None;
-            self.show_sending = false;
-        }
-        true
-    }
-
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             MsgItemMsg::PreviewImg => {
@@ -224,35 +215,11 @@ impl Component for MsgItem {
                 false
             }
             MsgItemMsg::CallVideo => {
-                Dispatch::<SendCallState>::global().reduce_mut(|s| {
-                    s.msg = InviteMsg {
-                        local_id: nanoid!().into(),
-                        server_id: AttrValue::default(),
-                        send_id: ctx.props().user_id.clone(),
-                        friend_id: ctx.props().friend_id.clone(),
-                        create_time: chrono::Utc::now().timestamp_millis(),
-                        invite_type: InviteType::Video,
-                        platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
-                        avatar: ctx.props().avatar.clone(),
-                        nickname: ctx.props().nickname.clone(),
-                    }
-                });
+                self.make_call(ctx, InviteType::Video);
                 false
             }
             MsgItemMsg::CallAudio => {
-                Dispatch::<SendCallState>::global().reduce_mut(|s| {
-                    s.msg = InviteMsg {
-                        local_id: nanoid!().into(),
-                        server_id: AttrValue::default(),
-                        send_id: ctx.props().user_id.clone(),
-                        friend_id: ctx.props().friend_id.clone(),
-                        create_time: chrono::Utc::now().timestamp_millis(),
-                        invite_type: InviteType::Audio,
-                        platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
-                        avatar: ctx.props().avatar.clone(),
-                        nickname: ctx.props().nickname.clone(),
-                    }
-                });
+                self.make_call(ctx, InviteType::Audio);
                 false
             }
             MsgItemMsg::QueryGroupMember(avatar) => {
@@ -407,8 +374,7 @@ impl Component for MsgItem {
                 false
             }
             MsgItemMsg::ShowForwardMsg => {
-                // Dispatch::<SendMessageState>::global()
-                //     .reduce_mut(|s| s.msg = Msg::Single(ctx.props().msg.clone()));
+                self.show_context_menu = false;
                 self.show_friendlist = !self.show_friendlist;
                 true
             }
@@ -428,6 +394,15 @@ impl Component for MsgItem {
                 true
             }
         }
+    }
+
+    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+        if ctx.props().msg.send_status == SendStatus::Success {
+            self.show_send_fail = false;
+            self.timeout = None;
+            self.show_sending = false;
+        }
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -542,16 +517,7 @@ impl Component for MsgItem {
             }
             ContentType::VideoCall => {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::CallVideo);
-                let full_original = ctx.props().msg.content.clone();
-                let mut parts = full_original.split("||");
-                let text = if parts.clone().count() < 2 {
-                    tr!(self.i18n.as_ref().unwrap(), &full_original)
-                } else {
-                    let prefix = parts.next().unwrap_or(&full_original).to_string();
-                    let duration = parts.next().unwrap_or(&full_original).to_string();
-
-                    format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
-                };
+                let text = self.get_call_hint(ctx);
                 html! {
                     <div class={msg_content_classes} {oncontextmenu} {onclick} style="cursor: pointer; user-select: none;">
                         {text}
@@ -562,16 +528,7 @@ impl Component for MsgItem {
             }
             ContentType::AudioCall => {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::CallAudio);
-                let full_original = ctx.props().msg.content.clone();
-                let mut parts = full_original.split("||");
-                let text = if parts.clone().count() < 2 {
-                    tr!(self.i18n.as_ref().unwrap(), &full_original)
-                } else {
-                    let prefix = parts.next().unwrap_or(&full_original).to_string();
-                    let duration = parts.next().unwrap_or(&full_original).to_string();
-
-                    format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
-                };
+                let text = self.get_call_hint(ctx);
                 html! {
                     <div class={msg_content_classes} {oncontextmenu} {onclick} style="cursor: pointer; user-select: none;">
                         {text}
@@ -701,6 +658,35 @@ impl Component for MsgItem {
 }
 
 impl MsgItem {
+    fn get_call_hint(&self, ctx: &Context<Self>) -> String {
+        let full_original = ctx.props().msg.content.clone();
+        let mut parts = full_original.split("||");
+        if parts.clone().count() < 2 {
+            tr!(self.i18n.as_ref().unwrap(), &full_original)
+        } else {
+            let prefix = parts.next().unwrap_or(&full_original).to_string();
+            let duration = parts.next().unwrap_or(&full_original).to_string();
+
+            format!("{} {}", tr!(self.i18n.as_ref().unwrap(), &prefix), duration)
+        }
+    }
+
+    fn make_call(&self, ctx: &Context<Self>, invite_type: InviteType) {
+        Dispatch::<SendCallState>::global().reduce_mut(|s| {
+            s.msg = InviteMsg {
+                local_id: nanoid!().into(),
+                server_id: AttrValue::default(),
+                send_id: ctx.props().user_id.clone(),
+                friend_id: ctx.props().friend_id.clone(),
+                create_time: chrono::Utc::now().timestamp_millis(),
+                invite_type,
+                platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
+                avatar: ctx.props().avatar.clone(),
+                nickname: ctx.props().nickname.clone(),
+            }
+        });
+    }
+
     fn voice_in_msg_icon(&self) -> Html {
         html! {
             <div id="voice-in-msg-icon" ref={self.audio_icon_node.clone()}>

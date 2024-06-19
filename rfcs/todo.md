@@ -2,7 +2,6 @@
 
 - the structure of the MESSAGE need to be same as server side MESSAGE structure
 - message item show send time while hover it
-- modify the friend remark
 - modify the group info
 - to sync the contacts list and apply list and apply response list
 - we need to update user information when we look up the friend info
@@ -14,7 +13,6 @@
 - need to handle the group invitation or create group in right mod com
 - we need to redesign the relation about friend with group
 - need to test the invite new member for group
-- need to hold the closure about db,
+- need to hold the closure in db module,
 - register page need to add check failed message for user input.
 - need to update group member info when we received a group message
-- custom error type
