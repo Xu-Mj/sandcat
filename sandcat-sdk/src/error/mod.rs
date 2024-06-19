@@ -2,6 +2,8 @@ use js_sys::{Error as JsError, JsString};
 use thiserror::Error as ThisError;
 use wasm_bindgen::{JsCast, JsValue};
 
+pub type Result<T> = std::result::Result<T, Error>;
+
 pub type Reason = String;
 
 #[derive(Debug, ThisError)]
