@@ -4,9 +4,9 @@ use wasm_bindgen::{JsCast, JsValue};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-pub type Reason = String;
+type Reason = String;
 
-#[derive(Debug, ThisError)]
+#[derive(Debug, Clone, ThisError)]
 pub enum Error {
     /// convert server message to local error
     #[error("Convert message error {0}")]

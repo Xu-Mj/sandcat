@@ -6,9 +6,9 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
 
-use crate::model::message::{Message, ServerResponse};
-
 use crate::db::messages::Messages;
+use crate::error::Result;
+use crate::model::message::{Message, ServerResponse};
 
 use super::{
     repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX,
@@ -34,7 +34,7 @@ impl MessageRepo {
 
 #[async_trait::async_trait(?Send)]
 impl Messages for MessageRepo {
-    async fn get_last_msg(&self, friend_id: &str) -> Result<Message, JsValue> {
+    async fn get_last_msg(&self, friend_id: &str) -> Result<Message> {
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<Message>();
         let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
@@ -88,7 +88,7 @@ impl Messages for MessageRepo {
         friend_id: &str,
         page: u32,
         page_size: u32,
-    ) -> Result<IndexMap<AttrValue, Message>, JsValue> {
+    ) -> Result<IndexMap<AttrValue, Message>> {
         let mut counter = 0;
         let mut advanced = true;
         // 使用channel异步获取数据
@@ -152,7 +152,7 @@ impl Messages for MessageRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn add_message(&self, msg: &mut Message) -> Result<(), JsValue> {
+    async fn add_message(&self, msg: &mut Message) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
         let index = store.index(MESSAGE_ID_INDEX).unwrap();
         let (tx, rx) = oneshot::channel::<Option<Message>>();
@@ -188,7 +188,7 @@ impl Messages for MessageRepo {
         Ok(())
     }
 
-    async fn update_msg_status(&self, msg: &ServerResponse) -> Result<(), JsValue> {
+    async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
         let index = store.index(MESSAGE_ID_INDEX).unwrap();
         let req = index.get(&JsValue::from(msg.local_id.as_str()))?;
@@ -223,7 +223,7 @@ impl Messages for MessageRepo {
         Ok(())
     }
 
-    async fn update_read_status(&self, friend_id: &str) -> Result<(), JsValue> {
+    async fn update_read_status(&self, friend_id: &str) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
         let rang = IdbKeyRange::only(&JsValue::from(friend_id));
         let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
@@ -300,7 +300,7 @@ impl Messages for MessageRepo {
         rx.await.unwrap_or_default()
     }
 
-    async fn batch_delete(&self, friend_id: &str) -> Result<(), JsValue> {
+    async fn batch_delete(&self, friend_id: &str) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
         let range = IdbKeyRange::only(&JsValue::from(friend_id))?;
@@ -330,7 +330,7 @@ impl Messages for MessageRepo {
         Ok(())
     }
 
-    async fn delete(&self, local_id: i32) -> Result<(), JsValue> {
+    async fn delete(&self, local_id: i32) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
         store.delete(&JsValue::from(local_id))?;
         Ok(())

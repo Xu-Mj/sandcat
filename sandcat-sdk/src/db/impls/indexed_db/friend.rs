@@ -7,10 +7,10 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbCursorWithValue, IdbKeyRange, IdbRequest};
 use yew::AttrValue;
 
+use crate::db::friends::Friends;
+use crate::error::Result;
 use crate::model::friend::Friend;
 use crate::model::message::Message;
-
-use crate::db::friends::Friends;
 
 use super::{repository::Repository, FRIEND_TABLE_NAME};
 use super::{MESSAGE_FRIEND_ID_INDEX, MESSAGE_TABLE_NAME};
@@ -44,7 +44,7 @@ impl Friends for FriendRepo {
         id: &str,
         avatar: AttrValue,
         nickname: AttrValue,
-    ) -> Result<(), JsValue> {
+    ) -> Result<()> {
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
         let request = store
             .get(&JsValue::from(id))
@@ -116,7 +116,7 @@ impl Friends for FriendRepo {
         rx.await.unwrap()
     }
 
-    async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>, JsValue> {
+    async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Friend>>();
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
         let request = store.open_cursor().unwrap();
@@ -163,7 +163,7 @@ impl Friends for FriendRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_list_by_ids(&self, ids: Vec<String>) -> Result<Vec<Friend>, JsValue> {
+    async fn get_list_by_ids(&self, ids: Vec<String>) -> Result<Vec<Friend>> {
         let (tx, rx) = oneshot::channel::<Vec<Friend>>();
         let store = self.store(FRIEND_TABLE_NAME).await?;
         let request = store.open_cursor().map_err(JsValue::from)?;
@@ -209,11 +209,11 @@ impl Friends for FriendRepo {
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
         success.forget(); // 避免内存泄漏
 
-        rx.await.map_err(|e| JsValue::from(&e.to_string()))
+        Ok(rx.await.unwrap())
     }
 
     /// delete friend by id; need to delete message data
-    async fn delete_friend(&self, id: &str) -> Result<(), JsValue> {
+    async fn delete_friend(&self, id: &str) -> Result<()> {
         let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
         store.delete(&JsValue::from(id))?;
 

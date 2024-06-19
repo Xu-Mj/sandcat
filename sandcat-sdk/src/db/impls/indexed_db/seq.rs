@@ -6,7 +6,7 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::IdbRequest;
 use yew::Event;
 
-use crate::{error::Error, model::seq::Seq};
+use crate::{error::Result, model::seq::Seq};
 
 use crate::db::seq::SeqInterface;
 
@@ -32,14 +32,14 @@ const ID: i32 = 1;
 
 #[async_trait(?Send)]
 impl SeqInterface for SeqRepo {
-    async fn put(&self, seq: &Seq) -> Result<(), Error> {
+    async fn put(&self, seq: &Seq) -> Result<()> {
         let store = self.store(SEQ_TABLE_NAME).await?;
         let value = serde_wasm_bindgen::to_value(seq)?;
         store.put(&value)?;
         Ok(())
     }
 
-    async fn get(&self) -> Result<Seq, Error> {
+    async fn get(&self) -> Result<Seq> {
         let (tx, rx) = oneshot::channel::<Seq>();
         let store = self.store(SEQ_TABLE_NAME).await?;
         let request = store.get(&JsValue::from(ID))?;

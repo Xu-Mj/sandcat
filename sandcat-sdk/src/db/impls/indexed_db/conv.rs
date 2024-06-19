@@ -7,10 +7,11 @@ use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{Event, IdbRequest};
 use yew::AttrValue;
 
+use crate::db::conversations::Conversations;
+use crate::error::Result;
 use crate::model::conversation::Conversation;
 
 use super::{repository::Repository, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME};
-use crate::db::conversations::Conversations;
 
 type SuccessCallback = RefCell<Option<Closure<dyn FnMut(&Event)>>>;
 #[derive(Debug)]
@@ -47,14 +48,14 @@ impl ConvRepo {
 
 #[async_trait::async_trait(?Send)]
 impl Conversations for ConvRepo {
-    async fn mute(&self, conv: &Conversation) -> Result<(), JsValue> {
+    async fn mute(&self, conv: &Conversation) -> Result<()> {
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         store.put(&serde_wasm_bindgen::to_value(&conv)?)?;
         Ok(())
     }
 
     // 使用put方法，不存在创建，存在则直接更新
-    async fn put_conv(&self, conv: &Conversation) -> Result<(), JsValue> {
+    async fn put_conv(&self, conv: &Conversation) -> Result<()> {
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         let value = serde_wasm_bindgen::to_value(&conv)?;
         let request = store.put(&value)?;
@@ -63,7 +64,7 @@ impl Conversations for ConvRepo {
         Ok(())
     }
 
-    async fn self_update_conv(&self, mut conv: Conversation) -> Result<Conversation, JsValue> {
+    async fn self_update_conv(&self, mut conv: Conversation) -> Result<Conversation> {
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         let request = store.get(&JsValue::from(conv.friend_id.as_str()))?;
         let store = store.clone();
@@ -92,7 +93,7 @@ impl Conversations for ConvRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_convs(&self) -> Result<IndexMap<AttrValue, Conversation>, JsValue> {
+    async fn get_convs(&self) -> Result<IndexMap<AttrValue, Conversation>> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Conversation>>();
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         let index = store.index(CONVERSATION_LAST_MSG_TIME_INDEX)?;
@@ -142,7 +143,7 @@ impl Conversations for ConvRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_by_frined_id(&self, friend_id: &str) -> Result<Option<Conversation>, JsValue> {
+    async fn get_by_frined_id(&self, friend_id: &str) -> Result<Option<Conversation>> {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Option<Conversation>>();
         let store = self.store(CONVERSATION_TABLE_NAME).await?;
@@ -170,7 +171,7 @@ impl Conversations for ConvRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn delete(&self, friend_id: &str) -> Result<(), JsValue> {
+    async fn delete(&self, friend_id: &str) -> Result<()> {
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
         store.delete(&JsValue::from(friend_id))?;
         Ok(())
