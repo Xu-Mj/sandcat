@@ -4,7 +4,7 @@ use futures_channel::oneshot;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{console, Event, IdbRequest};
 
-use crate::model::user::User;
+use crate::{error::Error, model::user::User};
 
 use super::repository::Repository;
 use crate::db::users::Users;
@@ -52,7 +52,7 @@ impl Users for UserRepo {
     }
 
     // 需要优化
-    async fn get(&self, id: &str) -> Result<User, JsValue> {
+    async fn get(&self, id: &str) -> Result<User, Error> {
         let (tx, rx) = oneshot::channel::<User>();
 
         let store = self.store(&String::from(USER_STORE_NAME)).await.unwrap();
