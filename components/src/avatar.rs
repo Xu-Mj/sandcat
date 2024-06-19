@@ -106,165 +106,50 @@ impl Component for Avatar {
                         self.avatar_onload = Some(on_load);
                     }
                 }
-                false
             }
-            Msg::Loaded(url) => {
-                self.load_img(ctx, &url);
-                false
-            }
+            Msg::Loaded(url) => self.load_img(ctx, &url),
             Msg::Wheel(event) => {
                 event.prevent_default();
                 event.stop_propagation();
-                let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
-                if let Some(img) = &self.img {
-                    let delta = event.delta_y();
-                    let mouse_x = event.client_x() as f64;
-                    let mouse_y = event.client_y() as f64;
-
-                    // 计算新的缩放比例
-                    let new_scale =
-                        (self.scale + delta * -1_f64 / (img.width() * 5) as f64).max(0.05);
-
-                    // 确保最小缩放比例不小于选区大小
-                    let img_width = img.width() as f64;
-                    let img_height = img.height() as f64;
-                    let min_scale =
-                        (self.selection_size / img_width).max(self.selection_size / img_height);
-                    let new_scale = new_scale.max(min_scale);
-
-                    // 以鼠标为缩放中心进行缩放
-                    let scale_ratio = new_scale / self.scale;
-                    let new_x = mouse_x - canvas.get_bounding_client_rect().left() - self.x;
-                    let new_y = mouse_y - canvas.get_bounding_client_rect().top() - self.y;
-
-                    self.x =
-                        mouse_x - new_x * scale_ratio - canvas.get_bounding_client_rect().left();
-                    self.y =
-                        mouse_y - new_y * scale_ratio - canvas.get_bounding_client_rect().top();
-                    self.scale = new_scale;
-
-                    // 限制图片位置保持在选区内部并适应缩放
-                    let result = self.adjust_image_position(img, &canvas);
-                    self.x = result.0;
-                    self.y = result.1;
-                    self.redraw();
-                }
-                false
+                self.wheel_zoom(event);
             }
             Msg::MouseDown(event) => {
                 event.stop_propagation();
                 self.dragging = true;
                 self.start_x = event.client_x() as f64;
                 self.start_y = event.client_y() as f64;
-                true
+                return true;
             }
             Msg::MouseUp => {
                 self.dragging = false;
-                true
+                return true;
             }
             Msg::MouseMove(event) => {
                 event.stop_propagation();
-                if self.dragging {
-                    let dx = event.client_x() as f64 - self.start_x;
-                    let dy = event.client_y() as f64 - self.start_y;
-                    self.x += dx;
-                    self.y += dy;
-
-                    if let Some(img) = &self.img {
-                        let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
-
-                        // 限制图片位置保持在选区内部
-                        let result = self.adjust_image_position(img, &canvas);
-                        self.x = result.0;
-                        self.y = result.1;
-                    }
-
-                    self.start_x = event.client_x() as f64;
-                    self.start_y = event.client_y() as f64;
-                    self.redraw();
-                }
-
-                false
+                self.handle_mouse_move(event);
             }
-            Msg::SubmitSelection => {
-                if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
-                    let context = canvas
-                        .get_context("2d")
-                        .unwrap()
-                        .unwrap()
-                        .dyn_into::<web_sys::CanvasRenderingContext2d>()
-                        .unwrap();
-
-                    // 提取选区图像数据
-                    let selection_x = (canvas.width() as f64 - self.selection_size) / 2.0;
-                    let selection_y = (canvas.height() as f64 - self.selection_size) / 2.0;
-                    let data = context
-                        .get_image_data(
-                            selection_x,
-                            selection_y,
-                            self.selection_size,
-                            self.selection_size,
-                        )
-                        .unwrap();
-
-                    match &ctx.props().submit {
-                        SubmitOption::ImageData(callback) => callback.emit(data),
-                        SubmitOption::DataUrl(callback) => {
-                            callback.emit(self.image_data_to_url(&data))
-                        }
-                        SubmitOption::Data(callback) => callback.emit(data.data().0),
-                    }
-                }
-                false
-            }
+            Msg::SubmitSelection => self.submit_image(ctx),
             Msg::ImageLoaded => {
-                if let Some(img) = &self.img {
-                    if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
-                        let image_width = img.width() as f64;
-                        let image_height = img.height() as f64;
-                        let canvas_width = canvas.width() as f64;
-                        let canvas_height = canvas.height() as f64;
-
-                        // 宽高比
-                        let scale_height = canvas_height / image_height;
-                        let scale_width = if image_height <= self.selection_size {
-                            1.0
-                        } else {
-                            canvas_width / image_width
-                        };
-
-                        // 使用canvas高度调整比例，确保能看到整个选区
-                        let scale = scale_height
-                            .min(scale_width)
-                            .max(self.selection_size / image_height);
-
-                        self.scale = scale;
-                        self.x = (canvas_width - image_width * scale) / 2.0;
-                        self.y = (canvas_height - image_height * scale) / 2.0;
-                    }
-                }
+                self.image_loaded();
                 self.redraw();
-                false
             }
             Msg::TouchStart(event) => {
                 event.stop_propagation();
                 self.update_touches(&event);
-                false
             }
             Msg::TouchMove(event) => {
                 event.stop_propagation();
                 event.prevent_default();
                 self.handle_touch_move(&event);
                 self.update_touches(&event);
-                false
             }
             Msg::TouchEnd(event) => {
                 event.stop_propagation();
                 event.prevent_default();
                 self.update_touches(&event);
-                false
             }
         }
+        false
     }
 
     fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
@@ -312,6 +197,7 @@ impl Component for Avatar {
                             line-height: 2rem;
                             text-align: center;
                             background-color: #fefefe;
+                            color: black;
                             border-radius: .3rem;">
                         { &ctx.props().choose_text }
                         <input id="avatar-setter"
@@ -322,12 +208,24 @@ impl Component for Avatar {
                             onchange={ctx.link().callback(Msg::Files)}/>
                     </label>
                     <div
-                        style="width: 5rem; height: 2rem; line-height: 2rem; text-align: center; background-color: green; color: white; border-radius: .3rem;"
+                        style="width: 5rem;
+                            height: 2rem;
+                            line-height: 2rem;
+                            text-align: center;
+                            background-color: green;
+                            color: white;
+                            border-radius: .3rem;"
                         onclick={on_submit}>
                         { &ctx.props().submit_text }
                     </div>
                     <div
-                        style="width: 5rem; height: 2rem; line-height: 2rem; text-align: center; background-color: white; border-radius: .3rem;"
+                        style="width: 5rem;
+                            height: 2rem;
+                            line-height: 2rem;
+                            text-align: center;
+                            background-color: white;
+                            color: black;
+                            border-radius: .3rem;"
                         onclick={ctx.props().close.reform(|_|{})}>
                         { &ctx.props().cancel_text }
                     </div>
@@ -466,6 +364,118 @@ impl Avatar {
             self.redraw();
         }
     }
+
+    fn wheel_zoom(&mut self, event: WheelEvent) {
+        let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
+        if let Some(img) = &self.img {
+            let delta = event.delta_y();
+            let mouse_x = event.client_x() as f64;
+            let mouse_y = event.client_y() as f64;
+
+            // 计算新的缩放比例
+            let new_scale = (self.scale + delta * -1_f64 / (img.width() * 5) as f64).max(0.05);
+
+            // 确保最小缩放比例不小于选区大小
+            let img_width = img.width() as f64;
+            let img_height = img.height() as f64;
+            let min_scale = (self.selection_size / img_width).max(self.selection_size / img_height);
+            let new_scale = new_scale.max(min_scale);
+
+            // 以鼠标为缩放中心进行缩放
+            let scale_ratio = new_scale / self.scale;
+            let new_x = mouse_x - canvas.get_bounding_client_rect().left() - self.x;
+            let new_y = mouse_y - canvas.get_bounding_client_rect().top() - self.y;
+
+            self.x = mouse_x - new_x * scale_ratio - canvas.get_bounding_client_rect().left();
+            self.y = mouse_y - new_y * scale_ratio - canvas.get_bounding_client_rect().top();
+            self.scale = new_scale;
+
+            // 限制图片位置保持在选区内部并适应缩放
+            let result = self.adjust_image_position(img, &canvas);
+            self.x = result.0;
+            self.y = result.1;
+            self.redraw();
+        }
+    }
+
+    fn handle_mouse_move(&mut self, event: MouseEvent) {
+        if self.dragging {
+            let dx = event.client_x() as f64 - self.start_x;
+            let dy = event.client_y() as f64 - self.start_y;
+            self.x += dx;
+            self.y += dy;
+
+            if let Some(img) = &self.img {
+                let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
+
+                // 限制图片位置保持在选区内部
+                let result = self.adjust_image_position(img, &canvas);
+                self.x = result.0;
+                self.y = result.1;
+            }
+
+            self.start_x = event.client_x() as f64;
+            self.start_y = event.client_y() as f64;
+            self.redraw();
+        }
+    }
+
+    fn image_loaded(&mut self) {
+        if let Some(img) = &self.img {
+            if let Some(canvas) = self.canvas_ref.cast::<HtmlCanvasElement>() {
+                let image_width = img.width() as f64;
+                let image_height = img.height() as f64;
+                let canvas_width = canvas.width() as f64;
+                let canvas_height = canvas.height() as f64;
+
+                // 宽高比
+                let scale_height = canvas_height / image_height;
+                let scale_width = if image_height <= self.selection_size {
+                    1.0
+                } else {
+                    canvas_width / image_width
+                };
+
+                // 使用canvas高度调整比例，确保能看到整个选区
+                let scale = scale_height
+                    .min(scale_width)
+                    .max(self.selection_size / image_height);
+
+                self.scale = scale;
+                self.x = (canvas_width - image_width * scale) / 2.0;
+                self.y = (canvas_height - image_height * scale) / 2.0;
+            }
+        }
+    }
+
+    fn submit_image(&mut self, ctx: &Context<Self>) {
+        let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
+        let context = canvas
+            .get_context("2d")
+            .unwrap()
+            .unwrap()
+            .dyn_into::<web_sys::CanvasRenderingContext2d>()
+            .unwrap();
+
+        // extract the selected area data
+        let selection_x = (canvas.width() as f64 - self.selection_size) / 2.0;
+        let selection_y = (canvas.height() as f64 - self.selection_size) / 2.0;
+        let data = context
+            .get_image_data(
+                selection_x,
+                selection_y,
+                self.selection_size,
+                self.selection_size,
+            )
+            .unwrap();
+
+        match &ctx.props().submit {
+            SubmitOption::ImageData(callback) => callback.emit(data),
+            SubmitOption::DataUrl(callback) => callback.emit(self.image_data_to_url(&data)),
+            SubmitOption::Data(callback) => callback.emit(data.data().0),
+        }
+    }
+
     fn redraw(&self) {
         let canvas = self.canvas_ref.cast::<HtmlCanvasElement>().unwrap();
         let context = canvas
