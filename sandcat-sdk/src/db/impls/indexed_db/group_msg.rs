@@ -1,7 +1,10 @@
+use std::cell::RefCell;
 use std::ops::Deref;
+use std::rc::Rc;
 
 use futures_channel::oneshot;
 use indexmap::IndexMap;
+use log::error;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
@@ -10,24 +13,42 @@ use crate::db::group_msg::GroupMessages;
 use crate::error::Result;
 use crate::model::message::{Message, ServerResponse};
 
+use super::SuccessCallback;
 use super::{
     repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
 };
 
-#[derive(Debug, Clone)]
-pub struct GroupMsgRepo(Repository);
+#[derive(Debug)]
+pub struct GroupMsgRepo {
+    repo: Repository,
+    on_err_callback: Closure<dyn FnMut(&Event)>,
+    on_get_list_success: SuccessCallback,
+    on_batch_del_success: SuccessCallback,
+}
+
 impl Deref for GroupMsgRepo {
     type Target = Repository;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.repo
     }
 }
+
 impl GroupMsgRepo {
     pub fn new(repo: Repository) -> Self {
-        Self(repo)
+        let on_err_callback = Closure::once(move |event: &Event| {
+            error!("group message operate error: {:?}", event);
+        });
+
+        Self {
+            repo,
+            on_err_callback,
+            on_get_list_success: Rc::new(RefCell::new(None)),
+            on_batch_del_success: Rc::new(RefCell::new(None)),
+        }
     }
 }
+
 #[async_trait::async_trait(?Send)]
 impl GroupMessages for GroupMsgRepo {
     async fn put(&self, group: &Message) -> Result<()> {
@@ -50,63 +71,65 @@ impl GroupMessages for GroupMsgRepo {
         // use channel to get messages
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Message>>();
 
-        let store = self.store(GROUP_MSG_TABLE_NAME).await.unwrap();
+        let store = self.store(GROUP_MSG_TABLE_NAME).await?;
         let rang = IdbKeyRange::only(&JsValue::from(friend_id));
 
         // use friend id as group id
         let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
-        let request = index
-            .open_cursor_with_range_and_direction(
-                &JsValue::from(&rang.unwrap()),
-                web_sys::IdbCursorDirection::Prev,
-            )
-            .unwrap();
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("读取数据失败").into());
-            web_sys::console::log_1(&event.into());
-        });
+        let request = index.open_cursor_with_range_and_direction(
+            &JsValue::from(&rang.unwrap()),
+            web_sys::IdbCursorDirection::Prev,
+        )?;
 
         let messages = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
         let messages = messages.clone();
         let mut tx = Some(tx);
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        let success = Closure::wrap(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = req.result().unwrap_or_else(|_err| JsValue::null());
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
 
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-                if page > 1 && advanced {
-                    advanced = false;
-                    cursor.advance((page - 1) * page_size).unwrap();
-                    return;
-                }
-                let value = cursor.value().unwrap();
-                // 反序列化
-                if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
-                    let id = msg.local_id.clone();
-                    messages.borrow_mut().insert(id, msg);
-                }
-                counter += 1;
-                if counter >= page_size {
-                    let _ = tx.take().unwrap().send(messages.borrow().clone());
-                    return;
-                }
-                let _ = cursor.continue_();
+        {
+            let mut on_get_list = self.on_get_list_success.borrow_mut();
+            if let Some(ref on_get_list) = *on_get_list {
+                request.set_onsuccess(Some(on_get_list.as_ref().unchecked_ref()));
             } else {
-                // 如果为null说明已经遍历完成
-                //将总的结果发送出来
-                let _ = tx.take().unwrap().send(messages.borrow().clone());
-            }
-        }) as Box<dyn FnMut(&Event)>);
+                let success = Closure::wrap(Box::new(move |event: &Event| {
+                    let target = event.target().expect("msg");
+                    let req = target
+                        .dyn_ref::<IdbRequest>()
+                        .expect("Event target is IdbRequest; qed");
+                    let result = req.result().unwrap_or_else(|_err| JsValue::null());
 
-        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-        success.forget();
+                    if !result.is_null() {
+                        let cursor = result
+                            .dyn_ref::<web_sys::IdbCursorWithValue>()
+                            .expect("result is IdbCursorWithValue; qed");
+                        if page > 1 && advanced {
+                            advanced = false;
+                            cursor.advance((page - 1) * page_size).unwrap();
+                            return;
+                        }
+                        let value = cursor.value().unwrap();
+                        // 反序列化
+                        if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
+                            let id = msg.local_id.clone();
+                            messages.borrow_mut().insert(id, msg);
+                        }
+                        counter += 1;
+                        if counter >= page_size {
+                            let _ = tx.take().unwrap().send(messages.borrow().clone());
+                            return;
+                        }
+                        let _ = cursor.continue_();
+                    } else {
+                        // 如果为null说明已经遍历完成
+                        //将总的结果发送出来
+                        let _ = tx.take().unwrap().send(messages.borrow().clone());
+                    }
+                }) as Box<dyn FnMut(&Event)>);
+
+                request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+                *on_get_list = Some(success);
+            }
+        }
         Ok(rx.await.unwrap())
     }
 
@@ -116,23 +139,17 @@ impl GroupMessages for GroupMsgRepo {
         let store = self.store(GROUP_MSG_TABLE_NAME).await.unwrap();
 
         // let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
-        let rang = IdbKeyRange::only(&JsValue::from(group_id));
-        let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
+        let rang = IdbKeyRange::only(&JsValue::from(group_id))?;
+        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
 
-        let request = index
-            .open_cursor_with_range_and_direction(
-                &JsValue::from(&rang.unwrap()),
-                web_sys::IdbCursorDirection::Prev,
-            )
-            .unwrap();
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("读取数据失败").into());
-            web_sys::console::log_1(&event.into());
-        });
+        let request = index.open_cursor_with_range_and_direction(
+            &JsValue::from(&rang),
+            web_sys::IdbCursorDirection::Prev,
+        )?;
 
         let mut tx = Some(tx);
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        let success = Closure::wrap(Box::new(move |event: &Event| {
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+        let success = Closure::once(Box::new(move |event: &Event| {
             let target = event.target().expect("msg");
             let req = target
                 .dyn_ref::<IdbRequest>()
@@ -155,7 +172,6 @@ impl GroupMessages for GroupMsgRepo {
         }) as Box<dyn FnMut(&Event)>);
 
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-        success.forget();
         Ok(rx.await.unwrap())
     }
 
@@ -184,13 +200,7 @@ impl GroupMessages for GroupMsgRepo {
             }
         });
         req.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        onsuccess.forget();
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("消息存储失败").into());
-            web_sys::console::log_1(&event.into());
-        });
-        req.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        on_add_error.forget();
+        req.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(())
     }
 
@@ -200,27 +210,37 @@ impl GroupMessages for GroupMsgRepo {
         let range = IdbKeyRange::only(&JsValue::from(group_id))?;
         let request = index.open_cursor_with_range(&range)?;
         let store = store.clone();
-        let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = req.result().unwrap_or_else(|_err| JsValue::null());
 
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-                let value = cursor.value().unwrap();
-                // 反序列化
-                if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
-                    store.delete(&JsValue::from(msg.id)).unwrap();
-                }
-                let _ = cursor.continue_();
+        {
+            let mut on_batch_del = self.on_batch_del_success.borrow_mut();
+            if let Some(ref on_batch) = *on_batch_del {
+                request.set_onsuccess(Some(on_batch.as_ref().unchecked_ref()));
+            } else {
+                let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
+                    let target = event.target().expect("msg");
+                    let req = target
+                        .dyn_ref::<IdbRequest>()
+                        .expect("Event target is IdbRequest; qed");
+                    let result = req.result().unwrap_or_else(|_err| JsValue::null());
+
+                    if !result.is_null() {
+                        let cursor = result
+                            .dyn_ref::<web_sys::IdbCursorWithValue>()
+                            .expect("result is IdbCursorWithValue; qed");
+                        let value = cursor.value().unwrap();
+                        // 反序列化
+                        if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
+                            store.delete(&JsValue::from(msg.id)).unwrap();
+                        }
+                        let _ = cursor.continue_();
+                    }
+                }) as Box<dyn FnMut(&Event)>);
+                request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+                *on_batch_del = Some(onsuccess);
             }
-        }) as Box<dyn FnMut(&Event)>);
-        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        onsuccess.forget();
+        }
+
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(())
     }
 }

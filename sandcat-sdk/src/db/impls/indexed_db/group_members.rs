@@ -20,7 +20,6 @@ use super::{SuccessCallback, GROUP_ID_INDEX};
 pub struct GroupMembersRepo {
     repo: Repository,
     on_err_callback: Closure<dyn FnMut(&Event)>,
-    /// use `RefCell` that we can modify this attr through the `&self`
     on_get_list_success: SuccessCallback,
 }
 
@@ -35,7 +34,7 @@ impl Deref for GroupMembersRepo {
 impl GroupMembersRepo {
     pub fn new(repo: Repository) -> Self {
         let on_err_callback = Closure::once(move |event: &Event| {
-            error!("conversation operate error: {:?}", event);
+            error!("group member operate error: {:?}", event);
         });
 
         Self {

@@ -1,8 +1,9 @@
 use std::ops::Deref;
 
 use futures_channel::oneshot;
+use log::error;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{console, Event, IdbRequest};
+use web_sys::{Event, IdbRequest};
 
 use crate::{error::Result, model::user::User};
 
@@ -37,32 +38,20 @@ impl Users for UserRepo {
             .put(&serde_wasm_bindgen::to_value(&user).unwrap())
             .unwrap();
 
-        let on_add_error = Closure::once(move |event: &Event| {
-            console::log_1(&String::from("写入数据失败").into());
-            console::log_1(&event.into());
-        });
+        let on_add_error =
+            Closure::once(move |event: &Event| error!("save user info error{:?}", event));
         add_request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        on_add_error.forget();
-
-        let on_add_success = Closure::once(move |_event: &Event| {
-            console::log_1(&String::from("写入数据成功").into());
-        });
-        add_request.set_onsuccess(Some(on_add_success.as_ref().unchecked_ref()));
-        on_add_success.forget();
     }
 
     // 需要优化
     async fn get(&self, id: &str) -> Result<User> {
         let (tx, rx) = oneshot::channel::<User>();
 
-        let store = self.store(&String::from(USER_STORE_NAME)).await.unwrap();
-        let request = store.get(&JsValue::from(id)).expect("get all error");
-        let on_add_error = Closure::once(move |event: &Event| {
-            console::log_1(&String::from("读取数据失败").into());
-            console::log_1(&event.into());
-        });
+        let store = self.store(&String::from(USER_STORE_NAME)).await?;
+        let request = store.get(&JsValue::from(id))?;
+        let on_add_error =
+            Closure::once(move |event: &Event| error!("read user info error{:?}", event));
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        on_add_error.forget();
 
         let on_success = Closure::once(move |event: &Event| {
             let target = event.target().expect("msg");
@@ -77,7 +66,6 @@ impl Users for UserRepo {
             let _ = tx.send(user);
         });
         request.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
-        on_success.forget();
 
         let user = rx.await.unwrap();
         Ok(user)
