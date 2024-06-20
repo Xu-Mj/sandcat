@@ -1,5 +1,6 @@
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
+use log::error;
 use wasm_bindgen::{closure::Closure, JsCast};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
@@ -428,7 +429,10 @@ impl SetWindow {
                 .await
                 .is_ok()
             {
-                db::db_ins().friends.put_friend(&friend).await;
+                if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                    error!("save friend error:{:?}", err);
+                    return;
+                }
                 Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
                     s.id = friend.friend_id;
                     s.name = Some(friend.remark.unwrap())

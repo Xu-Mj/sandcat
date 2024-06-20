@@ -1,4 +1,5 @@
 use fluent::{FluentBundle, FluentResource};
+use log::error;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -107,7 +108,15 @@ impl Component for UserInfoCom {
                             friendship.is_self = true;
                             friendship.read = ReadStatus::True;
                             // 数据入库
-                            db::db_ins().friendships.put_friendship(&friendship).await;
+                            if let Err(err) =
+                                db::db_ins().friendships.put_friendship(&friendship).await
+                            {
+                                error!("put friendship error:{:?}", err);
+
+                                return UserInfoComMsg::ApplyFriendResult(
+                                    FriendShipRequestState::Fail,
+                                );
+                            }
                             UserInfoComMsg::ApplyFriendResult(FriendShipRequestState::Success)
                         }
                     }

@@ -263,7 +263,9 @@ impl PostCard {
                     friend.signature = info.signature.into();
                     let friend = friend.clone();
                     spawn_local(async move {
-                        db::db_ins().friends.put_friend(&friend).await;
+                        if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                            error!("save friend error:{:?}", err);
+                        }
                     });
                 }
             }

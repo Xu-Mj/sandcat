@@ -12,7 +12,6 @@ use super::{repository::Repository, VOICE_TABLE_NAME};
 #[derive(Debug)]
 pub struct VoiceRepo {
     repo: Repository,
-    // on_get_success: Option<Closure<dyn FnOnce(Event)>>,
 }
 
 impl Deref for VoiceRepo {
@@ -57,9 +56,6 @@ impl Voices for VoiceRepo {
             tx.send(voice).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        // if self.on_get_success.is_none() {
-        // self.on_get_success = Some(onsuccess);
-        // }
         Ok(rx.await.unwrap())
     }
 

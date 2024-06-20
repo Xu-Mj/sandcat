@@ -192,22 +192,31 @@ impl Chats {
                 Msg::RecRelationship((fs, _)) => {
                     // receive the friend request, ignore the sequence
                     spawn_local(async move {
-                        db::db_ins().friendships.put_friendship(&fs).await;
+                        if let Err(err) = db::db_ins().friendships.put_friendship(&fs).await {
+                            error!("save friend error:{:?}", err);
+                        }
                     });
                 }
                 Msg::RelationshipRes((friend, _)) => {
                     let send_id = ctx.props().user_id.clone();
                     ctx.link().send_future(async move {
-                        db::db_ins()
+                        if let Err(err) = db::db_ins()
                             .friendships
                             .agree_by_friend_id(friend.friend_id.as_str())
-                            .await;
+                            .await
+                        {
+                            error!("agree friendship error:{:?}", err);
+                            return ChatsMsg::None;
+                        }
                         // select friend if exist
                         let f = db::db_ins().friends.get(&friend.friend_id).await;
                         if !f.friend_id.is_empty() {
                             return ChatsMsg::None;
                         }
-                        db::db_ins().friends.put_friend(&friend).await;
+                        if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                            error!("save friend error:{:?}", err);
+                            return ChatsMsg::None;
+                        }
                         // send hello message
                         let mut msg = Message {
                             local_id: nanoid::nanoid!().into(),

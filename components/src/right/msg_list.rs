@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use indexmap::IndexMap;
+use log::error;
 use sandcat_sdk::api;
 use sandcat_sdk::model::message::SendStatus;
 use sandcat_sdk::state::AudioDownloadedState;
@@ -165,7 +166,10 @@ impl MessageList {
                                     result.signature = user.signature.into();
                                 }
                                 if need_update {
-                                    db::db_ins().friends.put_friend(&result).await;
+                                    if let Err(err) = db::db_ins().friends.put_friend(&result).await
+                                    {
+                                        error!("save friend error:{:?}", err);
+                                    }
                                 }
                             }
                         }

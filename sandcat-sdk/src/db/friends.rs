@@ -8,7 +8,7 @@ use crate::model::friend::Friend;
 
 #[async_trait::async_trait(?Send)]
 pub trait Friends: Debug {
-    async fn put_friend(&self, friend: &Friend);
+    async fn put_friend(&self, friend: &Friend) -> Result<()>;
 
     async fn update_friend_avatar_nickname(
         &self,
