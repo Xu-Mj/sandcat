@@ -11,9 +11,11 @@ use crate::db::conversations::Conversations;
 use crate::error::Result;
 use crate::model::conversation::Conversation;
 
-use super::{repository::Repository, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME};
+use super::{
+    repository::Repository, SuccessCallback, CONVERSATION_LAST_MSG_TIME_INDEX,
+    CONVERSATION_TABLE_NAME,
+};
 
-type SuccessCallback = Rc<RefCell<Option<Closure<dyn FnMut(&Event)>>>>;
 #[derive(Debug)]
 pub struct ConvRepo {
     repo: Repository,
