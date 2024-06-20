@@ -35,9 +35,8 @@ impl Deref for ConvRepo {
 
 impl ConvRepo {
     pub fn new(repo: Repository) -> Self {
-        let on_err_callback = Closure::once(move |event: &Event| {
-            error!("conversation operate error: {:?}", event);
-        });
+        let on_err_callback =
+            Closure::once(move |event: &Event| error!("conversation operate error: {:?}", event));
 
         Self {
             repo,

@@ -36,9 +36,8 @@ impl Deref for FriendRepo {
 
 impl FriendRepo {
     pub fn new(repo: Repository) -> Self {
-        let on_err_callback = Closure::once(move |event: &Event| {
-            error!("friend operate error: {:?}", event);
-        });
+        let on_err_callback =
+            Closure::once(move |event: &Event| error!("friend operate error: {:?}", event));
 
         Self {
             repo,

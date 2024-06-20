@@ -38,9 +38,8 @@ impl Deref for MessageRepo {
 
 impl MessageRepo {
     pub fn new(repo: Repository) -> Self {
-        let on_err_callback = Closure::once(move |event: &Event| {
-            error!("group operate error: {:?}", event);
-        });
+        let on_err_callback =
+            Closure::once(move |event: &Event| error!("group operate error: {:?}", event));
 
         Self {
             repo,
@@ -109,9 +108,9 @@ impl Messages for MessageRepo {
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Message>>();
         // let (tx, rx) = oneshot::channel::<Vec<Message>>();
-        let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
+        let store = self.store(MESSAGE_TABLE_NAME).await?;
         let rang = IdbKeyRange::only(&JsValue::from(friend_id))?;
-        let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
+        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
         let request = index.open_cursor_with_range_and_direction(
             &JsValue::from(&rang),
             web_sys::IdbCursorDirection::Prev,

@@ -34,9 +34,8 @@ impl Deref for FriendShipRepo {
 
 impl FriendShipRepo {
     pub fn new(repo: Repository) -> Self {
-        let on_err_callback = Closure::once(move |event: &Event| {
-            error!("friendship operate error: {:?}", event);
-        });
+        let on_err_callback =
+            Closure::once(move |event: &Event| error!("friendship operate error: {:?}", event));
 
         Self {
             repo,
@@ -96,9 +95,8 @@ impl Friendships for FriendShipRepo {
             }
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        let on_add_error = Closure::once(move |event: &Event| {
-            log::error!("获取好友请求错误: {:?}", event);
-        });
+        let on_add_error =
+            Closure::once(move |event: &Event| log::error!("获取好友请求错误: {:?}", event));
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         rx.await.unwrap()
     }
@@ -132,9 +130,8 @@ impl Friendships for FriendShipRepo {
             }
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        let on_add_error = Closure::once(move |event: &Event| {
-            log::error!("获取好友请求错误: {:?}", event);
-        });
+        let on_add_error =
+            Closure::once(move |event: &Event| log::error!("获取好友请求错误: {:?}", event));
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         rx.await.unwrap()
     }
@@ -161,9 +158,8 @@ impl Friendships for FriendShipRepo {
                 .unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        let on_add_error = Closure::once(move |event: &Event| {
-            log::error!("get unread count error: {:?}", event);
-        });
+        let on_add_error =
+            Closure::once(move |event: &Event| log::error!("get unread count error: {:?}", event));
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         rx.await.unwrap()
     }

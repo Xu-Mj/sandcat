@@ -36,9 +36,8 @@ impl Deref for GroupMsgRepo {
 
 impl GroupMsgRepo {
     pub fn new(repo: Repository) -> Self {
-        let on_err_callback = Closure::once(move |event: &Event| {
-            error!("group message operate error: {:?}", event);
-        });
+        let on_err_callback =
+            Closure::once(move |event: &Event| error!("group message operate error: {:?}", event));
 
         Self {
             repo,
@@ -75,7 +74,7 @@ impl GroupMessages for GroupMsgRepo {
         let rang = IdbKeyRange::only(&JsValue::from(friend_id));
 
         // use friend id as group id
-        let index = store.index(MESSAGE_FRIEND_ID_INDEX).unwrap();
+        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
         let request = index.open_cursor_with_range_and_direction(
             &JsValue::from(&rang.unwrap()),
             web_sys::IdbCursorDirection::Prev,
@@ -136,7 +135,7 @@ impl GroupMessages for GroupMsgRepo {
     async fn get_last_msg(&self, group_id: &str) -> Result<Message> {
         // 使用channel异步获取数据
         let (tx, rx) = oneshot::channel::<Message>();
-        let store = self.store(GROUP_MSG_TABLE_NAME).await.unwrap();
+        let store = self.store(GROUP_MSG_TABLE_NAME).await?;
 
         // let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
         let rang = IdbKeyRange::only(&JsValue::from(group_id))?;

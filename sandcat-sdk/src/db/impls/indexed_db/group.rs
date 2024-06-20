@@ -41,9 +41,8 @@ impl Deref for GroupRepo {
 
 impl GroupRepo {
     pub fn new(repo: Repository) -> Self {
-        let on_err_callback = Closure::once(move |event: &Event| {
-            error!("group operate error: {:?}", event);
-        });
+        let on_err_callback =
+            Closure::once(move |event: &Event| error!("group operate error: {:?}", event));
 
         Self {
             repo,
