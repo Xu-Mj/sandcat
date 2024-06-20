@@ -98,7 +98,11 @@ impl Component for Contacts {
         });
         // 查询好友请求列表
         ctx.link().send_future(async {
-            let count = db::db_ins().friendships.get_unread_count().await;
+            let count = db::db_ins()
+                .friendships
+                .get_unread_count()
+                .await
+                .unwrap_or_default();
             ContactsMsg::QueryFriendship(count)
         });
         // register state
@@ -182,7 +186,11 @@ impl Component for Contacts {
                 match friendship.state_type {
                     FriendShipStateType::Req => {
                         ctx.link().send_future(async {
-                            let count = db::db_ins().friendships.get_unread_count().await;
+                            let count = db::db_ins()
+                                .friendships
+                                .get_unread_count()
+                                .await
+                                .unwrap_or_default();
                             Dispatch::<UnreadState>::global()
                                 .reduce_mut(|s| s.contacts_count = count);
                             ContactsMsg::QueryFriendship(count)

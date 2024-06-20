@@ -57,7 +57,7 @@ impl Component for FriendShipList {
 
     fn create(ctx: &Context<Self>) -> Self {
         ctx.link().send_future(async {
-            FriendShipListMsg::QueryFriendships(db::db_ins().friendships.get_list().await)
+            FriendShipListMsg::QueryFriendships(db::db_ins().friendships.get_list().await.unwrap())
         });
         let fs_dis = Dispatch::global().subscribe_silent(
             ctx.link()
