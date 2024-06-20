@@ -2,12 +2,15 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use sandcat_sdk::db::TOKEN;
+use sandcat_sdk::error::Error;
+use sandcat_sdk::error::WebSocketError;
 use sandcat_sdk::state::ConnectState;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 use yew::Callback;
 
+use sandcat_sdk::error::Result;
 use sandcat_sdk::model::message::convert_server_msg;
 use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::pb::message::Msg as PbMsg;
@@ -20,6 +23,7 @@ pub const UNAUTHORIZED_CODE: u16 = 4002;
 pub struct WebSocketManager {
     url: String,
     ws: Option<WebSocket>,
+    is_reconnecting: bool,
     reconnect_attempts: u32,
     max_reconnect_attempts: u32,
     reconnect_interval: i32,
@@ -27,6 +31,7 @@ pub struct WebSocketManager {
     knockoff_callback: Callback<()>,
     logout_callback: Callback<()>,
     // prevent memory leaks
+    on_timeout: Option<Closure<dyn FnMut()>>,
     on_open: Option<Closure<dyn FnMut()>>,
     on_close: Option<Closure<dyn FnMut(CloseEvent)>>,
     on_error: Option<Closure<dyn FnMut(ErrorEvent)>>,
@@ -51,10 +56,12 @@ impl WebSocketManager {
             ws: None,
             reconnect_attempts: 0,
             max_reconnect_attempts: 5,
+            is_reconnecting: false,
             reconnect_interval: 1000, // 初始重连间隔为1000毫秒
             receive_callback,
             knockoff_callback,
             logout_callback,
+            on_timeout: None,
             on_open: None,
             on_close: None,
             on_error: None,
@@ -63,12 +70,18 @@ impl WebSocketManager {
     }
 
     // 初始化WebSocket连接
-    pub fn connect(ws_manager: Rc<RefCell<Self>>) {
+    pub fn connect(ws_manager: Rc<RefCell<Self>>) -> Result<()> {
         // sentence the ws is connected
         if ws_manager.borrow().ws.is_some()
             && ws_manager.borrow().ws.as_ref().unwrap().ready_state() == WebSocket::OPEN
         {
-            return;
+            return Ok(());
+        }
+
+        if ws_manager.borrow().is_reconnecting {
+            let mut ws_manager = ws_manager.borrow_mut();
+            ws_manager.is_reconnecting = false;
+            ws_manager.on_timeout = None;
         }
 
         let ws = WebSocket::new(
@@ -79,7 +92,7 @@ impl WebSocketManager {
             )
             .as_str(),
         )
-        .unwrap();
+        .map_err(|e| Error::WebSocket(WebSocketError::Connect(e)))?;
 
         // send connecting state
         Dispatch::<ConnectState>::global().set(ConnectState::Connecting);
@@ -110,7 +123,6 @@ impl WebSocketManager {
                 }
             } else if let Ok(blob) = e.data().dyn_into::<web_sys::Blob>() {
                 // if message type is we need to convert it to ArrayBuffer
-                log::info!("Message received as a Blob, size: {}", blob.size());
                 let arr = js_sys::Uint8Array::new(&blob);
                 let mut body = vec![0; arr.length() as usize];
                 arr.copy_to(&mut body[..]);
@@ -168,27 +180,32 @@ impl WebSocketManager {
         manager.on_close = Some(on_close);
         manager.on_message = Some(on_message);
         manager.on_error = Some(on_error);
+        Ok(())
     }
 
-    pub fn send_message(&self, message: Msg) -> Result<(), JsValue> {
+    pub fn send_message(&self, message: Msg) -> Result<()> {
         if let Some(ws) = &self.ws {
             // encode message
-            let msg = bincode::serialize(&PbMsg::from(message))
-                .map_err(|e| JsValue::from_str(&format!("{:?}", e)))?;
+            let msg = bincode::serialize(&PbMsg::from(message))?;
             ws.send_with_u8_array(&msg)
+                .map_err(|e| Error::WebSocket(WebSocketError::Send(e)))?;
+            Ok(())
         } else {
-            Err(JsValue::from_str("websocket is none"))
+            Err(Error::WebSocket(WebSocketError::Closed))
         }
     }
 
     fn reconnect(&mut self, ws_manager: Rc<RefCell<Self>>) {
         log::debug!("第{}次重连", self.reconnect_attempts);
+        self.is_reconnecting = true;
         if self.reconnect_attempts < self.max_reconnect_attempts {
             self.reconnect_attempts += 1;
             let interval = self.reconnect_interval * self.reconnect_attempts as i32;
             let window = web_sys::window().unwrap();
-            let closure = Closure::wrap(Box::new(move || {
-                WebSocketManager::connect(ws_manager.clone());
+            let closure = Closure::once(Box::new(move || {
+                if let Err(e) = WebSocketManager::connect(ws_manager.clone()) {
+                    log::error!("reconnect error: {:?}", e)
+                }
             }) as Box<dyn FnMut()>);
 
             window
@@ -198,7 +215,7 @@ impl WebSocketManager {
                 )
                 .unwrap();
 
-            closure.forget();
+            self.on_timeout = Some(closure);
         } else {
             log::error!("Reached maximum reconnect attempts");
             Dispatch::<ConnectState>::global().set(ConnectState::DisConnect);
@@ -218,9 +235,10 @@ impl WebSocketManager {
             ws.set_onclose(None);
         }
 
-        drop(self.on_open.take());
-        drop(self.on_close.take());
-        drop(self.on_message.take());
-        drop(self.on_error.take());
+        self.on_close = None;
+        self.on_error = None;
+        self.on_message = None;
+        self.on_open = None;
+        self.on_timeout = None;
     }
 }

@@ -146,7 +146,9 @@ impl Component for Chats {
                 self.handle_offline_messages(ctx, messages);
                 // unmount loading
                 Dialog::close_loading();
-                WebSocketManager::connect(self.ws.clone());
+                if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
+                    Dialog::error(&e.to_string())
+                }
                 true
             }
             ChatsMsg::InsertConv(conv) => {
@@ -184,7 +186,6 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::CloseContextMenu => {
-                log::debug!("close context menu");
                 self.show_context_menu = false;
                 self.context_menu_pos = (0, 0, AttrValue::default(), false);
                 true

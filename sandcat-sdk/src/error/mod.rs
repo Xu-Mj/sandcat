@@ -6,7 +6,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 type Reason = String;
 
-#[derive(Debug, Clone, ThisError)]
+#[derive(Debug, Clone, ThisError, PartialEq)]
 pub enum Error {
     /// convert server message to local error
     #[error("Convert message error {0}")]
@@ -29,6 +29,23 @@ pub enum Error {
     NoWindow,
     #[error("JsValue to string error")]
     JsToStr,
+    #[error("JsValue to string error")]
+    WebSocket(WebSocketError),
+    #[error("BinCode error {0}")]
+    BinCode(Reason),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum WebSocketError {
+    Closed,
+    Connect(JsValue),
+    Send(JsValue),
+}
+
+impl From<bincode::Error> for Error {
+    fn from(value: bincode::Error) -> Self {
+        Self::BinCode(value.to_string())
+    }
 }
 
 impl From<serde_wasm_bindgen::Error> for Error {

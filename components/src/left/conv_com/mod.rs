@@ -21,6 +21,7 @@ use i18n::{
 use sandcat_sdk::{
     api,
     db::{REFRESH_TOKEN, TOKEN},
+    error::{Error, WebSocketError},
     model::{
         conversation::Conversation,
         message::{Msg, SingleCall},
@@ -268,14 +269,16 @@ impl Chats {
 
     pub fn send_msg(&self, msg: Msg) {
         // 发送已收到消息给服务器
-        match self.ws.borrow().send_message(msg) {
-            Ok(_) => {
-                log::info!("发送成功")
+        if let Err(e) = self.ws.borrow().send_message(msg) {
+            if e == Error::WebSocket(WebSocketError::Closed) {
+                // reconnect websocket
+                if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
+                    log::error!("websocket connect error: {:?}", e);
+                }
+            } else {
+                log::error!("send message error: {:?}", e);
             }
-            Err(e) => {
-                log::error!("发送失败: {:?}", e)
-            }
-        };
+        }
     }
 
     fn delete_item(&mut self) {
