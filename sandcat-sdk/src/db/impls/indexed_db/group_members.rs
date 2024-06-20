@@ -1,7 +1,10 @@
+use std::cell::RefCell;
 use std::ops::Deref;
+use std::rc::Rc;
 
 use futures_channel::oneshot;
 use js_sys::Array;
+use log::error;
 use wasm_bindgen::{closure::Closure, JsCast, JsValue};
 use web_sys::{IdbKeyRange, IdbRequest};
 use yew::Event;
@@ -11,21 +14,35 @@ use crate::error::Result;
 use crate::model::group::{GroupMember, GroupMemberFromServer};
 
 use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
+use super::{SuccessCallback, GROUP_ID_INDEX};
 
-#[derive(Debug, Clone)]
-pub struct GroupMembersRepo(Repository);
+#[derive(Debug)]
+pub struct GroupMembersRepo {
+    repo: Repository,
+    on_err_callback: Closure<dyn FnMut(&Event)>,
+    /// use `RefCell` that we can modify this attr through the `&self`
+    on_get_list_success: SuccessCallback,
+}
 
 impl Deref for GroupMembersRepo {
     type Target = Repository;
 
     fn deref(&self) -> &Self::Target {
-        &self.0
+        &self.repo
     }
 }
 
 impl GroupMembersRepo {
     pub fn new(repo: Repository) -> Self {
-        Self(repo)
+        let on_err_callback = Closure::once(move |event: &Event| {
+            error!("conversation operate error: {:?}", event);
+        });
+
+        Self {
+            repo,
+            on_err_callback,
+            on_get_list_success: Rc::new(RefCell::new(None)),
+        }
     }
 }
 
@@ -66,11 +83,7 @@ impl GroupMembers for GroupMembersRepo {
             tx.send(group).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("读取数据失败").into());
-            web_sys::console::log_1(&event.into());
-        });
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(rx.await.unwrap())
     }
 
@@ -101,58 +114,61 @@ impl GroupMembers for GroupMembersRepo {
             tx.send(group).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("读取数据失败").into());
-            web_sys::console::log_1(&event.into());
-        });
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(rx.await.unwrap())
     }
 
     async fn get_list_by_group_id(&self, group_id: &str) -> Result<Vec<GroupMember>> {
         let (tx, rx) = oneshot::channel::<Vec<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
-        let index = store.index("group_id")?;
+        let index = store.index(GROUP_ID_INDEX)?;
         let range = IdbKeyRange::only(&JsValue::from(group_id))?;
         let request = index.open_cursor_with_range(&range.into())?;
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("读取数据失败").into());
-            web_sys::console::log_1(&event.into());
-        });
 
         let mut groups = Vec::new();
         let mut tx = Some(tx);
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        let success = Closure::wrap(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = match req.result() {
-                Ok(data) => data,
-                Err(_err) => {
-                    log::error!("query friend list error ...:{:?}", _err);
-                    JsValue::null()
-                }
-            };
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-                let value = cursor.value().unwrap();
-                // 反序列化
-                let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
-                groups.push(group);
-                let _ = cursor.continue_();
-            } else {
-                // 如果为null说明已经遍历完成
-                //将总的结果发送出来
-                let _ = tx.take().unwrap().send(groups.to_owned());
-            }
-        }) as Box<dyn FnMut(&Event)>);
 
-        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-        success.forget();
+        {
+            let mut on_get_list = self.on_get_list_success.borrow_mut();
+            if let Some(ref on_get_list) = *on_get_list {
+                request.set_onsuccess(Some(on_get_list.as_ref().unchecked_ref()));
+            } else {
+                let success = Closure::wrap(Box::new(move |event: &Event| {
+                    let target = event.target().expect("msg");
+                    let req = target
+                        .dyn_ref::<IdbRequest>()
+                        .expect("Event target is IdbRequest; qed");
+                    let result = match req.result() {
+                        Ok(data) => data,
+                        Err(_err) => {
+                            error!("query friend list error ...:{:?}", _err);
+                            JsValue::null()
+                        }
+                    };
+                    if !result.is_null() {
+                        let cursor = result
+                            .dyn_ref::<web_sys::IdbCursorWithValue>()
+                            .expect("result is IdbCursorWithValue; qed");
+                        let value = cursor.value().unwrap();
+                        // 反序列化
+                        let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
+                        groups.push(group);
+                        let _ = cursor.continue_();
+                    } else {
+                        // 如果为null说明已经遍历完成
+                        //将总的结果发送出来
+                        let _ = tx.take().unwrap().send(groups.to_owned());
+                    }
+                }) as Box<dyn FnMut(&Event)>);
+
+                request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+
+                *on_get_list = Some(success);
+            }
+        }
+
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
         Ok(rx.await.unwrap())
     }
 
@@ -174,17 +190,12 @@ impl GroupMembers for GroupMembersRepo {
             if !result.is_undefined() && !result.is_null() {
                 let group: GroupMember = serde_wasm_bindgen::from_value(result).unwrap();
                 if let Err(err) = store.delete(&JsValue::from(group.id)) {
-                    log::error!("delete group member error: {:?}", err);
+                    error!("delete group member error: {:?}", err);
                 }
             }
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        onsuccess.forget();
-        let on_add_error = Closure::once(move |event: &Event| {
-            web_sys::console::log_1(&String::from("读取数据失败").into());
-            web_sys::console::log_1(&event.into());
-        });
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(())
     }
 }
