@@ -1,4 +1,4 @@
-use std::{cell::RefCell, ops::Deref};
+use std::{cell::RefCell, ops::Deref, rc::Rc};
 
 use futures_channel::oneshot;
 use indexmap::IndexMap;
@@ -13,7 +13,7 @@ use crate::model::conversation::Conversation;
 
 use super::{repository::Repository, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME};
 
-type SuccessCallback = RefCell<Option<Closure<dyn FnMut(&Event)>>>;
+type SuccessCallback = Rc<RefCell<Option<Closure<dyn FnMut(&Event)>>>>;
 #[derive(Debug)]
 pub struct ConvRepo {
     repo: Repository,
@@ -40,8 +40,8 @@ impl ConvRepo {
         Self {
             repo,
             on_err_callback,
-            on_update_success: RefCell::new(None),
-            get_conv_success: RefCell::new(None),
+            on_update_success: Rc::new(RefCell::new(None)),
+            get_conv_success: Rc::new(RefCell::new(None)),
         }
     }
 }
@@ -70,24 +70,31 @@ impl Conversations for ConvRepo {
         let store = store.clone();
 
         let (tx, rx) = oneshot::channel::<Conversation>();
-        let onsuccess = Closure::once(move |event: &Event| {
-            let result = event
-                .target()
-                .unwrap()
-                .dyn_ref::<IdbRequest>()
-                .unwrap()
-                .result()
-                .unwrap();
-            if !result.is_undefined() && !result.is_null() {
-                let conv1: Conversation = serde_wasm_bindgen::from_value(result).unwrap();
-                conv.unread_count = conv1.unread_count;
+        {
+            let mut on_update = self.on_update_success.borrow_mut();
+            if let Some(ref onsuccess) = *on_update {
+                request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+            } else {
+                let onsuccess = Closure::once(move |event: &Event| {
+                    let result = event
+                        .target()
+                        .unwrap()
+                        .dyn_ref::<IdbRequest>()
+                        .unwrap()
+                        .result()
+                        .unwrap();
+                    if !result.is_undefined() && !result.is_null() {
+                        let conv1: Conversation = serde_wasm_bindgen::from_value(result).unwrap();
+                        conv.unread_count = conv1.unread_count;
+                    }
+                    let value = serde_wasm_bindgen::to_value(&conv).unwrap();
+                    store.put(&value).unwrap();
+                    tx.send(conv).unwrap();
+                });
+                request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+                *on_update = Some(onsuccess);
             }
-            let value = serde_wasm_bindgen::to_value(&conv).unwrap();
-            store.put(&value).unwrap();
-            tx.send(conv).unwrap();
-        });
-        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        self.on_update_success.replace(Some(onsuccess));
+        }
 
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(rx.await.unwrap())
@@ -106,39 +113,48 @@ impl Conversations for ConvRepo {
         let convs = convs.clone();
         let mut tx = Some(tx);
 
-        let success = Closure::wrap(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = match req.result() {
-                Ok(data) => data,
-                Err(_err) => {
-                    log::error!("query...:{:?}", _err);
-                    JsValue::null()
-                }
-            };
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-                let value = cursor.value().unwrap();
-                // 反序列化
-                if let Ok(conv) = serde_wasm_bindgen::from_value::<Conversation>(value) {
-                    let id = conv.friend_id.clone();
-                    convs.borrow_mut().insert(id, conv);
-                }
-                let _ = cursor.continue_();
+        // make sure that the  `RefCell` reference is released already before await
+        {
+            let mut on_get = self.get_conv_success.borrow_mut();
+            if let Some(ref success) = *on_get {
+                request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
             } else {
-                // 如果为null说明已经遍历完成
-                //将总的结果发送出来
-                let _ = tx.take().unwrap().send(convs.borrow().clone());
+                let success = Closure::wrap(Box::new(move |event: &Event| {
+                    let target = event.target().expect("msg");
+                    let req = target
+                        .dyn_ref::<IdbRequest>()
+                        .expect("Event target is IdbRequest; qed");
+                    let result = match req.result() {
+                        Ok(data) => data,
+                        Err(_err) => {
+                            log::error!("query...:{:?}", _err);
+                            JsValue::null()
+                        }
+                    };
+                    if !result.is_null() {
+                        let cursor = result
+                            .dyn_ref::<web_sys::IdbCursorWithValue>()
+                            .expect("result is IdbCursorWithValue; qed");
+                        let value = cursor.value().unwrap();
+                        // 反序列化
+                        if let Ok(conv) = serde_wasm_bindgen::from_value::<Conversation>(value) {
+                            let id = conv.friend_id.clone();
+                            convs.borrow_mut().insert(id, conv);
+                        }
+                        let _ = cursor.continue_();
+                    } else {
+                        // 如果为null说明已经遍历完成
+                        //将总的结果发送出来
+                        let _ = tx.take().unwrap().send(convs.borrow().clone());
+                    }
+                }) as Box<dyn FnMut(&Event)>);
+
+                request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+                *on_get = Some(success);
             }
-        }) as Box<dyn FnMut(&Event)>);
+        }
 
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
-        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-        self.get_conv_success.replace(Some(success));
 
         Ok(rx.await.unwrap())
     }
