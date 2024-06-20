@@ -532,7 +532,10 @@ impl Chats {
 
                 // save friendship
                 spawn_local(async move {
-                    db::db_ins().friendships.put_friendship(&friendship).await;
+                    if let Err(err) = db::db_ins().friendships.put_friendship(&friendship).await {
+                        error!("save friendship error:{:?}", err);
+                        return;
+                    };
                     // notify
                     Dispatch::<FriendShipState>::global().reduce_mut(|s| {
                         s.ship = Some(friendship);
@@ -562,11 +565,18 @@ impl Chats {
                 // 需要通知联系人列表更新
                 // 数据入库
                 ctx.link().send_future(async move {
-                    db::db_ins()
+                    if let Err(err) = db::db_ins()
                         .friendships
                         .agree_by_friend_id(friend.friend_id.as_str())
-                        .await;
-                    db::db_ins().friends.put_friend(&friend).await;
+                        .await
+                    {
+                        error!("agree friendship error:{:?}", err);
+                        return ChatsMsg::None;
+                    }
+                    if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                        error!("save friend error:{:?}", err);
+                        return ChatsMsg::None;
+                    }
                     // send hello message
                     let mut msg = Message {
                         local_id: nanoid::nanoid!().into(),
@@ -626,7 +636,9 @@ impl Chats {
                     let mut friend = db::db_ins().friends.get(&friend_id).await;
                     if !friend.friend_id.is_empty() {
                         friend.status = FriendStatus::Delete as i32;
-                        db::db_ins().friends.put_friend(&friend).await;
+                        if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                            error!("save friend error:{:?}", err);
+                        }
                     }
                 });
                 self.handle_lack_msg(ctx, seq);

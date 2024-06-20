@@ -33,10 +33,11 @@ impl FriendRepo {
 }
 #[async_trait::async_trait(?Send)]
 impl Friends for FriendRepo {
-    async fn put_friend(&self, friend: &Friend) {
-        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
-        let value = serde_wasm_bindgen::to_value(friend).unwrap();
-        store.put(&value).unwrap();
+    async fn put_friend(&self, friend: &Friend) -> Result<()> {
+        let store = self.store(FRIEND_TABLE_NAME).await?;
+        let value = serde_wasm_bindgen::to_value(friend)?;
+        store.put(&value)?;
+        Ok(())
     }
 
     async fn update_friend_avatar_nickname(

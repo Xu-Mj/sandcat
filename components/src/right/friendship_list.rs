@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
+use log::error;
 use sandcat_sdk::db;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{HtmlInputElement, MouseEvent};
@@ -156,8 +157,16 @@ impl Component for FriendShipList {
                         let send_id = ctx.props().user_id.clone();
                         // update the is_operated field
                         spawn_local(async move {
-                            db::db_ins().friendships.agree(friendship_id.as_str()).await;
-                            db::db_ins().friends.put_friend(&friend).await;
+                            if let Err(err) =
+                                db::db_ins().friendships.agree(friendship_id.as_str()).await
+                            {
+                                error!("save agree friendship error:{:?}", err);
+                                return;
+                            }
+                            if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                                error!("save friend error:{:?}", err);
+                                return;
+                            }
                             let mut msg = Message {
                                 local_id: nanoid::nanoid!().into(),
                                 send_id,
