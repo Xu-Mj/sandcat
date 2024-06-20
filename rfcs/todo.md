@@ -14,3 +14,5 @@
 - register page need to add check failed message for user input.
 - need to update group member info when we received a group message
 - move database init to the conversation component to decrease render time
+- call component need i18n
+- need to notify user when the authorization is expired
