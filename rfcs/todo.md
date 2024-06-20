@@ -6,12 +6,11 @@
 - to sync the contacts list and apply list and apply response list
 - we need to update user information when we look up the friend info
 - we need to update user information when we click the conversation item -- need to optimize update time and use synchroniza way to update ui
-- redesign the websocket reconnection logical,
 - decrease the state count; --every action will trigger a state change
 - reply busy when the user is in the call
 - need to handle the group invitation or create group in right mod com
 - we need to redesign the relation about friend with group
 - need to test the invite new member for group
-- need to hold the closure in db module,
 - register page need to add check failed message for user input.
 - need to update group member info when we received a group message
+- move database init to the conversation component to decrease render time

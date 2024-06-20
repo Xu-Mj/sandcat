@@ -23,10 +23,10 @@ use sandcat_sdk::model::message::{
     Agree, Hangup, InviteAnswerMsg, InviteCancelMsg, InviteInfo, InviteMsg, InviteNotAnswerMsg,
     InviteType, Message, Msg, SingleCall,
 };
-use sandcat_sdk::model::notification::{Notification, NotificationType};
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::ItemInfo;
-use sandcat_sdk::state::{NotificationState, SendCallState};
+use sandcat_sdk::state::SendCallState;
 use ws::WebSocketManager;
 
 use crate::call::ConnectionState;
@@ -63,7 +63,6 @@ pub enum PhoneCallMsg {
     // callback from pc on_track
     OnConnect(web_sys::RtcTrackEvent),
     TickCallDuration,
-    Notification(Notification),
     // 显示顶部消息通知
     ShowCallNotify(Box<dyn ItemInfo>),
     SwitchVolume,
@@ -148,12 +147,8 @@ impl Component for PhoneCall {
                 if msg.agree {
                     // 对方同意了通话请求，正在建立连接，为了简化代码邀请方和被邀请方的创建pc方法合并到一起了
                     if let Err(e) = self.create_pc(ctx, "") {
-                        ctx.link()
-                            .send_message(PhoneCallMsg::Notification(Notification {
-                                type_: Default::default(),
-                                title: AttrValue::from("创建PC错误"),
-                                content: AttrValue::from(e.as_string().unwrap()),
-                            }));
+                        Dispatch::<Notification>::global()
+                            .set(Notification::error(format!("create pc error: {:?}", e)));
                         return false;
                     }
                 } else {
@@ -291,14 +286,7 @@ impl Component for PhoneCall {
                 log::debug!("send call invite");
                 // 判断是否正在通话中
                 if self.invite_info.is_some() {
-                    log::debug!("占线");
-                    // 给出提示
-                    ctx.link()
-                        .send_message(PhoneCallMsg::Notification(Notification {
-                            type_: NotificationType::Warn,
-                            title: AttrValue::from("Warn"),
-                            content: AttrValue::from("您正在通话中!"),
-                        }));
+                    Dispatch::<Notification>::global().set(Notification::warn("您正在通话中!"));
                     return false;
                 }
                 self.invite_info = Some(InviteInfo {
@@ -352,11 +340,9 @@ impl Component for PhoneCall {
                                     log::error!("未知错误获取音频流: {:?}", e);
                                     "其他错误"
                                 };
-                                PhoneCallMsg::Notification(Notification {
-                                    type_: NotificationType::Error,
-                                    title: AttrValue::from("ERROR"),
-                                    content: AttrValue::from(content),
-                                })
+                                Dispatch::<Notification>::global()
+                                    .set(Notification::error(content));
+                                PhoneCallMsg::None
                             }
                         },
                         InviteType::Audio => {
@@ -388,11 +374,9 @@ impl Component for PhoneCall {
                                         log::error!("未知错误获取音频流: {:?}", e);
                                         "其他错误"
                                     };
-                                    PhoneCallMsg::Notification(Notification {
-                                        type_: NotificationType::Error,
-                                        title: AttrValue::from("ERROR"),
-                                        content: AttrValue::from(content),
-                                    })
+                                    Dispatch::<Notification>::global()
+                                        .set(Notification::error(content));
+                                    PhoneCallMsg::None
                                 }
                             }
                         }
@@ -454,19 +438,21 @@ impl Component for PhoneCall {
                     match invite_type {
                         InviteType::Video => match utils::get_video_stream().await {
                             Ok(stream) => PhoneCallMsg::ConnectedCall(stream),
-                            Err(e) => PhoneCallMsg::Notification(Notification {
-                                type_: NotificationType::Error,
-                                title: AttrValue::from("ERROR"),
-                                content: format!("get video stream error: {:?}", e).into(),
-                            }),
+                            Err(e) => {
+                                Dispatch::<Notification>::global().set(Notification::error(
+                                    format!("get video stream error: {:?}", e),
+                                ));
+                                PhoneCallMsg::None
+                            }
                         },
                         InviteType::Audio => match utils::get_audio_stream().await {
                             Ok(stream) => PhoneCallMsg::ConnectedCall(stream),
-                            Err(e) => PhoneCallMsg::Notification(Notification {
-                                type_: NotificationType::Error,
-                                title: AttrValue::from("ERROR"),
-                                content: format!("get video stream error: {:?}", e).into(),
-                            }),
+                            Err(e) => {
+                                Dispatch::<Notification>::global().set(Notification::error(
+                                    format!("get audio stream error: {:?}", e),
+                                ));
+                                PhoneCallMsg::None
+                            }
                         },
                     }
                 });
@@ -723,16 +709,6 @@ impl Component for PhoneCall {
                     });
                     self.finish_call();
 
-                    return true;
-                }
-                false
-            }
-            PhoneCallMsg::Notification(item) => {
-                log::debug!("CallTimeout");
-                let type_ = item.type_.clone();
-                Dispatch::<NotificationState>::global().reduce_mut(|s| s.noti = item);
-                if type_ == NotificationType::Error {
-                    self.finish_call();
                     return true;
                 }
                 false

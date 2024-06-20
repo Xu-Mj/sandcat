@@ -5,6 +5,7 @@ mod avatar;
 pub mod call;
 pub mod dialog;
 pub mod left;
+pub mod notification;
 pub mod right;
 pub mod select_friends;
 pub mod self_info;

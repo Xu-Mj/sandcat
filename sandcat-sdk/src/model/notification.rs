@@ -1,27 +1,41 @@
 use yew::AttrValue;
+use yewdux::Store;
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct Notification {
-    pub type_: NotificationType,
-    pub title: AttrValue,
     pub content: AttrValue,
+    pub delay: u32,
+    pub type_: NotificationType,
 }
 
 impl Notification {
-    /* pub fn from_content(content: AttrValue) -> Self {
+    pub fn info(content: impl ToString) -> Self {
         Self {
-            content,
-            ..Default::default()
+            content: content.to_string().into(),
+            type_: NotificationType::Info,
+            delay: 3000,
         }
     }
-     */
-    #[allow(dead_code)]
-    pub fn error_from_content(content: AttrValue) -> Self {
+
+    pub fn warn(content: impl ToString) -> Self {
         Self {
-            content,
-            type_: NotificationType::Error,
-            ..Default::default()
+            content: content.to_string().into(),
+            type_: NotificationType::Warn,
+            delay: 3000,
         }
+    }
+
+    pub fn error(content: impl ToString) -> Self {
+        Self {
+            content: content.to_string().into(),
+            type_: NotificationType::Error,
+            delay: 3000,
+        }
+    }
+
+    pub fn with_delay(mut self, delay: u32) -> Self {
+        self.delay = delay;
+        self
     }
 }
 

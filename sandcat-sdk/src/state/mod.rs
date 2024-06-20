@@ -10,7 +10,6 @@ use crate::model::{
     friend::{Friend, FriendShipWithUser},
     group::Group,
     message::{InviteMsg, Message, Msg, ServerResponse},
-    notification::Notification,
     user::User,
     ComponentType, CurrentItem, FriendShipStateType, RightContentType,
 };
@@ -193,11 +192,6 @@ pub struct FriendShipState {
     pub ship: Option<FriendShipWithUser>,
     pub friend: Option<Friend>,
     pub state_type: FriendShipStateType,
-}
-
-#[derive(Default, Clone, PartialEq, Debug, Store)]
-pub struct NotificationState {
-    pub noti: Notification,
 }
 
 #[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
