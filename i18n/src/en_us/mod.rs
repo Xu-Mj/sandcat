@@ -95,6 +95,7 @@ forward = Forward
 
 pub const SELECT_FRIENDS: &str = r#"
 querying = Querying
+error = Query Error
 select_friends = Select Friends
 empty_result = No Result
 submit = Submit

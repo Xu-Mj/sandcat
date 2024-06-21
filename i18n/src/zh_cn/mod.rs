@@ -91,6 +91,7 @@ not_answer = 未接听
 
 pub const SELECT_FRIENDS: &str = r#"
 querying = 正在查询...
+error = 查询出错
 select_friends = 选择好友
 empty_result = 没有搜索结果
 submit = 确定

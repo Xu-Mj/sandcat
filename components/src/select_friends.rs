@@ -18,6 +18,7 @@ use yewdux::Dispatch;
 
 use crate::constant::CANCEL;
 use crate::constant::EMPTY_RESULT;
+use crate::constant::ERROR;
 use crate::constant::QUERYING;
 use crate::constant::SELECT_FRIENDS;
 use crate::constant::SUBMIT;
@@ -153,7 +154,7 @@ impl Component for SelectFriendList {
                             <div class="item" key={index.to_string()}>
                                 <input type="checkbox" id={index.to_string()} name="friend" value={index.to_string()} />
                                 <label for={index.to_string()}  class="item-card">
-                                    <img src={&item.avatar}/>
+                                    <img src={utils::get_avatar_url(&item.avatar)}/>
                                     {name}
                                 </label>
                             </div>
@@ -161,7 +162,7 @@ impl Component for SelectFriendList {
 
                     }).collect::<Html>()
         } else if self.err.is_some() {
-            content = html!(<div>{format!("查询出错{:?}", self.err)}</div>)
+            content = html!(<div>{format!("{}{:?}", tr!(self.i18n, ERROR), self.err)}</div>)
         }
         let submit = ctx.link().callback(|_| AddConvMsg::Add);
         let close = ctx.link().callback(|_| AddConvMsg::Close);
