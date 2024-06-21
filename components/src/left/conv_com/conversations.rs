@@ -26,6 +26,7 @@ use utils::tr;
 use ws::WebSocketManager;
 
 use crate::call::PhoneCall;
+use crate::constant::{KNOCK_OFF_MSG, NO_RESULT, OK};
 use crate::dialog::Dialog;
 use crate::left::right_click_panel::RightClickPanel;
 use crate::select_friends::SelectFriendList;
@@ -111,7 +112,6 @@ impl Component for Chats {
     type Properties = ChatsProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        Dialog::loading("正在加载数据");
         Self::new(ctx)
     }
 
@@ -386,7 +386,7 @@ impl Component for Chats {
         };
         let content = if self.is_searching {
             if self.result.is_empty() {
-                html! {<div class="no-result">{tr!(self.i18n,"no_result")}</div>}
+                html! {<div class="no-result">{tr!(self.i18n, NO_RESULT)}</div>}
             } else {
                 self.render_result(ctx)
             }
@@ -428,8 +428,8 @@ impl Component for Chats {
             warning = html! {
                 <div class="knock-off-warning">
                     <div class="warning-window box-shadow">
-                        <div>{tr!(self.i18n, "knock_off_msg")}</div>
-                        <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{tr!(self.i18n, "ok")}</button>
+                        <div>{tr!(self.i18n, KNOCK_OFF_MSG)}</div>
+                        <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{tr!(self.i18n, OK)}</button>
                     </div>
                 </div>
             }

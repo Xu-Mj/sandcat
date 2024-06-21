@@ -40,7 +40,7 @@ choose_avatar = Choose
 "#;
 
 pub const CONVERSATION: &str = r#"
-search = Search
+loading = Loading...
 no_result = No Result
 # content type
 image = [Image]
@@ -51,6 +51,7 @@ file = [File]
 text = [Text]
 video_call = [Video Call]
 audio_call = [Voice Call]
+error = [ERROR]
 knock_off_msg = Another device has logged in your account, if it is not you, please check your account password.
 ok = OK
 "#;

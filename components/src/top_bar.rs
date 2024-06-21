@@ -7,6 +7,8 @@ use icons::{PeoplePlusIcon, PlusIcon, SearchIcon};
 use sandcat_sdk::{model::ComponentType, state::MobileState};
 use utils::tr;
 use yewdux::Dispatch;
+
+use crate::constant::{CONCEL, SEARCH};
 /// 左侧组件顶部选项栏
 /// 包含搜索和设置按钮以及一个排序按钮
 /// 可在联系人与消息列表中进行复用
@@ -115,7 +117,7 @@ impl Component for TopBar {
                 html!(<PlusIcon />)
             }
             ComponentType::Default => {
-                html!({ tr!(self.i18n, "cancel") })
+                html!({ tr!(self.i18n, CONCEL) })
             }
             ComponentType::Setting => html!(),
         };
@@ -138,7 +140,7 @@ impl Component for TopBar {
                         ref={self.search_node.clone()}
                         class="search-input"
                         type="search"
-                        placeholder={tr!(self.i18n, "search")}
+                        placeholder={tr!(self.i18n, SEARCH)}
                         {onchange}
                         {onkeydown} />
                 </div>

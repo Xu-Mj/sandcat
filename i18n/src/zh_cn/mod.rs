@@ -54,9 +54,8 @@ cancel = 取消
 "#;
 
 pub const CONVERSATION: &str = r#"
-search = 搜索
+loading = 正在加载数据...
 no_result = 没有搜索结果
-# content type
 image = [图片]
 emoji = [表情]
 video = [视频]
@@ -64,6 +63,7 @@ audio = [语音]
 file = [文件]
 video_call = [视频通话]
 audio_call = [语音通话]
+error = [错误]
 knock_off_msg = 另一个设备登录了你的账号，如果不是你本人，请检查账号密码。
 ok = 确定
 "#;
