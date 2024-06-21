@@ -45,6 +45,7 @@ impl FriendShipRepo {
         }
     }
 }
+
 #[async_trait::async_trait(?Send)]
 impl Friendships for FriendShipRepo {
     async fn agree(&self, friendship_id: &str) -> Result<()> {
@@ -162,39 +163,32 @@ impl Friendships for FriendShipRepo {
         let mut tx = Some(tx);
         let mut ids = Vec::new();
 
-        {
-            let mut on_clean = self.on_clean_success.borrow_mut();
-            if let Some(ref onsuccess) = *on_clean {
-                request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-            } else {
-                let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
-                    let result = event.target().unwrap().dyn_into::<IdbRequest>().unwrap();
-                    let result = result.result().unwrap_or(JsValue::NULL);
-                    if !result.is_null() {
-                        let cursor = result
-                            .dyn_ref::<web_sys::IdbCursorWithValue>()
-                            .expect("cursor error");
-                        let value = cursor.value().expect("cursor value error");
-                        let mut res: FriendShipWithUser =
-                            serde_wasm_bindgen::from_value(value).unwrap();
-                        res.read = ReadStatus::True;
-                        match cursor.update(&serde_wasm_bindgen::to_value(&res).unwrap()) {
-                            Ok(_) => {
-                                ids.push(res.msg_id.to_string());
-                                let _ = cursor.continue_();
-                            }
-                            Err(err) => {
-                                log::error!("更新好友请求错误: {:?}", err);
-                            }
-                        };
-                    } else {
-                        tx.take().unwrap().send(ids.to_owned()).unwrap();
+        let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
+            let result = event.target().unwrap().dyn_into::<IdbRequest>().unwrap();
+            let result = result.result().unwrap_or(JsValue::NULL);
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("cursor error");
+                let value = cursor.value().expect("cursor value error");
+                let mut res: FriendShipWithUser = serde_wasm_bindgen::from_value(value).unwrap();
+                res.read = ReadStatus::True;
+                match cursor.update(&serde_wasm_bindgen::to_value(&res).unwrap()) {
+                    Ok(_) => {
+                        ids.push(res.msg_id.to_string());
+                        let _ = cursor.continue_();
                     }
-                }) as Box<dyn FnMut(&Event)>);
-                request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-                *on_clean = Some(onsuccess);
+                    Err(err) => {
+                        log::error!("更新好友请求错误: {:?}", err);
+                    }
+                };
+            } else {
+                tx.take().unwrap().send(ids.to_owned()).unwrap();
             }
-        }
+        }) as Box<dyn FnMut(&Event)>);
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        *self.on_clean_success.borrow_mut() = Some(onsuccess);
+
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(rx.await.unwrap())
     }
@@ -206,33 +200,27 @@ impl Friendships for FriendShipRepo {
         let mut friends = Vec::new();
         let mut tx = Some(tx);
 
-        {
-            let mut on_get_list = self.on_get_list_success.borrow_mut();
-            if let Some(ref on_get_list) = *on_get_list {
-                request.set_onsuccess(Some(on_get_list.as_ref().unchecked_ref()));
+        let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().unwrap();
+            let request = target.dyn_ref::<IdbRequest>().unwrap();
+            let result = match request.result() {
+                Ok(data) => data,
+                Err(_) => JsValue::NULL,
+            };
+            if result.is_null() {
+                let _ = tx.take().unwrap().send(friends.to_owned());
             } else {
-                let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
-                    let target = event.target().unwrap();
-                    let request = target.dyn_ref::<IdbRequest>().unwrap();
-                    let result = match request.result() {
-                        Ok(data) => data,
-                        Err(_) => JsValue::NULL,
-                    };
-                    if result.is_null() {
-                        let _ = tx.take().unwrap().send(friends.to_owned());
-                    } else {
-                        let cursor = result
-                            .dyn_ref::<web_sys::IdbCursorWithValue>()
-                            .expect("cursor error");
-                        let value = cursor.value().expect("cursor value error");
-                        friends.push(serde_wasm_bindgen::from_value(value).unwrap());
-                        let _ = cursor.continue_();
-                    }
-                }) as Box<dyn FnMut(&Event)>);
-                request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-                *on_get_list = Some(onsuccess);
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("cursor error");
+                let value = cursor.value().expect("cursor value error");
+                friends.push(serde_wasm_bindgen::from_value(value).unwrap());
+                let _ = cursor.continue_();
             }
-        }
+        }) as Box<dyn FnMut(&Event)>);
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        *self.on_get_list_success.borrow_mut() = Some(onsuccess);
+
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(rx.await.unwrap())
     }
