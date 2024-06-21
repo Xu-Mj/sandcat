@@ -14,7 +14,7 @@ cancel = 取消
 "#;
 
 pub const USER_INFO: &str = r#"
-name = 昵称
+nickname = 昵称
 account = 账号
 email = 邮箱
 phone = 手机号

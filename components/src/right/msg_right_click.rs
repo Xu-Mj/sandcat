@@ -9,9 +9,11 @@ use sandcat_sdk::state::I18nState;
 use utils::tr;
 use yewdux::Dispatch;
 
+use crate::constant::{DELETE, FORWARD};
+
 pub struct MsgRightClick {
     node: NodeRef,
-    pub i18n: FluentBundle<FluentResource>,
+    i18n: FluentBundle<FluentResource>,
 }
 
 #[derive(Debug, Clone, Properties, PartialEq)]
@@ -53,7 +55,7 @@ impl Component for MsgRightClick {
         {
             forward = html!(
                  <div class="right-click-panel-item hover" onclick={ctx.props().forward.reform(|_|())}>
-                     {tr!(self.i18n, "forward")}
+                     {tr!(self.i18n, FORWARD)}
                  </div>
             );
         };
@@ -64,7 +66,7 @@ impl Component for MsgRightClick {
                 onblur={ctx.props().close.reform(|_|())}
                 >
                 <div class="right-click-panel-item hover" onclick={ctx.props().delete.reform(|_|())}>
-                    {tr!(self.i18n, "delete")}
+                    {tr!(self.i18n, DELETE)}
                 </div>
                 {forward}
             </div>

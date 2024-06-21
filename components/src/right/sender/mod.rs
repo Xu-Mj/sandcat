@@ -24,6 +24,12 @@ use yew::Html;
 use yew::NodeRef;
 use yewdux::Dispatch;
 
+use crate::constant::CANCEL;
+use crate::constant::DISABLED;
+use crate::constant::GROUP_DISMISSED;
+use crate::constant::SEND;
+use crate::constant::SUBMIT;
+use crate::constant::VERIFY_NEEDED;
 use crate::right::sender::emoji::EmojiPanel;
 use icons::{CloseIcon, FileIcon, ImageIcon, PhoneIcon, VideoIcon};
 use sandcat_sdk::api;
@@ -240,10 +246,10 @@ impl Sender {
                 </div>
                 <div class="file-sender-footer">
                     <button onclick={send} >
-                        {tr!(self.i18n, "submit")}
+                        {tr!(self.i18n, SUBMIT)}
                     </button>
                     <button {onclick} >
-                        {tr!(self.i18n, "cancel")}
+                        {tr!(self.i18n, CANCEL)}
                     </button>
                 </div>
             </div>
@@ -466,7 +472,7 @@ impl Sender {
                 "empty-msg-tip box-shadow",
                 html!(
                     <button class="send-btn" onclick={ctx.link().callback(|_| SenderMsg::SendText)}>
-                        {tr!(self.i18n, "send")}
+                        {tr!(self.i18n, SEND)}
                     </button>
                 ),
             )
@@ -476,9 +482,9 @@ impl Sender {
     fn get_disable_html(&self, ctx: &Context<Self>) -> Html {
         if ctx.props().disable {
             let message = match ctx.props().conv_type {
-                RightContentType::Friend => tr!(self.i18n, "verify_needed"),
-                RightContentType::Group => tr!(self.i18n, "group_dismissed"),
-                _ => tr!(self.i18n, "disabled"),
+                RightContentType::Friend => tr!(self.i18n, VERIFY_NEEDED),
+                RightContentType::Group => tr!(self.i18n, GROUP_DISMISSED),
+                _ => tr!(self.i18n, DISABLED),
             };
             html!(<div class="sender-disabled">{message}</div>)
         } else {

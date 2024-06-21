@@ -14,6 +14,15 @@ use utils::tr;
 use yewdux::Dispatch;
 
 use crate::action::Action;
+use crate::constant::ACCOUNT;
+use crate::constant::APPLIED;
+use crate::constant::APPLY;
+use crate::constant::APPLYING;
+use crate::constant::APPLY_FAILED;
+use crate::constant::APPLY_MSG;
+use crate::constant::NICKNAME;
+use crate::constant::REGION;
+use crate::constant::REMARK;
 use crate::get_platform;
 
 pub struct UserInfoCom {
@@ -144,10 +153,10 @@ impl Component for UserInfoCom {
     fn view(&self, ctx: &Context<Self>) -> Html {
         // 根据参数渲染组件
         let apply_btn = match self.apply_state {
-            FriendShipRequestState::NotApply => tr!(self.i18n, "apply"),
-            FriendShipRequestState::Pending => tr!(self.i18n, "applying"),
-            FriendShipRequestState::Success => tr!(self.i18n, "applied"),
-            FriendShipRequestState::Fail => tr!(self.i18n, "apply_failed"),
+            FriendShipRequestState::NotApply => tr!(self.i18n, APPLY),
+            FriendShipRequestState::Pending => tr!(self.i18n, APPLYING),
+            FriendShipRequestState::Success => tr!(self.i18n, APPLIED),
+            FriendShipRequestState::Fail => tr!(self.i18n, APPLY_FAILED),
         };
         let apply = if ctx.props().info.is_friend {
             html!(<Action
@@ -162,11 +171,11 @@ impl Component for UserInfoCom {
             html! {
                 <div class="apply-detail">
                     <div class="apply-msg">
-                        <label>{tr!(self.i18n, "apply_msg")}</label>
+                        <label>{tr!(self.i18n, APPLY_MSG)}</label>
                         <input class="apply-input" ref={self.apply_node.clone()} type="text"/>
                     </div>
                     <div class="apply-remark">
-                        <label>{tr!(self.i18n, "remark")}</label>
+                        <label>{tr!(self.i18n, REMARK)}</label>
                         <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
                     </div>
                     <div class="apply-friend" >
@@ -182,9 +191,9 @@ impl Component for UserInfoCom {
                     <img src={&ctx.props().info.avatar} class="friend-card-avatar"/>
                     <div class="friend-card-info">
                         // <span><b>{&self.friend.remark}</b></span>
-                        <span>{tr!(self.i18n, "nickname")}{&ctx.props().info.name}</span>
-                        <span>{tr!(self.i18n, "account")}{&ctx.props().info.account}</span>
-                        <span>{tr!(self.i18n, "region")}{&ctx.props().info.region.clone().unwrap_or_default()} </span>
+                        <span>{tr!(self.i18n, NICKNAME)}{&ctx.props().info.name}</span>
+                        <span>{tr!(self.i18n, ACCOUNT)}{&ctx.props().info.account}</span>
+                        <span>{tr!(self.i18n, REGION)}{&ctx.props().info.region.clone().unwrap_or_default()} </span>
                     </div>
                 </div>
                 <div class="friend-card-body">

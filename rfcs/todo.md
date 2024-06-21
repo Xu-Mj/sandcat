@@ -16,3 +16,4 @@
 - move database init to the conversation component to decrease render time
 - call component need i18n
 - need to notify user when the authorization is expired
+- call component got a bug about style

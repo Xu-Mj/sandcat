@@ -22,6 +22,8 @@ use sandcat_sdk::{
 };
 use utils::tr;
 
+use crate::constant::NEW_FRIENDS;
+use crate::constant::NO_RESULT;
 use crate::left::add_friend::AddFriend;
 use crate::{left::list_item::ListItem, top_bar::TopBar};
 
@@ -340,7 +342,7 @@ impl Component for Contacts {
             .callback(|((x, y), id, is_mute)| ContactsMsg::ShowContextMenu((x, y), id, is_mute));
         let content = if self.is_searching {
             if self.result.is_empty() {
-                html! {<div class="no-result">{tr!(self.i18n, "no_result")}</div>}
+                html! {<div class="no-result">{tr!(self.i18n, NO_RESULT)}</div>}
             } else {
                 self.result
                     .iter()
@@ -387,7 +389,7 @@ impl Component for Contacts {
                                     lang={self.lang_state.lang} />
                                 <div class="contacts-list">
                                     <div class="new-friends" onclick={friendship_click}>
-                                        {tr!(self.i18n, "new_friends")}
+                                        {tr!(self.i18n, NEW_FRIENDS)}
                                         if self.friendships_unread_count > 0{
                                             {self.friendships_unread_count}
                                         }

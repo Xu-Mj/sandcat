@@ -19,7 +19,7 @@ cancel = Cancel
 "#;
 
 pub const USER_INFO: &str = r#"
-name = nicname
+nickname = nicname
 account = account
 email = email
 phone = phone

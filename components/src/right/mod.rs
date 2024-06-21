@@ -35,6 +35,7 @@ use sandcat_sdk::state::{
 use sandcat_sdk::{api, db};
 use utils::tr;
 
+use crate::constant::HELLO;
 use crate::dialog::Dialog;
 use crate::right::friendship_list::FriendShipList;
 use crate::right::set_window::SetWindow;
@@ -387,7 +388,7 @@ impl Component for Right {
                 // 处理没有选中会话的情况
                 if self.conv_state.conv.item_id.is_empty() {
                     html! {
-                        <h2 class="choose-conv">{tr!(self.i18n, "hello")}</h2>
+                        <h2 class="choose-conv">{tr!(self.i18n, HELLO)}</h2>
                     }
                 } else {
                     html! {

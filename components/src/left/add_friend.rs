@@ -8,6 +8,8 @@ use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ComponentType;
 use utils::tr;
 
+use crate::constant::NO_RESULT;
+use crate::constant::SEARCH_PROMPT;
 use crate::left::user_info::UserInfoCom;
 use crate::top_bar::TopBar;
 
@@ -127,10 +129,10 @@ impl Component for AddFriend {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let content = if !self.is_searching {
             html! {
-                <div class="hint">{tr!(self.i18n, "search_prompt")}</div>
+                <div class="hint">{tr!(self.i18n, SEARCH_PROMPT)}</div>
             }
         } else if self.result.is_none() {
-            html! {<div class="no-result">{tr!(self.i18n, "no_result")}</div>}
+            html! {<div class="no-result">{tr!(self.i18n, NO_RESULT)}</div>}
         } else {
             html! {
                 <UserInfoCom

@@ -7,6 +7,8 @@ use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::model::RightContentType;
 use utils::tr;
 
+use crate::constant::{DEL_FRIEND, DISMISS, QUIT};
+
 pub struct SetDrawer {
     node: NodeRef,
     i18n: FluentBundle<FluentResource>,
@@ -47,12 +49,12 @@ impl Component for SetDrawer {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let btn_msg = match ctx.props().conv_type {
-            RightContentType::Friend => tr!(self.i18n, "del_friend"),
+            RightContentType::Friend => tr!(self.i18n, DEL_FRIEND),
             RightContentType::Group => {
                 if ctx.props().is_owner {
-                    tr!(self.i18n, "dismiss")
+                    tr!(self.i18n, DISMISS)
                 } else {
-                    tr!(self.i18n, "quit")
+                    tr!(self.i18n, QUIT)
                 }
             }
             _ => String::new(),
