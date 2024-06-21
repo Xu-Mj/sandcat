@@ -17,3 +17,4 @@
 - call component need i18n
 - need to notify user when the authorization is expired
 - call component got a bug about style
+- indexeddb need composite index, update message read status need to rebuild, get message list need to use friend id and order to send time.
