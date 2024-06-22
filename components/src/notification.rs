@@ -37,7 +37,7 @@ impl Component for NotificationCom {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::Notification(noti) => {
-                let id = chrono::Utc::now().timestamp_millis();
+                let id = noti.id;
                 let ctx = ctx.link().clone();
                 let timeout = Timeout::new(noti.delay, move || ctx.send_message(Msg::Remove(id)));
                 self.notifications.insert(id, (noti.clone(), timeout));
