@@ -5,6 +5,7 @@ use web_sys::HtmlDivElement;
 use yew::{classes, html, Component, Context, Html, NodeRef, Properties};
 use yewdux::Dispatch;
 
+use icons::CloseIcon;
 use sandcat_sdk::model::notification::{Notification, NotificationType};
 
 type NotificationList = HashMap<i64, (Rc<Notification>, Timeout)>;
@@ -53,20 +54,28 @@ impl Component for NotificationCom {
         }
     }
 
-    fn view(&self, _ctx: &Context<Self>) -> Html {
+    fn view(&self, ctx: &Context<Self>) -> Html {
         let notifications = self
             .notifications
             .iter()
             .map(|(id, (item, _))| {
                 let mut class = classes!("notification-item");
+                let mut close_btn = html!();
                 match item.type_ {
                     NotificationType::Info => class.push("info"),
                     // NotificationType::Success => class.push("success"),
                     NotificationType::Warn => class.push("warn"),
-                    NotificationType::Error => class.push("error"),
+                    NotificationType::Error => {
+                        class.push("error");
+                        let id = *id;
+                        let onclick = ctx.link().callback(move |_| Msg::Remove(id));
+                        close_btn =
+                            html! { <span class="notification-close" {onclick}><CloseIcon/></span>};
+                    }
                 }
                 html! {
                     <div {class} key={*id}>
+                        {close_btn}
                         {item.content.clone()}
                     </div>
                 }
