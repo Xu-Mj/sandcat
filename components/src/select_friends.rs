@@ -16,6 +16,13 @@ use sandcat_sdk::state::MobileState;
 use utils::tr;
 use yewdux::Dispatch;
 
+use crate::constant::CANCEL;
+use crate::constant::EMPTY_RESULT;
+use crate::constant::ERROR;
+use crate::constant::QUERYING;
+use crate::constant::SELECT_FRIENDS;
+use crate::constant::SUBMIT;
+
 pub struct SelectFriendList {
     data: IndexMap<AttrValue, Friend>,
     querying: bool,
@@ -132,9 +139,9 @@ impl Component for SelectFriendList {
         } else {
             "add-conv add-conv-size box-shadow"
         };
-        let mut content = html!(<p class="empty-result">{tr!(self.i18n, "empty_result")}</p>);
+        let mut content = html!(<p class="empty-result">{tr!(self.i18n, EMPTY_RESULT)}</p>);
         if self.querying {
-            content = html!(<div>{tr!(self.i18n, "querying")}</div>)
+            content = html!(<div>{tr!(self.i18n, QUERYING)}</div>)
         } else if !self.data.is_empty() {
             content = self.data.iter().map(|(index,item)| {
                         let mut name = item.name.clone();
@@ -147,7 +154,7 @@ impl Component for SelectFriendList {
                             <div class="item" key={index.to_string()}>
                                 <input type="checkbox" id={index.to_string()} name="friend" value={index.to_string()} />
                                 <label for={index.to_string()}  class="item-card">
-                                    <img src={&item.avatar}/>
+                                    <img src={utils::get_avatar_url(&item.avatar)}/>
                                     {name}
                                 </label>
                             </div>
@@ -155,7 +162,7 @@ impl Component for SelectFriendList {
 
                     }).collect::<Html>()
         } else if self.err.is_some() {
-            content = html!(<div>{format!("查询出错{:?}", self.err)}</div>)
+            content = html!(<div>{format!("{}{:?}", tr!(self.i18n, ERROR), self.err)}</div>)
         }
         let submit = ctx.link().callback(|_| AddConvMsg::Add);
         let close = ctx.link().callback(|_| AddConvMsg::Close);
@@ -163,12 +170,12 @@ impl Component for SelectFriendList {
         html! {
             <div {class}>
                 <fieldset>
-                    <legend>{tr!(self.i18n, "select_friends")}</legend>
+                    <legend>{tr!(self.i18n, SELECT_FRIENDS)}</legend>
                     {content}
                 </fieldset>
                 <div class="add-conv-actions">
-                    <div onclick={submit} >{tr!(self.i18n, "submit")}</div>
-                    <div onclick={close} >{tr!(self.i18n, "cancel")}</div>
+                    <div onclick={submit} >{tr!(self.i18n, SUBMIT)}</div>
+                    <div onclick={close} >{tr!(self.i18n, CANCEL)}</div>
                 </div>
             </div>
         }

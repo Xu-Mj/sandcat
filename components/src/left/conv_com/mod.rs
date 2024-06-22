@@ -21,9 +21,11 @@ use i18n::{
 use sandcat_sdk::{
     api,
     db::{REFRESH_TOKEN, TOKEN},
+    error::{Error, WebSocketError},
     model::{
         conversation::Conversation,
         message::{Msg, SingleCall},
+        notification::Notification,
         seq::Seq,
         user::Claims,
         CommonProps, ComponentType, ContentType, CurrentItem, RightContentType,
@@ -41,7 +43,11 @@ use utils::tr;
 use ws::WebSocketManager;
 
 use self::conversations::ChatsMsg;
-use crate::{dialog::Dialog, left::list_item::ListItem};
+use crate::{
+    constant::{AUDIO, AUDIO_CALL, EMOJI, ERROR, FILE, IMAGE, LOADING, VIDEO, VIDEO_CALL},
+    dialog::Dialog,
+    left::list_item::ListItem,
+};
 
 pub struct Chats {
     /// used to notify the PhoneCall component to make a call
@@ -99,6 +105,16 @@ pub struct Chats {
 
 impl Chats {
     fn new(ctx: &Context<Self>) -> Self {
+        let lang_dispatch =
+            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SwitchLanguage));
+        let lang_state = lang_dispatch.get();
+        let res = match lang_state.lang {
+            LanguageType::ZhCN => zh_cn::CONVERSATION,
+            LanguageType::EnUS => en_us::CONVERSATION,
+        };
+        let i18n = utils::create_bundle(res);
+        Dialog::loading(&tr!(i18n, LOADING));
+
         let id = ctx.props().user_id.clone();
         // query conversation list
         let user_id = id.clone();
@@ -121,14 +137,14 @@ impl Chats {
                     Ok(messages) => messages,
                     Err(e) => {
                         error!("pull offline messages error: {:?}", e);
-                        Dialog::error("pull offline messages error");
+                        Notification::error("pull offline messages error").notify();
                         return ChatsMsg::None;
                     }
                 };
                 local_seq.local_seq = server_seq.seq;
                 if let Err(e) = db::db_ins().seq.put(&local_seq).await {
                     error!("save local seq error: {:?}", e);
-                    Dialog::error("save local seq error");
+                    Notification::error("save local seq error").notify();
                     return ChatsMsg::None;
                 }
             }
@@ -149,9 +165,7 @@ impl Chats {
         let rec_msg_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(|_| ChatsMsg::None));
         // same as conv state
-        let lang_dispatch =
-            Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::SwitchLanguage));
-        let lang_state = lang_dispatch.get();
+
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let addr = utils::get_local_storage(WS_ADDR).unwrap();
         let platform = Dispatch::<MobileState>::global().get();
@@ -171,11 +185,6 @@ impl Chats {
             knockoff,
             logout,
         )));
-        let res = match lang_state.lang {
-            LanguageType::ZhCN => zh_cn::CONVERSATION,
-            LanguageType::EnUS => en_us::CONVERSATION,
-        };
-        let i18n = utils::create_bundle(res);
 
         let _update_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(ChatsMsg::UpdateConvStateChanged));
@@ -268,14 +277,16 @@ impl Chats {
 
     pub fn send_msg(&self, msg: Msg) {
         // 发送已收到消息给服务器
-        match self.ws.borrow().send_message(msg) {
-            Ok(_) => {
-                log::info!("发送成功")
+        if let Err(e) = self.ws.borrow().send_message(msg) {
+            if e == Error::WebSocket(WebSocketError::Closed) {
+                // reconnect websocket
+                if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
+                    log::error!("websocket connect error: {:?}", e);
+                }
+            } else {
+                log::error!("send message error: {:?}", e);
             }
-            Err(e) => {
-                log::error!("发送失败: {:?}", e)
-            }
-        };
+        }
     }
 
     fn delete_item(&mut self) {
@@ -501,15 +512,15 @@ fn get_msg_type(
 ) -> AttrValue {
     match msg_type {
         ContentType::Text => content.clone(),
-        ContentType::Image => AttrValue::from(tr!(bundle, "image")),
-        ContentType::Video => AttrValue::from(tr!(bundle, "video")),
-        ContentType::File => AttrValue::from(tr!(bundle, "file")),
-        ContentType::Emoji => AttrValue::from(tr!(bundle, "emoji")),
+        ContentType::Image => AttrValue::from(tr!(bundle, IMAGE)),
+        ContentType::Video => AttrValue::from(tr!(bundle, VIDEO)),
+        ContentType::File => AttrValue::from(tr!(bundle, FILE)),
+        ContentType::Emoji => AttrValue::from(tr!(bundle, EMOJI)),
         ContentType::Default => AttrValue::from(""),
-        ContentType::VideoCall => AttrValue::from(tr!(bundle, "video_call")),
-        ContentType::AudioCall => AttrValue::from(tr!(bundle, "audio_call")),
-        ContentType::Audio => AttrValue::from(tr!(bundle, "audio")),
-        ContentType::Error => AttrValue::from(tr!(bundle, "error")),
+        ContentType::VideoCall => AttrValue::from(tr!(bundle, VIDEO_CALL)),
+        ContentType::AudioCall => AttrValue::from(tr!(bundle, AUDIO_CALL)),
+        ContentType::Audio => AttrValue::from(tr!(bundle, AUDIO)),
+        ContentType::Error => AttrValue::from(tr!(bundle, ERROR)),
     }
 }
 

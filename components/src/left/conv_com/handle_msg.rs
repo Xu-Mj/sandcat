@@ -9,6 +9,7 @@ use sandcat_sdk::{
         conversation::Conversation,
         friend::FriendStatus,
         message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
+        notification::Notification,
         voice::Voice,
         ContentType, FriendShipStateType, RightContentType,
     },
@@ -19,7 +20,7 @@ use sandcat_sdk::{
 
 use super::Chats;
 
-use crate::{dialog::Dialog, left::conv_com::conversations::ChatsMsg};
+use crate::left::conv_com::conversations::ChatsMsg;
 
 impl Chats {
     /// used to update the conversation list when a message is sent
@@ -153,7 +154,7 @@ impl Chats {
                 }
                 if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                     error!("put conv error:{:?}", e);
-                    Dialog::error("put conv error");
+                    Notification::error("put conv error").notify();
                 }
 
                 // update friend info about avatar and nickname
@@ -195,14 +196,14 @@ impl Chats {
                         Ok(conv) => conv,
                         Err(e) => {
                             error!("failed to update conv: {:?}", e);
-                            Dialog::error("update conv error");
+                            Notification::error("update conv error").notify();
                             return ChatsMsg::None;
                         }
                     };
                 } else {
                     if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                         error!("failed to update conv: {:?}", e);
-                        Dialog::error("update conv error");
+                        Notification::error("update conv error").notify();
                         return ChatsMsg::None;
                     }
 
@@ -294,7 +295,7 @@ impl Chats {
         ctx.link().send_future(async move {
             if let Err(e) = db::db_ins().seq.put(&seq).await {
                 error!("save seq error: {:?}", e);
-                Dialog::error("save seq error");
+                Notification::error("save seq error").notify();
                 return ChatsMsg::None;
             }
             if need_repull {
@@ -305,7 +306,7 @@ impl Chats {
                     Ok(messages) => messages,
                     Err(e) => {
                         error!("pull offline msg error: {:?}", e);
-                        Dialog::error("pull offline msg error");
+                        Notification::error("pull offline msg error").notify();
                         return ChatsMsg::None;
                     }
                 };
@@ -382,14 +383,14 @@ impl Chats {
                         )
                         .await
                         {
-                            Dialog::error(&e);
+                            Notification::error(e).notify();
                         }
                         msg.audio_downloaded = true;
                     }
                     // save to db
                     if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
                         error!("save message to db error: {:?}", e);
-                        Dialog::error("save message to db error");
+                        Notification::error("save message to db error").notify();
                     }
                     // ChatsMsg::None
                     // if let Err(err) = db::messages().await.add_message(&mut msg).await {
@@ -446,13 +447,13 @@ impl Chats {
                                 )
                                 .await
                                 {
-                                    Dialog::error(&e);
+                                    Notification::error(e).notify();
                                 }
                                 msg.audio_downloaded = true;
                             }
                             if let Err(e) = db::db_ins().group_msgs.put(&msg).await {
                                 error!("save message to db error: {:?}", e);
-                                Dialog::error("save message to db error");
+                                Notification::error("save message to db error").notify();
                             }
                             ChatsMsg::None
                         });
@@ -478,7 +479,7 @@ impl Chats {
                                 db::db_ins().group_members.delete(&group_id, &mem_id).await
                             {
                                 error!("delete members error: {:?}", e);
-                                Dialog::error("delete members error");
+                                Notification::error("delete members error").notify();
                             }
                         });
                     }
@@ -496,7 +497,7 @@ impl Chats {
                         spawn_local(async move {
                             if let Err(err) = db::db_ins().groups.dismiss(&cloned_group_id).await {
                                 log::error!("remove group fail:{:?}", err);
-                                Dialog::error("remove group error");
+                                Notification::error("remove group error").notify();
                             } else {
                                 //     // send message to other component
                                 //     ctx.send_message(HomeMsg::RecSendMsgStateChange(message));
@@ -594,7 +595,7 @@ impl Chats {
                     };
                     if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
                         log::error!("save message fail:{:?}", e);
-                        Dialog::error("save message error");
+                        Notification::error("save message error").notify();
                     }
 
                     // send message to contact component to update the friend list
@@ -616,14 +617,14 @@ impl Chats {
                         RespMsgType::Single => {
                             if let Err(err) = db::db_ins().messages.update_msg_status(&msg).await {
                                 log::error!("update message fail:{:?}", err);
-                                Dialog::error("update message fail");
+                                Notification::error("update message fail").notify();
                             }
                         }
                         RespMsgType::Group => {
                             if let Err(err) = db::db_ins().group_msgs.update_msg_status(&msg).await
                             {
                                 log::error!("update message fail:{:?}", err);
-                                Dialog::error("update message fail");
+                                Notification::error("update message fail").notify();
                             }
                         }
                     }

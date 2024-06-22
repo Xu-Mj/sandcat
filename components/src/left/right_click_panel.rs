@@ -6,9 +6,11 @@ use yew::{Component, Properties};
 use i18n::{en_us, zh_cn, LanguageType};
 use utils::tr;
 
+use crate::constant::{DELETE, MUTE, UN_MUTE};
+
 pub struct RightClickPanel {
     node: NodeRef,
-    pub i18n: FluentBundle<FluentResource>,
+    i18n: FluentBundle<FluentResource>,
 }
 
 #[derive(Debug, Clone, Properties, PartialEq)]
@@ -44,9 +46,9 @@ impl Component for RightClickPanel {
     fn view(&self, ctx: &Context<Self>) -> Html {
         let style = format!("left: {}px; top: {}px;", ctx.props().x, ctx.props().y);
         let mute_str = if ctx.props().is_mute {
-            tr!(self.i18n, "un_mute")
+            tr!(self.i18n, UN_MUTE)
         } else {
-            tr!(self.i18n, "mute")
+            tr!(self.i18n, MUTE)
         };
         html! {
             <div ref={self.node.clone()}
@@ -55,7 +57,7 @@ impl Component for RightClickPanel {
                 onblur={ctx.props().close.reform(|_|())}
                 >
                 <div class="right-click-panel-item hover" onclick={ctx.props().delete.reform(|_|())}>
-                    {tr!(self.i18n, "delete")}
+                    {tr!(self.i18n, DELETE)}
                 </div>
                 <div class="right-click-panel-item hover" onclick={ctx.props().mute.reform(|_|())}>
                     {mute_str}

@@ -12,6 +12,7 @@ use sandcat_sdk::state::{ComponentTypeState, ConvState};
 use sandcat_sdk::state::{MobileState, SendCallState};
 use utils::tr;
 
+use crate::constant::{SEND_MSG, VIDEO_CALL, VOICE_CALL};
 use crate::get_platform;
 
 // 联系人卡面上的动作组件：发消息、点电话、打视频
@@ -89,17 +90,17 @@ impl Component for Action {
             <div class="action">
                 <div {onclick}>
                     <SendMsgIcon/>
-                    <span>{tr!(self.i18n, "send_message")}</span>
+                    <span>{tr!(self.i18n, SEND_MSG)}</span>
                 </div>
                 // don't support call for group
                 if ctx.props().conv_type == RightContentType::Friend {
                     <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Audio))}>
                        <PhoneIcon/>
-                        <span>{tr!(self.i18n, "voice_call")}</span>
+                        <span>{tr!(self.i18n, VOICE_CALL)}</span>
                     </div>
                     <div onclick={ctx.link().callback(|_| ActionMsg::SendCallInvite(InviteType::Video))}>
                         <VideoIcon/>
-                        <span>{tr!(self.i18n, "video_call")}</span>
+                        <span>{tr!(self.i18n, VIDEO_CALL)}</span>
                     </div>
                 }
             </div>

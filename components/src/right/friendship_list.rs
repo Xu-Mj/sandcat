@@ -19,6 +19,10 @@ use sandcat_sdk::model::{ContentType, FriendShipStateType};
 use sandcat_sdk::state::{FriendShipState, SendMessageState};
 use utils::tr;
 
+use crate::constant::{
+    ACCEPT, ADDED, APPLY_MSG, CANCEL, GO_VERIFY, MESSAGE, REMARK, REQUESTED, TITLE,
+};
+
 pub struct FriendShipList {
     list: Vec<FriendShipWithUser>,
     friendship_state: Rc<FriendShipState>,
@@ -257,23 +261,23 @@ impl Component for FriendShipList {
                 });
 
                 let mut action = if item.status == FriendStatus::Accepted as i32{
-                    html!(<><UpIcon/><span>{tr!(self.i18n, "added")}</span></>)
+                    html!(<><UpIcon/><span>{tr!(self.i18n, ADDED)}</span></>)
                 } else  {
-                    html!(<><UpIcon/><span>{tr!(self.i18n, "requested")}</span></>)
+                    html!(<><UpIcon/><span>{tr!(self.i18n, REQUESTED)}</span></>)
                 };
-                let mut remark = html!(<div class="remark">{tr!(self.i18n, "remark")}{item.remark.clone()}</div>);
+                let mut remark = html!(<div class="remark">{tr!(self.i18n, REMARK)}{item.remark.clone()}</div>);
                 if !item.is_self {
                     if item.status == FriendStatus::Accepted as i32 {
                         action = html! {
-                            <button>{tr!(self.i18n, "added")}</button>
+                            <button>{tr!(self.i18n, ADDED)}</button>
                         };
                     } else if item.status == FriendStatus::Pending as i32{
                         action = html! {
-                            <button {onclick}>{tr!(self.i18n, "go_verify")}</button>
+                            <button {onclick}>{tr!(self.i18n, GO_VERIFY)}</button>
                         };
                     }
                     remark = html! {
-                        <div class="remark">{tr!(self.i18n, "apply_msg")}{item.apply_msg.clone()}</div>
+                        <div class="remark">{tr!(self.i18n, APPLY_MSG)}{item.apply_msg.clone()}</div>
                     };
                 }
                 html! {
@@ -309,24 +313,24 @@ impl Component for FriendShipList {
                 <div class="friendship-detail box-shadow" >
                     // 标题
                     <div class="title">
-                        {tr!(self.i18n, "title")}
+                        {tr!(self.i18n, TITLE)}
                     </div>
                     // 备注
                     <div class="remark">
-                        {tr!(self.i18n, "remark")}
+                        {tr!(self.i18n, REMARK)}
                         <input type="text" ref={self.apply_msg_node.clone()} value={remark} />
                     </div>
                     <div class="response_msg">
-                        {tr!(self.i18n, "message")}
+                        {tr!(self.i18n, MESSAGE)}
                         <input type="text" ref={self.response_msg_node.clone()} />
                     </div>
                     // 通过验证
                     <div class="agree">
                         <button onclick={ctx.link().callback(|_| FriendShipListMsg::AgreeFriendShip)}>
-                            {tr!(self.i18n, "accept")}
+                            {tr!(self.i18n, ACCEPT)}
                         </button>
                         <button onclick={ctx.link().callback(|_| FriendShipListMsg::Cancel)}>
-                            {tr!(self.i18n, "cancel")}
+                            {tr!(self.i18n, CANCEL)}
                         </button>
                     </div>
                 </div>

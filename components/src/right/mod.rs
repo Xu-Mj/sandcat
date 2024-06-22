@@ -17,6 +17,7 @@ use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
 use log::error;
 use sandcat_sdk::model::group::GroupMemberFromServer;
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::pb::message::GroupInviteNew;
 use wasm_bindgen::JsCast;
 use web_sys::{CssAnimation, HtmlDivElement};
@@ -35,7 +36,7 @@ use sandcat_sdk::state::{
 use sandcat_sdk::{api, db};
 use utils::tr;
 
-use crate::dialog::Dialog;
+use crate::constant::HELLO;
 use crate::right::friendship_list::FriendShipList;
 use crate::right::set_window::SetWindow;
 use crate::right::setting::Setting;
@@ -207,12 +208,12 @@ impl Component for Right {
                         let group = match db::db_ins().groups.get(&group_id).await {
                             Ok(Some(group)) => group,
                             Ok(None) => {
-                                Dialog::error("get group info error");
+                                Notification::error("get group info error").notify();
                                 return;
                             }
                             Err(e) => {
                                 error!("get group info error:{:?}", e);
-                                Dialog::error("get group info error");
+                                Notification::error("get group info error").notify();
                                 return;
                             }
                         };
@@ -226,7 +227,7 @@ impl Component for Right {
                             .await
                         {
                             error!("invite member error:{:?}", e);
-                            Dialog::error("invite member error");
+                            Notification::error("invite member error").notify();
                             // return;
                         }
                         let time = chrono::Utc::now().timestamp_millis();
@@ -387,7 +388,7 @@ impl Component for Right {
                 // 处理没有选中会话的情况
                 if self.conv_state.conv.item_id.is_empty() {
                     html! {
-                        <h2 class="choose-conv">{tr!(self.i18n, "hello")}</h2>
+                        <h2 class="choose-conv">{tr!(self.i18n, HELLO)}</h2>
                     }
                 } else {
                     html! {

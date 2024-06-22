@@ -14,12 +14,12 @@ use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::{
-    model::voice::Voice,
+    model::{notification::Notification, voice::Voice},
     state::{I18nState, MobileState},
 };
 use utils::tr;
 
-use crate::dialog::Dialog;
+use crate::constant::{CANCEL, CANCEL_MOBILE, ERROR, PRESS, RECORD, SEND, SEND_MOBILE, STOP};
 
 pub struct Recorder {
     mask_node: NodeRef,
@@ -246,9 +246,9 @@ impl Component for Recorder {
                 let msg = if let Some(err) = e.dyn_ref::<web_sys::DomException>() {
                     err.name()
                 } else {
-                    tr!(self.i18n, "error")
+                    tr!(self.i18n, ERROR)
                 };
-                Dialog::error(&msg);
+                Notification::error(msg).notify();
                 true
             }
             RecorderMsg::TouchStart(event) => {
@@ -312,7 +312,7 @@ impl Component for Recorder {
         if self.record_state == RecorderState::Error {
             error = html! {
                 <div class="error">
-                    {tr!(self.i18n, "error")}
+                    {tr!(self.i18n, ERROR)}
                 </div>
             };
         }
@@ -324,9 +324,9 @@ impl Component for Recorder {
 
             // hint
             let hint = if self.is_cancel {
-                tr!(self.i18n, "cancel_mobile")
+                tr!(self.i18n, CANCEL_MOBILE)
             } else {
-                tr!(self.i18n, "send_mobile")
+                tr!(self.i18n, SEND_MOBILE)
             };
             html! {
                 <div
@@ -344,7 +344,7 @@ impl Component for Recorder {
 
                         </div>
                     </div>
-                    {tr!(self.i18n, "press")}
+                    {tr!(self.i18n, PRESS)}
                 </div>
             }
         } else {
@@ -383,14 +383,14 @@ impl Component for Recorder {
             let on_recorder_click = ctx.link().callback(|_| RecorderMsg::Prepare);
             html! {
                 <div class="recorder">
-                    <button class="btn" disabled={record_btn} onclick={on_recorder_click}>{tr!(self.i18n, "record")}</button>
+                    <button class="btn" disabled={record_btn} onclick={on_recorder_click}>{tr!(self.i18n, RECORD)}</button>
                     {error}
                     {voice}
                     {audio}
 
-                    <button class="btn" disabled={stop_btn} onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{tr!(self.i18n, "stop")}</button>
-                    <button class="btn" disabled={send_btn} onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{tr!(self.i18n, "send")}</button>
-                    <button class="btn" disabled={cancel_btn} onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{tr!(self.i18n, "cancel")}</button>
+                    <button class="btn" disabled={stop_btn} onclick={ctx.link().callback(|_| RecorderMsg::Stop)}>{tr!(self.i18n, STOP)}</button>
+                    <button class="btn" disabled={send_btn} onclick={ctx.link().callback(|_| RecorderMsg::Send)}>{tr!(self.i18n, SEND)}</button>
+                    <button class="btn" disabled={cancel_btn} onclick={ctx.link().callback(|_| RecorderMsg::Cancel)}>{tr!(self.i18n, CANCEL)}</button>
                 </div>
             }
         };

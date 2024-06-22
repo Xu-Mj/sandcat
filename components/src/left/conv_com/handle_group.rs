@@ -8,13 +8,12 @@ use sandcat_sdk::{
         conversation::Conversation,
         group::{Group, GroupMember, GroupRequest},
         message::GroupInvitation,
+        notification::Notification,
         ContentType,
     },
     state::UpdateConvState,
 };
 use yewdux::Dispatch;
-
-use crate::dialog::Dialog;
 
 use super::{conversations::ChatsMsg, Chats};
 
@@ -30,20 +29,22 @@ impl Chats {
 
             if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                 error!("Failed to store conversation: {:?}", e);
-                Dialog::error("Failed to store conversation");
+                Notification::error("Failed to store conversation").notify();
                 return;
             }
 
             // store group information
             if let Err(err) = db::db_ins().groups.put(&info).await {
                 error!("store group error : {:?}", err);
-                return Dialog::error("Failed to store group");
+                Notification::error("Failed to store group").notify();
+                return;
             };
 
             // store group members
             if let Err(e) = db::db_ins().group_members.put_list(msg.members).await {
                 error!("save group member error: {:?}", e);
-                return Dialog::error("Failed to store group member");
+                Notification::error("Failed to store group member").notify();
+                return;
             }
 
             // send back received message
@@ -93,7 +94,7 @@ impl Chats {
                 Ok(user) => user,
                 Err(e) => {
                     error!("get user error:{:?}", e);
-                    Dialog::error("query user error");
+                    Notification::error("query user error").notify();
                     return ChatsMsg::None;
                 }
             };
@@ -117,7 +118,7 @@ impl Chats {
                     // sotre the group info to database
                     if let Err(err) = db::db_ins().groups.put(&g).await {
                         log::error!("create group error: {:?}", err);
-                        Dialog::error("Failed to store group");
+                        Notification::error("Failed to store group").notify();
                         return ChatsMsg::None;
                     }
 
@@ -126,7 +127,7 @@ impl Chats {
                         v.group_id = g.id.clone();
                         if let Err(e) = db::db_ins().group_members.put(v).await {
                             log::error!("save group member error: {:?}", e);
-                            Dialog::error("Failed to store group member");
+                            Notification::error("Failed to store group member").notify();
                             continue;
                         }
                     }
@@ -139,7 +140,7 @@ impl Chats {
                     conv.unread_count = 0;
                     if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                         error!("failed to store conversation to db: {:?}", e);
-                        Dialog::error("Failed to store group");
+                        Notification::error("Failed to store group").notify();
                         return ChatsMsg::None;
                     }
 
@@ -148,7 +149,7 @@ impl Chats {
                 }
                 Err(err) => {
                     log::error!("create group request error: {:?}", err);
-                    Dialog::error("Failed to create group");
+                    Notification::error("Failed to create group").notify();
                     ChatsMsg::None
                 }
             }
@@ -166,7 +167,7 @@ impl Chats {
                     Ok(message) => ChatsMsg::DismissGroup(key, message),
                     Err(e) => {
                         error!("dismiss group error: {:?}", e);
-                        Dialog::error("Failed to dismiss group ");
+                        Notification::error("Failed to dismiss group ").notify();
                         ChatsMsg::None
                     }
                 }
@@ -212,7 +213,7 @@ impl Chats {
         spawn_local(async move {
             if let Err(err) = db::db_ins().groups.put(&group).await {
                 log::error!("update group fail:{:?}", err);
-                Dialog::error("Failed to update group");
+                Notification::error("Failed to update group").notify();
             }
         });
     }

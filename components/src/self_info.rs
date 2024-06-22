@@ -4,6 +4,7 @@ use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
 use gloo::utils::window;
 use js_sys::Array;
+use sandcat_sdk::model::notification::Notification;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::spawn_local;
@@ -28,9 +29,11 @@ use sandcat_sdk::state::I18nState;
 use sandcat_sdk::state::MobileState;
 use utils::tr;
 
-use crate::avatar::Avatar;
-use crate::avatar::SubmitOption;
-use crate::dialog::Dialog;
+use crate::avatar::{Avatar, SubmitOption};
+use crate::constant::{
+    ACCOUNT, ADDRESS, CANCEL, CHOOSE_AVATAR, EMAIL, FEMALE, GENDER, LOGOUT, MALE, NICKNAME, PHONE,
+    REGION, SECRET, SET_AVATAR, SIGNATURE, SUBMIT,
+};
 
 pub struct SelfInfo {
     i18n: FluentBundle<FluentResource>,
@@ -132,7 +135,8 @@ impl Component for SelfInfo {
                             Ok(name) => user.avatar = name,
                             Err(e) => {
                                 log::error!("upload avatar error: {:?}", e);
-                                Dialog::error("upload avatar error");
+                                Dispatch::<Notification>::global()
+                                    .set(Notification::error("upload avatar error"));
                                 return;
                             }
                         }
@@ -144,7 +148,8 @@ impl Component for SelfInfo {
                         }
                         Err(e) => {
                             log::error!("{:?}", e);
-                            Dialog::error("update user info failed");
+                            Dispatch::<Notification>::global()
+                                .set(Notification::error("update user info failed"));
                             close.emit(());
                         }
                     }
@@ -215,9 +220,9 @@ impl Component for SelfInfo {
                         submit={SubmitOption::DataUrl(submit)}
                         {close}
                         avatar_url={self.get_avatar_url()}
-                        submit_text={tr!(self.i18n, "submit")}
-                        cancel_text={tr!(self.i18n, "cancel")}
-                        choose_text={tr!(self.i18n, "choose_avatar")}/>
+                        submit_text={tr!(self.i18n, SUBMIT)}
+                        cancel_text={tr!(self.i18n, CANCEL)}
+                        choose_text={tr!(self.i18n, CHOOSE_AVATAR)}/>
                 </div>
             )
         }
@@ -229,7 +234,7 @@ impl Component for SelfInfo {
                 <div class="info-panel-item-avatar">
                     <label for="avatar" {onclick}>
                         <span>
-                            {tr!(self.i18n, "set_avatar")}
+                            {tr!(self.i18n, SET_AVATAR)}
                         </span>
                         <img ref={self.avatar_node.clone()}
                             src={format!("/api/file/avatar/get/{}", user.avatar)}
@@ -239,7 +244,7 @@ impl Component for SelfInfo {
                 </div>
                 <div class="info-panel-item">
                     <label for="nickname">
-                        {tr!(self.i18n, "name")}
+                        {tr!(self.i18n, NICKNAME)}
                     </label>
                     <input
                         ref={self.name_node.clone()}
@@ -252,12 +257,12 @@ impl Component for SelfInfo {
                         />
                 </div>
                 <div class="info-panel-item">
-                    <label>{tr!(self.i18n, "account")}</label>
+                    <label>{tr!(self.i18n, ACCOUNT)}</label>
                     <span>{user.account}</span>
                 </div>
                 <div class="info-panel-item">
                     <label>
-                        {tr!(self.i18n, "gender")}
+                        {tr!(self.i18n, GENDER)}
                     </label>
                     <div class="info-panel-item-gender">
                         <label for="male">
@@ -268,7 +273,7 @@ impl Component for SelfInfo {
                                 value="male"
                                 checked={self.gender == "male"}
                                 onchange={onchange.clone()}/>
-                            {tr!(self.i18n, "male")}
+                            {tr!(self.i18n, MALE)}
                         </label>
                         <label for="female">
                             <input
@@ -278,7 +283,7 @@ impl Component for SelfInfo {
                                 value="female"
                                 checked={self.gender == "female"}
                                 onchange={onchange.clone()}/>
-                            {tr!(self.i18n, "female")}
+                            {tr!(self.i18n, FEMALE)}
                         </label>
                         <label for="secret">
                             <input
@@ -288,32 +293,32 @@ impl Component for SelfInfo {
                                 value="secret"
                                 checked={self.gender == "secret" || self.gender.is_empty() }
                                 {onchange}/>
-                            {tr!(self.i18n, "secret")}
+                            {tr!(self.i18n, SECRET)}
                         </label>
 
                     </div>
                 </div>
                 <div class="info-panel-item">
                     <label for="phone">
-                        {tr!(self.i18n, "phone")}
+                        {tr!(self.i18n, PHONE)}
                     </label>
                     <input ref={self.phone_node.clone()}
                         type="text"
                         id="phone"
                         name="phone"
-                        placeholder={tr!(self.i18n, "phone")}
+                        placeholder={tr!(self.i18n, PHONE)}
                         value={user.phone}
                             />
                 </div>
                 <div class="info-panel-item">
                     <label for="email">
-                        {tr!(self.i18n, "email")}
+                        {tr!(self.i18n, EMAIL)}
                     </label>
                     <input ref={self.email_node.clone()}
                         type="text"
                         id="email"
                         name="email"
-                        placeholder={tr!(self.i18n, "email")}
+                        placeholder={tr!(self.i18n, EMAIL)}
                         required={true}
                         value={user.email}
                         autocomplete="current-password"
@@ -321,7 +326,7 @@ impl Component for SelfInfo {
                 </div>
                 <div class="info-panel-item">
                     <label for="address">
-                        {tr!(self.i18n, "address")}
+                        {tr!(self.i18n, ADDRESS)}
                     </label>
                     <input
                         ref={self.addr_node.clone()}
@@ -329,13 +334,13 @@ impl Component for SelfInfo {
                         id="address"
                         required={true}
                         autocomplete="address"
-                        placeholder={tr!(self.i18n, "address")}
+                        placeholder={tr!(self.i18n, ADDRESS)}
                         value={user.address}
                         />
                 </div>
                 <div class="info-panel-item">
                     <label for="signature">
-                        {tr!(self.i18n, "signature")}
+                        {tr!(self.i18n, SIGNATURE)}
                     </label>
                     <input
                         ref={self.signature_node.clone()}
@@ -343,20 +348,20 @@ impl Component for SelfInfo {
                         id="signature"
                         required={true}
                         autocomplete="signature"
-                        placeholder={tr!(self.i18n, "signature")}
+                        placeholder={tr!(self.i18n, SIGNATURE)}
                         value={user.signature}
                         />
                 </div>
 
 
                 <div class="info-panel-item">
-                    <label>{tr!(self.i18n, "region")}</label>
+                    <label>{tr!(self.i18n, REGION)}</label>
                     {user.region}
                 </div>
                 <div class="info-panel-btn">
-                    <button type="submit" onclick={on_submit}>{tr!(self.i18n, "submit")}</button>
-                    <button type="button" onclick={on_cancel}>{tr!(self.i18n, "cancel")}</button>
-                    <button type="button" onclick={ctx.link().callback(|_| SelfInfoMsg::Logout)}>{tr!(self.i18n, "logout")}</button>
+                    <button type="submit" onclick={on_submit}>{tr!(self.i18n, SUBMIT)}</button>
+                    <button type="button" onclick={on_cancel}>{tr!(self.i18n, CANCEL)}</button>
+                    <button type="button" onclick={ctx.link().callback(|_| SelfInfoMsg::Logout)}>{tr!(self.i18n, LOGOUT)}</button>
                 </div>
             </div>
             </>

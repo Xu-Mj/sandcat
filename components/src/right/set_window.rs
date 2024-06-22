@@ -23,6 +23,8 @@ use sandcat_sdk::{
 };
 use utils::tr;
 
+use crate::constant::{ADD, DELETE, GROUP_ANNOUNCEMENT, GROUP_DESC, GROUP_NAME, MUTE, REMARK};
+
 pub struct SetWindow {
     members: Vec<GroupMember>,
     info: Option<Box<dyn ItemInfo>>,
@@ -296,7 +298,7 @@ impl Component for SetWindow {
                     info = html! {
                         <div class="group-name">
                             <div>
-                                {tr!(self.i18n, "remark")}
+                                {tr!(self.i18n, REMARK)}
                             </div>
                             <input type="text" value={&friend.remark} onchange={on_name_change} />
                         </div>
@@ -324,19 +326,19 @@ impl Component for SetWindow {
                         <>
                             <div class="group-name">
                                 <div>
-                                    {tr!(self.i18n, "group_name")}
+                                    {tr!(self.i18n, GROUP_NAME)}
                                 </div>
                                 <input type="text" value={&v.name} onchange={on_group_name_change} />
                             </div>
                             <div class="group-announcement">
                                 <div>
-                                    {tr!(self.i18n, "group_announcement")}
+                                    {tr!(self.i18n, GROUP_ANNOUNCEMENT)}
                                 </div>
                                 <input type="text" value={&v.announcement} onchange={on_group_anno_change} />
                             </div>
                             <div class="group-desc">
                                 <div>
-                                    {tr!(self.i18n, "group_desc")}
+                                    {tr!(self.i18n, GROUP_DESC)}
                                 </div>
                                 <input type="text" value={&v.description} onchange={on_group_desc_change} />
                             </div>
@@ -351,7 +353,7 @@ impl Component for SetWindow {
         let add_friend = html! {
             <div class="avatar-name pointer" onclick={add_click}>
                 <PlusRectIcon/>
-                <span>{tr!(self.i18n, "add")}</span>
+                <span>{tr!(self.i18n, ADD)}</span>
             </div>
         };
         let mute_click = ctx.link().callback(|_| SetWindowMsg::MuteClicked);
@@ -366,7 +368,7 @@ impl Component for SetWindow {
 
         let setting = html! {
             <div class="setting-item">
-            {tr!(self.i18n, "mute")}
+            {tr!(self.i18n, MUTE)}
             <span class={switch} onclick={mute_click}>
                 <span class={slider}></span>
             </span>
@@ -385,7 +387,7 @@ impl Component for SetWindow {
                     {setting}
                 </div>
                 <div class="bottom pointer" onclick={ctx.link().callback(|_| SetWindowMsg::DeleteClicked)} >
-                    {tr!(self.i18n, "delete")}
+                    {tr!(self.i18n, DELETE)}
                 </div>
             </div>
         }

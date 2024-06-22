@@ -7,7 +7,10 @@ use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::model::{user::UserWithMatchType, RightContentType};
 use utils::tr;
 
-use crate::action::Action;
+use crate::{
+    action::Action,
+    constant::{ACCOUNT, NICKNAME, REGION},
+};
 
 #[derive(Default)]
 pub struct FriendCard {
@@ -74,9 +77,9 @@ impl Component for FriendCard {
                     <img src={utils::get_avatar_url(&self.friend.avatar)} class="friend-card-avatar"/>
                     <div class="friend-card-info">
                         // <span><b>{&self.friend.remark}</b></span>
-                        <span>{tr!(self.i18n, "nickname")}{&self.friend.name}</span>
-                        <span>{tr!(self.i18n, "account")}{&self.friend.account}</span>
-                        <span>{tr!(self.i18n, "region")}{&self.friend.region.clone().unwrap_or_default()} </span>
+                        <span>{tr!(self.i18n, NICKNAME)}{&self.friend.name}</span>
+                        <span>{tr!(self.i18n, ACCOUNT)}{&self.friend.account}</span>
+                        <span>{tr!(self.i18n, REGION)}{&self.friend.region.clone().unwrap_or_default()} </span>
                     </div>
                 </div>
                 <div class="friend-card-body">

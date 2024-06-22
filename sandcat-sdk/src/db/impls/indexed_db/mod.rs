@@ -1,4 +1,3 @@
-pub mod config;
 pub mod conv;
 pub mod friend;
 pub mod friend_ship;
@@ -11,16 +10,12 @@ pub mod seq;
 pub mod user;
 pub mod voice;
 
-use std::{
-    cell::RefCell,
-    error::Error,
-    fmt::{Debug, Display},
-    rc::Rc,
-    sync::OnceLock,
-};
+use std::{cell::RefCell, fmt::Debug, rc::Rc, sync::OnceLock};
 
 use wasm_bindgen::closure::Closure;
 use yew::Event;
+
+use crate::error::Error;
 
 pub type SuccessCallback = Rc<RefCell<Option<Closure<dyn FnMut(&Event)>>>>;
 
@@ -77,20 +72,5 @@ pub enum QueryStatus<T> {
     // 查询成功
     QuerySuccess(T),
     // 查询失败
-    QueryFail(QueryError),
+    QueryFail(Error),
 }
-
-#[derive(Debug, Clone)]
-pub struct QueryError {
-    // pub code: i32,
-    pub err: String,
-}
-
-// 为error类型实现Display特征
-impl Display for QueryError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Debug::fmt(&self.err, f)
-    }
-}
-
-impl Error for QueryError {}

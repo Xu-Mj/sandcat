@@ -19,7 +19,7 @@ cancel = Cancel
 "#;
 
 pub const USER_INFO: &str = r#"
-name = nicname
+nickname = nicname
 account = account
 email = email
 phone = phone
@@ -40,7 +40,7 @@ choose_avatar = Choose
 "#;
 
 pub const CONVERSATION: &str = r#"
-search = Search
+loading = Loading...
 no_result = No Result
 # content type
 image = [Image]
@@ -51,6 +51,7 @@ file = [File]
 text = [Text]
 video_call = [Video Call]
 audio_call = [Voice Call]
+error = [ERROR]
 knock_off_msg = Another device has logged in your account, if it is not you, please check your account password.
 ok = OK
 "#;
@@ -94,6 +95,7 @@ forward = Forward
 
 pub const SELECT_FRIENDS: &str = r#"
 querying = Querying
+error = Query Error
 select_friends = Select Friends
 empty_result = No Result
 submit = Submit

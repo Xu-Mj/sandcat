@@ -4,6 +4,7 @@ use indexmap::IndexMap;
 use log::error;
 use sandcat_sdk::api;
 use sandcat_sdk::model::message::SendStatus;
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::state::AudioDownloadedState;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
@@ -21,7 +22,6 @@ use sandcat_sdk::state::{
     SendResultState,
 };
 
-use crate::dialog::Dialog;
 use crate::right::{msg_item::MsgItem, sender::Sender};
 
 pub struct MessageList {
@@ -323,7 +323,7 @@ impl MessageList {
                 Ok(url) => url,
                 Err(e) => {
                     log::error!("create data url error: {:?}", e);
-                    Dialog::error("play audio error");
+                    Notification::error("play audio error").notify();
                     return;
                 }
             };
@@ -344,7 +344,7 @@ impl MessageList {
             // todo handle error
             if let Err(e) = audio.play() {
                 log::error!("play audio error: {:?}", e);
-                Dialog::error("play audio error");
+                Notification::error("play audio error").notify();
             };
         }
     }

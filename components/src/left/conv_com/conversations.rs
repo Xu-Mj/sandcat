@@ -3,6 +3,7 @@ use std::rc::Rc;
 use gloo::timers::callback::Timeout;
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
+use sandcat_sdk::model::notification::Notification;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -26,6 +27,7 @@ use utils::tr;
 use ws::WebSocketManager;
 
 use crate::call::PhoneCall;
+use crate::constant::{KNOCK_OFF_MSG, NO_RESULT, OK};
 use crate::dialog::Dialog;
 use crate::left::right_click_panel::RightClickPanel;
 use crate::select_friends::SelectFriendList;
@@ -111,7 +113,6 @@ impl Component for Chats {
     type Properties = ChatsProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        Dialog::loading("正在加载数据");
         Self::new(ctx)
     }
 
@@ -146,7 +147,9 @@ impl Component for Chats {
                 self.handle_offline_messages(ctx, messages);
                 // unmount loading
                 Dialog::close_loading();
-                WebSocketManager::connect(self.ws.clone());
+                if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
+                    Notification::error(e).notify();
+                }
                 true
             }
             ChatsMsg::InsertConv(conv) => {
@@ -184,7 +187,6 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::CloseContextMenu => {
-                log::debug!("close context menu");
                 self.show_context_menu = false;
                 self.context_menu_pos = (0, 0, AttrValue::default(), false);
                 true
@@ -385,7 +387,7 @@ impl Component for Chats {
         };
         let content = if self.is_searching {
             if self.result.is_empty() {
-                html! {<div class="no-result">{tr!(self.i18n,"no_result")}</div>}
+                html! {<div class="no-result">{tr!(self.i18n, NO_RESULT)}</div>}
             } else {
                 self.render_result(ctx)
             }
@@ -427,8 +429,8 @@ impl Component for Chats {
             warning = html! {
                 <div class="knock-off-warning">
                     <div class="warning-window box-shadow">
-                        <div>{tr!(self.i18n, "knock_off_msg")}</div>
-                        <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{tr!(self.i18n, "ok")}</button>
+                        <div>{tr!(self.i18n, KNOCK_OFF_MSG)}</div>
+                        <button onclick={ctx.link().callback(|_|ChatsMsg::Logout)}>{tr!(self.i18n, OK)}</button>
                     </div>
                 </div>
             }

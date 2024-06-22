@@ -16,6 +16,10 @@ use sandcat_sdk::state::{ItemType, RemoveConvState, RemoveFriendState};
 use utils::tr;
 
 use crate::action::Action;
+use crate::constant::ACCOUNT;
+use crate::constant::REGION;
+use crate::constant::REMARK;
+use crate::constant::SIGNATURE;
 use crate::right::set_drawer::SetDrawer;
 
 #[derive(Properties, Clone, PartialEq)]
@@ -385,20 +389,20 @@ impl PostCard {
                                 {&friend.name}
                             </span>
                             <span class="num">
-                                {tr!(self.i18n, "account")}{&friend.friend_id}
+                                {tr!(self.i18n, ACCOUNT)}{&friend.friend_id}
                             </span>
                             <span class="region">
-                                {tr!(self.i18n, "region")}{friend.region.clone()}
+                                {tr!(self.i18n, REGION)}{friend.region.clone()}
                             </span>
                         </div>
                     </div>
 
                 // </div>
                 <div class="postcard-remark">
-                    {tr!(self.i18n, "remark")}{friend.remark.clone()}
+                    {tr!(self.i18n, REMARK)}{friend.remark.clone()}
                 </div>
                 <div class="sign">
-                    {tr!(self.i18n, "signature")}{friend.signature.clone()}
+                    {tr!(self.i18n, SIGNATURE)}{friend.signature.clone()}
                 </div>
 
                 <Action friend_id={&friend.friend_id}
@@ -433,17 +437,17 @@ impl PostCard {
                                 {&group.name}
                             </span>
                             <span class="num">
-                                {tr!(self.i18n, "account")}{&group.id}
+                                {tr!(self.i18n, ACCOUNT)}{&group.id}
                             </span>
                         </div>
                     </div>
 
                 </div>
                 <div class="postcard-remark">
-                    {tr!(self.i18n, "remark")}{group.remark.clone()}
+                    {tr!(self.i18n, REMARK)}{group.remark.clone()}
                 </div>
                 <div class="sign">
-                    {tr!(self.i18n, "signature")}{group.signature()}
+                    {tr!(self.i18n, SIGNATURE)}{group.signature()}
                 </div>
 
                 <Action friend_id={&group.id}

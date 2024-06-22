@@ -98,44 +98,32 @@ impl GroupInterface for GroupRepo {
 
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
 
-        {
-            let mut on_get_list = self.on_get_list_success.borrow_mut();
-            if let Some(ref on_get_list) = *on_get_list {
-                request.set_onsuccess(Some(on_get_list.as_ref().unchecked_ref()));
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = req.result().unwrap_or(JsValue::null());
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+                let value = cursor.value().unwrap();
+                // 反序列化
+                let group: Group = serde_wasm_bindgen::from_value(value).unwrap();
+                let id = group.id.to_string().into();
+                groups.borrow_mut().insert(id, group);
+                let _ = cursor.continue_();
             } else {
-                let success = Closure::wrap(Box::new(move |event: &Event| {
-                    let target = event.target().expect("msg");
-                    let req = target
-                        .dyn_ref::<IdbRequest>()
-                        .expect("Event target is IdbRequest; qed");
-                    let result = match req.result() {
-                        Ok(data) => data,
-                        Err(_err) => {
-                            log::error!("query friend list error ...:{:?}", _err);
-                            JsValue::null()
-                        }
-                    };
-                    if !result.is_null() {
-                        let cursor = result
-                            .dyn_ref::<web_sys::IdbCursorWithValue>()
-                            .expect("result is IdbCursorWithValue; qed");
-                        let value = cursor.value().unwrap();
-                        // 反序列化
-                        let group: Group = serde_wasm_bindgen::from_value(value).unwrap();
-                        let id = group.id.to_string().into();
-                        groups.borrow_mut().insert(id, group);
-                        let _ = cursor.continue_();
-                    } else {
-                        // 如果为null说明已经遍历完成
-                        //将总的结果发送出来
-                        let _ = tx.take().unwrap().send(groups.borrow().clone());
-                    }
-                }) as Box<dyn FnMut(&Event)>);
-
-                request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-                *on_get_list = Some(success);
+                // 如果为null说明已经遍历完成
+                //将总的结果发送出来
+                let _ = tx.take().unwrap().send(groups.borrow().clone());
             }
-        }
+        }) as Box<dyn FnMut(&Event)>);
+
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        *self.on_get_list_success.borrow_mut() = Some(success);
+
         Ok(rx.await.unwrap())
     }
 
@@ -152,38 +140,31 @@ impl GroupInterface for GroupRepo {
         let range = JsValue::from(IdbKeyRange::only(&JsValue::from(id))?);
         let request = index.open_cursor_with_range(&range)?;
 
-        {
-            let mut on_del_mem = self.on_del_mem_success.borrow_mut();
-            if let Some(ref on_del) = *on_del_mem {
-                request.set_onsuccess(Some(on_del.as_ref().unchecked_ref()));
-            } else {
-                let success = Closure::wrap(Box::new(move |event: &Event| {
-                    let target = event.target().expect("msg");
-                    let req = target
-                        .dyn_ref::<IdbRequest>()
-                        .expect("Event target is IdbRequest; qed");
-                    let result = match req.result() {
-                        Ok(data) => data,
-                        Err(_err) => {
-                            error!("query friend list error ...:{:?}", _err);
-                            JsValue::null()
-                        }
-                    };
-                    if !result.is_null() {
-                        let cursor = result
-                            .dyn_ref::<web_sys::IdbCursorWithValue>()
-                            .expect("result is IdbCursorWithValue; qed");
-                        let value = cursor.value().unwrap();
-                        // 反序列化
-                        let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
-                        store.delete(&JsValue::from(group.id)).unwrap();
-                        let _ = cursor.continue_();
-                    }
-                }) as Box<dyn FnMut(&Event)>);
-                request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-                *on_del_mem = Some(success);
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = match req.result() {
+                Ok(data) => data,
+                Err(_err) => {
+                    error!("query friend list error ...:{:?}", _err);
+                    JsValue::null()
+                }
+            };
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+                let value = cursor.value().unwrap();
+                // 反序列化
+                let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
+                store.delete(&JsValue::from(group.id)).unwrap();
+                let _ = cursor.continue_();
             }
-        }
+        }) as Box<dyn FnMut(&Event)>);
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        *self.on_del_mem_success.borrow_mut() = Some(success);
 
         // delete group messages
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
@@ -192,38 +173,32 @@ impl GroupInterface for GroupRepo {
         let range = JsValue::from(IdbKeyRange::only(&JsValue::from(id))?);
         let request = index.open_cursor_with_range(&range)?;
 
-        {
-            let mut on_del_msg = self.on_del_msg_success.borrow_mut();
-            if let Some(ref on_del) = *on_del_msg {
-                request.set_onsuccess(Some(on_del.as_ref().unchecked_ref()));
-            } else {
-                let success = Closure::wrap(Box::new(move |event: &Event| {
-                    let target = event.target().expect("msg");
-                    let req = target
-                        .dyn_ref::<IdbRequest>()
-                        .expect("Event target is IdbRequest; qed");
-                    let result = match req.result() {
-                        Ok(data) => data,
-                        Err(_err) => {
-                            log::error!("query friend list error ...:{:?}", _err);
-                            JsValue::null()
-                        }
-                    };
-                    if !result.is_null() {
-                        let cursor = result
-                            .dyn_ref::<web_sys::IdbCursorWithValue>()
-                            .expect("result is IdbCursorWithValue; qed");
-                        let value = cursor.value().unwrap();
-                        // 反序列化
-                        let group: Message = serde_wasm_bindgen::from_value(value).unwrap();
-                        store.delete(&JsValue::from(group.id)).unwrap();
-                        let _ = cursor.continue_();
-                    }
-                }) as Box<dyn FnMut(&Event)>);
-                request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-                *on_del_msg = Some(success);
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = match req.result() {
+                Ok(data) => data,
+                Err(_err) => {
+                    log::error!("query friend list error ...:{:?}", _err);
+                    JsValue::null()
+                }
+            };
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+                let value = cursor.value().unwrap();
+                // 反序列化
+                let group: Message = serde_wasm_bindgen::from_value(value).unwrap();
+                store.delete(&JsValue::from(group.id)).unwrap();
+                let _ = cursor.continue_();
             }
-        }
+        }) as Box<dyn FnMut(&Event)>);
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        *self.on_del_msg_success.borrow_mut() = Some(success);
+
         Ok(())
     }
 

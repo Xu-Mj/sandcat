@@ -13,13 +13,12 @@ use sandcat_sdk::{
             convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall,
             DEFAULT_HELLO_MESSAGE,
         },
+        notification::Notification,
         ContentType, RightContentType,
     },
     pb::message::Msg as PbMsg,
     state::RefreshMsgListState,
 };
-
-use crate::dialog::Dialog;
 
 use super::{conversations::ChatsMsg, Chats};
 
@@ -52,13 +51,13 @@ impl Chats {
                     Self::download_voice_and_save(&msg.content, &msg.local_id, msg.audio_duration)
                         .await
                 {
-                    Dialog::error(&e);
+                    Notification::error(e).notify();
                 }
                 msg.audio_downloaded = true;
             }
             if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
                 error!("save message to db error: {:?}", e);
-                Dialog::error("save message to db error");
+                Notification::error("save message to db  error").notify();
             }
         });
 
@@ -92,7 +91,7 @@ impl Chats {
                 Ok(msg) => msg,
                 Err(e) => {
                     error!("convert_server_msg error: {:?}", e);
-                    Dialog::error("convert_server_msg error");
+                    Notification::error("sconvert_server_msg error").notify();
                     return;
                 }
             };
@@ -119,13 +118,13 @@ impl Chats {
                                 )
                                 .await
                                 {
-                                    Dialog::error(&e);
+                                    Notification::error(e).notify();
                                 }
                                 msg.audio_downloaded = true;
                             }
                             if let Err(e) = db::db_ins().group_msgs.put(&msg).await {
                                 error!("save message to db error: {:?}", e);
-                                Dialog::error("save message to db error");
+                                Notification::error("save message to db error").notify();
                             }
                         });
                     }
@@ -136,7 +135,7 @@ impl Chats {
                                 db::db_ins().group_members.delete(&mem_id, &group_id).await
                             {
                                 error!("remove members error: {:?}", e);
-                                Dialog::error("remove members error");
+                                Notification::error("remove members error").notify();
                             }
                         });
                     }
@@ -233,7 +232,7 @@ impl Chats {
                         };
                         if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
                             error!("save message to db error: {:?}", e);
-                            Dialog::error("save message to db error");
+                            Notification::error("save message to db error").notify();
                         }
 
                         ChatsMsg::SendMessage(Msg::Single(msg))

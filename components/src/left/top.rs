@@ -15,7 +15,10 @@ use sandcat_sdk::{
 };
 use utils::tr;
 
-use crate::self_info::SelfInfo;
+use crate::{
+    constant::{CONTACTS, MSG},
+    self_info::SelfInfo,
+};
 
 /// 增加双击切换置顶未读消息
 pub struct Top {
@@ -148,11 +151,11 @@ impl Component for Top {
             html! {
                 <div class="top-down">
                     <div class={classes!(msg_class.clone(), "top-down-style")} onclick={msg_onclick.clone()}>
-                        { tr!(self.i18n, "msg") }
+                        { tr!(self.i18n, MSG) }
                         { msg_count.clone() }
                     </div>
                     <div class={classes!(contact_class.clone(), "top-down-style")} onclick={contact_onclick.clone()}>
-                        { tr!(self.i18n, "contact") }
+                        { tr!(self.i18n, CONTACTS) }
                         { contact_count.clone() }
                     </div>
                 </div>
