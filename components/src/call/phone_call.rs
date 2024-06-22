@@ -69,7 +69,7 @@ pub enum PhoneCallMsg {
     SwitchMicrophoneMute,
     SendMessage(SingleCall),
     CallStateChange(Rc<SendCallState>),
-    None,
+    Close,
     OnMouseDown(MouseEvent),
     OnMouseMove(MouseEvent),
     OnMouseUp,
@@ -321,7 +321,7 @@ impl Component for PhoneCall {
                                     .send_message(Msg::SingleCall(SingleCall::Invite(msg)))
                                 {
                                     log::error!("send message error: {:?}", e);
-                                    return PhoneCallMsg::None;
+                                    return PhoneCallMsg::Close;
                                 }
                                 PhoneCallMsg::ShowVideoWindow(stream, Box::new(friend))
                             }
@@ -342,7 +342,7 @@ impl Component for PhoneCall {
                                 };
                                 Dispatch::<Notification>::global()
                                     .set(Notification::error(content));
-                                PhoneCallMsg::None
+                                PhoneCallMsg::Close
                             }
                         },
                         InviteType::Audio => {
@@ -376,7 +376,7 @@ impl Component for PhoneCall {
                                     };
                                     Dispatch::<Notification>::global()
                                         .set(Notification::error(content));
-                                    PhoneCallMsg::None
+                                    PhoneCallMsg::Close
                                 }
                             }
                         }
@@ -442,7 +442,7 @@ impl Component for PhoneCall {
                                 Dispatch::<Notification>::global().set(Notification::error(
                                     format!("get video stream error: {:?}", e),
                                 ));
-                                PhoneCallMsg::None
+                                PhoneCallMsg::Close
                             }
                         },
                         InviteType::Audio => match utils::get_audio_stream().await {
@@ -451,7 +451,7 @@ impl Component for PhoneCall {
                                 Dispatch::<Notification>::global().set(Notification::error(
                                     format!("get audio stream error: {:?}", e),
                                 ));
-                                PhoneCallMsg::None
+                                PhoneCallMsg::Close
                             }
                         },
                     }
@@ -767,7 +767,10 @@ impl Component for PhoneCall {
                 // self.call_state = state;
                 true
             }
-            PhoneCallMsg::None => false,
+            PhoneCallMsg::Close => {
+                self.finish_call();
+                true
+            }
             PhoneCallMsg::OnMouseDown(event) => {
                 event.stop_propagation();
                 event.prevent_default();
