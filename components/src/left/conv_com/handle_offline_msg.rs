@@ -9,6 +9,7 @@ use sandcat_sdk::{
     db,
     model::{
         conversation::Conversation,
+        friend::FriendStatus,
         message::{
             convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall,
             DEFAULT_HELLO_MESSAGE,
@@ -237,6 +238,18 @@ impl Chats {
 
                         ChatsMsg::SendMessage(Msg::Single(msg))
                     });
+                }
+                Msg::RecRelationshipDel((friend_id, seq)) => {
+                    spawn_local(async move {
+                        let mut friend = db::db_ins().friends.get(&friend_id).await;
+                        if !friend.friend_id.is_empty() {
+                            friend.status = FriendStatus::Delete as i32;
+                            if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                                error!("save friend error:{:?}", err);
+                            }
+                        }
+                    });
+                    self.handle_lack_msg(ctx, seq);
                 }
                 _ => {}
             }

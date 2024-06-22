@@ -55,14 +55,15 @@ impl FriendApi for FriendHttp {
     }
 
     // 获取好友列表, 服务端需要增加好友表及其逻辑，包括好友请求表，实际好友关系表（因为需要额外字段：备注，添加时间等）
-    async fn get_friend_list_by_id(&self, id: String) -> Result<Vec<Friend>> {
-        let friends: Vec<Friend> = Request::get(format!("/api/friend/{}", id).as_str())
-            .header(AUTHORIZE_HEADER, &token())
-            .send()
-            .await?
-            .success()?
-            .json()
-            .await?;
+    async fn get_friend_list_by_id(&self, id: &str, offline_time: i64) -> Result<Vec<Friend>> {
+        let friends: Vec<Friend> =
+            Request::get(format!("/api/friend/{id}/{offline_time}").as_str())
+                .header(AUTHORIZE_HEADER, &token())
+                .send()
+                .await?
+                .success()?
+                .json()
+                .await?;
         Ok(friends)
     }
 
