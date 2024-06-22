@@ -158,8 +158,8 @@ impl Component for Setting {
                             value="large"
                             onchange={on_font_size_change.clone()}
                             checked={*self.font_size==FontSizeState::Large}/>
-                        </label>
                             {format!("\t{}", tr!(self.i18n, LARGE))}
+                        </label>
                         <label for="larger">
                             <input type="radio"
                             name="font_size"
