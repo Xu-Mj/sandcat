@@ -1,7 +1,8 @@
 use std::{collections::HashMap, rc::Rc};
 
 use gloo::timers::callback::Timeout;
-use yew::{classes, html, Component, Context, Html, Properties};
+use web_sys::HtmlDivElement;
+use yew::{classes, html, Component, Context, Html, NodeRef, Properties};
 use yewdux::Dispatch;
 
 use sandcat_sdk::model::notification::{Notification, NotificationType};
@@ -9,6 +10,7 @@ use sandcat_sdk::model::notification::{Notification, NotificationType};
 type NotificationList = HashMap<i64, (Rc<Notification>, Timeout)>;
 
 pub struct NotificationCom {
+    noti_ref: NodeRef,
     notifications: NotificationList,
     _noti_dis: Dispatch<Notification>,
 }
@@ -29,6 +31,7 @@ impl Component for NotificationCom {
     fn create(ctx: &Context<Self>) -> Self {
         let _noti_dis = Dispatch::global().subscribe_silent(ctx.link().callback(Msg::Notification));
         Self {
+            noti_ref: NodeRef::default(),
             notifications: HashMap::new(),
             _noti_dis,
         }
@@ -70,9 +73,15 @@ impl Component for NotificationCom {
             })
             .collect::<Html>();
         html! {
-            <div class="notify">
+            <div class="notify" ref={self.noti_ref.clone()}>
                 {notifications}
             </div>
+        }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        if let Some(node) = self.noti_ref.cast::<HtmlDivElement>() {
+            node.set_scroll_top(node.scroll_height());
         }
     }
 }
