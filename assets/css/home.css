@@ -301,8 +301,8 @@
     z-index: 10;
 
     .error {
-        background-color: red;
-        color: aliceblue;
+        background-color: #f8d7da;
+        color: #721c24;
 
         svg path {
             fill: aliceblue;

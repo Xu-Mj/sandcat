@@ -12,8 +12,8 @@ use web_sys::{
 };
 use yew::platform::spawn_local;
 use yew::{html, AttrValue, Callback, Component, Context, Html, Properties, TouchEvent};
-use yewdux::Dispatch;
 
+use i18n::LanguageType;
 use icons::{
     AnswerPhoneIcon, AudioZoomInIcon, AudioZoomOutIcon, HangUpLoadingIcon, HangupInNotifyIcon,
     MicrophoneIcon, MicrophoneMuteIcon, VideoRecordIcon, VolumeIcon, VolumeMuteIcon,
@@ -27,9 +27,14 @@ use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::ItemInfo;
 use sandcat_sdk::state::SendCallState;
+use utils::tr;
 use ws::WebSocketManager;
 
 use crate::call::ConnectionState;
+use crate::constant::{
+    CALL_BUSY, CONNECTING, CONN_ERROR, INCOMING_CALL, OTHER_ERROR, STREAM_ERROR, UNKNOW_ERROR,
+    WAITING,
+};
 use crate::get_platform;
 
 use super::PhoneCall;
@@ -40,6 +45,7 @@ pub struct PhoneCallProps {
     pub user_id: AttrValue,
     pub send_msg: Callback<SingleCall>,
     pub msg: SingleCall,
+    pub lang: LanguageType,
 }
 
 pub enum PhoneCallMsg {
@@ -70,6 +76,7 @@ pub enum PhoneCallMsg {
     SendMessage(SingleCall),
     CallStateChange(Rc<SendCallState>),
     Close,
+    Error(String),
     OnMouseDown(MouseEvent),
     OnMouseMove(MouseEvent),
     OnMouseUp,
@@ -147,8 +154,7 @@ impl Component for PhoneCall {
                 if msg.agree {
                     // 对方同意了通话请求，正在建立连接，为了简化代码邀请方和被邀请方的创建pc方法合并到一起了
                     if let Err(e) = self.create_pc(ctx, "") {
-                        Dispatch::<Notification>::global()
-                            .set(Notification::error(format!("create pc error: {:?}", e)));
+                        Notification::error(format!("create pc error: {:?}", e)).notify();
                         return false;
                     }
                 } else {
@@ -286,7 +292,7 @@ impl Component for PhoneCall {
                 log::debug!("send call invite");
                 // 判断是否正在通话中
                 if self.invite_info.is_some() {
-                    Dispatch::<Notification>::global().set(Notification::warn("您正在通话中!"));
+                    Notification::warn(tr!(self.i18n, CALL_BUSY)).notify();
                     return false;
                 }
                 self.invite_info = Some(InviteInfo {
@@ -332,17 +338,18 @@ impl Component for PhoneCall {
                                     log::warn!("dom exception: {}", dom_exception.name());
                                     if dom_exception.name() == "NotFoundError" {
                                         log::warn!("没有检测到音视频设备");
-                                        "没有检测到音视频设备"
+                                        // "没有检测到音视频设备"
+                                        STREAM_ERROR
                                     } else {
-                                        "其他错误"
+                                        // "其他错误"
+                                        OTHER_ERROR
                                     }
                                 } else {
                                     log::error!("未知错误获取音频流: {:?}", e);
-                                    "其他错误"
+                                    UNKNOW_ERROR
+                                    // "其他错误"
                                 };
-                                Dispatch::<Notification>::global()
-                                    .set(Notification::error(content));
-                                PhoneCallMsg::Close
+                                PhoneCallMsg::Error(content.to_string())
                             }
                         },
                         InviteType::Audio => {
@@ -366,17 +373,16 @@ impl Component for PhoneCall {
                                         log::warn!("dom exception: {}", dom_exception.name());
                                         if dom_exception.name() == "NotFoundError" {
                                             log::warn!("没有检测到音频设备");
-                                            "没有检测到音视频设备"
+                                            // "没有检测到音视频设备"
+                                            STREAM_ERROR
                                         } else {
-                                            "其他错误"
+                                            OTHER_ERROR
                                         }
                                     } else {
                                         log::error!("未知错误获取音频流: {:?}", e);
-                                        "其他错误"
+                                        UNKNOW_ERROR
                                     };
-                                    Dispatch::<Notification>::global()
-                                        .set(Notification::error(content));
-                                    PhoneCallMsg::Close
+                                    PhoneCallMsg::Error(content.to_string())
                                 }
                             }
                         }
@@ -439,18 +445,16 @@ impl Component for PhoneCall {
                         InviteType::Video => match utils::get_video_stream().await {
                             Ok(stream) => PhoneCallMsg::ConnectedCall(stream),
                             Err(e) => {
-                                Dispatch::<Notification>::global().set(Notification::error(
-                                    format!("get video stream error: {:?}", e),
-                                ));
+                                Notification::error(format!("get video stream error: {:?}", e))
+                                    .notify();
                                 PhoneCallMsg::Close
                             }
                         },
                         InviteType::Audio => match utils::get_audio_stream().await {
                             Ok(stream) => PhoneCallMsg::ConnectedCall(stream),
                             Err(e) => {
-                                Dispatch::<Notification>::global().set(Notification::error(
-                                    format!("get audio stream error: {:?}", e),
-                                ));
+                                Notification::error(format!("get audio stream error: {:?}", e))
+                                    .notify();
                                 PhoneCallMsg::Close
                             }
                         },
@@ -893,6 +897,11 @@ impl Component for PhoneCall {
                 self.call_duration += 1;
                 true
             }
+            PhoneCallMsg::Error(err) => {
+                self.finish_call();
+                Notification::error(tr!(self.i18n, &err)).notify();
+                true
+            }
         }
     }
 
@@ -929,7 +938,7 @@ impl Component for PhoneCall {
                     // 头像。昵称。挂断。接听
                     <img src={utils::get_avatar_url(&info.avatar())}/>
                     <span class="video-or-audio-notify-text" >
-                        {format!("{} 来电", info.name())}
+                        {format!("{} {}", info.name(), tr!(self.i18n, INCOMING_CALL))}
                     </span>
                     <div class="video-audio-notify-operate" >
                         <span onclick={ctx.link().callback(|_| PhoneCallMsg::DenyCall)}>
@@ -947,15 +956,12 @@ impl Component for PhoneCall {
         let mut audio = html!();
 
         let (hangup_icon, duration) = match self.conn_state {
-            ConnectionState::Waiting => (html!(<HangupInNotifyIcon/>), String::from("Waiting ...")),
+            ConnectionState::Waiting => (html!(<HangupInNotifyIcon/>), tr!(self.i18n, WAITING)),
             ConnectionState::Connecting => {
-                (html!(<HangUpLoadingIcon/>), String::from("Connecting..."))
+                (html!(<HangUpLoadingIcon/>), tr!(self.i18n, CONNECTING))
             }
             ConnectionState::Connected => (html!(<HangupInNotifyIcon/>), self.format_duration()),
-            ConnectionState::Error => (
-                html!(<HangupInNotifyIcon/>),
-                String::from("Connection error"),
-            ),
+            ConnectionState::Error => (html!(<HangupInNotifyIcon/>), tr!(self.i18n, CONN_ERROR)),
         };
 
         if self.show_video || self.show_audio {

@@ -54,6 +54,17 @@ region = 地区:
 cancel = 取消
 "#;
 
+pub const CALL_COM: &str = r#"
+incoming_call = 来电
+waiting = 等待中...
+connecting = 连接中...
+conn_error =  连接错误
+stream_error = 没有检测到音视频设备
+other_error = 其他错误
+unkonw_error = 未知错误
+busy = 您正在通话中！
+"#;
+
 pub const CONVERSATION: &str = r#"
 loading = 正在加载数据...
 no_result = 没有搜索结果

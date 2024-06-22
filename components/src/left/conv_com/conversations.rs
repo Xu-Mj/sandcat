@@ -446,7 +446,8 @@ impl Component for Chats {
                 ws={self.ws.clone()}
                 user_id={&ctx.props().user_id}
                 msg={self.call_msg.clone()}
-                send_msg={send_msg_callback}/>
+                send_msg={send_msg_callback}
+                lang={self.lang_state.lang}/>
 
             <div class="list-wrapper" {ontouchstart} {ontouchend}>
                 {context_menu}

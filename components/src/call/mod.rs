@@ -1,4 +1,6 @@
 mod phone_call;
+use fluent::{FluentBundle, FluentResource};
+use i18n::{en_us, zh_cn, LanguageType};
 pub use phone_call::*;
 use wasm_bindgen_futures::{spawn_local, JsFuture};
 
@@ -68,6 +70,7 @@ pub struct PhoneCall {
     is_mobile: bool,
     is_zoom: bool,
     conn_state: ConnectionState,
+    i18n: FluentBundle<FluentResource>,
 }
 
 impl Debug for PhoneCall {
@@ -89,6 +92,13 @@ impl PhoneCall {
         let call_state_dis =
             Dispatch::global().subscribe(ctx.link().callback(PhoneCallMsg::CallStateChange));
         let is_mobile = Dispatch::<MobileState>::global().get().is_mobile();
+
+        let res = match ctx.props().lang {
+            LanguageType::ZhCN => zh_cn::CALL_COM,
+            LanguageType::EnUS => en_us::CALL_COM,
+        };
+        let i18n = utils::create_bundle(res);
+
         Self {
             show_video: false,
             show_audio: false,
@@ -114,6 +124,7 @@ impl PhoneCall {
             is_mobile,
             is_zoom: false,
             conn_state: ConnectionState::Waiting,
+            i18n,
         }
     }
 

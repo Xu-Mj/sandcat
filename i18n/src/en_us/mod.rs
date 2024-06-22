@@ -40,6 +40,17 @@ logout = Logout
 choose_avatar = Choose
 "#;
 
+pub const CALL_COM: &str = r#"
+incoming_call = Call you
+waiting = Waiting...
+connecting = Connecting...
+conn_error = Connection error
+stream_error = Stream error
+other_error = Other error
+unkonw_error = Unkonw error
+busy = Busy
+"#;
+
 pub const CONVERSATION: &str = r#"
 loading = Loading...
 no_result = No Result
