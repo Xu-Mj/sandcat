@@ -77,7 +77,7 @@ impl Component for Left {
             ComponentType::Setting => {}
             ComponentType::Default => {}
         };
-        let class = match *Dispatch::<MobileState>::global().get() {
+        let class = match *MobileState::get() {
             MobileState::Desktop => "left-container",
             MobileState::Mobile => "left-container-mobile",
         };

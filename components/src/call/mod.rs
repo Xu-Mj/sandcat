@@ -91,7 +91,7 @@ impl PhoneCall {
     fn new(ctx: &Context<Self>) -> Self {
         let call_state_dis =
             Dispatch::global().subscribe(ctx.link().callback(PhoneCallMsg::CallStateChange));
-        let is_mobile = Dispatch::<MobileState>::global().get().is_mobile();
+        let is_mobile = MobileState::get().is_mobile();
 
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::CALL_COM,

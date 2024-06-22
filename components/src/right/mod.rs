@@ -317,7 +317,7 @@ impl Component for Right {
         let mut setting = html!();
         let mut friend_list = html!();
         let (class, right_top_bar_class, back, operation_bar, ontouchstart, ontouchend) =
-            match *Dispatch::<MobileState>::global().get() {
+            match *MobileState::get() {
                 MobileState::Desktop => (
                     "right-container",
                     "right-top-bar-friend",

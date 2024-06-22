@@ -79,7 +79,7 @@ impl Component for Top {
             connect_state: _conn_dis.get(),
             _conn_dis,
             i18n,
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile: MobileState::get().is_mobile(),
         }
     }
 

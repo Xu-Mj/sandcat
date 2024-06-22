@@ -168,7 +168,7 @@ impl Chats {
 
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let addr = utils::get_local_storage(WS_ADDR).unwrap();
-        let platform = Dispatch::<MobileState>::global().get();
+        let platform = MobileState::get();
         let is_mobile = platform.is_mobile();
         let url = format!(
             "{}/{}/conn/{}/{}",

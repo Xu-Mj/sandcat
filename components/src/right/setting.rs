@@ -115,7 +115,7 @@ impl Component for Setting {
 
         let mut class = classes!("rect");
         let mut font_class = classes!("font-size");
-        match *Dispatch::<MobileState>::global().get() {
+        match *MobileState::get() {
             MobileState::Desktop => {
                 class.push("rect-size");
                 font_class.push("font-size-desktop");

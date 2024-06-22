@@ -75,7 +75,7 @@ impl Component for Home {
         if !self.db_inited {
             return html! {};
         }
-        let (right, class) = match *Dispatch::<MobileState>::global().get() {
+        let (right, class) = match *MobileState::get() {
             MobileState::Desktop => (html!(<Right />), "home"),
             MobileState::Mobile => match *Dispatch::<ShowRight>::global().get() {
                 ShowRight::None => (html!(), "home-mobile"),
@@ -118,9 +118,9 @@ impl Home {
                 || platform.contains("Android")
                 || platform.contains("iPhone")
             {
-                Dispatch::<MobileState>::global().set(MobileState::Mobile);
+                MobileState::Mobile.notify();
             } else {
-                Dispatch::<MobileState>::global().set(MobileState::Desktop);
+                MobileState::Desktop.notify();
             }
         }
 

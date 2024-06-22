@@ -14,7 +14,6 @@ use sandcat_sdk::error::Error;
 use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::state::MobileState;
 use utils::tr;
-use yewdux::Dispatch;
 
 use crate::constant::CANCEL;
 use crate::constant::EMPTY_RESULT;
@@ -81,7 +80,7 @@ impl Component for SelectFriendList {
             data: IndexMap::new(),
             querying: false,
             err: None,
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile: MobileState::get().is_mobile(),
         }
     }
 

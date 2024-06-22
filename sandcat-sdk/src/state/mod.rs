@@ -1,4 +1,7 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    rc::Rc,
+};
 
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
@@ -277,6 +280,14 @@ impl MobileState {
             MobileState::Desktop => false,
             MobileState::Mobile => true,
         }
+    }
+
+    pub fn notify(self) {
+        Dispatch::<MobileState>::global().set(self);
+    }
+
+    pub fn get() -> Rc<Self> {
+        Dispatch::<Self>::global().get()
     }
 }
 impl From<&str> for MobileState {

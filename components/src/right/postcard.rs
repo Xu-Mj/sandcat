@@ -368,7 +368,7 @@ impl PostCard {
 
     fn get_friend_html(&self, ctx: &Context<Self>, set_drawer: Html) -> Html {
         if let Some(friend) = self.friend.as_ref() {
-            let class = match *Dispatch::<MobileState>::global().get() {
+            let class = match *MobileState::get() {
                 MobileState::Desktop => "pc-wrapper pc-wrapper-size",
                 MobileState::Mobile => "pc-wrapper pc-wrapper-size-mobile",
             };
