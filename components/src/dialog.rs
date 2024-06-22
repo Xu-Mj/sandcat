@@ -161,11 +161,7 @@ impl Component for Dialog {
                 class.push("notification");
                 class.push("error");
                 html! {
-                    <>
-                        // <div class="header">{&ctx.props().title}</div>
-                        <div class="content">{&ctx.props().content}</div>
-                        // <div class="footer"><div class="button">{"got it"}</div></div>
-                    </>
+                    <div class="content">{&ctx.props().content}</div>
                 }
             }
             DialogType::Panic => {
@@ -214,27 +210,6 @@ impl Dialog {
 
     pub fn close_loading() {
         Dispatch::<LoadingState>::global().reduce_mut(|s| s.is_loading = false);
-    }
-
-    pub fn success(msg: &str) {
-        let container = Dialog::container();
-        let props = DialogProps::success(msg);
-        yew::Renderer::<Dialog>::with_root_and_props(container, props).render();
-    }
-
-    pub fn info(msg: &str) {
-        let props = DialogProps::info(msg);
-        yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
-    }
-
-    pub fn warn(msg: &str) {
-        let props = DialogProps::warn(msg);
-        yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
-    }
-
-    pub fn error(msg: &str) {
-        let props = DialogProps::error(msg);
-        yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
     }
 
     fn unmount(&mut self, ctx: &Context<Self>) {

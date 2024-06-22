@@ -1,5 +1,6 @@
 // login component
 pub const LOGIN: &str = r#"
+error = 用户名或密码错误
 login_text = 登录
 submit = 登录
 email = 邮箱地址

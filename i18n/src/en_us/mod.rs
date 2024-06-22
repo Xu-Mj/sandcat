@@ -1,5 +1,6 @@
 // login component
 pub const LOGIN: &str = r#"
+error = account or password is incorrect
 login_text = SignIn
 submit = login
 email = e-mail

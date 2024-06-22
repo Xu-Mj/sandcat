@@ -1,10 +1,10 @@
 use std::collections::HashMap;
 
-use components::dialog::Dialog;
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::{Interval, Timeout};
 use gloo::utils::window;
 use regex::Regex;
+use sandcat_sdk::model::notification::Notification;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -12,6 +12,7 @@ use yew_router::prelude::RouterScopeExt;
 use yewdux::Dispatch;
 use zxcvbn::zxcvbn;
 
+use components::notification::NotificationCom;
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
 use sandcat_sdk::error::Error;
@@ -210,7 +211,7 @@ impl Component for Register {
             }
             RegisterMsg::SendCodeFailed(e) => {
                 log::error!("send code failed: {:?}", e);
-                Dialog::error("code send failed");
+                Notification::error("code send failed").notify();
                 self.is_send = false;
                 true
             }
@@ -350,6 +351,7 @@ impl Component for Register {
         };
         html! {
             <div class="register-container">
+                <NotificationCom />
                 {req_status}
                 <div {class}
                     // onkeydown={ctx.link().callback(RegisterMsg::OnFormKeyDown)}

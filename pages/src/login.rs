@@ -2,18 +2,19 @@ use std::rc::Rc;
 
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
-use components::dialog::Dialog;
 use fluent::{FluentBundle, FluentResource};
-use icons::{MoonIcon, SunIcon};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
+use components::constant::ERROR;
 use i18n::{en_us, zh_cn, LanguageType};
+use icons::{MoonIcon, SunIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db::{self, DB_NAME, REFRESH_TOKEN, TOKEN, WS_ADDR};
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::LoginRequest;
 use sandcat_sdk::state::{I18nState, ThemeState};
@@ -101,7 +102,7 @@ impl Component for Login {
                     {
                         Ok(resp) => resp,
                         Err(err) => {
-                            Dialog::error(&err.to_string());
+                            Notification::error(err).notify();
                             return LoginMsg::Failed;
                         }
                     };
@@ -180,7 +181,7 @@ impl Component for Login {
         if self.show_error {
             info = html!(
                 <div class="error">
-                    {"用户名或密码错误"}
+                    {tr!(self.i18n, ERROR )}
                 </div>)
         }
 
