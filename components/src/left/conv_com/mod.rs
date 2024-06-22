@@ -25,6 +25,7 @@ use sandcat_sdk::{
     model::{
         conversation::Conversation,
         message::{Msg, SingleCall},
+        notification::Notification,
         seq::Seq,
         user::Claims,
         CommonProps, ComponentType, ContentType, CurrentItem, RightContentType,
@@ -136,14 +137,14 @@ impl Chats {
                     Ok(messages) => messages,
                     Err(e) => {
                         error!("pull offline messages error: {:?}", e);
-                        Dialog::error("pull offline messages error");
+                        Notification::error("pull offline messages error").notify();
                         return ChatsMsg::None;
                     }
                 };
                 local_seq.local_seq = server_seq.seq;
                 if let Err(e) = db::db_ins().seq.put(&local_seq).await {
                     error!("save local seq error: {:?}", e);
-                    Dialog::error("save local seq error");
+                    Notification::error("save local seq error").notify();
                     return ChatsMsg::None;
                 }
             }

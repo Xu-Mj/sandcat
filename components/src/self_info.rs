@@ -4,6 +4,7 @@ use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
 use gloo::utils::window;
 use js_sys::Array;
+use sandcat_sdk::model::notification::Notification;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::spawn_local;
@@ -28,25 +29,11 @@ use sandcat_sdk::state::I18nState;
 use sandcat_sdk::state::MobileState;
 use utils::tr;
 
-use crate::avatar::Avatar;
-use crate::avatar::SubmitOption;
-use crate::constant::ACCOUNT;
-use crate::constant::ADDRESS;
-use crate::constant::CANCEL;
-use crate::constant::CHOOSE_AVATAR;
-use crate::constant::EMAIL;
-use crate::constant::FEMALE;
-use crate::constant::GENDER;
-use crate::constant::LOGOUT;
-use crate::constant::MALE;
-use crate::constant::NICKNAME;
-use crate::constant::PHONE;
-use crate::constant::REGION;
-use crate::constant::SECRET;
-use crate::constant::SET_AVATAR;
-use crate::constant::SIGNATURE;
-use crate::constant::SUBMIT;
-use crate::dialog::Dialog;
+use crate::avatar::{Avatar, SubmitOption};
+use crate::constant::{
+    ACCOUNT, ADDRESS, CANCEL, CHOOSE_AVATAR, EMAIL, FEMALE, GENDER, LOGOUT, MALE, NICKNAME, PHONE,
+    REGION, SECRET, SET_AVATAR, SIGNATURE, SUBMIT,
+};
 
 pub struct SelfInfo {
     i18n: FluentBundle<FluentResource>,
@@ -148,7 +135,8 @@ impl Component for SelfInfo {
                             Ok(name) => user.avatar = name,
                             Err(e) => {
                                 log::error!("upload avatar error: {:?}", e);
-                                Dialog::error("upload avatar error");
+                                Dispatch::<Notification>::global()
+                                    .set(Notification::error("upload avatar error"));
                                 return;
                             }
                         }
@@ -160,7 +148,8 @@ impl Component for SelfInfo {
                         }
                         Err(e) => {
                             log::error!("{:?}", e);
-                            Dialog::error("update user info failed");
+                            Dispatch::<Notification>::global()
+                                .set(Notification::error("update user info failed"));
                             close.emit(());
                         }
                     }

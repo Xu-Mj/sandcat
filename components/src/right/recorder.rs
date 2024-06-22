@@ -14,15 +14,12 @@ use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::{
-    model::voice::Voice,
+    model::{notification::Notification, voice::Voice},
     state::{I18nState, MobileState},
 };
 use utils::tr;
 
-use crate::{
-    constant::{CANCEL, CANCEL_MOBILE, ERROR, PRESS, RECORD, SEND, SEND_MOBILE, STOP},
-    dialog::Dialog,
-};
+use crate::constant::{CANCEL, CANCEL_MOBILE, ERROR, PRESS, RECORD, SEND, SEND_MOBILE, STOP};
 
 pub struct Recorder {
     mask_node: NodeRef,
@@ -251,7 +248,7 @@ impl Component for Recorder {
                 } else {
                     tr!(self.i18n, ERROR)
                 };
-                Dialog::error(&msg);
+                Notification::error(msg).notify();
                 true
             }
             RecorderMsg::TouchStart(event) => {

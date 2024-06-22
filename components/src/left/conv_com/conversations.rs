@@ -3,6 +3,7 @@ use std::rc::Rc;
 use gloo::timers::callback::Timeout;
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
+use sandcat_sdk::model::notification::Notification;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -147,7 +148,7 @@ impl Component for Chats {
                 // unmount loading
                 Dialog::close_loading();
                 if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
-                    Dialog::error(&e.to_string())
+                    Notification::error(e).notify();
                 }
                 true
             }

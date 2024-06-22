@@ -1,5 +1,5 @@
 use yew::AttrValue;
-use yewdux::Store;
+use yewdux::{Dispatch, Store};
 
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct Notification {
@@ -38,6 +38,10 @@ impl Notification {
             type_: NotificationType::Error,
             delay: 3000,
         }
+    }
+
+    pub fn notify(self) {
+        Dispatch::<Notification>::global().set(self);
     }
 
     pub fn with_delay(mut self, delay: u32) -> Self {
