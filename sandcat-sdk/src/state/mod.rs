@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
-use yewdux::Store;
+use yewdux::{Dispatch, Store};
 
 use i18n::LanguageType;
 
@@ -234,6 +234,12 @@ pub enum ThemeState {
     #[default]
     Light,
     Dark,
+}
+
+impl ThemeState {
+    pub fn notify(&self) {
+        Dispatch::<ThemeState>::global().set(self.clone());
+    }
 }
 
 impl Display for ThemeState {

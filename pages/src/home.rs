@@ -103,6 +103,7 @@ impl Home {
         DB_NAME.get_or_init(|| format!("im-{}", id));
         let clone_id = id.clone();
         ctx.link().send_future(async move {
+            // 防止页面刷新，导致全局变量重置后，db对象也被重置
             db::init_db().await;
             match db::db_ins().users.get(&clone_id).await {
                 Ok(data) => HomeMsg::Query(Box::new(QueryStatus::QuerySuccess(data))),

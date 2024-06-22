@@ -45,19 +45,19 @@ pub enum LoginState {
 }
 
 // 模拟输入写入数据库
-async fn init_db(id: AttrValue) {
-    // 拉取联系人
-    // 查询是否需要更新联系人
-    match api::friends().get_friend_list_by_id(id.to_string()).await {
-        Ok(res) => {
-            // 写入数据库
-            db::db_ins().friends.put_friend_list(&res).await;
-        }
-        Err(e) => {
-            log::error!("获取联系人列表错误: {:?}", e)
-        }
-    }
-}
+// async fn init_db(id: AttrValue) {
+//     // 拉取联系人
+//     // 查询是否需要更新联系人
+//     match api::friends().get_friend_list_by_id(id.to_string()).await {
+//         Ok(res) => {
+//             // 写入数据库
+//             db::db_ins().friends.put_friend_list(&res).await;
+//         }
+//         Err(e) => {
+//             log::error!("获取联系人列表错误: {:?}", e)
+//         }
+//     }
+// }
 
 impl Component for Login {
     type Message = LoginMsg;
@@ -122,7 +122,7 @@ impl Component for Login {
 
                     // 初始化数据库
                     db::init_db().await;
-                    init_db(id.clone()).await;
+                    // init_db(id.clone()).await;
                     // 将用户信息存入数据库
                     // 先查询是否登录过
                     // let user_former = user_repo.get(id.clone()).await;

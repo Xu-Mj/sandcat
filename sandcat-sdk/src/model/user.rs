@@ -20,6 +20,7 @@ pub struct User {
     pub address: Option<AttrValue>,
     pub birthday: Option<chrono::NaiveDateTime>,
     pub signature: AttrValue,
+    #[serde(default)]
     pub offline_time: Option<chrono::NaiveDateTime>,
 }
 
