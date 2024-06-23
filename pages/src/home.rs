@@ -49,8 +49,8 @@ impl Component for Home {
                         AppState { login_user: u }.notify();
                         self.db_inited = true;
                     }
-                    QueryStatus::QueryFail(_) => {
-                        gloo::console::log!("query fail")
+                    QueryStatus::QueryFail(e) => {
+                        log::error!("query fail{:?}", e)
                     }
                     _ => {}
                 }
@@ -109,6 +109,7 @@ impl Home {
                 Err(err) => HomeMsg::Query(Box::new(QueryStatus::QueryFail(err))),
             }
         });
+
         // query device info
         if let Ok(platform) = window().navigator().user_agent() {
             log::debug!("platform: {:?}", platform);
@@ -129,6 +130,7 @@ impl Home {
         let _right_dis = Dispatch::global().subscribe(ctx.link().callback(|_| HomeMsg::ShowRight));
         let _font_size_dis =
             Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchFontSize));
+
         Self {
             _theme_dis,
             _font_size_dis,
