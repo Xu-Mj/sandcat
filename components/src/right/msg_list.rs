@@ -382,7 +382,7 @@ impl Component for MessageList {
             is_black: false,
             audio_on_stop: None,
             audio_data_url: None,
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
 
             _sync_msg_dis,
             _rec_msg_dis,

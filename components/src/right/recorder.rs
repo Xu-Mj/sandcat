@@ -83,7 +83,7 @@ impl Component for Recorder {
         };
         let i18n = utils::create_bundle(res);
         Self {
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
             mask_node: NodeRef::default(),
             holder_node: NodeRef::default(),
             voice_node: NodeRef::default(),

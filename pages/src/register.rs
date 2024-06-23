@@ -123,7 +123,7 @@ impl Component for Register {
             i18n,
             avatars,
             avatar,
-            is_mobile: pf.is_mobile(),
+            is_mobile: pf == MobileState::Mobile,
             ..Default::default()
         }
     }

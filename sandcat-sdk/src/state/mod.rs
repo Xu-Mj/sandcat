@@ -275,21 +275,24 @@ pub enum MobileState {
 }
 
 impl MobileState {
-    pub fn is_mobile(&self) -> bool {
-        match self {
+    pub fn is_mobile() -> bool {
+        match *Self::get() {
             MobileState::Desktop => false,
             MobileState::Mobile => true,
         }
     }
 
-    pub fn notify(self) {
-        Dispatch::<MobileState>::global().set(self);
-    }
+    // pub fn notify(self) {
+    //     Dispatch::<MobileState>::global().set(self);
+    // }
 
-    pub fn get() -> Rc<Self> {
-        Dispatch::<Self>::global().get()
-    }
+    // pub fn get() -> Rc<Self> {
+    //     Dispatch::<Self>::global().get()
+    // }
 }
+
+impl Notify for MobileState {}
+
 impl From<&str> for MobileState {
     fn from(value: &str) -> Self {
         match value {
@@ -343,4 +346,16 @@ pub enum ConnectState {
     DisConnect,
     Connecting,
     Connected,
+}
+
+impl Notify for ConnectState {}
+
+pub trait Notify: Sized + Store {
+    fn notify(self) {
+        Dispatch::<Self>::global().set(self);
+    }
+
+    fn get() -> Rc<Self> {
+        Dispatch::<Self>::global().get()
+    }
 }

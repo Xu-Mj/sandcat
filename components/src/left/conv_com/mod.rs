@@ -31,7 +31,7 @@ use sandcat_sdk::{
         TOKEN, WS_ADDR,
     },
     state::{
-        ConvState, CreateConvState, I18nState, MobileState, MuteState, RecMessageState,
+        ConvState, CreateConvState, I18nState, MobileState, MuteState, Notify, RecMessageState,
         RemoveConvState, SendMessageState, UnreadState, UpdateConvState,
     },
 };
@@ -165,7 +165,7 @@ impl Chats {
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let addr = utils::get_local_storage(WS_ADDR).unwrap();
         let platform = MobileState::get();
-        let is_mobile = platform.is_mobile();
+        let is_mobile = *platform == MobileState::Mobile;
         let url = format!(
             "{}/{}/conn/{}/{}",
             addr,

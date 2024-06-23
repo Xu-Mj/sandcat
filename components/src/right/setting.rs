@@ -7,7 +7,7 @@ use yew::{classes, html, Component, Event, Properties};
 use yewdux::Dispatch;
 
 use i18n::{self, en_us, zh_cn, LanguageType};
-use sandcat_sdk::state::{FontSizeState, I18nState, MobileState, ThemeState};
+use sandcat_sdk::state::{FontSizeState, I18nState, MobileState, Notify, ThemeState};
 use utils::tr;
 
 use crate::constant::{

@@ -51,7 +51,7 @@ impl Component for TopBar {
         Self {
             i18n,
             search_node: NodeRef::default(),
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
         }
     }
 

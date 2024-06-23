@@ -3,6 +3,7 @@ use log::error;
 use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::pb::message::FriendInfo;
 use sandcat_sdk::state::MobileState;
+use sandcat_sdk::state::Notify;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;

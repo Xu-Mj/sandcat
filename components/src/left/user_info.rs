@@ -96,7 +96,7 @@ impl Component for UserInfoCom {
                     apply_msg,
                     source,
                     req_remark,
-                    platform: get_platform(MobileState::get().is_mobile()),
+                    platform: get_platform(MobileState::is_mobile()),
                 };
 
                 log::debug!("发送好友申请:{:?}", &new_friend);

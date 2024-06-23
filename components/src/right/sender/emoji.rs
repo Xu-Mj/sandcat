@@ -61,7 +61,7 @@ impl Component for EmojiPanel {
         ]);
         // todo add user emoji
 
-        let is_mobile = MobileState::get().is_mobile();
+        let is_mobile = MobileState::is_mobile();
         Self {
             node: NodeRef::default(),
             click_closure: None,

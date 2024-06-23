@@ -93,7 +93,7 @@ impl Component for SelfInfo {
             avatar: ctx.props().user.avatar.to_string(),
             show_avatar_setter: false,
             _dispatch: dispatch,
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
         }
     }
 

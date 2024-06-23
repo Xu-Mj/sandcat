@@ -9,7 +9,7 @@ use components::notification::NotificationCom;
 use components::right::Right;
 use sandcat_sdk::db::{self, QueryStatus, DB_NAME};
 use sandcat_sdk::model::user::User;
-use sandcat_sdk::state::{AppState, FontSizeState, MobileState, ShowRight, ThemeState};
+use sandcat_sdk::state::{AppState, FontSizeState, MobileState, Notify, ShowRight, ThemeState};
 
 pub struct Home {
     _theme_dis: Dispatch<ThemeState>,
