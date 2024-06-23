@@ -89,8 +89,8 @@ impl Component for Setting {
                 let value = input.value();
                 let theme = ThemeState::from(value.as_str());
                 // use yewdux to save theme to local storage
+                self.theme = Rc::new(theme.clone());
                 theme.notify();
-                self.theme = Rc::new(theme);
                 false
             }
             SettingMsg::SwitchFontSize(event) => {

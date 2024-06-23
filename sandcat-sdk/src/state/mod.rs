@@ -17,11 +17,23 @@ use crate::model::{
     ComponentType, CurrentItem, FriendShipStateType, RightContentType,
 };
 
+pub trait Notify: Sized + Store {
+    fn notify(self) {
+        Dispatch::<Self>::global().set(self);
+    }
+
+    fn get() -> Rc<Self> {
+        Dispatch::<Self>::global().get()
+    }
+}
+
 /// offline message. notify other components after offline handled complete
 #[derive(Store, Debug, Default, Clone, PartialEq)]
 pub struct RefreshMsgListState {
     pub refresh: bool,
 }
+
+impl Notify for RefreshMsgListState {}
 
 /// language type
 #[derive(Debug, Default, Clone, PartialEq, Store, Serialize, Deserialize)]
@@ -30,12 +42,16 @@ pub struct I18nState {
     pub lang: LanguageType,
 }
 
+impl Notify for I18nState {}
+
 /// component type,
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct AppState {
     // pub component_type: ComponentType,
     pub login_user: User,
 }
+
+impl Notify for AppState {}
 
 /// component type,
 #[derive(Default, Debug, Clone, PartialEq, Store, Serialize, Deserialize)]
@@ -44,6 +60,8 @@ pub struct ComponentTypeState {
     pub component_type: ComponentType,
 }
 
+impl Notify for ComponentTypeState {}
+
 impl From<ComponentType> for ComponentTypeState {
     fn from(value: ComponentType) -> Self {
         Self {
@@ -51,6 +69,7 @@ impl From<ComponentType> for ComponentTypeState {
         }
     }
 }
+
 /// global unread count and contacts count(add friends)
 /// there is an issue that I've encountered which is difficult to understand.
 /// If the state not stored, and it's not at default value,
@@ -62,11 +81,15 @@ pub struct UnreadState {
     pub contacts_count: usize,
 }
 
+impl Notify for UnreadState {}
+
 /// notify other components after received a message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct RecMessageState {
     pub msg: Msg,
 }
+
+impl Notify for RecMessageState {}
 
 /// mute conversation in chats component and set window com
 #[derive(Default, Debug, Clone, PartialEq, Store)]
@@ -74,11 +97,15 @@ pub struct MuteState {
     pub conv_id: AttrValue,
 }
 
+impl Notify for MuteState {}
+
 /// to notify chats component to remove conversation by id
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct RemoveConvState {
     pub id: AttrValue,
 }
+
+impl Notify for RemoveConvState {}
 
 /// to notify contacts component to remove friend item by id
 #[derive(Default, Debug, Clone, PartialEq, Store)]
@@ -86,6 +113,8 @@ pub struct RemoveFriendState {
     pub id: AttrValue,
     pub type_: ItemType,
 }
+
+impl Notify for RemoveFriendState {}
 
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum ItemType {
@@ -100,11 +129,15 @@ pub struct SendMessageState {
     pub msg: Msg,
 }
 
+impl Notify for SendMessageState {}
+
 /// send audio message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct SendAudioMsgState {
     pub msg: Message,
 }
+
+impl Notify for SendAudioMsgState {}
 
 /// send audio message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
@@ -112,16 +145,22 @@ pub struct AudioDownloadedState {
     pub local_id: AttrValue,
 }
 
+impl Notify for AudioDownloadedState {}
+
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct SendCallState {
     pub msg: InviteMsg,
 }
+
+impl Notify for SendCallState {}
 
 /// send message result, success or failed or timeout
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct SendResultState {
     pub msg: ServerResponse,
 }
+
+impl Notify for SendResultState {}
 
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct CreateConvState {
@@ -132,18 +171,13 @@ pub struct CreateConvState {
     pub group: Option<Vec<String>>,
 }
 
+impl Notify for CreateConvState {}
+
 impl CreateConvState {
     pub fn create_group(&mut self, group: Vec<String>) {
         self.group = Some(group);
         self.type_ = RightContentType::Group;
-        // self.friend = None;
     }
-
-    // pub fn create_friend(&mut self, friend: Friend) {
-    //     self.friend = Some(friend);
-    //     self.type_ = RightContentType::Friend;
-    //     self.group = None;
-    // }
 }
 
 #[derive(Default, Clone, PartialEq, Store)]
@@ -151,12 +185,16 @@ pub struct AddFriendState {
     pub item: AddFriendStateItem,
 }
 
+impl Notify for AddFriendState {}
+
 #[derive(Debug, Default, Clone, PartialEq, Store)]
 pub struct UpdateConvState {
     pub id: AttrValue,
     pub name: Option<AttrValue>,
     pub avatar: Option<AttrValue>,
 }
+
+impl Notify for UpdateConvState {}
 
 /// 记录当前朋友列表状态
 #[derive(Default, Clone, PartialEq)]
@@ -183,6 +221,8 @@ pub struct ConvState {
     pub conv: CurrentItem,
 }
 
+impl Notify for ConvState {}
+
 /// current friend id and type
 #[derive(Default, Debug, Clone, PartialEq, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
@@ -190,12 +230,16 @@ pub struct FriendListState {
     pub friend: CurrentItem,
 }
 
+impl Notify for FriendListState {}
+
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct FriendShipState {
     pub ship: Option<FriendShipWithUser>,
     pub friend: Option<Friend>,
     pub state_type: FriendShipStateType,
 }
+
+impl Notify for FriendShipState {}
 
 #[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
@@ -206,6 +250,8 @@ pub enum FontSizeState {
     Large,
     Larger,
 }
+
+impl Notify for FontSizeState {}
 
 impl From<&str> for FontSizeState {
     fn from(value: &str) -> Self {
@@ -239,11 +285,7 @@ pub enum ThemeState {
     Dark,
 }
 
-impl ThemeState {
-    pub fn notify(&self) {
-        Dispatch::<ThemeState>::global().set(self.clone());
-    }
-}
+impl Notify for ThemeState {}
 
 impl Display for ThemeState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -281,14 +323,6 @@ impl MobileState {
             MobileState::Mobile => true,
         }
     }
-
-    // pub fn notify(self) {
-    //     Dispatch::<MobileState>::global().set(self);
-    // }
-
-    // pub fn get() -> Rc<Self> {
-    //     Dispatch::<Self>::global().get()
-    // }
 }
 
 impl Notify for MobileState {}
@@ -321,6 +355,8 @@ pub enum ShowRight {
     Show,
 }
 
+impl Notify for ShowRight {}
+
 impl From<&str> for ShowRight {
     fn from(value: &str) -> Self {
         match value {
@@ -349,13 +385,3 @@ pub enum ConnectState {
 }
 
 impl Notify for ConnectState {}
-
-pub trait Notify: Sized + Store {
-    fn notify(self) {
-        Dispatch::<Self>::global().set(self);
-    }
-
-    fn get() -> Rc<Self> {
-        Dispatch::<Self>::global().get()
-    }
-}
