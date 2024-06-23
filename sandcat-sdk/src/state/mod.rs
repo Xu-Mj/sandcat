@@ -79,23 +79,17 @@ pub struct UnreadState {
     pub contacts_count: usize,
 }
 
-impl Notify for UnreadState {}
-
 /// notify other components after received a message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct RecMessageState {
     pub msg: Msg,
 }
 
-impl Notify for RecMessageState {}
-
 /// mute conversation in chats component and set window com
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct MuteState {
     pub conv_id: AttrValue,
 }
-
-impl Notify for MuteState {}
 
 /// to notify chats component to remove conversation by id
 #[derive(Default, Debug, Clone, PartialEq, Store)]
@@ -112,8 +106,6 @@ pub struct RemoveFriendState {
     pub type_: ItemType,
 }
 
-impl Notify for RemoveFriendState {}
-
 #[derive(Default, Debug, Clone, PartialEq)]
 pub enum ItemType {
     Group,
@@ -127,15 +119,11 @@ pub struct SendMessageState {
     pub msg: Msg,
 }
 
-impl Notify for SendMessageState {}
-
 /// send audio message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct SendAudioMsgState {
     pub msg: Message,
 }
-
-impl Notify for SendAudioMsgState {}
 
 /// send audio message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
@@ -143,22 +131,16 @@ pub struct AudioDownloadedState {
     pub local_id: AttrValue,
 }
 
-impl Notify for AudioDownloadedState {}
-
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct SendCallState {
     pub msg: InviteMsg,
 }
-
-impl Notify for SendCallState {}
 
 /// send message result, success or failed or timeout
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct SendResultState {
     pub msg: ServerResponse,
 }
-
-impl Notify for SendResultState {}
 
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct CreateConvState {
@@ -168,8 +150,6 @@ pub struct CreateConvState {
     // 创建群聊，接收一个NodeList，在chats中会生成群聊
     pub group: Option<Vec<String>>,
 }
-
-impl Notify for CreateConvState {}
 
 impl CreateConvState {
     pub fn create_group(&mut self, group: Vec<String>) {
@@ -183,16 +163,12 @@ pub struct AddFriendState {
     pub item: AddFriendStateItem,
 }
 
-impl Notify for AddFriendState {}
-
 #[derive(Debug, Default, Clone, PartialEq, Store)]
 pub struct UpdateConvState {
     pub id: AttrValue,
     pub name: Option<AttrValue>,
     pub avatar: Option<AttrValue>,
 }
-
-impl Notify for UpdateConvState {}
 
 /// 记录当前朋友列表状态
 #[derive(Default, Clone, PartialEq)]
@@ -219,8 +195,6 @@ pub struct ConvState {
     pub conv: CurrentItem,
 }
 
-impl Notify for ConvState {}
-
 /// current friend id and type
 #[derive(Default, Debug, Clone, PartialEq, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
@@ -228,16 +202,12 @@ pub struct FriendListState {
     pub friend: CurrentItem,
 }
 
-impl Notify for FriendListState {}
-
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct FriendShipState {
     pub ship: Option<FriendShipWithUser>,
     pub friend: Option<Friend>,
     pub state_type: FriendShipStateType,
 }
-
-impl Notify for FriendShipState {}
 
 #[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
 #[store(storage = "local")]

@@ -2,6 +2,7 @@ use fluent::{FluentBundle, FluentResource};
 use indexmap::IndexMap;
 use sandcat_sdk::state::ComponentTypeState;
 use sandcat_sdk::state::MobileState;
+use sandcat_sdk::state::Notify;
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
@@ -228,7 +229,7 @@ impl Component for Contacts {
                         if !msg_id.is_empty() {
                             Dispatch::<UnreadState>::global().reduce_mut(|s| s.contacts_count = 0);
                             // send read request
-                            let user = Dispatch::<AppState>::global().get();
+                            let user = AppState::get();
                             let user_id = user.login_user.id.as_str();
                             if let Err(err) = api::messages().del_msg(user_id, msg_id).await {
                                 log::error!("{:?}", err);

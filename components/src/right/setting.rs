@@ -39,7 +39,7 @@ impl Component for Setting {
     type Properties = SettingProps;
 
     fn create(ctx: &yew::prelude::Context<Self>) -> Self {
-        let theme = Dispatch::<ThemeState>::global().get();
+        let theme = ThemeState::get();
         // sub I18n
         let lang = ctx.props().lang;
         let content = match lang {
@@ -48,7 +48,7 @@ impl Component for Setting {
         };
         let i18n = utils::create_bundle(content);
 
-        let font_size = Dispatch::<FontSizeState>::global().get();
+        let font_size = FontSizeState::get();
         Self {
             i18n,
             lang,
@@ -102,7 +102,7 @@ impl Component for Setting {
                 let value = input.value();
                 let font_size = FontSizeState::from(value.as_str());
                 self.font_size = Rc::new(font_size.clone());
-                Dispatch::<FontSizeState>::global().reduce_mut(|s| *s = font_size);
+                font_size.notify();
                 false
             }
         }

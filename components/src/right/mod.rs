@@ -271,8 +271,7 @@ impl Component for Right {
                             let _ = animation.reverse();
                             let ctx = ctx.link().clone();
                             self.timeout = Some(Timeout::new(200, move || {
-                                Dispatch::<ShowRight>::global()
-                                    .reduce_mut(|s| *s = ShowRight::None);
+                                ShowRight::None.notify();
                                 ctx.send_message(RightMsg::CleanTimer);
                             }));
                         }

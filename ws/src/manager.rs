@@ -14,7 +14,7 @@ use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::model::TOKEN;
 use sandcat_sdk::pb::message::Msg as PbMsg;
 use sandcat_sdk::state::ConnectState;
-use yewdux::Dispatch;
+use sandcat_sdk::state::Notify;
 
 const KNOCKOFF_CODE: u16 = 4001;
 pub const UNAUTHORIZED_CODE: u16 = 4002;
@@ -95,7 +95,7 @@ impl WebSocketManager {
         .map_err(|e| Error::WebSocket(WebSocketError::Connect(e)))?;
 
         // send connecting state
-        Dispatch::<ConnectState>::global().set(ConnectState::Connecting);
+        ConnectState::Connecting.notify();
         // set default binary type
         ws.set_binary_type(web_sys::BinaryType::Arraybuffer);
         let cloned_ws = ws_manager.clone();
@@ -104,7 +104,7 @@ impl WebSocketManager {
             log::info!("WebSocket connection opened");
             // set the count of reconnect to 0
             cloned_ws.borrow_mut().reconnect_attempts = 0;
-            Dispatch::<ConnectState>::global().set(ConnectState::Connected);
+            ConnectState::Connected.notify();
         }) as Box<dyn FnMut()>);
 
         let ws_manager_clone = ws_manager.clone();
@@ -141,7 +141,7 @@ impl WebSocketManager {
 
         let on_error = Closure::wrap(Box::new(move |e: ErrorEvent| {
             log::error!("WebSocket error: {:?}", e.message());
-            Dispatch::<ConnectState>::global().set(ConnectState::DisConnect);
+            ConnectState::DisConnect.notify();
         }) as Box<dyn FnMut(ErrorEvent)>);
 
         let ws_manager_clone = ws_manager.clone();
@@ -218,7 +218,7 @@ impl WebSocketManager {
             self.on_timeout = Some(closure);
         } else {
             log::error!("Reached maximum reconnect attempts");
-            Dispatch::<ConnectState>::global().set(ConnectState::DisConnect);
+            ConnectState::DisConnect.notify();
         }
     }
 
