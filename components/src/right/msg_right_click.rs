@@ -5,9 +5,8 @@ use yew::{Component, Properties};
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::model::ContentType;
-use sandcat_sdk::state::I18nState;
+use sandcat_sdk::state::{I18nState, Notify};
 use utils::tr;
-use yewdux::Dispatch;
 
 use crate::constant::{DELETE, FORWARD};
 
@@ -34,7 +33,7 @@ impl Component for MsgRightClick {
     type Properties = RightClickPanelProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let res = match Dispatch::<I18nState>::global().get().lang {
+        let res = match I18nState::get().lang {
             LanguageType::ZhCN => zh_cn::RIGHT_CLICK_PANEL,
             LanguageType::EnUS => en_us::RIGHT_CLICK_PANEL,
         };

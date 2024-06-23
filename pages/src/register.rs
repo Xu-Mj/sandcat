@@ -4,21 +4,20 @@ use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::{Interval, Timeout};
 use gloo::utils::window;
 use regex::Regex;
-use sandcat_sdk::model::notification::Notification;
 use web_sys::HtmlInputElement;
 use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::prelude::RouterScopeExt;
-use yewdux::Dispatch;
 use zxcvbn::zxcvbn;
 
 use components::notification::NotificationCom;
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
 use sandcat_sdk::error::Error;
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::UserRegister;
-use sandcat_sdk::state::{I18nState, MobileState};
+use sandcat_sdk::state::{I18nState, MobileState, Notify};
 use utils::tr;
 
 #[derive(Default)]
@@ -107,23 +106,25 @@ impl Component for Register {
                 || platform.contains("iPhone")
             {
                 pf = MobileState::Mobile;
-                Dispatch::<MobileState>::global().set(MobileState::Mobile);
-            } else {
-                Dispatch::<MobileState>::global().set(MobileState::Desktop);
             }
         }
+
+        let is_mobile = pf == MobileState::Mobile;
+
+        pf.notify();
         // load the i18n bundle
-        let lang = Dispatch::<I18nState>::global().get().lang;
+        let lang = I18nState::get().lang;
         let res = match lang {
             LanguageType::ZhCN => zh_cn::REGISTER,
             LanguageType::EnUS => en_us::REGISTER,
         };
         let i18n = utils::create_bundle(res);
+
         Self {
             i18n,
             avatars,
             avatar,
-            is_mobile: pf == MobileState::Mobile,
+            is_mobile,
             ..Default::default()
         }
     }

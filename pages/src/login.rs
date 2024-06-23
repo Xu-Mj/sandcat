@@ -18,7 +18,7 @@ use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::LoginRequest;
 use sandcat_sdk::model::{REFRESH_TOKEN, TOKEN, WS_ADDR};
-use sandcat_sdk::state::{I18nState, ThemeState};
+use sandcat_sdk::state::{I18nState, Notify, ThemeState};
 use utils::tr;
 
 pub struct Login {
@@ -70,7 +70,7 @@ impl Component for Login {
         let theme =
             Dispatch::<ThemeState>::global().subscribe(ctx.link().callback(LoginMsg::SwitchTheme));
         // load the i18n bundle
-        let lang = Dispatch::<I18nState>::global().get().lang;
+        let lang = I18nState::get().lang;
         let res = match lang {
             LanguageType::ZhCN => zh_cn::LOGIN,
             LanguageType::EnUS => en_us::LOGIN,

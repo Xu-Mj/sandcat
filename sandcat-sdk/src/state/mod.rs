@@ -33,8 +33,6 @@ pub struct RefreshMsgListState {
     pub refresh: bool,
 }
 
-impl Notify for RefreshMsgListState {}
-
 /// language type
 #[derive(Debug, Default, Clone, PartialEq, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
