@@ -80,7 +80,7 @@ impl Component for SelectFriendList {
             data: IndexMap::new(),
             querying: false,
             err: None,
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
         }
     }
 

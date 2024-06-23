@@ -29,7 +29,7 @@ use i18n::{en_us, zh_cn, LanguageType};
 use icons::{BackIcon, CatHeadIcon, CloseIcon, MaxIcon};
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
-use sandcat_sdk::state::{AppState, MobileState, ShowRight};
+use sandcat_sdk::state::{AppState, MobileState, Notify, ShowRight};
 use sandcat_sdk::state::{
     ComponentTypeState, ConvState, CreateConvState, FriendListState, I18nState,
 };
@@ -271,8 +271,7 @@ impl Component for Right {
                             let _ = animation.reverse();
                             let ctx = ctx.link().clone();
                             self.timeout = Some(Timeout::new(200, move || {
-                                Dispatch::<ShowRight>::global()
-                                    .reduce_mut(|s| *s = ShowRight::None);
+                                ShowRight::None.notify();
                                 ctx.send_message(RightMsg::CleanTimer);
                             }));
                         }

@@ -9,7 +9,7 @@ use components::notification::NotificationCom;
 use components::right::Right;
 use sandcat_sdk::db::{self, QueryStatus, DB_NAME};
 use sandcat_sdk::model::user::User;
-use sandcat_sdk::state::{AppState, FontSizeState, MobileState, ShowRight, ThemeState};
+use sandcat_sdk::state::{AppState, FontSizeState, MobileState, Notify, ShowRight, ThemeState};
 
 pub struct Home {
     _theme_dis: Dispatch<ThemeState>,
@@ -46,9 +46,7 @@ impl Component for Home {
             HomeMsg::Query(status) => {
                 match *status {
                     QueryStatus::QuerySuccess(u) => {
-                        Dispatch::<AppState>::global().reduce_mut(|s| {
-                            s.login_user = u;
-                        });
+                        AppState { login_user: u }.notify();
                         self.db_inited = true;
                     }
                     QueryStatus::QueryFail(_) => {
@@ -77,7 +75,7 @@ impl Component for Home {
         }
         let (right, class) = match *MobileState::get() {
             MobileState::Desktop => (html!(<Right />), "home"),
-            MobileState::Mobile => match *Dispatch::<ShowRight>::global().get() {
+            MobileState::Mobile => match *ShowRight::get() {
                 ShowRight::None => (html!(), "home-mobile"),
                 ShowRight::Show => (html!(<Right />), "home-mobile"),
             },

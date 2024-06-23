@@ -9,7 +9,9 @@ use yewdux::Dispatch;
 use sandcat_sdk::{
     db,
     model::{CommonProps, ComponentType, CurrentItem, RightContentType},
-    state::{ComponentTypeState, ConvState, FriendListState, MobileState, ShowRight, UnreadState},
+    state::{
+        ComponentTypeState, ConvState, FriendListState, MobileState, Notify, ShowRight, UnreadState,
+    },
 };
 
 pub struct ListItem {
@@ -66,7 +68,7 @@ impl Component for ListItem {
             unread_count,
             conv_state: conv_dispatch.get(),
             conv_dispatch,
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
             touch_start: 0,
             long_press_timer: None,
         }
@@ -99,7 +101,7 @@ impl Component for ListItem {
                 self.unread_count = 0;
                 // show right if mobile
                 if self.is_mobile {
-                    Dispatch::<ShowRight>::global().set(ShowRight::Show);
+                    ShowRight::Show.notify();
                     // return false;
                 }
                 // do not update if current item is the same
@@ -113,8 +115,7 @@ impl Component for ListItem {
                     };
                 });
 
-                Dispatch::<ComponentTypeState>::global()
-                    .set(ComponentTypeState::from(ctx.props().component_type));
+                ComponentTypeState::from(ctx.props().component_type).notify();
                 true
             }
             ListItemMsg::FriendStateChanged(state) => {
@@ -123,7 +124,7 @@ impl Component for ListItem {
             }
             ListItemMsg::FriendItemClicked => {
                 if self.is_mobile {
-                    Dispatch::<ShowRight>::global().set(ShowRight::Show);
+                    ShowRight::Show.notify();
                     // return false;
                 }
                 if self.friend_state.friend.item_id == ctx.props().props.id {

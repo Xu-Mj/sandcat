@@ -7,7 +7,7 @@ use yew::{classes, html, Component, Event, Properties};
 use yewdux::Dispatch;
 
 use i18n::{self, en_us, zh_cn, LanguageType};
-use sandcat_sdk::state::{FontSizeState, I18nState, MobileState, ThemeState};
+use sandcat_sdk::state::{FontSizeState, I18nState, MobileState, Notify, ThemeState};
 use utils::tr;
 
 use crate::constant::{
@@ -39,7 +39,7 @@ impl Component for Setting {
     type Properties = SettingProps;
 
     fn create(ctx: &yew::prelude::Context<Self>) -> Self {
-        let theme = Dispatch::<ThemeState>::global().get();
+        let theme = ThemeState::get();
         // sub I18n
         let lang = ctx.props().lang;
         let content = match lang {
@@ -48,7 +48,7 @@ impl Component for Setting {
         };
         let i18n = utils::create_bundle(content);
 
-        let font_size = Dispatch::<FontSizeState>::global().get();
+        let font_size = FontSizeState::get();
         Self {
             i18n,
             lang,
@@ -89,8 +89,8 @@ impl Component for Setting {
                 let value = input.value();
                 let theme = ThemeState::from(value.as_str());
                 // use yewdux to save theme to local storage
+                self.theme = Rc::new(theme.clone());
                 theme.notify();
-                self.theme = Rc::new(theme);
                 false
             }
             SettingMsg::SwitchFontSize(event) => {
@@ -102,7 +102,7 @@ impl Component for Setting {
                 let value = input.value();
                 let font_size = FontSizeState::from(value.as_str());
                 self.font_size = Rc::new(font_size.clone());
-                Dispatch::<FontSizeState>::global().reduce_mut(|s| *s = font_size);
+                font_size.notify();
                 false
             }
         }

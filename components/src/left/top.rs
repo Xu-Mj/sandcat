@@ -11,7 +11,9 @@ use icons::{
 };
 use sandcat_sdk::{
     model::{user::User, ComponentType, OFFLINE_TIME},
-    state::{AppState, ComponentTypeState, ConnectState, I18nState, MobileState, UnreadState},
+    state::{
+        AppState, ComponentTypeState, ConnectState, I18nState, MobileState, Notify, UnreadState,
+    },
 };
 use utils::tr;
 
@@ -62,7 +64,7 @@ impl Component for Top {
             Dispatch::global().subscribe(ctx.link().callback(TopMsg::ConnectionStateChanged));
         let unread_dis =
             Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
-        let res = match Dispatch::<I18nState>::global().get().lang {
+        let res = match I18nState::get().lang {
             LanguageType::ZhCN => zh_cn::TOP,
             LanguageType::EnUS => en_us::TOP,
         };
@@ -79,7 +81,7 @@ impl Component for Top {
             connect_state: _conn_dis.get(),
             _conn_dis,
             i18n,
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
         }
     }
 

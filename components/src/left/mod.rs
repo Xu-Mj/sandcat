@@ -12,7 +12,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use sandcat_sdk::model::ComponentType;
-use sandcat_sdk::state::{AppState, ComponentTypeState, MobileState};
+use sandcat_sdk::state::{AppState, ComponentTypeState, MobileState, Notify};
 
 use crate::left::contacts::Contacts;
 use crate::left::conv_com::Chats;

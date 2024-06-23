@@ -78,7 +78,7 @@ impl Component for Sender {
             show_file_sender: false,
             i18n,
             file_list: vec![],
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
             enter_key_down: 0,
             is_key_down: false,
             is_voice_mode: false,

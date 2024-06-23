@@ -19,7 +19,7 @@ use sandcat_sdk::model::message::{
 use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::{I18nState, MobileState, SendCallState, SendMessageState};
+use sandcat_sdk::state::{I18nState, MobileState, Notify, SendCallState, SendMessageState};
 
 use crate::get_platform;
 use crate::right::friend_card::FriendCard;
@@ -134,7 +134,7 @@ impl Component for MsgItem {
         if ctx.props().msg.content_type == ContentType::VideoCall
             || ctx.props().msg.content_type == ContentType::AudioCall
         {
-            let res = match Dispatch::<I18nState>::global().get().lang {
+            let res = match I18nState::get().lang {
                 LanguageType::ZhCN => zh_cn::MSG_ITEM,
                 LanguageType::EnUS => en_us::MSG_ITEM,
             };
@@ -638,7 +638,7 @@ impl Component for MsgItem {
                     except={&ctx.props().friend_id}
                     {close_back}
                     {submit_back}
-                    lang={Dispatch::<I18nState>::global().get().lang} />)
+                    lang={I18nState::get().lang} />)
         }
         html! {
             <>
@@ -680,7 +680,7 @@ impl MsgItem {
                 friend_id: ctx.props().friend_id.clone(),
                 create_time: chrono::Utc::now().timestamp_millis(),
                 invite_type,
-                platform: get_platform(MobileState::get().is_mobile()),
+                platform: get_platform(MobileState::is_mobile()),
                 avatar: ctx.props().avatar.clone(),
                 nickname: ctx.props().nickname.clone(),
             }

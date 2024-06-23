@@ -10,12 +10,11 @@ use yew::{
     html, Callback, Classes, Component, Context, Html, NodeRef, ProgressEvent, Properties,
     TouchEvent,
 };
-use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::{
     model::{notification::Notification, voice::Voice},
-    state::{I18nState, MobileState},
+    state::{I18nState, MobileState, Notify},
 };
 use utils::tr;
 
@@ -77,13 +76,13 @@ impl Component for Recorder {
     type Properties = RecorderProps;
 
     fn create(_ctx: &Context<Self>) -> Self {
-        let res = match Dispatch::<I18nState>::global().get().lang {
+        let res = match I18nState::get().lang {
             LanguageType::ZhCN => zh_cn::RECORDER,
             LanguageType::EnUS => en_us::RECORDER,
         };
         let i18n = utils::create_bundle(res);
         Self {
-            is_mobile: MobileState::get().is_mobile(),
+            is_mobile: MobileState::is_mobile(),
             mask_node: NodeRef::default(),
             holder_node: NodeRef::default(),
             voice_node: NodeRef::default(),

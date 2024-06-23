@@ -17,6 +17,16 @@ use crate::model::{
     ComponentType, CurrentItem, FriendShipStateType, RightContentType,
 };
 
+pub trait Notify: Sized + Store {
+    fn notify(self) {
+        Dispatch::<Self>::global().set(self);
+    }
+
+    fn get() -> Rc<Self> {
+        Dispatch::<Self>::global().get()
+    }
+}
+
 /// offline message. notify other components after offline handled complete
 #[derive(Store, Debug, Default, Clone, PartialEq)]
 pub struct RefreshMsgListState {
@@ -30,12 +40,16 @@ pub struct I18nState {
     pub lang: LanguageType,
 }
 
+impl Notify for I18nState {}
+
 /// component type,
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct AppState {
     // pub component_type: ComponentType,
     pub login_user: User,
 }
+
+impl Notify for AppState {}
 
 /// component type,
 #[derive(Default, Debug, Clone, PartialEq, Store, Serialize, Deserialize)]
@@ -44,6 +58,8 @@ pub struct ComponentTypeState {
     pub component_type: ComponentType,
 }
 
+impl Notify for ComponentTypeState {}
+
 impl From<ComponentType> for ComponentTypeState {
     fn from(value: ComponentType) -> Self {
         Self {
@@ -51,6 +67,7 @@ impl From<ComponentType> for ComponentTypeState {
         }
     }
 }
+
 /// global unread count and contacts count(add friends)
 /// there is an issue that I've encountered which is difficult to understand.
 /// If the state not stored, and it's not at default value,
@@ -79,6 +96,8 @@ pub struct MuteState {
 pub struct RemoveConvState {
     pub id: AttrValue,
 }
+
+impl Notify for RemoveConvState {}
 
 /// to notify contacts component to remove friend item by id
 #[derive(Default, Debug, Clone, PartialEq, Store)]
@@ -136,14 +155,7 @@ impl CreateConvState {
     pub fn create_group(&mut self, group: Vec<String>) {
         self.group = Some(group);
         self.type_ = RightContentType::Group;
-        // self.friend = None;
     }
-
-    // pub fn create_friend(&mut self, friend: Friend) {
-    //     self.friend = Some(friend);
-    //     self.type_ = RightContentType::Friend;
-    //     self.group = None;
-    // }
 }
 
 #[derive(Default, Clone, PartialEq, Store)]
@@ -207,6 +219,8 @@ pub enum FontSizeState {
     Larger,
 }
 
+impl Notify for FontSizeState {}
+
 impl From<&str> for FontSizeState {
     fn from(value: &str) -> Self {
         match value {
@@ -239,11 +253,7 @@ pub enum ThemeState {
     Dark,
 }
 
-impl ThemeState {
-    pub fn notify(&self) {
-        Dispatch::<ThemeState>::global().set(self.clone());
-    }
-}
+impl Notify for ThemeState {}
 
 impl Display for ThemeState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -275,21 +285,16 @@ pub enum MobileState {
 }
 
 impl MobileState {
-    pub fn is_mobile(&self) -> bool {
-        match self {
+    pub fn is_mobile() -> bool {
+        match *Self::get() {
             MobileState::Desktop => false,
             MobileState::Mobile => true,
         }
     }
-
-    pub fn notify(self) {
-        Dispatch::<MobileState>::global().set(self);
-    }
-
-    pub fn get() -> Rc<Self> {
-        Dispatch::<Self>::global().get()
-    }
 }
+
+impl Notify for MobileState {}
+
 impl From<&str> for MobileState {
     fn from(value: &str) -> Self {
         match value {
@@ -318,6 +323,8 @@ pub enum ShowRight {
     Show,
 }
 
+impl Notify for ShowRight {}
+
 impl From<&str> for ShowRight {
     fn from(value: &str) -> Self {
         match value {
@@ -344,3 +351,5 @@ pub enum ConnectState {
     Connecting,
     Connected,
 }
+
+impl Notify for ConnectState {}
