@@ -6,7 +6,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use sandcat_sdk::{
-    db,
+    api, db,
     model::{
         conversation::Conversation,
         friend::FriendStatus,
@@ -15,7 +15,7 @@ use sandcat_sdk::{
             DEFAULT_HELLO_MESSAGE,
         },
         notification::Notification,
-        ContentType, RightContentType,
+        ContentType, RightContentType, OFFLINE_TIME,
     },
     pb::message::Msg as PbMsg,
     state::RefreshMsgListState,
@@ -264,6 +264,26 @@ impl Chats {
             self.operate_msg(ctx, v, false);
         }
 
+        // sync friend list again
+        let id = ctx.props().user_id.clone();
+        spawn_local(async move {
+            // pull friends list
+            let offline_time = utils::get_local_storage(OFFLINE_TIME)
+                .unwrap_or_default()
+                .parse::<i64>()
+                .unwrap_or_default();
+            match api::friends()
+                .get_friend_list_by_id(&id, offline_time)
+                .await
+            {
+                Ok(res) => {
+                    db::db_ins().friends.put_friend_list(&res).await;
+                }
+                Err(e) => {
+                    log::error!("获取联系人列表错误: {:?}", e)
+                }
+            }
+        });
         // send sync offline message complete message to msg_list component
         Dispatch::<RefreshMsgListState>::global().reduce_mut(|s| s.refresh = !s.refresh);
     }

@@ -105,22 +105,12 @@ impl Home {
         ctx.link().send_future(async move {
             // 防止页面刷新，导致全局变量重置后，db对象也被重置
             db::init_db().await;
+
             match db::db_ins().users.get(&clone_id).await {
                 Ok(data) => HomeMsg::Query(Box::new(QueryStatus::QuerySuccess(data))),
                 Err(err) => HomeMsg::Query(Box::new(QueryStatus::QueryFail(err))),
             }
         });
-
-        // pull friends list
-        // match api::friends().get_friend_list_by_id(id.to_string()).await {
-        //     Ok(res) => {
-        //         // 写入数据库
-        //         db::db_ins().friends.put_friend_list(&res).await;
-        //     }
-        //     Err(e) => {
-        //         log::error!("获取联系人列表错误: {:?}", e)
-        //     }
-        // }
         // query device info
         if let Ok(platform) = window().navigator().user_agent() {
             log::debug!("platform: {:?}", platform);

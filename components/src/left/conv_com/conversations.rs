@@ -10,13 +10,15 @@ use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
 use sandcat_sdk::api;
-use sandcat_sdk::db::{self, REFRESH_TOKEN, TOKEN};
+use sandcat_sdk::db;
 use sandcat_sdk::model::conversation::Conversation;
 use sandcat_sdk::model::group::Group;
 use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::seq::Seq;
-use sandcat_sdk::model::{ComponentType, CurrentItem, RightContentType};
+use sandcat_sdk::model::{
+    ComponentType, CurrentItem, RightContentType, OFFLINE_TIME, REFRESH_TOKEN, TOKEN,
+};
 use sandcat_sdk::pb::message::Msg as PbMsg;
 use sandcat_sdk::state::{
     AddFriendState, AddFriendStateItem, ComponentTypeState, CreateConvState, I18nState, MuteState,
@@ -251,7 +253,6 @@ impl Component for Chats {
             ChatsMsg::SendMsg(state) => {
                 log::debug!("send message from sender in conversation");
                 let msg = state.msg.clone();
-                log::debug!("message: {:?}", msg);
                 self.handle_sent_msg(ctx, &msg);
                 self.send_msg(msg);
                 true
@@ -328,6 +329,11 @@ impl Component for Chats {
             ChatsMsg::Logout => {
                 if let Some(navigator) = ctx.link().navigator() {
                     navigator.push(&Page::Login);
+                }
+                //  record logout time
+                let now = chrono::Utc::now().timestamp_millis();
+                if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
+                    log::error!("record offline time to local storage error: {:?}", err);
                 }
                 false
             }
@@ -468,5 +474,10 @@ impl Component for Chats {
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
         self.ws.borrow_mut().cleanup();
+        // record the offline time
+        let now = chrono::Utc::now().timestamp_millis();
+        if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
+            log::error!("record offline time to local storage error: {:?}", err);
+        }
     }
 }

@@ -13,10 +13,11 @@ use components::constant::ERROR;
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{MoonIcon, SunIcon};
 use sandcat_sdk::api;
-use sandcat_sdk::db::{self, DB_NAME, REFRESH_TOKEN, TOKEN, WS_ADDR};
+use sandcat_sdk::db::{self, DB_NAME};
 use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::LoginRequest;
+use sandcat_sdk::model::{REFRESH_TOKEN, TOKEN, WS_ADDR};
 use sandcat_sdk::state::{I18nState, ThemeState};
 use utils::tr;
 

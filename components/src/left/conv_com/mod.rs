@@ -19,8 +19,7 @@ use i18n::{
     zh_cn, LanguageType,
 };
 use sandcat_sdk::{
-    api,
-    db::{REFRESH_TOKEN, TOKEN},
+    api, db,
     error::{Error, WebSocketError},
     model::{
         conversation::Conversation,
@@ -28,16 +27,13 @@ use sandcat_sdk::{
         notification::Notification,
         seq::Seq,
         user::Claims,
-        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType,
+        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType, REFRESH_TOKEN,
+        TOKEN, WS_ADDR,
     },
     state::{
-        ConvState, CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState,
-        SendMessageState, UnreadState, UpdateConvState,
+        ConvState, CreateConvState, I18nState, MobileState, MuteState, RecMessageState,
+        RemoveConvState, SendMessageState, UnreadState, UpdateConvState,
     },
-};
-use sandcat_sdk::{
-    db::{self, WS_ADDR},
-    state::MobileState,
 };
 use utils::tr;
 use ws::WebSocketManager;

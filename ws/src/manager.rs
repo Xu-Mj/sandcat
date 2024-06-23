@@ -1,19 +1,19 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use sandcat_sdk::db::TOKEN;
-use sandcat_sdk::error::Error;
-use sandcat_sdk::error::WebSocketError;
-use sandcat_sdk::state::ConnectState;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
 use yew::Callback;
 
+use sandcat_sdk::error::Error;
 use sandcat_sdk::error::Result;
+use sandcat_sdk::error::WebSocketError;
 use sandcat_sdk::model::message::convert_server_msg;
 use sandcat_sdk::model::message::Msg;
+use sandcat_sdk::model::TOKEN;
 use sandcat_sdk::pb::message::Msg as PbMsg;
+use sandcat_sdk::state::ConnectState;
 use yewdux::Dispatch;
 
 const KNOCKOFF_CODE: u16 = 4001;

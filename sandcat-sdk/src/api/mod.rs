@@ -1,4 +1,4 @@
-use crate::db::TOKEN;
+use crate::model::TOKEN;
 
 use self::{
     file::FileApi,

@@ -20,8 +20,6 @@ pub struct User {
     pub address: Option<AttrValue>,
     pub birthday: Option<chrono::NaiveDateTime>,
     pub signature: AttrValue,
-    #[serde(default)]
-    pub offline_time: Option<chrono::NaiveDateTime>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
@@ -124,7 +122,6 @@ impl From<GroupMember> for User {
             birthday: None,
             signature: AttrValue::default(),
             region: value.region,
-            offline_time: None,
         }
     }
 }
@@ -144,7 +141,6 @@ impl From<Friend> for User {
             birthday: None,
             signature: value.signature,
             region: value.region,
-            offline_time: None,
         }
     }
 }
