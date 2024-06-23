@@ -66,7 +66,7 @@ impl Component for ListItem {
             unread_count,
             conv_state: conv_dispatch.get(),
             conv_dispatch,
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile: MobileState::get().is_mobile(),
             touch_start: 0,
             long_press_timer: None,
         }

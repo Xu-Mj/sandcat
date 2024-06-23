@@ -3,7 +3,6 @@ use indexmap::IndexMap;
 use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
-use yewdux::Dispatch;
 
 use icons::{BiggerIcon, SmileIcon};
 use sandcat_sdk::state::MobileState;
@@ -62,7 +61,7 @@ impl Component for EmojiPanel {
         ]);
         // todo add user emoji
 
-        let is_mobile = Dispatch::<MobileState>::global().get().is_mobile();
+        let is_mobile = MobileState::get().is_mobile();
         Self {
             node: NodeRef::default(),
             click_closure: None,

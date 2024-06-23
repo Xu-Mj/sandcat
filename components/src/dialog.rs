@@ -116,7 +116,7 @@ impl Component for Dialog {
 
         Self {
             timer,
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile: MobileState::get().is_mobile(),
             _loading_dis: Dispatch::<LoadingState>::global()
                 .subscribe_silent(ctx.link().callback(Self::Message::LoadingStateChanged)),
         }

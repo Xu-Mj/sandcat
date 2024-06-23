@@ -19,8 +19,7 @@ use i18n::{
     zh_cn, LanguageType,
 };
 use sandcat_sdk::{
-    api,
-    db::{REFRESH_TOKEN, TOKEN},
+    api, db,
     error::{Error, WebSocketError},
     model::{
         conversation::Conversation,
@@ -28,16 +27,13 @@ use sandcat_sdk::{
         notification::Notification,
         seq::Seq,
         user::Claims,
-        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType,
+        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType, REFRESH_TOKEN,
+        TOKEN, WS_ADDR,
     },
     state::{
-        ConvState, CreateConvState, I18nState, MuteState, RecMessageState, RemoveConvState,
-        SendMessageState, UnreadState, UpdateConvState,
+        ConvState, CreateConvState, I18nState, MobileState, MuteState, RecMessageState,
+        RemoveConvState, SendMessageState, UnreadState, UpdateConvState,
     },
-};
-use sandcat_sdk::{
-    db::{self, WS_ADDR},
-    state::MobileState,
 };
 use utils::tr;
 use ws::WebSocketManager;
@@ -168,7 +164,7 @@ impl Chats {
 
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let addr = utils::get_local_storage(WS_ADDR).unwrap();
-        let platform = Dispatch::<MobileState>::global().get();
+        let platform = MobileState::get();
         let is_mobile = platform.is_mobile();
         let url = format!(
             "{}/{}/conn/{}/{}",

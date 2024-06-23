@@ -22,7 +22,6 @@ use yewdux::Dispatch;
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
-use sandcat_sdk::db::repository::Repository;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::{User, UserUpdate};
 use sandcat_sdk::state::I18nState;
@@ -94,7 +93,7 @@ impl Component for SelfInfo {
             avatar: ctx.props().user.avatar.to_string(),
             show_avatar_setter: false,
             _dispatch: dispatch,
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile: MobileState::get().is_mobile(),
         }
     }
 
@@ -178,9 +177,9 @@ impl Component for SelfInfo {
             SelfInfoMsg::Logout => {
                 log::debug!("user logout ==> delete database");
                 // 测试阶段，销毁时删除数据库
-                spawn_local(async {
-                    let _ = Repository::new().await.delete_db().await;
-                });
+                // spawn_local(async {
+                //     let _ = Repository::new().await.delete_db().await;
+                // });
                 window().local_storage().unwrap().unwrap().clear().unwrap();
                 ctx.link().navigator().unwrap().push(&Page::Login);
                 false

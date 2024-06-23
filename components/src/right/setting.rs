@@ -39,8 +39,7 @@ impl Component for Setting {
     type Properties = SettingProps;
 
     fn create(ctx: &yew::prelude::Context<Self>) -> Self {
-        let theme =
-            Dispatch::<ThemeState>::global().subscribe(ctx.link().callback(|_| SettingMsg::None));
+        let theme = Dispatch::<ThemeState>::global().get();
         // sub I18n
         let lang = ctx.props().lang;
         let content = match lang {
@@ -49,13 +48,12 @@ impl Component for Setting {
         };
         let i18n = utils::create_bundle(content);
 
-        let font_size_dis = Dispatch::<FontSizeState>::global()
-            .subscribe_silent(ctx.link().callback(|_| SettingMsg::None));
+        let font_size = Dispatch::<FontSizeState>::global().get();
         Self {
             i18n,
             lang,
-            theme: theme.get(),
-            font_size: font_size_dis.get(),
+            theme,
+            font_size,
         }
     }
 
@@ -90,8 +88,9 @@ impl Component for Setting {
                     .unwrap();
                 let value = input.value();
                 let theme = ThemeState::from(value.as_str());
-                self.theme = Rc::new(theme.clone());
-                Dispatch::<ThemeState>::global().reduce_mut(|s| *s = theme);
+                // use yewdux to save theme to local storage
+                theme.notify();
+                self.theme = Rc::new(theme);
                 false
             }
             SettingMsg::SwitchFontSize(event) => {
@@ -116,7 +115,7 @@ impl Component for Setting {
 
         let mut class = classes!("rect");
         let mut font_class = classes!("font-size");
-        match *Dispatch::<MobileState>::global().get() {
+        match *MobileState::get() {
             MobileState::Desktop => {
                 class.push("rect-size");
                 font_class.push("font-size-desktop");
@@ -159,8 +158,8 @@ impl Component for Setting {
                             value="large"
                             onchange={on_font_size_change.clone()}
                             checked={*self.font_size==FontSizeState::Large}/>
-                        </label>
                             {format!("\t{}", tr!(self.i18n, LARGE))}
+                        </label>
                         <label for="larger">
                             <input type="radio"
                             name="font_size"

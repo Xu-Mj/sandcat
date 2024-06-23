@@ -5,23 +5,6 @@ use crate::model::friend::Friend;
 
 use super::group::GroupMember;
 
-/// 用来接收服务端的用户信息
-#[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
-// 当前用户表
-pub struct UserInfo {
-    pub login: bool,
-    pub id: AttrValue,
-    pub name: AttrValue,
-    pub account: AttrValue,
-    pub avatar: AttrValue,
-    pub gender: AttrValue,
-    pub age: i32,
-    pub phone: Option<AttrValue>,
-    pub email: Option<AttrValue>,
-    pub address: Option<AttrValue>,
-    pub birthday: Option<chrono::NaiveDateTime>,
-}
-
 /// 用户模型，用来记录当前登录的用户信息
 #[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
 pub struct User {
@@ -38,6 +21,7 @@ pub struct User {
     pub birthday: Option<chrono::NaiveDateTime>,
     pub signature: AttrValue,
 }
+
 #[derive(Debug, Deserialize, Serialize, Default, PartialEq, Clone)]
 pub struct UserWithMatchType {
     pub id: AttrValue,

@@ -75,7 +75,7 @@ impl Component for Home {
         if !self.db_inited {
             return html! {};
         }
-        let (right, class) = match *Dispatch::<MobileState>::global().get() {
+        let (right, class) = match *MobileState::get() {
             MobileState::Desktop => (html!(<Right />), "home"),
             MobileState::Mobile => match *Dispatch::<ShowRight>::global().get() {
                 ShowRight::None => (html!(), "home-mobile"),
@@ -103,13 +103,14 @@ impl Home {
         DB_NAME.get_or_init(|| format!("im-{}", id));
         let clone_id = id.clone();
         ctx.link().send_future(async move {
+            // 防止页面刷新，导致全局变量重置后，db对象也被重置
             db::init_db().await;
+
             match db::db_ins().users.get(&clone_id).await {
                 Ok(data) => HomeMsg::Query(Box::new(QueryStatus::QuerySuccess(data))),
                 Err(err) => HomeMsg::Query(Box::new(QueryStatus::QueryFail(err))),
             }
         });
-
         // query device info
         if let Ok(platform) = window().navigator().user_agent() {
             log::debug!("platform: {:?}", platform);
@@ -117,9 +118,9 @@ impl Home {
                 || platform.contains("Android")
                 || platform.contains("iPhone")
             {
-                Dispatch::<MobileState>::global().set(MobileState::Mobile);
+                MobileState::Mobile.notify();
             } else {
-                Dispatch::<MobileState>::global().set(MobileState::Desktop);
+                MobileState::Desktop.notify();
             }
         }
 

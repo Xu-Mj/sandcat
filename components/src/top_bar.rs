@@ -6,7 +6,6 @@ use i18n::{en_us, zh_cn, LanguageType};
 use icons::{PeoplePlusIcon, PlusIcon, SearchIcon};
 use sandcat_sdk::{model::ComponentType, state::MobileState};
 use utils::tr;
-use yewdux::Dispatch;
 
 use crate::constant::{CANCEL, SEARCH};
 /// 左侧组件顶部选项栏
@@ -52,7 +51,7 @@ impl Component for TopBar {
         Self {
             i18n,
             search_node: NodeRef::default(),
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile: MobileState::get().is_mobile(),
         }
     }
 

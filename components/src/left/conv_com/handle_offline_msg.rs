@@ -6,15 +6,16 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use sandcat_sdk::{
-    db,
+    api, db,
     model::{
         conversation::Conversation,
+        friend::FriendStatus,
         message::{
             convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall,
             DEFAULT_HELLO_MESSAGE,
         },
         notification::Notification,
-        ContentType, RightContentType,
+        ContentType, RightContentType, OFFLINE_TIME,
     },
     pb::message::Msg as PbMsg,
     state::RefreshMsgListState,
@@ -238,6 +239,18 @@ impl Chats {
                         ChatsMsg::SendMessage(Msg::Single(msg))
                     });
                 }
+                Msg::RecRelationshipDel((friend_id, seq)) => {
+                    spawn_local(async move {
+                        let mut friend = db::db_ins().friends.get(&friend_id).await;
+                        if !friend.friend_id.is_empty() {
+                            friend.status = FriendStatus::Delete as i32;
+                            if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                                error!("save friend error:{:?}", err);
+                            }
+                        }
+                    });
+                    self.handle_lack_msg(ctx, seq);
+                }
                 _ => {}
             }
         }
@@ -251,6 +264,26 @@ impl Chats {
             self.operate_msg(ctx, v, false);
         }
 
+        // sync friend list again
+        let id = ctx.props().user_id.clone();
+        spawn_local(async move {
+            // pull friends list
+            let offline_time = utils::get_local_storage(OFFLINE_TIME)
+                .unwrap_or_default()
+                .parse::<i64>()
+                .unwrap_or_default();
+            match api::friends()
+                .get_friend_list_by_id(&id, offline_time)
+                .await
+            {
+                Ok(res) => {
+                    db::db_ins().friends.put_friend_list(&res).await;
+                }
+                Err(e) => {
+                    log::error!("获取联系人列表错误: {:?}", e)
+                }
+            }
+        });
         // send sync offline message complete message to msg_list component
         Dispatch::<RefreshMsgListState>::global().reduce_mut(|s| s.refresh = !s.refresh);
     }

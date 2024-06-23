@@ -1,8 +1,11 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    rc::Rc,
+};
 
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
-use yewdux::Store;
+use yewdux::{Dispatch, Store};
 
 use i18n::LanguageType;
 
@@ -236,6 +239,12 @@ pub enum ThemeState {
     Dark,
 }
 
+impl ThemeState {
+    pub fn notify(&self) {
+        Dispatch::<ThemeState>::global().set(self.clone());
+    }
+}
+
 impl Display for ThemeState {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -271,6 +280,14 @@ impl MobileState {
             MobileState::Desktop => false,
             MobileState::Mobile => true,
         }
+    }
+
+    pub fn notify(self) {
+        Dispatch::<MobileState>::global().set(self);
+    }
+
+    pub fn get() -> Rc<Self> {
+        Dispatch::<Self>::global().get()
     }
 }
 impl From<&str> for MobileState {

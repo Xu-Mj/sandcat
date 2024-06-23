@@ -137,7 +137,7 @@ impl Component for Contacts {
             show_context_menu: false,
             i18n,
             touch_start: 0,
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile: MobileState::get().is_mobile(),
             _fs_dis: fs_dis,
             friend_state: friend_dispatch.get(),
             friend_dispatch,

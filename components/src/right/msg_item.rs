@@ -680,7 +680,7 @@ impl MsgItem {
                 friend_id: ctx.props().friend_id.clone(),
                 create_time: chrono::Utc::now().timestamp_millis(),
                 invite_type,
-                platform: get_platform(Dispatch::<MobileState>::global().get().is_mobile()),
+                platform: get_platform(MobileState::get().is_mobile()),
                 avatar: ctx.props().avatar.clone(),
                 nickname: ctx.props().nickname.clone(),
             }

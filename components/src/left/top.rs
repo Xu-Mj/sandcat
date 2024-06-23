@@ -10,7 +10,7 @@ use icons::{
     ConnectedIcon, ContactsIcon, DisconnectIcon, HangUpLoadingIcon, MessagesIcon, SettingIcon,
 };
 use sandcat_sdk::{
-    model::{user::User, ComponentType},
+    model::{user::User, ComponentType, OFFLINE_TIME},
     state::{AppState, ComponentTypeState, ConnectState, I18nState, MobileState, UnreadState},
 };
 use utils::tr;
@@ -79,7 +79,7 @@ impl Component for Top {
             connect_state: _conn_dis.get(),
             _conn_dis,
             i18n,
-            is_mobile: Dispatch::<MobileState>::global().get().is_mobile(),
+            is_mobile: MobileState::get().is_mobile(),
         }
     }
 
@@ -94,7 +94,16 @@ impl Component for Top {
                 self.show_info = !self.show_info;
                 self.app_s_dis.reduce_mut(|s| s.login_user = *user);
             }
-            TopMsg::ConnectionStateChanged(state) => self.connect_state = state,
+            TopMsg::ConnectionStateChanged(state) => {
+                self.connect_state = state;
+                // todo record offline time
+                if *self.connect_state == ConnectState::DisConnect {
+                    let now = chrono::Utc::now().timestamp_millis();
+                    if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
+                        log::error!("record offline time to local storage error: {:?}", err);
+                    }
+                }
+            }
         }
         true
     }
