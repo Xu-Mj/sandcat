@@ -21,3 +21,4 @@
 - local storage is shared with same address, it will influence the other user.
 - add login state ui: logining, login failed, login success
 - adjust oauth2 login ui
+- add google oauth2 login

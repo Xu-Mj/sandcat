@@ -12,7 +12,7 @@ use yewdux::Dispatch;
 
 use components::constant::ERROR;
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{GMailIcon, GitHubIcon, MoonIcon, SunIcon};
+use icons::{GitHubIcon, MoonIcon, SunIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db::{self, DB_NAME};
 use sandcat_sdk::model::notification::Notification;
@@ -222,7 +222,7 @@ impl Component for Login {
                     <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title.clone()}/>
                     <div class="third-login">
                         <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin(ThirdLoginType::GitHub))}><GitHubIcon /></span>
-                        <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin(ThirdLoginType::Google))}><GMailIcon /></span>
+                        // <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin(ThirdLoginType::Google))}><GMailIcon /></span>
                     </div>
                     <div class="login-register">
                         {tr!(self.i18n, "to_register_prefix")}
