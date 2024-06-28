@@ -108,11 +108,6 @@
     }
 }
 
-/* prevent pull-to-refresh for Chrome 63+ */
-body {
-    overscroll-behavior-y: none;
-}
-
 *,
 *::before,
 *::after {
