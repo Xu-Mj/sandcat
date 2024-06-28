@@ -23,6 +23,7 @@
         justify-content: center;
         align-items: center;
     }
+
     .sign {
         font-size: xx-large;
         font-weight: bolder;
@@ -73,13 +74,13 @@
         }
 
         .submit {
-            margin-top: 40px;
-            width: 70px;
-            height: 40px;
+            margin-top: 2rem;
+            width: 4.5rem;
+            height: 2rem;
             padding: 0;
-            line-height: 40px;
+            line-height: 2rem;
             text-align: center;
-            border-radius: 5px;
+            border-radius: .3rem;
             color: #ffffff;
             background-color: #f77c2c;
             cursor: pointer;
@@ -99,8 +100,8 @@
         align-items: center;
         animation: sun-rotate 3s linear infinite;
 
-        svg{
-            path{
+        svg {
+            path {
                 fill: white;
             }
         }
@@ -130,6 +131,22 @@
     margin: auto;
     bottom: 1rem;
     position: absolute;
+}
+
+.third-login {
+    width: 100%;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+
+    >span {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+    }
 }
 
 /* 登录结束 */
