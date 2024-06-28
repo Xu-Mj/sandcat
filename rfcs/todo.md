@@ -20,3 +20,4 @@
 - there is a problem about relationship while two devices login both especially one offline and the other online, the offline turn to online, it is difficult to get the relationship between the two devices.
 - local storage is shared with same address, it will influence the other user.
 - add login state ui: logining, login failed, login success
+- adjust oauth2 login ui
