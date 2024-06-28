@@ -21,9 +21,9 @@ impl OAuth2Api for OAuth2Http {
         .await?;
         Ok(resp)
     }
-    async fn wechat(&self, code: &str, state: &str) -> Result<LoginResp> {
+    async fn google(&self, code: &str, state: &str) -> Result<LoginResp> {
         let resp = Request::get(&format!(
-            "/api/user/auth/wechat/callback?code={}&state={}",
+            "/api/user/auth/google/callback?code={}&state={}",
             code, state
         ))
         .send()
