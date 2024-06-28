@@ -21,14 +21,14 @@ pub enum Page {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ThirdLoginType {
     GitHub,
-    WeChat,
+    Google,
 }
 
 impl Display for ThirdLoginType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ThirdLoginType::GitHub => write!(f, "github"),
-            ThirdLoginType::WeChat => write!(f, "wechat"),
+            ThirdLoginType::Google => write!(f, "google"),
         }
     }
 }
@@ -39,7 +39,7 @@ impl FromStr for ThirdLoginType {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "github" => Ok(ThirdLoginType::GitHub),
-            "wechat" => Ok(ThirdLoginType::WeChat),
+            "google" => Ok(ThirdLoginType::Google),
             _ => Err(format!("Invalid third login type: {}", s)),
         }
     }

@@ -74,13 +74,13 @@
         }
 
         .submit {
-            margin-top: 40px;
-            width: 70px;
-            height: 40px;
+            margin-top: 2rem;
+            width: 4.5rem;
+            height: 2rem;
             padding: 0;
-            line-height: 40px;
+            line-height: 2rem;
             text-align: center;
-            border-radius: 5px;
+            border-radius: .3rem;
             color: #ffffff;
             background-color: #f77c2c;
             cursor: pointer;

@@ -12,7 +12,7 @@ use yewdux::Dispatch;
 
 use components::constant::ERROR;
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{GitHubIcon, MoonIcon, SunIcon, WeChatIcon};
+use icons::{GMailIcon, GitHubIcon, MoonIcon, SunIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db::{self, DB_NAME};
 use sandcat_sdk::model::notification::Notification;
@@ -159,7 +159,7 @@ impl Component for Login {
             LoginMsg::ThirdLogin(tp) => {
                 let url = match tp {
                     ThirdLoginType::GitHub => "http://127.0.0.1:50001/user/auth/github",
-                    ThirdLoginType::WeChat => "http://127.0.0.1:50001/user/auth/wechat",
+                    ThirdLoginType::Google => "http://127.0.0.1:50001/user/auth/wechat",
                 };
                 window().location().set_href(url).unwrap();
                 false
@@ -222,7 +222,7 @@ impl Component for Login {
                     <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title.clone()}/>
                     <div class="third-login">
                         <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin(ThirdLoginType::GitHub))}><GitHubIcon /></span>
-                        <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin(ThirdLoginType::WeChat))}><WeChatIcon /></span>
+                        <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin(ThirdLoginType::Google))}><GMailIcon /></span>
                     </div>
                     <div class="login-register">
                         {tr!(self.i18n, "to_register_prefix")}

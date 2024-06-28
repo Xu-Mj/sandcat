@@ -42,7 +42,7 @@ impl Component for OAuth2 {
         ctx.link().send_future(async move {
             let resp = match tp {
                 ThirdLoginType::GitHub => api::oauth2().github(&code, &state).await,
-                ThirdLoginType::WeChat => api::oauth2().wechat(&code, &state).await,
+                ThirdLoginType::Google => api::oauth2().wechat(&code, &state).await,
             };
             let res = match resp {
                 Ok(resp) => resp,
