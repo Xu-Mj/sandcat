@@ -1,3 +1,4 @@
+use components::dialog::Dialog;
 use web_sys::UrlSearchParams;
 use yew::{html, AttrValue, Component, Html, Properties};
 
@@ -16,9 +17,7 @@ pub struct Props {
     pub tp: ThirdLoginType,
 }
 
-pub struct OAuth2 {
-    err_msg: AttrValue,
-}
+pub struct OAuth2;
 
 pub enum Msg {
     Success(AttrValue),
@@ -31,6 +30,7 @@ impl Component for OAuth2 {
     type Properties = Props;
 
     fn create(ctx: &yew::Context<Self>) -> Self {
+        Dialog::loading("Login...");
         let location = gloo::utils::window().location();
         let search = location.search().unwrap_or_default();
         let search_params = UrlSearchParams::new_with_str(&search).unwrap();
@@ -70,9 +70,7 @@ impl Component for OAuth2 {
             db::db_ins().users.add(&user).await;
             Msg::Success(id)
         });
-        Self {
-            err_msg: AttrValue::default(),
-        }
+        Self
     }
 
     fn update(&mut self, ctx: &yew::Context<Self>, msg: Self::Message) -> bool {
@@ -82,27 +80,13 @@ impl Component for OAuth2 {
                 false
             }
             Msg::Failed(err) => {
-                self.err_msg = err;
-                true
+                Dialog::error(&err);
+                false
             }
         }
     }
 
     fn view(&self, _ctx: &yew::Context<Self>) -> Html {
-        let content = if self.err_msg.is_empty() {
-            html!(<p>{ "正在登录..." }</p>)
-        } else {
-            html!(
-                <div>
-                    <p>{ "登录失败" }</p>
-                    <p>{ self.err_msg.clone() }</p>
-                </div>
-            )
-        };
-        html! {
-            <div class="oauth2-logining">
-                { content }
-            </div>
-        }
+        html! (<></>)
     }
 }

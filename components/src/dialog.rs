@@ -212,6 +212,11 @@ impl Dialog {
         Dispatch::<LoadingState>::global().reduce_mut(|s| s.is_loading = false);
     }
 
+    pub fn error(msg: &str) {
+        let props = DialogProps::error(msg);
+        yew::Renderer::<Dialog>::with_root_and_props(props.container.clone(), props).render();
+    }
+
     fn unmount(&mut self, ctx: &Context<Self>) {
         self.timer = None;
         ctx.props().container.remove()
