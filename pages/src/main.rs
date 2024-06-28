@@ -1,7 +1,9 @@
-pub mod home;
-pub mod login;
-pub mod register;
+mod home;
+mod login;
+mod oauth2;
+mod register;
 
+use oauth2::OAuth2;
 use sandcat_sdk::model::page::Page;
 use yew::prelude::*;
 use yew_router::{BrowserRouter, Switch};
@@ -17,6 +19,7 @@ fn app() -> Html {
                 match page {
                     Page::Home{id} => html!{<Home {id}/>},
                     Page::Login => html!{<Login/>},
+                    Page::ThirdLoginCallback => html!{<OAuth2/>},
                     Page::Register => html!{<Register />},
                     Page::Redirect => html!{<Login />}}
             }/>

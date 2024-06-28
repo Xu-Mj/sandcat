@@ -12,4 +12,6 @@ pub enum Page {
     Register,
     #[at("/")]
     Redirect,
+    #[at("/third_login_callback")]
+    ThirdLoginCallback,
 }

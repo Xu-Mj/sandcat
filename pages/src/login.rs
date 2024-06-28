@@ -3,15 +3,17 @@ use std::rc::Rc;
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
 use fluent::{FluentBundle, FluentResource};
+use gloo::utils::window;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
+use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
 use components::constant::ERROR;
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{MoonIcon, SunIcon};
+use icons::{GitHubIcon, MoonIcon, SunIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db::{self, DB_NAME};
 use sandcat_sdk::model::notification::Notification;
@@ -33,6 +35,7 @@ pub struct Login {
 
 pub enum LoginMsg {
     Login,
+    ThirdLogin,
     Success(AttrValue),
     Failed,
     OnEnterKeyDown(SubmitEvent),
@@ -158,12 +161,12 @@ impl Component for Login {
                     .dyn_into::<HtmlInputElement>()
                     .unwrap();
                 let value = input.value();
-                if value == "zh_cn" {
+                if value == LanguageType::ZhCN.to_string() {
                     self.i18n = utils::create_bundle(zh_cn::LOGIN);
                     // save language type with yewdux
                     Dispatch::<I18nState>::global().reduce_mut(|s| s.lang = LanguageType::ZhCN);
                     self.lang = LanguageType::ZhCN;
-                } else if value == "en_us" {
+                } else if value == LanguageType::EnUS.to_string() {
                     self.i18n = utils::create_bundle(en_us::LOGIN);
                     Dispatch::<I18nState>::global().reduce_mut(|s| s.lang = LanguageType::EnUS);
                     self.lang = LanguageType::EnUS;
@@ -173,6 +176,15 @@ impl Component for Login {
             LoginMsg::SwitchTheme(state) => {
                 utils::set_theme(&state.to_string());
                 true
+            }
+            LoginMsg::ThirdLogin => {
+                spawn_local(async {
+                    window()
+                        .location()
+                        .set_href("http://127.0.0.1:50001/user/auth/github")
+                        .unwrap();
+                });
+                false
             }
         }
     }
@@ -229,7 +241,10 @@ impl Component for Login {
                             <input type="radio" name="language" id="zh_cn" value="zh_cn" {onchange} checked={self.lang==LanguageType::ZhCN}/>{"\t中文"}
                         </label>
                     </div>
-                    <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title}/>
+                    <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title.clone()}/>
+                    <div class="third-login">
+                        <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin)}><GitHubIcon /></span>
+                    </div>
                     <div class="login-register">
                         {tr!(self.i18n, "to_register_prefix")}
                         <a href="/register">{tr!(self.i18n, "to_register")}</a>
