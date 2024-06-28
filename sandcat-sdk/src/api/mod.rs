@@ -4,8 +4,10 @@ use self::{
     file::FileApi,
     friend::FriendApi,
     group::GroupApi,
+    http::OAuth2Http,
     http::{FileHttp, FriendHttp, GroupHttp, MsgHttp, SeqHttp, UserHttp},
     message::MsgApi,
+    oauth2::OAuth2Api,
     seq::SeqApi,
     user::UserApi,
 };
@@ -15,6 +17,7 @@ mod friend;
 mod group;
 mod http;
 mod message;
+mod oauth2;
 mod seq;
 mod user;
 
@@ -27,6 +30,10 @@ pub fn token() -> String {
 
 pub fn users() -> Box<dyn UserApi> {
     Box::new(UserHttp)
+}
+
+pub fn oauth2() -> Box<dyn OAuth2Api> {
+    Box::new(OAuth2Http)
 }
 
 pub fn groups() -> Box<dyn GroupApi> {

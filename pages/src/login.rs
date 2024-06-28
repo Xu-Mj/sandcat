@@ -6,18 +6,17 @@ use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
-use yew::platform::spawn_local;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
 use components::constant::ERROR;
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{GitHubIcon, MoonIcon, SunIcon};
+use icons::{GitHubIcon, MoonIcon, SunIcon, WeChatIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db::{self, DB_NAME};
 use sandcat_sdk::model::notification::Notification;
-use sandcat_sdk::model::page::Page;
+use sandcat_sdk::model::page::{Page, ThirdLoginType};
 use sandcat_sdk::model::user::LoginRequest;
 use sandcat_sdk::model::{REFRESH_TOKEN, TOKEN, WS_ADDR};
 use sandcat_sdk::state::{I18nState, Notify, ThemeState};
@@ -35,7 +34,7 @@ pub struct Login {
 
 pub enum LoginMsg {
     Login,
-    ThirdLogin,
+    ThirdLogin(ThirdLoginType),
     Success(AttrValue),
     Failed,
     OnEnterKeyDown(SubmitEvent),
@@ -47,21 +46,6 @@ pub enum LoginState {
     Logining,
     Nothing,
 }
-
-// 模拟输入写入数据库
-// async fn init_db(id: AttrValue) {
-//     // 拉取联系人
-//     // 查询是否需要更新联系人
-//     match api::friends().get_friend_list_by_id(id.to_string()).await {
-//         Ok(res) => {
-//             // 写入数据库
-//             db::db_ins().friends.put_friend_list(&res).await;
-//         }
-//         Err(e) => {
-//             log::error!("获取联系人列表错误: {:?}", e)
-//         }
-//     }
-// }
 
 impl Component for Login {
     type Message = LoginMsg;
@@ -126,16 +110,11 @@ impl Component for Login {
 
                     // 初始化数据库
                     db::init_db().await;
-                    // init_db(id.clone()).await;
                     // 将用户信息存入数据库
                     // 先查询是否登录过
                     // let user_former = user_repo.get(id.clone()).await;
                     db::db_ins().users.add(&user).await;
-                    // if user_former.is_ok() && user_former.unwrap().id != AttrValue::default() {
-                    //     // 已经存在，更新数据库
-                    // } else {
-                    //     user_repo.add(&user).await;
-                    // }
+
                     LoginMsg::Success(id)
                 });
                 self.login_state = LoginState::Logining;
@@ -177,13 +156,12 @@ impl Component for Login {
                 utils::set_theme(&state.to_string());
                 true
             }
-            LoginMsg::ThirdLogin => {
-                spawn_local(async {
-                    window()
-                        .location()
-                        .set_href("http://127.0.0.1:50001/user/auth/github")
-                        .unwrap();
-                });
+            LoginMsg::ThirdLogin(tp) => {
+                let url = match tp {
+                    ThirdLoginType::GitHub => "http://127.0.0.1:50001/user/auth/github",
+                    ThirdLoginType::WeChat => "http://127.0.0.1:50001/user/auth/wechat",
+                };
+                window().location().set_href(url).unwrap();
                 false
             }
         }
@@ -243,7 +221,8 @@ impl Component for Login {
                     </div>
                     <input type="submit" class="submit" onclick={ctx.link().callback(|_| LoginMsg::Login)} value={login_title.clone()}/>
                     <div class="third-login">
-                        <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin)}><GitHubIcon /></span>
+                        <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin(ThirdLoginType::GitHub))}><GitHubIcon /></span>
+                        <span onclick={ctx.link().callback(|_| LoginMsg::ThirdLogin(ThirdLoginType::WeChat))}><WeChatIcon /></span>
                     </div>
                     <div class="login-register">
                         {tr!(self.i18n, "to_register_prefix")}

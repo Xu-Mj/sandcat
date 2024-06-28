@@ -19,7 +19,7 @@ fn app() -> Html {
                 match page {
                     Page::Home{id} => html!{<Home {id}/>},
                     Page::Login => html!{<Login/>},
-                    Page::ThirdLoginCallback => html!{<OAuth2/>},
+                    Page::ThirdLoginCallback{tp} => html!{<OAuth2 {tp}/>},
                     Page::Register => html!{<Register />},
                     Page::Redirect => html!{<Login />}}
             }/>
