@@ -22,3 +22,4 @@
 - add login state ui: logining, login failed, login success
 - adjust oauth2 login ui
 - add google oauth2 login
+- add password modify
