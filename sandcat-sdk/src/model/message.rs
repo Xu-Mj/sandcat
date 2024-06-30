@@ -59,6 +59,8 @@ pub struct Message {
     pub audio_downloaded: bool,
     #[serde(skip)]
     pub file_content: AttrValue,
+    /// related message id
+    pub related_msg_id: Option<AttrValue>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone, Default, PartialEq)]
@@ -106,6 +108,7 @@ impl From<InviteCancelMsg> for Message {
             audio_downloaded: false,
             file_content: Default::default(),
             is_resend: value.is_resend,
+            related_msg_id: None,
         }
     }
 }
@@ -142,6 +145,7 @@ impl From<InviteAnswerMsg> for Message {
             audio_downloaded: false,
             file_content: Default::default(),
             is_resend: value.is_resend,
+            related_msg_id: None,
         }
     }
 }
@@ -174,6 +178,7 @@ impl From<InviteNotAnswerMsg> for Message {
             audio_downloaded: false,
             file_content: Default::default(),
             is_resend: value.is_resend,
+            related_msg_id: None,
         }
     }
 }
@@ -207,6 +212,7 @@ impl From<Hangup> for Message {
             audio_downloaded: false,
             file_content: Default::default(),
             is_resend: value.is_resend,
+            related_msg_id: None,
         }
     }
 }
@@ -240,6 +246,7 @@ impl Message {
             audio_downloaded: false,
             file_content: Default::default(),
             is_resend: value.is_resend,
+            related_msg_id: None,
         }
     }
     pub fn from_not_answer(msg: InviteNotAnswerMsg) -> Self {
@@ -269,6 +276,7 @@ impl Message {
             audio_downloaded: false,
             file_content: Default::default(),
             is_resend: msg.is_resend,
+            related_msg_id: None,
         }
     }
 }
@@ -324,6 +332,7 @@ impl Msg {
             audio_downloaded: false,
             file_content: msg.file_content.clone(),
             is_resend: msg.is_resend,
+            related_msg_id: None,
         }
     }
 
@@ -605,6 +614,7 @@ impl TryFrom<pb::message::Msg> for Message {
             audio_downloaded: false,
             file_content: AttrValue::default(),
             is_resend: false,
+            related_msg_id: value.related_msg_id.map(|v| v.into()),
         })
     }
 }
