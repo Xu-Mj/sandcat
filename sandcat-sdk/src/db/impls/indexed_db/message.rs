@@ -99,6 +99,30 @@ impl Messages for MessageRepo {
         Ok(rx.await.unwrap())
     }
 
+    async fn get_msg_by_local_id(&self, local_id: &str) -> Result<Option<Message>> {
+        let (tx, rx) = oneshot::channel::<Option<Message>>();
+        let store = self.store(MESSAGE_TABLE_NAME).await?;
+        let request = store.get(&JsValue::from(local_id))?;
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            let mut msg = None;
+            if !result.is_undefined() && !result.is_null() {
+                msg = Some(serde_wasm_bindgen::from_value(result).unwrap());
+            }
+            tx.send(msg).unwrap();
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        let on_add_error = Closure::once(move |event: &Event| error!("query error: {:?}", event));
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+        Ok(rx.await.unwrap())
+    }
+
     async fn get_messages(
         &self,
         friend_id: &str,

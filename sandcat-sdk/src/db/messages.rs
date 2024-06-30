@@ -9,6 +9,7 @@ use crate::model::message::{Message, ServerResponse};
 #[async_trait::async_trait(?Send)]
 pub trait Messages: Debug {
     async fn get_last_msg(&self, friend_id: &str) -> Result<Message>;
+    async fn get_msg_by_local_id(&self, server_id: &str) -> Result<Option<Message>>;
 
     async fn get_messages(
         &self,
