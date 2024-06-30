@@ -23,3 +23,5 @@
 - adjust oauth2 login ui
 - add google oauth2 login
 - add password modify
+- we need to give the user a message if their email is already used
+- encrypt the password before send to server
