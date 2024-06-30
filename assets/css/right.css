@@ -582,7 +582,6 @@
             height: calc(100% - 2rem);
             display: flex;
             flex-direction: column;
-            align-items: flex-end;
             position: relative;
 
             .msg-input-size {
@@ -628,9 +627,24 @@
                 background-color: var(--color-background);
             }
 
+            .sender-footer {
+                width: 100%;
+                height: 2rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+
+                .related-msg {
+                    max-width: 50%;
+                    height: 100%;
+                    overflow: hidden;
+                    word-wrap: none;
+                }
+            }
+
             .send-btn {
                 width: 6rem;
-                height: 3rem;
+                height: 100%;
                 background-color: var(--color-background-btn);
                 color: var(--sender-btn-color-text);
                 border-radius: .2rem;

@@ -29,7 +29,7 @@ pub enum MsgItemMsg {
     CallAudio,
     SendTimeout,
     ReSendMessage,
-    QueryGroupMember(AttrValue),
+    QueryGroupMember(AttrValue, AttrValue),
     CloseFriendCard,
     TextDoubleClick(MouseEvent),
     PlayAudio,
@@ -63,6 +63,7 @@ impl Component for MsgItem {
     type Properties = MsgItemProps;
 
     fn create(ctx: &Context<Self>) -> Self {
+        log::debug!("create msg item:{:?}", ctx.props().avatar);
         Self::new(ctx)
     }
 
@@ -126,8 +127,9 @@ impl Component for MsgItem {
                 self.make_call(ctx, InviteType::Audio);
                 false
             }
-            MsgItemMsg::QueryGroupMember(avatar) => {
+            MsgItemMsg::QueryGroupMember(avatar, nickname) => {
                 self.avatar = avatar;
+                self.nickname = nickname;
                 true
             }
             MsgItemMsg::SendTimeout => {
@@ -300,7 +302,8 @@ impl Component for MsgItem {
             MsgItemMsg::RelatedMsg => {
                 self.show_context_menu = false;
                 let msg = ctx.props().msg.clone();
-                RelatedMsgState::notify(msg);
+                let nickname = self.nickname.clone();
+                RelatedMsgState::notify(nickname, msg);
                 true
             }
         }
@@ -507,7 +510,7 @@ impl Component for MsgItem {
                     friend_info={self.friend_info.as_ref().unwrap().clone()}
                     user_id={&ctx.props().user_id}
                     avatar={&ctx.props().avatar}
-                    nickname={&ctx.props().nickname}
+                    nickname={&ctx.props().msg.nickname}
                     lang={LanguageType::ZhCN}
                     close={ctx.link().callback(|_| MsgItemMsg::CloseFriendCard)}
                     is_self={ctx.props().msg.is_self}

@@ -81,7 +81,8 @@ pub struct Sender {
     enter_key_down: i64,
     is_key_down: bool,
     is_voice_mode: bool,
-    related_msg: Option<Message>,
+    /// nickname, server_id, content
+    related_msg: Option<(AttrValue, AttrValue, AttrValue)>,
     _related_msg_state: Dispatch<RelatedMsgState>,
 }
 
@@ -340,6 +341,7 @@ impl Sender {
 
             let send_id = ctx.props().cur_user_id.clone();
             let platform = self.get_platform();
+
             let msg = Message {
                 local_id: nanoid::nanoid!().into(),
                 server_id: AttrValue::default(),
@@ -354,6 +356,7 @@ impl Sender {
                 send_status: SendStatus::Sending,
                 avatar: ctx.props().avatar.clone(),
                 nickname: ctx.props().nickname.clone(),
+                related_msg_id: self.related_msg.take().map(|v| v.1),
                 ..Default::default()
             };
             self.store_send_msg(ctx, msg);

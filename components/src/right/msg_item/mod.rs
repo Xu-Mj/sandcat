@@ -22,6 +22,7 @@ use crate::get_platform;
 
 pub struct MsgItem {
     avatar: AttrValue,
+    nickname: AttrValue,
     show_img_preview: bool,
     show_friend_card: bool,
     show_friendlist: bool,
@@ -63,12 +64,14 @@ impl MsgItem {
                     .group_members
                     .get_by_group_id_and_friend_id(group_id.as_str(), friend_id.as_str())
                     .await
+                    .unwrap()
                     .unwrap();
-                MsgItemMsg::QueryGroupMember(member.unwrap().avatar)
+                MsgItemMsg::QueryGroupMember(member.avatar, member.group_name)
             });
         }
 
         let avatar = ctx.props().avatar.clone();
+        let nickname = ctx.props().nickname.clone();
         let mut timeout = None;
         if ctx.props().msg.is_self && ctx.props().msg.send_status == SendStatus::Sending {
             let ctx = ctx.link().clone();
@@ -103,6 +106,7 @@ impl MsgItem {
             show_friend_card: false,
             show_friendlist: false,
             avatar,
+            nickname,
             show_send_fail: ctx.props().msg.send_status == SendStatus::Failed,
             show_sending: false,
             pointer: (0, 0),
@@ -142,7 +146,7 @@ impl MsgItem {
                 invite_type,
                 platform: get_platform(MobileState::is_mobile()),
                 avatar: ctx.props().avatar.clone(),
-                nickname: ctx.props().nickname.clone(),
+                nickname: ctx.props().msg.nickname.clone(),
             }
         });
     }

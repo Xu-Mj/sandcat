@@ -1,6 +1,5 @@
 use std::rc::Rc;
 
-use sandcat_sdk::state::RelatedMsgState;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
     ClipboardEvent, DataTransferItem, DataTransferItemList, HtmlElement, HtmlInputElement,
@@ -10,12 +9,12 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{FileIcon, KeyboardIcon, SmileIcon, VoiceIcon};
+use icons::{CloseIcon, FileIcon, KeyboardIcon, SmileIcon, VoiceIcon};
 use sandcat_sdk::model::voice::Voice;
 use sandcat_sdk::{
     model::message::{InviteMsg, InviteType, Message, SendStatus},
     model::{ContentType, RightContentType},
-    state::{MobileState, SendCallState},
+    state::{MobileState, RelatedMsgState, SendCallState},
 };
 use utils::tr;
 
@@ -45,6 +44,7 @@ pub enum SenderMsg {
     VoiceIconClicked,
     SendVoice(Voice),
     RelatedMsgStateChanged(Rc<RelatedMsgState>),
+    DelRelatMsg,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -296,7 +296,15 @@ impl Component for Sender {
                     self.related_msg = None;
                     return false;
                 }
-                self.related_msg = Some(state.msg.clone());
+                self.related_msg = Some((
+                    state.nickname.clone(),
+                    state.msg.server_id.clone(),
+                    state.msg.content.clone(),
+                ));
+                true
+            }
+            SenderMsg::DelRelatMsg => {
+                self.related_msg = None;
                 true
             }
         }
@@ -344,6 +352,17 @@ impl Component for Sender {
             html!()
         };
 
+        // related message
+        let mut related_msg_html = html!();
+
+        if let Some((ref nickname, _, ref content)) = self.related_msg {
+            related_msg_html = html! {
+                <p class="related-msg">
+                    {&nickname}{":"}{&content}
+                    <span onclick={ctx.link().callback(|_|SenderMsg::DelRelatMsg)}><CloseIcon/></span> </p>
+            };
+        }
+
         html! {
             <>
                 {file_sender_html}
@@ -381,8 +400,12 @@ impl Component for Sender {
                             onkeydown={ctx.link().callback(SenderMsg::OnEnterKeyDown)}
                             onkeyup={ctx.link().callback(SenderMsg::OnEnterKeyUp)}>
                         </textarea>
-                        {warn_html}
-                        {send_btn}
+                        // sender footer contains related message, warn message and send button
+                        <div class="sender-footer">
+                            {warn_html}
+                            {related_msg_html}
+                            {send_btn}
+                        </div>
                     </div>
                     {disable_html}
                 </div>
