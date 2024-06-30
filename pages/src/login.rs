@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use base64::prelude::BASE64_STANDARD_NO_PAD;
 use base64::Engine;
+use components::dialog::Dialog;
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::window;
 use wasm_bindgen::JsCast;
@@ -78,6 +79,7 @@ impl Component for Login {
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             LoginMsg::Login => {
+                Dialog::loading("login..");
                 // use ref to get the account and password
                 let account = self.account_ref.cast::<HtmlInputElement>().unwrap().value();
                 let pwd = self.pwd_ref.cast::<HtmlInputElement>().unwrap().value();
@@ -125,6 +127,8 @@ impl Component for Login {
                 true
             }
             LoginMsg::Failed => {
+                Dialog::close_loading();
+                Dialog::error("login failed, please check your account and password");
                 self.show_error = true;
                 true
             }
