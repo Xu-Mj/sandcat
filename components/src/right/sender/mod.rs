@@ -81,7 +81,7 @@ pub struct Sender {
     enter_key_down: i64,
     is_key_down: bool,
     is_voice_mode: bool,
-    /// nickname, server_id, content
+    /// nickname, local_id, content
     related_msg: Option<(AttrValue, AttrValue, AttrValue)>,
     _related_msg_state: Dispatch<RelatedMsgState>,
 }

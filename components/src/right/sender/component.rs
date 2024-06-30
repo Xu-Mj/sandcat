@@ -298,7 +298,7 @@ impl Component for Sender {
                 }
                 self.related_msg = Some((
                     state.nickname.clone(),
-                    state.msg.server_id.clone(),
+                    state.msg.local_id.clone(),
                     state.msg.content.clone(),
                 ));
                 true

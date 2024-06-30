@@ -3,16 +3,18 @@ use component::*;
 
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
+use log::error;
 use nanoid::nanoid;
 use utils::tr;
 use wasm_bindgen::JsCast;
+use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::db;
-use sandcat_sdk::model::message::{InviteMsg, InviteType, SendStatus};
+use sandcat_sdk::model::message::{InviteMsg, InviteType, Message, SendStatus};
 use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
@@ -44,6 +46,8 @@ pub struct MsgItem {
     show_context_menu: bool,
     /// hold right click item position
     context_menu_pos: (i32, i32),
+    /// related msg
+    related_msg: Option<Message>,
 }
 
 enum AudioDownloadStage {
@@ -67,6 +71,19 @@ impl MsgItem {
                     .unwrap()
                     .unwrap();
                 MsgItemMsg::QueryGroupMember(member.avatar, member.group_name)
+            });
+        }
+
+        // query related msg
+        if let Some(ref local_id) = ctx.props().msg.related_msg_id {
+            let local_id = local_id.clone();
+            let ctx = ctx.link().clone();
+            spawn_local(async move {
+                if let Ok(Some(msg)) = db::db_ins().messages.get_msg_by_local_id(&local_id).await {
+                    ctx.send_message(MsgItemMsg::ShowRelatedMsg(msg));
+                } else {
+                    error!("related msg not found");
+                }
             });
         }
 
@@ -119,6 +136,7 @@ impl MsgItem {
             i18n,
             show_context_menu: false,
             context_menu_pos: (0, 0),
+            related_msg: None,
         }
     }
 

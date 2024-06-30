@@ -41,6 +41,7 @@ pub enum MsgItemMsg {
     ShowForwardMsg,
     ForwardMsg(Vec<String>),
     RelatedMsg,
+    ShowRelatedMsg(Message),
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -304,6 +305,10 @@ impl Component for MsgItem {
                 let msg = ctx.props().msg.clone();
                 let nickname = self.nickname.clone();
                 RelatedMsgState::notify(nickname, msg);
+                true
+            }
+            MsgItemMsg::ShowRelatedMsg(msg) => {
+                self.related_msg = Some(msg);
                 true
             }
         }
