@@ -40,6 +40,7 @@ pub enum MsgItemMsg {
     DeleteItem,
     ShowForwardMsg,
     ForwardMsg(Vec<String>),
+    RelatedMsg,
 }
 
 type FriendCardProps = (UserWithMatchType, i32, i32);
@@ -296,6 +297,12 @@ impl Component for MsgItem {
                 self.show_friendlist = false;
                 true
             }
+            MsgItemMsg::RelatedMsg => {
+                let msg = ctx.props().msg.clone();
+                self.show_context_menu = false;
+                log::debug!("related msg: {:?}", msg);
+                true
+            }
         }
     }
 
@@ -527,6 +534,7 @@ impl Component for MsgItem {
                     close={ctx.link().callback( |_|MsgItemMsg::CloseContextMenu)}
                     delete={ctx.link().callback(|_|MsgItemMsg::DeleteItem)}
                     forward={ctx.link().callback(|_|MsgItemMsg::ShowForwardMsg)}
+                    related={ctx.link().callback(|_|MsgItemMsg::RelatedMsg)}
                     />
             }
         }

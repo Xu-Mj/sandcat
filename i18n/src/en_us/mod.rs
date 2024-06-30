@@ -103,6 +103,7 @@ delete = Delete
 mute = Mute
 un_mute = Un-mute
 forward = Forward
+related = Related
 "#;
 
 pub const SELECT_FRIENDS: &str = r#"

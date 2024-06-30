@@ -277,7 +277,6 @@ impl Component for Register {
         }
     }
     fn view(&self, ctx: &Context<Self>) -> Html {
-        log::debug!("view:{:?}", self.avatars);
         let avatars = self.avatars.iter().map(|(path,avatar)| {
             let mut classes = classes!("register-avatar");
             if avatar == &self.avatar {

@@ -91,6 +91,7 @@ delete = 删除
 mute = 消息免打扰
 un_mute = 取消免打扰
 forward = 转发
+related = 引用
 "#;
 
 pub const MSG_ITEM: &str = r#"
