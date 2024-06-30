@@ -26,6 +26,7 @@ pub struct MessageRepo {
     on_get_list_success: SuccessCallback,
     on_update_success: SuccessCallback,
     on_del_msg_success: SuccessCallback,
+    on_update_state_success: SuccessCallback,
 }
 
 impl Deref for MessageRepo {
@@ -47,6 +48,7 @@ impl MessageRepo {
             on_get_list_success: Rc::new(RefCell::new(None)),
             on_update_success: Rc::new(RefCell::new(None)),
             on_del_msg_success: Rc::new(RefCell::new(None)),
+            on_update_state_success: Rc::new(RefCell::new(None)),
         }
     }
 }
@@ -222,6 +224,7 @@ impl Messages for MessageRepo {
         req.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         req.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
 
+        *self.on_update_state_success.borrow_mut() = Some(onsuccess);
         Ok(())
     }
 
