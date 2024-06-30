@@ -8,6 +8,7 @@ use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
 use gloo::utils::window;
 use log::error;
+use sandcat_sdk::state::RelatedMsgState;
 use utils::tr;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
@@ -80,6 +81,8 @@ pub struct Sender {
     enter_key_down: i64,
     is_key_down: bool,
     is_voice_mode: bool,
+    related_msg: Option<Message>,
+    _related_msg_state: Dispatch<RelatedMsgState>,
 }
 
 impl Sender {

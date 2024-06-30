@@ -1,3 +1,6 @@
+use std::rc::Rc;
+
+use sandcat_sdk::state::RelatedMsgState;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
     ClipboardEvent, DataTransferItem, DataTransferItemList, HtmlElement, HtmlInputElement,
@@ -41,6 +44,7 @@ pub enum SenderMsg {
     OnTextInput,
     VoiceIconClicked,
     SendVoice(Voice),
+    RelatedMsgStateChanged(Rc<RelatedMsgState>),
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -66,6 +70,10 @@ impl Component for Sender {
             LanguageType::EnUS => en_us::SENDER,
         };
         let i18n = utils::create_bundle(res);
+
+        // listen related message state
+        let _related_msg_state = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(SenderMsg::RelatedMsgStateChanged));
         // 加载表情
         Self {
             is_warn_needed: false,
@@ -82,6 +90,8 @@ impl Component for Sender {
             enter_key_down: 0,
             is_key_down: false,
             is_voice_mode: false,
+            related_msg: None,
+            _related_msg_state,
         }
     }
 
@@ -280,6 +290,14 @@ impl Component for Sender {
                 log::debug!("send voice");
                 self.send_voice_msg(ctx, voice);
                 false
+            }
+            SenderMsg::RelatedMsgStateChanged(state) => {
+                if state.msg.local_id.is_empty() {
+                    self.related_msg = None;
+                    return false;
+                }
+                self.related_msg = Some(state.msg.clone());
+                true
             }
         }
     }

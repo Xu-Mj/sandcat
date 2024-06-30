@@ -13,7 +13,7 @@ use sandcat_sdk::model::message::{GroupMsg, InviteType, Message, Msg, SendStatus
 use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::{I18nState, Notify, SendMessageState};
+use sandcat_sdk::state::{I18nState, Notify, RelatedMsgState, SendMessageState};
 
 use crate::right::friend_card::FriendCard;
 use crate::right::msg_right_click::MsgRightClick;
@@ -298,9 +298,9 @@ impl Component for MsgItem {
                 true
             }
             MsgItemMsg::RelatedMsg => {
-                let msg = ctx.props().msg.clone();
                 self.show_context_menu = false;
-                log::debug!("related msg: {:?}", msg);
+                let msg = ctx.props().msg.clone();
+                RelatedMsgState::notify(msg);
                 true
             }
         }

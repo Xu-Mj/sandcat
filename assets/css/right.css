@@ -134,7 +134,7 @@
         width: 100%;
         border-top: var(--color-border) solid 1px;
 
-        > div > input {
+        >div>input {
             width: 100%;
             height: 1.3rem;
             padding: .3rem;
@@ -171,7 +171,7 @@
     justify-content: space-evenly;
     align-items: center;
 
-    & > div {
+    &>div {
         width: 1px;
         border-radius: 1px;
         background-color: var(--color-text);
@@ -230,9 +230,9 @@
         padding: 1rem 1rem 0 1rem;
         transform: translate(-50%, -50%);
         box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
-        10px 10px 10px rgba(60, 60, 60, 0.12),
-        -10px -10px 15px rgba(60, 60, 60, 0.12),
-        -10px -10px 15px rgba(60, 60, 60, 0.12);
+            10px 10px 10px rgba(60, 60, 60, 0.12),
+            -10px -10px 15px rgba(60, 60, 60, 0.12),
+            -10px -10px 15px rgba(60, 60, 60, 0.12);
         z-index: 20;
 
         .file-sender-content {
@@ -571,7 +571,7 @@
                 cursor: pointer;
             }
 
-            > div {
+            >div {
                 display: flex;
                 gap: 1rem;
             }
@@ -581,6 +581,8 @@
             width: 100%;
             height: calc(100% - 2rem);
             display: flex;
+            flex-direction: column;
+            align-items: flex-end;
             position: relative;
 
             .msg-input-size {
@@ -628,16 +630,14 @@
 
             .send-btn {
                 width: 6rem;
-                height: 2rem;
+                height: 3rem;
                 background-color: var(--color-background-btn);
                 color: var(--sender-btn-color-text);
                 border-radius: .2rem;
                 border: none;
                 cursor: pointer;
-                position: absolute;
-                right: 1rem;
-                bottom: .5rem;
                 font-size: large;
+                margin-right: 1rem;
             }
 
             .send-btn:hover {
@@ -787,13 +787,13 @@
                 align-items: center;
             }
 
-            .font-size-desktop > :last-child {
+            .font-size-desktop> :last-child {
                 display: grid;
                 grid-template-columns: 1fr 1fr 1fr 1fr;
                 align-items: center;
             }
 
-            .font-size-mobile > :last-child {
+            .font-size-mobile> :last-child {
                 display: grid;
                 grid-template-columns: 2fr 2fr;
                 align-items: center;
@@ -863,7 +863,7 @@
         flex-direction: column;
         position: relative;
 
-        & > *:not(:last-child, :first-child, :nth-child(2)) {
+        &>*:not(:last-child, :first-child, :nth-child(2)) {
             border-bottom: 1px solid var(--color-border);
         }
 
