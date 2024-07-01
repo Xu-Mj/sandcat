@@ -292,19 +292,20 @@ impl Component for Sender {
                 false
             }
             SenderMsg::RelatedMsgStateChanged(state) => {
-                if state.msg.local_id.is_empty() {
+                if state.msg.is_none() {
                     self.related_msg = None;
                     return false;
                 }
                 self.related_msg = Some((
-                    state.nickname.clone(),
-                    state.msg.local_id.clone(),
-                    state.msg.content.clone(),
+                    state.nickname.as_ref().unwrap().clone(),
+                    state.msg.as_ref().unwrap().local_id.clone(),
+                    state.msg.as_ref().unwrap().content.clone(),
                 ));
                 true
             }
             SenderMsg::DelRelatMsg => {
                 self.related_msg = None;
+                self._related_msg_state.reduce_mut(|s| s.msg = None);
                 true
             }
         }
