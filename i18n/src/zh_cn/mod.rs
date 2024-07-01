@@ -162,9 +162,8 @@ video_call = 视频通话
 "#;
 
 pub const SENDER: &str = r#"
-# sender
 send = 发送
-file = 文件
+#file = 文件
 submit = 确定
 cancel = 取消
 no_empty = 发送内容不能为空
@@ -172,6 +171,14 @@ input_max_len = 发送内容不能超过
 disabled = 暂时无法发送消息
 group_dismissed = 群聊已经解散
 verify_needed = 对方开启了好友验证，请先通过验证
+image = [图片]
+emoji = [表情]
+video = [视频]
+audio = [语音]
+file = [文件]
+video_call = [视频通话]
+audio_call = [语音通话]
+error = [错误]
 "#;
 
 pub const RECORDER: &str = r#"

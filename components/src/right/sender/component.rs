@@ -296,9 +296,11 @@ impl Component for Sender {
                     self.related_msg = None;
                     return false;
                 }
+                let msg = state.msg.as_ref().unwrap();
                 self.related_msg = Some((
                     state.nickname.as_ref().unwrap().clone(),
-                    state.msg.as_ref().unwrap().local_id.clone(),
+                    msg.local_id.clone(),
+                    msg.content_type,
                     state.msg.as_ref().unwrap().content.clone(),
                 ));
                 true
@@ -356,10 +358,10 @@ impl Component for Sender {
         // related message
         let mut related_msg_html = html!();
 
-        if let Some((ref nickname, _, ref content)) = self.related_msg {
+        if let Some((ref nickname, _, t, ref content)) = self.related_msg {
             related_msg_html = html! {
                 <p class="related-msg related-msg-background">
-                    {&nickname}{":"}{&content}
+                    {&nickname}{":"}{self.get_msg_type(t, content)}
                     <span onclick={ctx.link().callback(|_|SenderMsg::DelRelatMsg)}><CloseIcon/></span> </p>
             };
         }

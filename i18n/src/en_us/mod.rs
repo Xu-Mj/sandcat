@@ -168,9 +168,8 @@ video_call = VideoCall
 "#;
 
 pub const SENDER: &str = r#"
-# sender
 send = Send
-file = File
+#file = File
 submit = Submit
 cancel = Cancel
 no_empty = CAN NOT SEND AN EMPTY MESSAGE
@@ -178,6 +177,15 @@ input_max_len = input len more than
 disabled = CAN NOT SEND FOR NOW
 group_dismissed = THE GROUP HAS BEEN DISMISSED
 verify_needed = FRIEND ENABLED THE FRIEND VERIFICATION, PLEASE PASS IT FIRST
+image = [Image]
+emoji = [Emoji]
+video = [Video]
+audio = [Audio]
+file = [File]
+text = [Text]
+video_call = [Video Call]
+audio_call = [Voice Call]
+error = [ERROR]
 "#;
 
 pub const RECORDER: &str = r#"
