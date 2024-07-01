@@ -54,6 +54,8 @@ pub struct Chats {
     /// received messages sequence,
     /// used to determine whether the message is the latest message
     seq: Seq,
+    /// pin list
+    pin_list: IndexMap<AttrValue, Conversation>,
     /// the list of conversations
     list: IndexMap<AttrValue, Conversation>,
     /// search result list
@@ -96,6 +98,7 @@ pub struct Chats {
     is_mobile: bool,
     is_knocked: bool,
     token_getter: Option<Timeout>,
+    /// refresh token
     refresh_token_getter: Option<Timeout>,
 }
 
@@ -193,6 +196,7 @@ impl Chats {
             call_msg: SingleCall::default(),
             ws,
             seq: Seq::default(),
+            pin_list: IndexMap::new(),
             list: IndexMap::new(),
             result: IndexMap::new(),
             query_complete: false,

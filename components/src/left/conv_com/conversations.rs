@@ -132,6 +132,12 @@ impl Component for Chats {
                             self.result.insert((*key).clone(), (*item).clone());
                         }
                     });
+
+                    self.pin_list.iter().for_each(|(key, item)| {
+                        if item.name.contains(pattern.as_str()) {
+                            self.result.insert((*key).clone(), (*item).clone());
+                        }
+                    });
                 }
                 true
             }
