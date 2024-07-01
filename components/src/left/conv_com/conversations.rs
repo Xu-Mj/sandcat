@@ -142,7 +142,7 @@ impl Component for Chats {
                         }
                     });
 
-                    self.pined_list.iter().for_each(|(key, item)| {
+                    self.pinned_list.iter().for_each(|(key, item)| {
                         if item.name.contains(pattern.as_str()) {
                             self.result.insert((*key).clone(), (*item).clone());
                         }
@@ -156,7 +156,7 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::QueryConvList((pined_list, convs, messages, seq)) => {
-                self.pined_list = pined_list;
+                self.pinned_list = pined_list;
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了

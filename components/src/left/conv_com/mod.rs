@@ -55,7 +55,7 @@ pub struct Chats {
     /// used to determine whether the message is the latest message
     seq: Seq,
     /// pin list
-    pined_list: IndexMap<AttrValue, Conversation>,
+    pinned_list: IndexMap<AttrValue, Conversation>,
     /// the list of conversations
     list: IndexMap<AttrValue, Conversation>,
     /// search result list
@@ -201,7 +201,7 @@ impl Chats {
             call_msg: SingleCall::default(),
             ws,
             seq: Seq::default(),
-            pined_list: IndexMap::new(),
+            pinned_list: IndexMap::new(),
             list: IndexMap::new(),
             result: IndexMap::new(),
             query_complete: false,
@@ -359,10 +359,11 @@ impl Chats {
         if to_pin {
             if let Some(mut conv) = self.list.shift_remove(&self.context_menu_pos.2) {
                 conv.is_pined = 1;
-                self.pined_list.insert(conv.friend_id.clone(), conv.clone());
+                self.pinned_list
+                    .insert(conv.friend_id.clone(), conv.clone());
                 update_conv(conv);
             }
-        } else if let Some(mut conv) = self.pined_list.shift_remove(&self.context_menu_pos.2) {
+        } else if let Some(mut conv) = self.pinned_list.shift_remove(&self.context_menu_pos.2) {
             conv.is_pined = 0;
             self.list.insert(conv.friend_id.clone(), conv.clone());
             update_conv(conv);
@@ -379,7 +380,7 @@ impl Chats {
     fn render_list(&self, ctx: &Context<Self>) -> Html {
         html! {
         <>
-            {self.render(&self.pined_list, ctx)}
+            {self.render(&self.pinned_list, ctx)}
             {self.render(&self.list, ctx)}
         </>
         }
