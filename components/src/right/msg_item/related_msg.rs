@@ -4,11 +4,14 @@ use sandcat_sdk::{
     model::{message::Message, ContentType},
 };
 use wasm_bindgen_futures::spawn_local;
+use web_sys::HtmlElement;
 use yew::prelude::*;
 
 pub struct RelatedMsg {
+    text_node: NodeRef,
     show_img_preview: bool,
     msg: Option<Message>,
+    show_complete_text: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Properties)]
@@ -18,7 +21,8 @@ pub struct Props {
 
 pub enum Msg {
     PreviewImg,
-    ShowRelatedMsg(Message),
+    ShowRelated(Message),
+    ShowText,
 }
 
 impl Component for RelatedMsg {
@@ -31,25 +35,30 @@ impl Component for RelatedMsg {
         let ctx = ctx.link().clone();
         spawn_local(async move {
             if let Ok(Some(msg)) = db::db_ins().messages.get_msg_by_local_id(&local_id).await {
-                ctx.send_message(Self::Message::ShowRelatedMsg(msg));
+                ctx.send_message(Self::Message::ShowRelated(msg));
             } else {
                 error!("related msg not found");
             }
         });
 
         Self {
+            text_node: NodeRef::default(),
             show_img_preview: false,
             msg: None,
+            show_complete_text: false,
         }
     }
 
     fn update(&mut self, _ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
             Msg::PreviewImg => {
-                self.show_img_preview = true;
+                self.show_img_preview = !self.show_img_preview;
             }
-            Msg::ShowRelatedMsg(msg) => {
+            Msg::ShowRelated(msg) => {
                 self.msg = Some(msg);
+            }
+            Msg::ShowText => {
+                self.show_complete_text = !self.show_complete_text;
             }
         }
         true
@@ -83,8 +92,25 @@ impl Component for RelatedMsg {
                         }
                     })
                     .collect::<Html>();
+                let mut preview_text = html!();
+                if self.show_complete_text {
+                    preview_text = html! {
+                        <div  class="preview-text box-shadow"
+                            tabindex="0"
+                            ref={self.text_node.clone()}
+                            onblur={ctx.link().callback(|_|Self::Message::ShowText)}>
+                            {html_content.clone()}
+                        </div>
+                    }
+                }
+                let onclick = ctx.link().callback(|_| Self::Message::ShowText);
                 html! {
-                    {html_content}
+                <>
+                    {preview_text}
+                    <div class="related-text-msg" {onclick}>
+                        {html_content}
+                    </div>
+                </>
                 }
             }
             ContentType::Image => {
@@ -143,9 +169,15 @@ impl Component for RelatedMsg {
             _ => html!(),
         };
         html! {
-            <div class="related-msg related-msg-background">
+            <div class="related-msg related-msg-background pointer">
                 {content}
             </div>
+        }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        if let Some(node) = self.text_node.cast::<HtmlElement>() {
+            let _ = node.focus();
         }
     }
 }
