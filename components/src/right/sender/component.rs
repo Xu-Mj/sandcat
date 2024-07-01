@@ -357,7 +357,7 @@ impl Component for Sender {
 
         if let Some((ref nickname, _, ref content)) = self.related_msg {
             related_msg_html = html! {
-                <p class="related-msg">
+                <p class="related-msg related-msg-background">
                     {&nickname}{":"}{&content}
                     <span onclick={ctx.link().callback(|_|SenderMsg::DelRelatMsg)}><CloseIcon/></span> </p>
             };

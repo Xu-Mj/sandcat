@@ -424,7 +424,7 @@ impl Component for MsgItem {
                     <div class={format!("related-msg-content {position}")}>
                         {related_msg}
                     </div>
-                    <RelatedMsg local_id={local_id.clone()} />
+                    <RelatedMsg local_id={local_id.clone()} nickname={self.nickname.clone()}/>
                 </div>
             };
         }

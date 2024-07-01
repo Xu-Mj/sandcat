@@ -17,6 +17,7 @@ pub struct RelatedMsg {
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
     pub local_id: AttrValue,
+    pub nickname: AttrValue,
 }
 
 pub enum Msg {
@@ -108,6 +109,7 @@ impl Component for RelatedMsg {
                 <>
                     {preview_text}
                     <div class="related-text-msg" {onclick}>
+                        {format!("{}: ",ctx.props().nickname)}
                         {html_content}
                     </div>
                 </>
