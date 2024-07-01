@@ -848,6 +848,7 @@ impl From<Msg> for PbMsg {
                     platform: msg.platform,
                     avatar: msg.avatar.to_string(),
                     nickname: msg.nickname.to_string(),
+                    related_msg_id: msg.related_msg_id.map(|v| v.to_string()),
                     ..Default::default()
                 }
             }
@@ -873,6 +874,7 @@ impl From<Msg> for PbMsg {
                         pb_msg.platform = msg.platform;
                         pb_msg.avatar = msg.avatar.to_string();
                         pb_msg.nickname = msg.nickname.to_string();
+                        pb_msg.related_msg_id = msg.related_msg_id.map(|v| v.to_string());
                     }
                     GroupMsg::Invitation(info) => {
                         pb_msg.msg_type = MsgType::GroupInvitation as i32;

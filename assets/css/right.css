@@ -369,6 +369,7 @@
 
             .content-wrapper {
                 max-width: calc(100% - var(--avatar-width) * 2 - .6rem);
+                width: fit-content;
                 height: auto;
                 position: relative;
             }
@@ -390,6 +391,7 @@
 
             .content-wrapper {
                 max-width: calc(100% - var(--avatar-width) * 2 - .6rem);
+                width: fit-content;
                 height: auto;
                 position: relative;
             }
@@ -521,6 +523,41 @@
         .background-other {
             background-color: #90CBFB;
         }
+
+        .related-msg-wrapper {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: .2rem;
+        }
+
+        .related-msg-content {
+            width: 100%;
+            height: auto;
+            display: flex;
+            gap: .2rem;
+        }
+
+        .related-msg-right {
+            flex-direction: row-reverse;
+        }
+
+        .related-msg-left {
+            flex-direction: row;
+        }
+
+        .colunm-float-right {
+            align-items: flex-end;
+        }
+
+        .colunm-float-lef {
+            align-items: flex-start;
+        }
+
+    }
+
+    .related-msg-background {
+        background-color: rgba(red, green, blue, 0.5);
     }
 
     .msg-list::-webkit-scrollbar-button {

@@ -102,7 +102,8 @@ impl Messages for MessageRepo {
     async fn get_msg_by_local_id(&self, local_id: &str) -> Result<Option<Message>> {
         let (tx, rx) = oneshot::channel::<Option<Message>>();
         let store = self.store(MESSAGE_TABLE_NAME).await?;
-        let request = store.get(&JsValue::from(local_id))?;
+        let index = store.index(MESSAGE_ID_INDEX)?;
+        let request = index.get(&JsValue::from(local_id))?;
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()
