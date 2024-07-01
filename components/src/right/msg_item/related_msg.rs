@@ -142,6 +142,7 @@ impl Component for RelatedMsg {
                     {img_preview}
                     <div class="img-mask">
                     </div>
+                    {format!("{}: ",ctx.props().nickname)}
                     <img class="msg-item-img" src={img_url} {onclick}/>
                 </>
                 }

@@ -25,4 +25,4 @@
 - add password modify
 - we need to give the user a message if their email is already used
 - encrypt the password before send to server
-- hello message is reversed
+- bug: hello message is reversed
