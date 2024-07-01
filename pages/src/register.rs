@@ -81,15 +81,15 @@ impl Component for Register {
         let avatars = HashMap::from([
             (
                 AttrValue::from("/api/file/avatar/get/avatar1.png"),
-                AttrValue::from("avatar1"),
+                AttrValue::from("avatar1.png"),
             ),
             (
                 AttrValue::from("/api/file/avatar/get/avatar2.png"),
-                AttrValue::from("avatar2"),
+                AttrValue::from("avatar2.png"),
             ),
             (
                 AttrValue::from("/api/file/avatar/get/avatar3.png"),
-                AttrValue::from("avatar3"),
+                AttrValue::from("avatar3.png"),
             ),
         ]);
         let avatar = avatars
@@ -392,6 +392,7 @@ impl Component for Register {
                             placeholder={tr!(self.i18n, "pwd_hint")}
                             value={self.pwd.clone()}
                             oninput={ctx.link().callback(RegisterMsg::OnPwdInput)}
+                            minlength="6"
                             />
                         {pwd_strength}
                     </div>
@@ -405,6 +406,7 @@ impl Component for Register {
                             required={true}
                             autocomplete="current-password"
                             placeholder={tr!(self.i18n, "confirm_pwd_hint")}
+                            minlength="6"
                             oninput={ctx.link().callback(RegisterMsg::OnRePwdInput)}
                             />
                         {pwd_is_same}

@@ -28,6 +28,7 @@ pub struct Msg {
     pub avatar: String,
     pub nickname: String,
     pub is_resend: bool,
+    pub related_msg_id: Option<String>,
 }
 
 impl Into<Message> for Msg {
@@ -53,6 +54,7 @@ impl Into<Message> for Msg {
             avatar: self.avatar.into(),
             nickname: self.nickname.into(),
             is_resend: self.is_resend,
+            related_msg_id: self.related_msg_id.map(|v| v.into()),
         }
     }
 }

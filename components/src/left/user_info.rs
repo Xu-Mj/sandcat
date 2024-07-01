@@ -187,7 +187,7 @@ impl Component for UserInfoCom {
         <>
         <div class={"user-info"} ref={self.node.clone()}>
             <div class="friend-card-header">
-                    <img src={&ctx.props().info.avatar} class="friend-card-avatar"/>
+                    <img src={utils::get_avatar_url(&ctx.props().info.avatar)} class="friend-card-avatar"/>
                     <div class="friend-card-info">
                         // <span><b>{&self.friend.remark}</b></span>
                         <span>{tr!(self.i18n, NICKNAME)}{&ctx.props().info.name}</span>

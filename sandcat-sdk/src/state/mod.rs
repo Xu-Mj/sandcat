@@ -353,3 +353,18 @@ pub enum ConnectState {
 }
 
 impl Notify for ConnectState {}
+
+#[derive(Default, Debug, Clone, PartialEq, Store)]
+pub struct RelatedMsgState {
+    pub nickname: Option<AttrValue>,
+    pub msg: Option<Message>,
+}
+
+impl RelatedMsgState {
+    pub fn notify(nickname: AttrValue, msg: Message) {
+        Dispatch::<Self>::global().reduce_mut(|s| {
+            s.nickname = Some(nickname);
+            s.msg = Some(msg);
+        });
+    }
+}

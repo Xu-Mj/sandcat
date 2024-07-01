@@ -26,6 +26,7 @@ pub struct MessageRepo {
     on_get_list_success: SuccessCallback,
     on_update_success: SuccessCallback,
     on_del_msg_success: SuccessCallback,
+    on_update_state_success: SuccessCallback,
 }
 
 impl Deref for MessageRepo {
@@ -47,6 +48,7 @@ impl MessageRepo {
             on_get_list_success: Rc::new(RefCell::new(None)),
             on_update_success: Rc::new(RefCell::new(None)),
             on_del_msg_success: Rc::new(RefCell::new(None)),
+            on_update_state_success: Rc::new(RefCell::new(None)),
         }
     }
 }
@@ -94,6 +96,31 @@ impl Messages for MessageRepo {
 
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
 
+        Ok(rx.await.unwrap())
+    }
+
+    async fn get_msg_by_local_id(&self, local_id: &str) -> Result<Option<Message>> {
+        let (tx, rx) = oneshot::channel::<Option<Message>>();
+        let store = self.store(MESSAGE_TABLE_NAME).await?;
+        let index = store.index(MESSAGE_ID_INDEX)?;
+        let request = index.get(&JsValue::from(local_id))?;
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            let mut msg = None;
+            if !result.is_undefined() && !result.is_null() {
+                msg = Some(serde_wasm_bindgen::from_value(result).unwrap());
+            }
+            tx.send(msg).unwrap();
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+        let on_add_error = Closure::once(move |event: &Event| error!("query error: {:?}", event));
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
         Ok(rx.await.unwrap())
     }
 
@@ -222,6 +249,7 @@ impl Messages for MessageRepo {
         req.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         req.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
 
+        *self.on_update_state_success.borrow_mut() = Some(onsuccess);
         Ok(())
     }
 

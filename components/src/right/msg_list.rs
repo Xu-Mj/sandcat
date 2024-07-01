@@ -546,15 +546,16 @@ impl Component for MessageList {
 
         let conv_type = &props.conv_type;
         let friend_avatar = self.friend.as_ref().unwrap().avatar();
+        let friend_nickname = self.friend.as_ref().unwrap().name();
         let list = self
             .list
             .iter()
             .map(|(_, msg)| {
                 // let mut avatar = friend.avatar().clone();
-                let avatar = if msg.is_self {
-                    &props.cur_user_avatar
+                let (avatar, nickname) = if msg.is_self {
+                    (&props.cur_user_avatar, &props.nickname)
                 } else {
-                    &friend_avatar
+                    (&friend_avatar, &friend_nickname)
                 };
                 let mut play_audio = None;
                 if msg.content_type == ContentType::Audio {
@@ -569,7 +570,7 @@ impl Component for MessageList {
                         friend_id={&props.friend_id}
                         msg={msg.clone()}
                         {avatar}
-                        nickname={&msg.nickname}
+                        nickname={nickname}
                         conv_type={conv_type.clone()}
                         {play_audio}
                         {del_item}

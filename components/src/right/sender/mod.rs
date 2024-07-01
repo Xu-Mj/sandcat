@@ -1,13 +1,13 @@
 mod component;
 mod emoji;
 pub use component::*;
-use log::error;
 
 use fluent::FluentBundle;
 use fluent::FluentResource;
 use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
 use gloo::utils::window;
+use log::error;
 use utils::tr;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
@@ -24,13 +24,6 @@ use yew::Html;
 use yew::NodeRef;
 use yewdux::Dispatch;
 
-use crate::constant::CANCEL;
-use crate::constant::DISABLED;
-use crate::constant::GROUP_DISMISSED;
-use crate::constant::SEND;
-use crate::constant::SUBMIT;
-use crate::constant::VERIFY_NEEDED;
-use crate::right::sender::emoji::EmojiPanel;
 use icons::{CloseIcon, FileIcon, ImageIcon, PhoneIcon, VideoIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
@@ -42,8 +35,25 @@ use sandcat_sdk::model::voice::Voice;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::state::MobileState;
+use sandcat_sdk::state::RelatedMsgState;
 use sandcat_sdk::state::SendAudioMsgState;
 use sandcat_sdk::state::SendMessageState;
+
+use crate::constant::AUDIO;
+use crate::constant::AUDIO_CALL;
+use crate::constant::CANCEL;
+use crate::constant::DISABLED;
+use crate::constant::EMOJI;
+use crate::constant::ERROR;
+use crate::constant::FILE;
+use crate::constant::GROUP_DISMISSED;
+use crate::constant::IMAGE;
+use crate::constant::SEND;
+use crate::constant::SUBMIT;
+use crate::constant::VERIFY_NEEDED;
+use crate::constant::VIDEO;
+use crate::constant::VIDEO_CALL;
+use crate::right::sender::emoji::EmojiPanel;
 
 use super::emoji::Emoji;
 
@@ -79,6 +89,9 @@ pub struct Sender {
     enter_key_down: i64,
     is_key_down: bool,
     is_voice_mode: bool,
+    /// nickname, local_id, message type,content
+    related_msg: Option<(AttrValue, AttrValue, ContentType, AttrValue)>,
+    _related_msg_state: Dispatch<RelatedMsgState>,
 }
 
 impl Sender {
@@ -336,6 +349,7 @@ impl Sender {
 
             let send_id = ctx.props().cur_user_id.clone();
             let platform = self.get_platform();
+
             let msg = Message {
                 local_id: nanoid::nanoid!().into(),
                 server_id: AttrValue::default(),
@@ -350,6 +364,7 @@ impl Sender {
                 send_status: SendStatus::Sending,
                 avatar: ctx.props().avatar.clone(),
                 nickname: ctx.props().nickname.clone(),
+                related_msg_id: self.related_msg.take().map(|v| v.1),
                 ..Default::default()
             };
             self.store_send_msg(ctx, msg);
@@ -517,6 +532,21 @@ impl Sender {
             html!(<EmojiPanel send={callback} close={onblur}/>)
         } else {
             html!()
+        }
+    }
+
+    fn get_msg_type(&self, msg_type: ContentType, content: &AttrValue) -> AttrValue {
+        match msg_type {
+            ContentType::Text => content.clone(),
+            ContentType::Image => AttrValue::from(tr!(self.i18n, IMAGE)),
+            ContentType::Video => AttrValue::from(tr!(self.i18n, VIDEO)),
+            ContentType::File => AttrValue::from(tr!(self.i18n, FILE)),
+            ContentType::Emoji => AttrValue::from(tr!(self.i18n, EMOJI)),
+            ContentType::Default => AttrValue::from(""),
+            ContentType::VideoCall => AttrValue::from(tr!(self.i18n, VIDEO_CALL)),
+            ContentType::AudioCall => AttrValue::from(tr!(self.i18n, AUDIO_CALL)),
+            ContentType::Audio => AttrValue::from(tr!(self.i18n, AUDIO)),
+            ContentType::Error => AttrValue::from(tr!(self.i18n, ERROR)),
         }
     }
 }

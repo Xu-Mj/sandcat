@@ -8,7 +8,7 @@ use sandcat_sdk::model::ContentType;
 use sandcat_sdk::state::{I18nState, Notify};
 use utils::tr;
 
-use crate::constant::{DELETE, FORWARD};
+use crate::constant::{DELETE, FORWARD, RELATED};
 
 pub struct MsgRightClick {
     node: NodeRef,
@@ -23,6 +23,7 @@ pub struct RightClickPanelProps {
     pub close: Callback<()>,
     pub delete: Callback<()>,
     pub forward: Callback<()>,
+    pub related: Callback<()>,
 }
 
 pub enum RightClickPanelMsg {}
@@ -48,6 +49,7 @@ impl Component for MsgRightClick {
         let style = format!("left: {}px; top: {}px;", ctx.props().x, ctx.props().y);
 
         let mut forward = html!();
+        let mut related = html!();
         if ctx.props().content_type != ContentType::Audio
             || ctx.props().content_type != ContentType::AudioCall
             || ctx.props().content_type != ContentType::VideoCall
@@ -55,6 +57,12 @@ impl Component for MsgRightClick {
             forward = html!(
                  <div class="right-click-panel-item hover" onclick={ctx.props().forward.reform(|_|())}>
                      {tr!(self.i18n, FORWARD)}
+                 </div>
+            );
+
+            related = html!(
+                 <div class="right-click-panel-item hover" onclick={ctx.props().related.reform(|_|())}>
+                     {tr!(self.i18n, RELATED)}
                  </div>
             );
         };
@@ -68,6 +76,7 @@ impl Component for MsgRightClick {
                     {tr!(self.i18n, DELETE)}
                 </div>
                 {forward}
+                {related}
             </div>
         }
     }

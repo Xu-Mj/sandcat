@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
     ClipboardEvent, DataTransferItem, DataTransferItemList, HtmlElement, HtmlInputElement,
@@ -7,12 +9,12 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{FileIcon, KeyboardIcon, SmileIcon, VoiceIcon};
+use icons::{CloseIcon, FileIcon, KeyboardIcon, SmileIcon, VoiceIcon};
 use sandcat_sdk::model::voice::Voice;
 use sandcat_sdk::{
     model::message::{InviteMsg, InviteType, Message, SendStatus},
     model::{ContentType, RightContentType},
-    state::{MobileState, SendCallState},
+    state::{MobileState, RelatedMsgState, SendCallState},
 };
 use utils::tr;
 
@@ -41,6 +43,8 @@ pub enum SenderMsg {
     OnTextInput,
     VoiceIconClicked,
     SendVoice(Voice),
+    RelatedMsgStateChanged(Rc<RelatedMsgState>),
+    DelRelatMsg,
 }
 
 #[derive(Properties, PartialEq, Debug)]
@@ -66,6 +70,10 @@ impl Component for Sender {
             LanguageType::EnUS => en_us::SENDER,
         };
         let i18n = utils::create_bundle(res);
+
+        // listen related message state
+        let _related_msg_state = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(SenderMsg::RelatedMsgStateChanged));
         // 加载表情
         Self {
             is_warn_needed: false,
@@ -82,6 +90,8 @@ impl Component for Sender {
             enter_key_down: 0,
             is_key_down: false,
             is_voice_mode: false,
+            related_msg: None,
+            _related_msg_state,
         }
     }
 
@@ -281,6 +291,25 @@ impl Component for Sender {
                 self.send_voice_msg(ctx, voice);
                 false
             }
+            SenderMsg::RelatedMsgStateChanged(state) => {
+                if state.msg.is_none() {
+                    self.related_msg = None;
+                    return false;
+                }
+                let msg = state.msg.as_ref().unwrap();
+                self.related_msg = Some((
+                    state.nickname.as_ref().unwrap().clone(),
+                    msg.local_id.clone(),
+                    msg.content_type,
+                    state.msg.as_ref().unwrap().content.clone(),
+                ));
+                true
+            }
+            SenderMsg::DelRelatMsg => {
+                self.related_msg = None;
+                self._related_msg_state.reduce_mut(|s| s.msg = None);
+                true
+            }
         }
     }
 
@@ -326,6 +355,17 @@ impl Component for Sender {
             html!()
         };
 
+        // related message
+        let mut related_msg_html = html!();
+
+        if let Some((ref nickname, _, t, ref content)) = self.related_msg {
+            related_msg_html = html! {
+                <p class="related-msg related-msg-background">
+                    {&nickname}{":"}{self.get_msg_type(t, content)}
+                    <span onclick={ctx.link().callback(|_|SenderMsg::DelRelatMsg)}><CloseIcon/></span> </p>
+            };
+        }
+
         html! {
             <>
                 {file_sender_html}
@@ -363,8 +403,12 @@ impl Component for Sender {
                             onkeydown={ctx.link().callback(SenderMsg::OnEnterKeyDown)}
                             onkeyup={ctx.link().callback(SenderMsg::OnEnterKeyUp)}>
                         </textarea>
-                        {warn_html}
-                        {send_btn}
+                        // sender footer contains related message, warn message and send button
+                        <div class="sender-footer">
+                            {warn_html}
+                            {related_msg_html}
+                            {send_btn}
+                        </div>
                     </div>
                     {disable_html}
                 </div>

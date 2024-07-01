@@ -57,6 +57,7 @@ pub const MESSAGE: &str = "message";
 pub const ACCEPT: &str = "accept";
 pub const HELLO: &str = "hello";
 pub const FORWARD: &str = "forward";
+pub const RELATED: &str = "related";
 pub const CANCEL_MOBILE: &str = "cancel_mobile";
 pub const SEND_MOBILE: &str = "send_mobile";
 pub const PRESS: &str = "press";
