@@ -358,6 +358,7 @@ pub struct ServerResponse {
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_status: SendStatus,
+    pub send_time: i64,
     pub err_msg: Option<AttrValue>,
     pub resp_msg_type: RespMsgType,
 }
@@ -807,6 +808,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                     SendStatus::Success
                 },
                 err_msg: None,
+                send_time: msg.send_time,
                 server_id: msg.server_id.into(),
                 resp_msg_type: msg_type,
             }))

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use log::error;
+use log::{error, warn};
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -205,8 +205,8 @@ impl Chats {
                             .agree_by_friend_id(friend.friend_id.as_str())
                             .await
                         {
-                            error!("agree friendship error:{:?}", err);
-                            return ChatsMsg::None;
+                            warn!("agree friendship error:{:?}", err);
+                            // return ChatsMsg::None;
                         }
                         // select friend if exist
                         let f = db::db_ins().friends.get(&friend.friend_id).await;

@@ -118,6 +118,7 @@ impl Chats {
         // query conversation list
         let user_id = id.clone();
         ctx.link().send_future(async move {
+            // sync contacts
             let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
             // pull offline messages
             // get the seq
@@ -452,6 +453,7 @@ impl Chats {
                             friend_id,
                             conv_type,
                             mute: false,
+                            is_pined: false,
                         }
                     }
                     RightContentType::Group => {
@@ -484,6 +486,7 @@ impl Chats {
                             friend_id,
                             conv_type,
                             mute: false,
+                            is_pined: false,
                         }
                     }
                     _ => {

@@ -9,14 +9,14 @@ use web_sys::{
 use yew::prelude::*;
 
 use crate::db::{
-    CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME, FRIENDSHIP_ID_INDEX,
-    FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_ADDRESS_INDEX, FRIEND_GENDER_INDEX,
-    FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX, FRIEND_REMARK_INDEX, FRIEND_TABLE_NAME,
-    FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX, GROUP_ID_AND_USER_ID, GROUP_ID_INDEX,
-    GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME, GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX,
-    MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
-    MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX,
-    SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
+    CONVERSATION_IS_PINED_INDEX, CONVERSATION_LAST_MSG_TIME_INDEX, CONVERSATION_TABLE_NAME,
+    FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX, FRIEND_ADDRESS_INDEX,
+    FRIEND_GENDER_INDEX, FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX, FRIEND_REMARK_INDEX,
+    FRIEND_TABLE_NAME, FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX, GROUP_ID_AND_USER_ID,
+    GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME, GROUP_TABLE_NAME,
+    MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX,
+    MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX,
+    MESSAGE_TYPE_INDEX, SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
 };
 
 use super::DB_NAME;
@@ -138,17 +138,12 @@ impl Repository {
                     &String::from(CONVERSATION_TABLE_NAME),
                     &parameters,
                 )
-                .unwrap(); /* let store = db
-                           .create_object_store_with_optional_parameters(
-                               &String::from(CONVERSATION_TABLE_NAME),
-                               &parameters,
-                           )
-                           .unwrap(); */
-            // store
-            //     .create_index_with_str(CONVERSATION_FRIEND_ID_INDEX, "friend_id")
-            //     .unwrap();
+                .unwrap();
             store
                 .create_index_with_str(CONVERSATION_LAST_MSG_TIME_INDEX, "last_msg_time")
+                .unwrap();
+            store
+                .create_index_with_str(CONVERSATION_IS_PINED_INDEX, "is_pined")
                 .unwrap();
 
             let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
@@ -272,7 +267,7 @@ impl Repository {
         transaction.object_store(name)
     }
 
-    pub async fn delete_db(&self) {
+    pub async fn delete_db() {
         let db_name = DB_NAME.get().unwrap();
 
         let window = web_sys::window().unwrap();
