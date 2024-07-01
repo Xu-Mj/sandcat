@@ -438,8 +438,6 @@ impl Component for MsgItem {
                 <div class="msg-item-avatar">
                     {avatar}
                 </div>
-                // {content}
-                // {send_status}
                 {related_msg}
             </div>
             </>
