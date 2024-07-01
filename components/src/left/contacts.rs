@@ -74,7 +74,7 @@ pub enum ContactsMsg {
     FriendListStateChanged(Rc<FriendListState>),
     QueryFriendship(usize),
     NewFriendClicked,
-    ShowContextMenu((i32, i32), AttrValue, bool),
+    ShowContextMenu((i32, i32), AttrValue, bool, bool),
     RemoveFriend(Rc<RemoveFriendState>),
     AddFriend(Rc<AddFriendState>),
     SwitchLanguage(Rc<I18nState>),
@@ -239,7 +239,7 @@ impl Component for Contacts {
                 });
                 true
             }
-            ContactsMsg::ShowContextMenu((_x, _y), _id, _is_mute) => {
+            ContactsMsg::ShowContextMenu((_x, _y), _id, _is_mute, _pin) => {
                 // event.prevent_default();
                 self.show_context_menu = true;
                 true
@@ -338,9 +338,9 @@ impl Component for Contacts {
         };
         // 根据搜索结果显示联系人列表，
         // 如果是搜索状态，那么搜索结果为空时需要提示用户没有结果
-        let oncontextmenu = ctx
-            .link()
-            .callback(|((x, y), id, is_mute)| ContactsMsg::ShowContextMenu((x, y), id, is_mute));
+        let oncontextmenu = ctx.link().callback(|((x, y), id, is_mute, is_pined)| {
+            ContactsMsg::ShowContextMenu((x, y), id, is_mute, is_pined)
+        });
         let content = if self.is_searching {
             if self.result.is_empty() {
                 html! {<div class="no-result">{tr!(self.i18n, NO_RESULT)}</div>}
@@ -409,7 +409,7 @@ impl Component for Contacts {
 
 fn get_list_item(
     item: &impl ItemInfo,
-    oncontextmenu: Callback<((i32, i32), AttrValue, bool)>,
+    oncontextmenu: Callback<((i32, i32), AttrValue, bool, bool)>,
 ) -> Html {
     html! {
         <ListItem
@@ -427,6 +427,7 @@ fn get_list_item(
             conv_type={item.get_type()}
             {oncontextmenu}
             mute={false}
+            pined={false}
             key={item.id().as_str()} />
     }
 }

@@ -90,6 +90,8 @@ pub const RIGHT_CLICK_PANEL: &str = r#"
 delete = 删除
 mute = 消息免打扰
 un_mute = 取消免打扰
+pin = 置顶
+un_pin = 取消置顶
 forward = 转发
 related = 引用
 "#;

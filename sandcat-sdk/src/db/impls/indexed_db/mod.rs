@@ -50,7 +50,7 @@ pub const FRIEND_ADDRESS_INDEX: &str = "address";
 pub const FRIEND_TIME_INDEX: &str = "time";
 
 // pub const CONVERSATION_FRIEND_ID_INDEX: &str = "friend_id";
-// pub const CONVERSATION_LAST_MSG_TIME_INDEX: &str = "last_msg_time";
+pub const CONVERSATION_LAST_MSG_TIME_INDEX: &str = "last_msg_time";
 pub const CONVERSATION_IS_PINED_WITH_TIME_INDEX: &str = "is_pined_with_time";
 
 // pub const MESSAGE_USER_ID_INDEX: &str = "user_id";

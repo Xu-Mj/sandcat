@@ -37,6 +37,13 @@ use crate::top_bar::TopBar;
 
 use super::Chats;
 
+type QueryResult = (
+    IndexMap<AttrValue, Conversation>,
+    IndexMap<AttrValue, Conversation>,
+    Vec<PbMsg>,
+    Seq,
+);
+
 #[derive(Debug)]
 pub enum ChatsMsg {
     /// filter conversations for local data
@@ -44,7 +51,7 @@ pub enum ChatsMsg {
     /// clean filter result
     CleanupSearchResult,
     /// query conversation list from db
-    QueryConvList((IndexMap<AttrValue, Conversation>, Vec<PbMsg>, Seq)),
+    QueryConvList(QueryResult),
     /// receive a message from server
     ReceiveMsg(Msg),
     /// send message from sender component
@@ -62,12 +69,14 @@ pub enum ChatsMsg {
     CreateGroup(Vec<String>),
     SendBackGroupInvitation(AttrValue),
     /// right click menu, contains click position, conv id and if mute
-    ShowContextMenu((i32, i32), AttrValue, bool),
+    ShowContextMenu((i32, i32), AttrValue, bool, bool),
     CloseContextMenu,
     /// delete conversation
     DeleteItem,
     /// mute conversation
     Mute,
+    /// pin conversation to top
+    Pin,
     /// do nothing
     None,
     /// create a conversation item by received state
@@ -133,7 +142,7 @@ impl Component for Chats {
                         }
                     });
 
-                    self.pin_list.iter().for_each(|(key, item)| {
+                    self.pined_list.iter().for_each(|(key, item)| {
                         if item.name.contains(pattern.as_str()) {
                             self.result.insert((*key).clone(), (*item).clone());
                         }
@@ -146,7 +155,8 @@ impl Component for Chats {
                 self.result.clear();
                 true
             }
-            ChatsMsg::QueryConvList((convs, messages, seq)) => {
+            ChatsMsg::QueryConvList((pined_list, convs, messages, seq)) => {
+                self.pined_list = pined_list;
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
@@ -188,15 +198,15 @@ impl Component for Chats {
                 //     ))));
                 false
             }
-            ChatsMsg::ShowContextMenu((x, y), id, is_mute) => {
+            ChatsMsg::ShowContextMenu((x, y), id, is_mute, is_pined) => {
                 // event.prevent_default();
-                self.context_menu_pos = (x, y, id, is_mute);
+                self.context_menu_pos = (x, y, id, is_mute, is_pined);
                 self.show_context_menu = true;
                 true
             }
             ChatsMsg::CloseContextMenu => {
                 self.show_context_menu = false;
-                self.context_menu_pos = (0, 0, AttrValue::default(), false);
+                self.context_menu_pos = (0, 0, AttrValue::default(), false, false);
                 true
             }
             ChatsMsg::DeleteItem => {
@@ -223,6 +233,7 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::Mute => self.mute(),
+            ChatsMsg::Pin => self.pin(),
             ChatsMsg::CreateConvStateChanged(state) => {
                 match state.type_ {
                     RightContentType::Friend => {}
@@ -429,8 +440,10 @@ impl Component for Chats {
                     y={self.context_menu_pos.1}
                     close={ctx.link().callback( |_|ChatsMsg::CloseContextMenu)}
                     mute={ctx.link().callback(|_| ChatsMsg::Mute)}
+                    pin={ctx.link().callback(|_| ChatsMsg::Pin)}
                     delete={ctx.link().callback(|_|ChatsMsg::DeleteItem)}
                     is_mute={self.context_menu_pos.3}
+                    is_pined={self.context_menu_pos.4}
                     lang={self.lang_state.lang}/>
             }
         }

@@ -55,7 +55,7 @@ pub struct Chats {
     /// used to determine whether the message is the latest message
     seq: Seq,
     /// pin list
-    pin_list: IndexMap<AttrValue, Conversation>,
+    pined_list: IndexMap<AttrValue, Conversation>,
     /// the list of conversations
     list: IndexMap<AttrValue, Conversation>,
     /// search result list
@@ -70,7 +70,7 @@ pub struct Chats {
     show_context_menu: bool,
     i18n: FluentBundle<FluentResource>,
     /// hold right click item position and id
-    context_menu_pos: (i32, i32, AttrValue, bool),
+    context_menu_pos: (i32, i32, AttrValue, bool, bool),
 
     /// receive the message state from sender
     /// sender send message through Home Component
@@ -118,7 +118,11 @@ impl Chats {
         // query conversation list
         let user_id = id.clone();
         ctx.link().send_future(async move {
-            // sync contacts
+            let pined_convs = db::db_ins()
+                .convs
+                .get_pined_convs()
+                .await
+                .unwrap_or_default();
             let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
             // pull offline messages
             // get the seq
@@ -148,7 +152,7 @@ impl Chats {
                     return ChatsMsg::None;
                 }
             }
-            ChatsMsg::QueryConvList((convs, messages, local_seq))
+            ChatsMsg::QueryConvList((pined_convs, convs, messages, local_seq))
         });
         // we need use conv state to rerender the chats component, so use subscribe in create
         let conv_dispatch =
@@ -197,14 +201,14 @@ impl Chats {
             call_msg: SingleCall::default(),
             ws,
             seq: Seq::default(),
-            pin_list: IndexMap::new(),
+            pined_list: IndexMap::new(),
             list: IndexMap::new(),
             result: IndexMap::new(),
             query_complete: false,
             is_searching: false,
             show_friend_list: false,
             show_context_menu: false,
-            context_menu_pos: (0, 0, AttrValue::default(), false),
+            context_menu_pos: (0, 0, AttrValue::default(), false, false),
             _remove_conv_dis,
             _send_msg_dis,
             _create_conv_dis,
@@ -312,7 +316,7 @@ impl Chats {
         }
 
         self.show_context_menu = false;
-        self.context_menu_pos = (0, 0, AttrValue::default(), false);
+        self.context_menu_pos = (0, 0, AttrValue::default(), false, false);
     }
 
     fn mute(&mut self) -> bool {
@@ -342,18 +346,40 @@ impl Chats {
         false
     }
 
+    fn pin(&mut self) -> bool {
+        if let Some(conv) = self.list.get_mut(&self.context_menu_pos.2) {
+            conv.is_pined = !conv.is_pined;
+            let conv = conv.clone();
+
+            spawn_local(async move {
+                if let Err(e) = db::db_ins().convs.mute(&conv).await {
+                    log::error!("pin/un-pin conversation err: {:?}", e);
+                }
+            });
+
+            self.show_context_menu = false;
+            return true;
+        }
+        false
+    }
+
     fn render_result(&self, ctx: &Context<Self>) -> Html {
         self.render(&self.result, ctx)
     }
 
     fn render_list(&self, ctx: &Context<Self>) -> Html {
-        self.render(&self.list, ctx)
+        html! {
+        <>
+            {self.render(&self.pined_list, ctx)}
+            {self.render(&self.list, ctx)}
+        </>
+        }
     }
 
     fn render(&self, list: &IndexMap<AttrValue, Conversation>, ctx: &Context<Self>) -> Html {
-        let oncontextmenu = ctx
-            .link()
-            .callback(|((x, y), id, is_mute)| ChatsMsg::ShowContextMenu((x, y), id, is_mute));
+        let oncontextmenu = ctx.link().callback(|((x, y), id, is_mute, is_pined)| {
+            ChatsMsg::ShowContextMenu((x, y), id, is_mute, is_pined)
+        });
 
         list.iter()
             .map(|(_id, item)| self.get_list_item(item, oncontextmenu.clone()))
@@ -363,7 +389,7 @@ impl Chats {
     fn get_list_item(
         &self,
         item: &Conversation,
-        oncontextmenu: Callback<((i32, i32), AttrValue, bool)>,
+        oncontextmenu: Callback<((i32, i32), AttrValue, bool, bool)>,
     ) -> Html {
         let remark = get_msg_type(&self.i18n, item.last_msg_type, &item.last_msg);
         let name = if let Some(remark) = &item.remark {
@@ -383,6 +409,7 @@ impl Chats {
                 conv_type={item.conv_type.clone()}
                 oncontextmenu={oncontextmenu.clone()}
                 mute={item.mute}
+                pined={item.is_pined}
                 key={item.friend_id.clone().as_str()} />
         )
     }

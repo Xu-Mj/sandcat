@@ -32,8 +32,10 @@ pub struct ListItemProps {
     pub component_type: ComponentType,
     pub unread_count: usize,
     pub conv_type: RightContentType,
-    pub oncontextmenu: Callback<((i32, i32), AttrValue, bool)>,
+    /// position x/y, item id, is_mute, is pined
+    pub oncontextmenu: Callback<((i32, i32), AttrValue, bool, bool)>,
     pub mute: bool,
+    pub pined: bool,
 }
 
 pub enum ListItemMsg {
@@ -147,6 +149,7 @@ impl Component for ListItem {
                     (event.client_x(), event.client_y()),
                     ctx.props().props.id.clone(),
                     ctx.props().mute,
+                    ctx.props().pined,
                 ));
                 false
             }
@@ -155,6 +158,7 @@ impl Component for ListItem {
                 let oncontextmenu = ctx.props().oncontextmenu.clone();
                 let id = ctx.props().props.id.clone();
                 let mute = ctx.props().mute;
+                let pined = ctx.props().pined;
                 let ctx = ctx.link().clone();
                 self.long_press_timer = Some(Timeout::new(500, move || {
                     if let Some(event) = event.changed_touches().get(0) {
@@ -163,6 +167,7 @@ impl Component for ListItem {
                             (event.client_x(), event.client_y()),
                             id.clone(),
                             mute,
+                            pined,
                         ));
                     }
                     ctx.send_message(ListItemMsg::CleanTimer);
@@ -184,6 +189,7 @@ impl Component for ListItem {
                             (event.client_x(), event.client_y()),
                             ctx.props().props.id.clone(),
                             ctx.props().mute,
+                            ctx.props().pined,
                         ));
                     }
                 } else {
