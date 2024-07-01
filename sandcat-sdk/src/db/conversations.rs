@@ -14,6 +14,8 @@ pub trait Conversations: Debug {
 
     async fn self_update_conv(&self, conv: Conversation) -> Result<Conversation>;
 
+    async fn get_pined_convs(&self) -> Result<IndexMap<AttrValue, Conversation>>;
+
     async fn get_convs(&self) -> Result<IndexMap<AttrValue, Conversation>>;
 
     async fn get_by_frined_id(&self, friend_id: &str) -> Result<Option<Conversation>>;
