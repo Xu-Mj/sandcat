@@ -335,7 +335,7 @@ impl Chats {
             let conv = conv.clone();
 
             spawn_local(async move {
-                if let Err(e) = db::db_ins().convs.mute(&conv).await {
+                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                     log::error!("mute conversation err: {:?}", e);
                 }
             });
@@ -346,21 +346,30 @@ impl Chats {
         false
     }
 
-    fn pin(&mut self) -> bool {
-        if let Some(conv) = self.list.get_mut(&self.context_menu_pos.2) {
-            conv.is_pined = !conv.is_pined;
-            let conv = conv.clone();
-
+    fn pin(&mut self, to_pin: bool) -> bool {
+        // use closure to handle pin
+        let update_conv = |conv: Conversation| {
             spawn_local(async move {
-                if let Err(e) = db::db_ins().convs.mute(&conv).await {
+                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                     log::error!("pin/un-pin conversation err: {:?}", e);
                 }
             });
-
-            self.show_context_menu = false;
-            return true;
+        };
+        // from un-pin to pin
+        if to_pin {
+            if let Some(mut conv) = self.list.shift_remove(&self.context_menu_pos.2) {
+                conv.is_pined = 1;
+                self.pined_list.insert(conv.friend_id.clone(), conv.clone());
+                update_conv(conv);
+            }
+        } else if let Some(mut conv) = self.pined_list.shift_remove(&self.context_menu_pos.2) {
+            conv.is_pined = 0;
+            self.list.insert(conv.friend_id.clone(), conv.clone());
+            update_conv(conv);
         }
-        false
+
+        self.show_context_menu = false;
+        true
     }
 
     fn render_result(&self, ctx: &Context<Self>) -> Html {
@@ -409,7 +418,7 @@ impl Chats {
                 conv_type={item.conv_type.clone()}
                 oncontextmenu={oncontextmenu.clone()}
                 mute={item.mute}
-                pined={item.is_pined}
+                pined={item.is_pined==1}
                 key={item.friend_id.clone().as_str()} />
         )
     }
@@ -480,7 +489,7 @@ impl Chats {
                             friend_id,
                             conv_type,
                             mute: false,
-                            is_pined: false,
+                            is_pined: 0,
                         }
                     }
                     RightContentType::Group => {
@@ -513,7 +522,7 @@ impl Chats {
                             friend_id,
                             conv_type,
                             mute: false,
-                            is_pined: false,
+                            is_pined: 0,
                         }
                     }
                     _ => {

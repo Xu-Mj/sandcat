@@ -76,7 +76,7 @@ pub enum ChatsMsg {
     /// mute conversation
     Mute,
     /// pin conversation to top
-    Pin,
+    Pin(bool),
     /// do nothing
     None,
     /// create a conversation item by received state
@@ -233,7 +233,7 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::Mute => self.mute(),
-            ChatsMsg::Pin => self.pin(),
+            ChatsMsg::Pin(is_pined) => self.pin(is_pined),
             ChatsMsg::CreateConvStateChanged(state) => {
                 match state.type_ {
                     RightContentType::Friend => {}
@@ -440,10 +440,10 @@ impl Component for Chats {
                     y={self.context_menu_pos.1}
                     close={ctx.link().callback( |_|ChatsMsg::CloseContextMenu)}
                     mute={ctx.link().callback(|_| ChatsMsg::Mute)}
-                    pin={ctx.link().callback(|_| ChatsMsg::Pin)}
+                    pin={ctx.link().callback(ChatsMsg::Pin)}
                     delete={ctx.link().callback(|_|ChatsMsg::DeleteItem)}
                     is_mute={self.context_menu_pos.3}
-                    is_pined={self.context_menu_pos.4}
+                    is_pinned={self.context_menu_pos.4}
                     lang={self.lang_state.lang}/>
             }
         }

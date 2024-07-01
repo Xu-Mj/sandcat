@@ -36,7 +36,7 @@ pub struct Conversation {
     pub unread_count: usize,
     pub mute: bool,
     #[serde(default)]
-    pub is_pined: bool,
+    pub is_pined: u8,
 }
 
 impl From<Message> for Conversation {
@@ -52,7 +52,7 @@ impl From<Message> for Conversation {
             name: msg.nickname,
             remark: None,
             mute: false,
-            is_pined: false,
+            is_pined: 0,
         }
     }
 }

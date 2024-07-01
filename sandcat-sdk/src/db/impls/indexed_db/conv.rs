@@ -49,12 +49,6 @@ impl ConvRepo {
 
 #[async_trait::async_trait(?Send)]
 impl Conversations for ConvRepo {
-    async fn mute(&self, conv: &Conversation) -> Result<()> {
-        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
-        store.put(&serde_wasm_bindgen::to_value(&conv)?)?;
-        Ok(())
-    }
-
     // 使用put方法，不存在创建，存在则直接更新
     async fn put_conv(&self, conv: &Conversation) -> Result<()> {
         let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
@@ -105,11 +99,11 @@ impl Conversations for ConvRepo {
         // )?;
 
         let start_key = js_sys::Array::new();
-        start_key.push(&JsValue::from(true));
+        start_key.push(&JsValue::from(1));
         start_key.push(&JsValue::from_f64(f64::NEG_INFINITY));
 
         let end_key = js_sys::Array::new();
-        end_key.push(&JsValue::from(true));
+        end_key.push(&JsValue::from(1));
         end_key.push(&JsValue::from_f64(f64::INFINITY));
 
         let range = IdbKeyRange::bound(&JsValue::from(start_key), &JsValue::from(end_key))?;
@@ -164,11 +158,11 @@ impl Conversations for ConvRepo {
         let index = store.index(CONVERSATION_IS_PINED_WITH_TIME_INDEX)?;
 
         let start_key = js_sys::Array::new();
-        start_key.push(&JsValue::from(false));
+        start_key.push(&JsValue::from(0));
         start_key.push(&JsValue::from_f64(f64::NEG_INFINITY));
 
         let end_key = js_sys::Array::new();
-        end_key.push(&JsValue::from(false));
+        end_key.push(&JsValue::from(0));
         end_key.push(&JsValue::from_f64(f64::INFINITY));
 
         let range = IdbKeyRange::bound(&JsValue::from(start_key), &JsValue::from(end_key))?;
