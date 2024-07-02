@@ -26,3 +26,5 @@
 - we need to give the user a message if their email is already used
 - encrypt the password before send to server
 - bug: hello message is reversed
+- bug: need to refresh contacts list after offline message synced
+- bug: add friend page need to listen input change event

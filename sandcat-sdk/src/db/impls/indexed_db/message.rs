@@ -13,11 +13,11 @@ use crate::db::messages::Messages;
 use crate::error::Result;
 use crate::model::message::{Message, ServerResponse};
 
-use super::SuccessCallback;
 use super::{
     repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX,
     MESSAGE_TABLE_NAME,
 };
+use super::{SuccessCallback, MESSAGE_FRIEND_AND_SEND_TIME_INDEX};
 
 #[derive(Debug)]
 pub struct MessageRepo {
@@ -136,12 +136,20 @@ impl Messages for MessageRepo {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Message>>();
         // let (tx, rx) = oneshot::channel::<Vec<Message>>();
         let store = self.store(MESSAGE_TABLE_NAME).await?;
-        let rang = IdbKeyRange::only(&JsValue::from(friend_id))?;
-        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
-        let request = index.open_cursor_with_range_and_direction(
-            &JsValue::from(&rang),
-            web_sys::IdbCursorDirection::Prev,
-        )?;
+
+        let index = store.index(MESSAGE_FRIEND_AND_SEND_TIME_INDEX)?;
+
+        let start_key = js_sys::Array::new();
+        start_key.push(&JsValue::from(friend_id));
+        start_key.push(&JsValue::from_f64(f64::NEG_INFINITY));
+
+        let end_key = js_sys::Array::new();
+        end_key.push(&JsValue::from(friend_id));
+        end_key.push(&JsValue::from_f64(f64::INFINITY));
+
+        let range = IdbKeyRange::bound(&JsValue::from(start_key), &JsValue::from(end_key))?;
+        let request = index
+            .open_cursor_with_range_and_direction(&range, web_sys::IdbCursorDirection::Prev)?;
 
         let messages = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
         let messages = messages.clone();
@@ -153,7 +161,7 @@ impl Messages for MessageRepo {
             let req = target
                 .dyn_ref::<IdbRequest>()
                 .expect("Event target is IdbRequest; qed");
-            let result = req.result().unwrap_or_else(|_err| JsValue::null());
+            let result = req.result().unwrap_or(JsValue::null());
 
             if !result.is_null() {
                 let cursor = result
@@ -189,10 +197,10 @@ impl Messages for MessageRepo {
     }
 
     async fn add_message(&self, msg: &mut Message) -> Result<()> {
-        let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
-        let index = store.index(MESSAGE_ID_INDEX).unwrap();
+        let store = self.store(MESSAGE_TABLE_NAME).await?;
+        let index = store.index(MESSAGE_ID_INDEX)?;
         let (tx, rx) = oneshot::channel::<Option<Message>>();
-        let req = index.get(&JsValue::from(msg.local_id.as_str())).unwrap();
+        let req = index.get(&JsValue::from(msg.local_id.as_str()))?;
 
         let onsuccess = Closure::once(move |event: &Event| {
             let value = event
@@ -220,13 +228,14 @@ impl Messages for MessageRepo {
     }
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()> {
-        let store = self.store(MESSAGE_TABLE_NAME).await.unwrap();
-        let index = store.index(MESSAGE_ID_INDEX).unwrap();
+        let store = self.store(MESSAGE_TABLE_NAME).await?;
+        let index = store.index(MESSAGE_ID_INDEX)?;
         let req = index.get(&JsValue::from(msg.local_id.as_str()))?;
 
         let store = store.clone();
         let send_status = msg.send_status.clone();
         let server_id = msg.server_id.clone();
+        let send_time = msg.send_time;
 
         let onsuccess = Closure::once(move |event: &Event| {
             let value = event
@@ -240,6 +249,8 @@ impl Messages for MessageRepo {
                 let mut result: Message = serde_wasm_bindgen::from_value(value).unwrap();
                 result.send_status = send_status;
                 result.server_id = server_id;
+                result.send_time = send_time;
+
                 store
                     .put(&serde_wasm_bindgen::to_value(&result).unwrap())
                     .unwrap();

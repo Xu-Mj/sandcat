@@ -6,7 +6,7 @@ use yew::{Component, Properties};
 use i18n::{en_us, zh_cn, LanguageType};
 use utils::tr;
 
-use crate::constant::{DELETE, MUTE, UN_MUTE};
+use crate::constant::{DELETE, MUTE, PIN, UN_MUTE, UN_PIN};
 
 pub struct RightClickPanel {
     node: NodeRef,
@@ -20,6 +20,8 @@ pub struct RightClickPanelProps {
     pub close: Callback<()>,
     pub delete: Callback<()>,
     pub mute: Callback<()>,
+    pub pin: Callback<bool>,
+    pub is_pinned: bool,
     pub is_mute: bool,
     pub lang: LanguageType,
 }
@@ -50,6 +52,12 @@ impl Component for RightClickPanel {
         } else {
             tr!(self.i18n, MUTE)
         };
+        let pin_str = if ctx.props().is_pinned {
+            tr!(self.i18n, UN_PIN)
+        } else {
+            tr!(self.i18n, PIN)
+        };
+        let pinned = ctx.props().is_pinned;
         html! {
             <div ref={self.node.clone()}
                 {style}
@@ -61,6 +69,9 @@ impl Component for RightClickPanel {
                 </div>
                 <div class="right-click-panel-item hover" onclick={ctx.props().mute.reform(|_|())}>
                     {mute_str}
+                </div>
+                <div class="right-click-panel-item hover" onclick={ctx.props().pin.reform(move |_|!pinned)}>
+                    {pin_str}
                 </div>
             </div>
         }

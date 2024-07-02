@@ -8,11 +8,11 @@ use crate::model::conversation::Conversation;
 
 #[async_trait::async_trait(?Send)]
 pub trait Conversations: Debug {
-    async fn mute(&self, conv: &Conversation) -> Result<()>;
-
     async fn put_conv(&self, conv: &Conversation) -> Result<()>;
 
     async fn self_update_conv(&self, conv: Conversation) -> Result<Conversation>;
+
+    async fn get_pined_convs(&self) -> Result<IndexMap<AttrValue, Conversation>>;
 
     async fn get_convs(&self) -> Result<IndexMap<AttrValue, Conversation>>;
 

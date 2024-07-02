@@ -112,112 +112,165 @@ impl Chats {
         }
     }
 
-    pub fn operate_msg(
+    fn update_unread_count(&self, conv: &Conversation, is_self: bool) {
+        if !conv.mute && !is_self && self.conv_state.conv.item_id != conv.friend_id {
+            Dispatch::<UnreadState>::global()
+                .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(conv.unread_count));
+        }
+    }
+
+    async fn save_conversation_and_update_friend_info(
+        conv: &Conversation,
+        new_name: AttrValue,
+        need_update_friend_info: bool,
+        clean: bool,
+    ) {
+        let mut conv = conv.clone();
+        if clean {
+            conv.unread_count = 0;
+        }
+        if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+            error!("put conv error:{:?}", e);
+            Notification::error("put conv error").notify();
+        }
+
+        if need_update_friend_info && conv.conv_type == RightContentType::Friend {
+            if let Err(e) = db::db_ins()
+                .friends
+                .update_friend_avatar_nickname(&conv.friend_id, conv.avatar.clone(), new_name)
+                .await
+            {
+                error!("update friend info error:{:?}", e);
+            }
+        }
+    }
+
+    async fn create_new_conversation(
+        mut conv: Conversation,
+        friend_id: AttrValue,
+        is_self: bool,
+        unread_count: usize,
+        current_id: AttrValue,
+    ) -> Option<ChatsMsg> {
+        let friend = db::db_ins().friends.get(&friend_id).await;
+        if friend.friend_id.is_empty() {
+            return None;
+        }
+
+        conv.avatar = friend.avatar;
+        conv.name = friend.name;
+        conv.remark = friend.remark;
+
+        if is_self {
+            conv = match db::db_ins().convs.self_update_conv(conv).await {
+                Ok(conv) => conv,
+                Err(e) => {
+                    error!("failed to update conv: {:?}", e);
+                    Notification::error("update conv error").notify();
+                    return None;
+                }
+            };
+        } else {
+            if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                error!("failed to update conv: {:?}", e);
+                Notification::error("update conv error").notify();
+                return None;
+            }
+            conv.unread_count = unread_count;
+        }
+
+        if !is_self && current_id != friend_id {
+            Dispatch::<UnreadState>::global()
+                .reduce_mut(|state| state.msg_count = state.msg_count.saturating_add(unread_count));
+        }
+
+        log::debug!("create conversation: {:?}", &conv);
+        Some(ChatsMsg::InsertConv(conv))
+    }
+
+    fn update_old_conv(
         &mut self,
-        ctx: &Context<Self>,
+        mut old: Conversation,
         mut conv: Conversation,
         is_self: bool,
+        is_pinned: bool,
     ) -> bool {
-        let friend_id = conv.friend_id.clone();
+        self.update_unread_count(&old, is_self);
         let mut clean = false;
+        let friend_id = conv.friend_id.clone();
         let unread_count = conv.unread_count;
-        if let Some(mut old) = self.list.shift_remove(&friend_id) {
-            // deal with unread message count
-            if !old.mute && !is_self && self.conv_state.conv.item_id != friend_id {
-                Dispatch::<UnreadState>::global()
-                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(unread_count));
-            }
-            // 这里是因为要直接更新面板上的数据，所以需要处理未读数量
-            if friend_id != self.conv_state.conv.item_id {
-                old.unread_count += unread_count;
-            } else {
-                old.unread_count = 0;
-                clean = true;
-            }
-            let mut need_update_friend_info = false;
-            let new_name = conv.name.clone();
-            if conv.avatar.is_empty() || conv.conv_type != RightContentType::Friend {
-                conv.avatar = old.avatar;
-            } else if conv.avatar != old.avatar || conv.name != old.name {
-                // update friend info
-                need_update_friend_info = true;
-            }
-            conv.name = old.name;
-            // conv.id = old.id;
-            conv.unread_count = old.unread_count;
-            conv.mute = old.mute;
-            self.list.shift_insert(0, friend_id, conv.clone());
-            log::debug!("dest: {:?}", self.list);
-            spawn_local(async move {
-                if clean {
-                    conv.unread_count = 0;
-                }
-                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
-                    error!("put conv error:{:?}", e);
-                    Notification::error("put conv error").notify();
-                }
+        let current_id = self.conv_state.conv.item_id.clone();
 
-                // update friend info about avatar and nickname
-                if need_update_friend_info {
-                    match conv.conv_type {
-                        RightContentType::Friend => {
-                            if let Err(e) = db::db_ins()
-                                .friends
-                                .update_friend_avatar_nickname(
-                                    &conv.friend_id,
-                                    conv.avatar.clone(),
-                                    new_name,
-                                )
-                                .await
-                            {
-                                error!("update friend info error:{:?}", e);
-                            }
-                        }
-                        RightContentType::Group => {}
-                        _ => {}
-                    }
-                }
-            });
-            true
+        // handle unread message count
+        if friend_id != current_id {
+            old.unread_count += unread_count;
         } else {
-            let current_id = self.conv_state.conv.item_id.clone();
-            // 如果会话列表中不存在那么需要新建
+            old.unread_count = 0;
+            clean = true;
+        }
+
+        let new_name = conv.name.clone();
+        let mut need_update_friend_info = false;
+
+        if conv.avatar.is_empty() || conv.conv_type != RightContentType::Friend {
+            conv.avatar = old.avatar;
+        } else if conv.avatar != old.avatar || conv.name != old.name {
+            need_update_friend_info = true;
+        }
+
+        conv.name = old.name;
+        conv.unread_count = old.unread_count;
+        conv.mute = old.mute;
+        conv.is_pined = old.is_pined;
+
+        if is_pinned {
+            self.pinned_list
+                .shift_insert(0, friend_id.clone(), conv.clone());
+        } else {
+            self.list.shift_insert(0, friend_id.clone(), conv.clone());
+        }
+
+        spawn_local(async move {
+            Self::save_conversation_and_update_friend_info(
+                &conv,
+                new_name,
+                need_update_friend_info,
+                clean,
+            )
+            .await;
+        });
+        true
+    }
+
+    pub fn operate_msg(&mut self, ctx: &Context<Self>, conv: Conversation, is_self: bool) -> bool {
+        let friend_id = conv.friend_id.clone();
+        let unread_count = conv.unread_count;
+        let current_id = self.conv_state.conv.item_id.clone();
+
+        // query pinned list first
+        if let Some(old) = self.pinned_list.shift_remove(&friend_id) {
+            return self.update_old_conv(old, conv, is_self, true);
+        }
+
+        if let Some(old) = self.list.shift_remove(&friend_id) {
+            self.update_old_conv(old, conv, is_self, false)
+        } else {
             ctx.link().send_future(async move {
-                let friend = db::db_ins().friends.get(friend_id.as_str()).await;
-                if friend.friend_id.is_empty() {
-                    return ChatsMsg::None;
-                }
-                conv.avatar = friend.avatar;
-                conv.name = friend.name;
-                conv.remark = friend.remark;
-                if is_self {
-                    // we don't need to set the unread count if it is self message
-                    conv = match db::db_ins().convs.self_update_conv(conv).await {
-                        Ok(conv) => conv,
-                        Err(e) => {
-                            error!("failed to update conv: {:?}", e);
-                            Notification::error("update conv error").notify();
-                            return ChatsMsg::None;
-                        }
-                    };
+                if let Some(result) = Self::create_new_conversation(
+                    conv,
+                    friend_id,
+                    is_self,
+                    unread_count,
+                    current_id,
+                )
+                .await
+                {
+                    result
                 } else {
-                    if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
-                        error!("failed to update conv: {:?}", e);
-                        Notification::error("update conv error").notify();
-                        return ChatsMsg::None;
-                    }
-
-                    conv.unread_count = unread_count;
+                    ChatsMsg::None
                 }
-
-                // add global unread
-                if !is_self && current_id != friend_id {
-                    Dispatch::<UnreadState>::global()
-                        .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(unread_count));
-                }
-                log::debug!("create conversation: {:?}", &conv);
-                ChatsMsg::InsertConv(conv)
             });
+
             false
         }
     }

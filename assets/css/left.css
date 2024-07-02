@@ -247,9 +247,15 @@
         }
     }
 
+    .top-pinned-conversation {
+        background-color:var(--color-background-pinned);
+    }
+
+    /* selected color need to be under the pinned color */
     .selected {
         background-color: var(--hover-color);
     }
+
 
     .item {
         width: 100%;

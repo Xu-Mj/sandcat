@@ -164,7 +164,7 @@ impl Component for SetWindow {
                 let conv = self.conv.clone();
                 // update conversation
                 spawn_local(async move {
-                    db::db_ins().convs.mute(&conv).await.unwrap();
+                    db::db_ins().convs.put_conv(&conv).await.unwrap();
                 });
                 // todo send mute message to conversation component
                 if let Some(info) = self.info.as_ref() {

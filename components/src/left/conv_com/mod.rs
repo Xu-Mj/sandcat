@@ -54,6 +54,8 @@ pub struct Chats {
     /// received messages sequence,
     /// used to determine whether the message is the latest message
     seq: Seq,
+    /// pin list
+    pinned_list: IndexMap<AttrValue, Conversation>,
     /// the list of conversations
     list: IndexMap<AttrValue, Conversation>,
     /// search result list
@@ -68,7 +70,7 @@ pub struct Chats {
     show_context_menu: bool,
     i18n: FluentBundle<FluentResource>,
     /// hold right click item position and id
-    context_menu_pos: (i32, i32, AttrValue, bool),
+    context_menu_pos: (i32, i32, AttrValue, bool, bool),
 
     /// receive the message state from sender
     /// sender send message through Home Component
@@ -96,6 +98,7 @@ pub struct Chats {
     is_mobile: bool,
     is_knocked: bool,
     token_getter: Option<Timeout>,
+    /// refresh token
     refresh_token_getter: Option<Timeout>,
 }
 
@@ -115,6 +118,11 @@ impl Chats {
         // query conversation list
         let user_id = id.clone();
         ctx.link().send_future(async move {
+            let pined_convs = db::db_ins()
+                .convs
+                .get_pined_convs()
+                .await
+                .unwrap_or_default();
             let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
             // pull offline messages
             // get the seq
@@ -144,7 +152,7 @@ impl Chats {
                     return ChatsMsg::None;
                 }
             }
-            ChatsMsg::QueryConvList((convs, messages, local_seq))
+            ChatsMsg::QueryConvList((pined_convs, convs, messages, local_seq))
         });
         // we need use conv state to rerender the chats component, so use subscribe in create
         let conv_dispatch =
@@ -193,13 +201,14 @@ impl Chats {
             call_msg: SingleCall::default(),
             ws,
             seq: Seq::default(),
+            pinned_list: IndexMap::new(),
             list: IndexMap::new(),
             result: IndexMap::new(),
             query_complete: false,
             is_searching: false,
             show_friend_list: false,
             show_context_menu: false,
-            context_menu_pos: (0, 0, AttrValue::default(), false),
+            context_menu_pos: (0, 0, AttrValue::default(), false, false),
             _remove_conv_dis,
             _send_msg_dis,
             _create_conv_dis,
@@ -285,20 +294,26 @@ impl Chats {
         }
     }
 
-    fn delete_item(&mut self) {
+    fn delete_item(&mut self) -> bool {
         // delete database data
         let id = self.context_menu_pos.2.clone();
         spawn_local(async move {
-            if let Err(e) = db::db_ins().convs.delete(id.as_str()).await {
+            if let Err(e) = db::db_ins().convs.delete(&id).await {
                 log::error!("delete conversation error: {:?}", e);
             }
         });
 
-        if let Some(conv) = self.list.shift_remove(self.context_menu_pos.2.as_str()) {
-            if conv.unread_count > 0 {
+        let notify_unread = |unread_count: usize| {
+            if unread_count > 0 {
                 Dispatch::<UnreadState>::global()
-                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(conv.unread_count));
+                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(unread_count));
             }
+        };
+
+        if let Some(conv) = self.list.shift_remove(&self.context_menu_pos.2) {
+            notify_unread(conv.unread_count);
+        } else if let Some(conv) = self.pinned_list.shift_remove(&self.context_menu_pos.2) {
+            notify_unread(conv.unread_count);
         }
 
         // set right content type
@@ -307,34 +322,72 @@ impl Chats {
         }
 
         self.show_context_menu = false;
-        self.context_menu_pos = (0, 0, AttrValue::default(), false);
+        self.context_menu_pos = (0, 0, AttrValue::default(), false, false);
+        true
     }
 
     fn mute(&mut self) -> bool {
-        if let Some(conv) = self.list.get_mut(&self.context_menu_pos.2) {
-            // if concel mute need to notify unread count event
-            if conv.mute {
-                // notify
-                Dispatch::<UnreadState>::global()
-                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(conv.unread_count));
-            } else {
-                Dispatch::<UnreadState>::global()
-                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(conv.unread_count));
-            }
+        // notify unread count
+        let notify_unread_count = |conv: &Conversation, increment: bool| {
+            let update_fn = |s: &mut UnreadState| {
+                if increment {
+                    s.msg_count = s.msg_count.saturating_add(conv.unread_count)
+                } else {
+                    s.msg_count = s.msg_count.saturating_sub(conv.unread_count)
+                }
+            };
+            Dispatch::<UnreadState>::global().reduce_mut(update_fn);
+        };
 
+        // store data to db
+        let update_conv = |conv: &mut Conversation| {
+            // from mute to unmute need to increment unread count
+            notify_unread_count(conv, conv.mute);
             conv.mute = !conv.mute;
-            let conv = conv.clone();
+            let updated_conv = conv.clone();
 
             spawn_local(async move {
-                if let Err(e) = db::db_ins().convs.mute(&conv).await {
+                if let Err(e) = db::db_ins().convs.put_conv(&updated_conv).await {
                     log::error!("mute conversation err: {:?}", e);
                 }
             });
+        };
 
-            self.show_context_menu = false;
-            return true;
+        if let Some(conv) = self.list.get_mut(&self.context_menu_pos.2) {
+            update_conv(conv);
+        } else if let Some(conv) = self.pinned_list.get_mut(&self.context_menu_pos.2) {
+            update_conv(conv);
         }
-        false
+
+        self.show_context_menu = false;
+        true
+    }
+
+    fn pin(&mut self, to_pin: bool) -> bool {
+        // use closure to handle pin
+        let update_conv = |conv: Conversation| {
+            spawn_local(async move {
+                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                    log::error!("pin/un-pin conversation err: {:?}", e);
+                }
+            });
+        };
+        // from un-pin to pin
+        if to_pin {
+            if let Some(mut conv) = self.list.shift_remove(&self.context_menu_pos.2) {
+                conv.is_pined = 1;
+                self.pinned_list
+                    .insert(conv.friend_id.clone(), conv.clone());
+                update_conv(conv);
+            }
+        } else if let Some(mut conv) = self.pinned_list.shift_remove(&self.context_menu_pos.2) {
+            conv.is_pined = 0;
+            self.list.insert(conv.friend_id.clone(), conv.clone());
+            update_conv(conv);
+        }
+
+        self.show_context_menu = false;
+        true
     }
 
     fn render_result(&self, ctx: &Context<Self>) -> Html {
@@ -342,13 +395,18 @@ impl Chats {
     }
 
     fn render_list(&self, ctx: &Context<Self>) -> Html {
-        self.render(&self.list, ctx)
+        html! {
+        <>
+            {self.render(&self.pinned_list, ctx)}
+            {self.render(&self.list, ctx)}
+        </>
+        }
     }
 
     fn render(&self, list: &IndexMap<AttrValue, Conversation>, ctx: &Context<Self>) -> Html {
-        let oncontextmenu = ctx
-            .link()
-            .callback(|((x, y), id, is_mute)| ChatsMsg::ShowContextMenu((x, y), id, is_mute));
+        let oncontextmenu = ctx.link().callback(|((x, y), id, is_mute, is_pined)| {
+            ChatsMsg::ShowContextMenu((x, y), id, is_mute, is_pined)
+        });
 
         list.iter()
             .map(|(_id, item)| self.get_list_item(item, oncontextmenu.clone()))
@@ -358,7 +416,7 @@ impl Chats {
     fn get_list_item(
         &self,
         item: &Conversation,
-        oncontextmenu: Callback<((i32, i32), AttrValue, bool)>,
+        oncontextmenu: Callback<((i32, i32), AttrValue, bool, bool)>,
     ) -> Html {
         let remark = get_msg_type(&self.i18n, item.last_msg_type, &item.last_msg);
         let name = if let Some(remark) = &item.remark {
@@ -378,6 +436,7 @@ impl Chats {
                 conv_type={item.conv_type.clone()}
                 oncontextmenu={oncontextmenu.clone()}
                 mute={item.mute}
+                pined={item.is_pined==1}
                 key={item.friend_id.clone().as_str()} />
         )
     }
@@ -400,103 +459,119 @@ impl Chats {
 
         // if use searching, do not rerender the UI, just update the data
         let need_rerender = !self.is_searching;
-        // log::debug!("in update app state changed: {:?} ; id: {}", self.list.clone(), self.app_state.current_conv_id);
-        // 判断是否需要更新当前会话
-        let dest = self.list.get_mut(&cur_conv_id);
-        if dest.is_some() {
-            let conv = dest.unwrap();
+
+        let update_conv = |conv: &mut Conversation| {
             conv.unread_count = 0;
             // self.list.shift_insert(index, cur_conv_id, conv.clone());
             let conv = conv.clone();
             spawn_local(async move {
                 db::db_ins().convs.put_conv(&conv).await.unwrap();
             });
-            need_rerender
-        } else {
-            // not exists, create a new conversation
-            let friend_id = cur_conv_id;
-            let conv_type = self.conv_state.conv.content_type.clone();
-            log::debug!("conv type in messages: {:?}", conv_type.clone());
+        };
 
-            ctx.link().send_future(async move {
-                // i18n
-                let bundle = utils::create_bundle(CONVERSATION);
-                // query information by conv_type
-                let conv = match conv_type {
-                    RightContentType::Friend => {
-                        let friend = db::db_ins().friends.get(friend_id.as_str()).await;
-                        // todo查询上一条消息
-                        let result = db::db_ins()
-                            .messages
-                            .get_last_msg(friend_id.as_str())
-                            .await
-                            .unwrap_or_default();
-                        let content = if result.id != 0 {
-                            get_msg_type(&bundle, result.content_type, &result.content)
-                        } else {
-                            AttrValue::default()
-                        };
-                        Conversation {
-                            // id: 0,
-                            name: friend.name,
-                            remark: friend.remark,
-                            avatar: friend.avatar,
-                            last_msg: content,
-                            last_msg_time: result.create_time,
-                            last_msg_type: result.content_type,
-                            unread_count: 0,
-                            friend_id,
-                            conv_type,
-                            mute: false,
-                        }
-                    }
-                    RightContentType::Group => {
-                        let group = db::db_ins()
-                            .groups
-                            .get(friend_id.as_str())
-                            .await
-                            .unwrap()
-                            .unwrap();
-                        // todo查询上一条消息
-                        let result = db::db_ins()
-                            .group_msgs
-                            .get_last_msg(friend_id.as_str())
-                            .await
-                            .unwrap_or_default();
-                        let content = if result.id != 0 {
-                            get_msg_type(&bundle, result.content_type, &result.content)
-                        } else {
-                            AttrValue::default()
-                        };
-                        Conversation {
-                            // id: 0,
-                            name: group.name,
-                            remark: group.remark,
-                            avatar: group.avatar,
-                            last_msg: content,
-                            last_msg_time: result.create_time,
-                            last_msg_type: result.content_type,
-                            unread_count: 0,
-                            friend_id,
-                            conv_type,
-                            mute: false,
-                        }
-                    }
-                    _ => {
-                        log::warn!("not support this type {:?} for now", conv_type);
-                        return ChatsMsg::None;
-                    }
-                };
+        // 判断是否需要更新当前会话
+        // look up from pinned list first
+        if let Some(conv) = self.pinned_list.get_mut(&cur_conv_id) {
+            update_conv(conv);
+            return need_rerender;
+        }
 
-                db::db_ins().convs.put_conv(&conv).await.unwrap();
-                log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
-                if need_rerender {
-                    ChatsMsg::InsertConv(conv)
-                } else {
-                    ChatsMsg::InsertConvWithoutUpdate(conv)
+        if let Some(conv) = self.list.get_mut(&cur_conv_id) {
+            update_conv(conv);
+            return need_rerender;
+        }
+
+        // not exists, create a new conversation
+        let friend_id = cur_conv_id;
+        let conv_type = self.conv_state.conv.content_type.clone();
+
+        let create_new_conv = async move {
+            // query information by conv_type
+            let conv = match conv_type {
+                RightContentType::Friend => Self::create_friend_conversation(friend_id).await,
+                RightContentType::Group => Self::create_group_conversation(friend_id).await,
+                _ => {
+                    log::warn!("not support this type {:?} for now", conv_type);
+                    return ChatsMsg::None;
                 }
-            });
-            false
+            };
+
+            db::db_ins().convs.put_conv(&conv).await.unwrap();
+            log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
+            if need_rerender {
+                ChatsMsg::InsertConv(conv)
+            } else {
+                ChatsMsg::InsertConvWithoutUpdate(conv)
+            }
+        };
+
+        ctx.link().send_future(create_new_conv);
+        false
+    }
+
+    // 创建好友会话
+    async fn create_friend_conversation(friend_id: AttrValue) -> Conversation {
+        let friend = db::db_ins().friends.get(&friend_id).await;
+        let result = db::db_ins()
+            .messages
+            .get_last_msg(&friend_id)
+            .await
+            .unwrap_or_default();
+        let content = if result.id != 0 {
+            get_msg_type(
+                &utils::create_bundle(CONVERSATION),
+                result.content_type,
+                &result.content,
+            )
+        } else {
+            AttrValue::default()
+        };
+
+        Conversation {
+            name: friend.name,
+            remark: friend.remark,
+            avatar: friend.avatar,
+            last_msg: content,
+            last_msg_time: result.create_time,
+            last_msg_type: result.content_type,
+            unread_count: 0,
+            friend_id,
+            conv_type: RightContentType::Friend,
+            mute: false,
+            is_pined: 0,
+        }
+    }
+
+    // 创建群组会话
+    async fn create_group_conversation(group_id: AttrValue) -> Conversation {
+        let group = db::db_ins().groups.get(&group_id).await.unwrap().unwrap();
+        let result = db::db_ins()
+            .group_msgs
+            .get_last_msg(&group_id)
+            .await
+            .unwrap_or_default();
+        let content = if result.id != 0 {
+            get_msg_type(
+                &utils::create_bundle(CONVERSATION),
+                result.content_type,
+                &result.content,
+            )
+        } else {
+            AttrValue::default()
+        };
+
+        Conversation {
+            name: group.name,
+            remark: group.remark,
+            avatar: group.avatar,
+            last_msg: content,
+            last_msg_time: result.create_time,
+            last_msg_type: result.content_type,
+            unread_count: 0,
+            friend_id: group_id,
+            conv_type: RightContentType::Group,
+            mute: false,
+            is_pined: 0,
         }
     }
 }
