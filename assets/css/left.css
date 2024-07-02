@@ -247,13 +247,15 @@
         }
     }
 
+    .top-pinned-conversation {
+        background-color:var(--color-background-pinned);
+    }
+
+    /* selected color need to be under the pinned color */
     .selected {
         background-color: var(--hover-color);
     }
 
-    .top-pinned-conversation {
-        background-color:var(--color-background-pinned); /* 浅蓝色 */
-    }
 
     .item {
         width: 100%;

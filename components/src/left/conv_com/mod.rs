@@ -461,6 +461,17 @@ impl Chats {
         let need_rerender = !self.is_searching;
         // log::debug!("in update app state changed: {:?} ; id: {}", self.list.clone(), self.app_state.current_conv_id);
         // 判断是否需要更新当前会话
+        // look up from pinned list first
+        if let Some(conv) = self.pinned_list.get_mut(&cur_conv_id) {
+            conv.unread_count = 0;
+            // self.list.shift_insert(index, cur_conv_id, conv.clone());
+            let conv = conv.clone();
+            spawn_local(async move {
+                db::db_ins().convs.put_conv(&conv).await.unwrap();
+            });
+            return need_rerender;
+        }
+
         let dest = self.list.get_mut(&cur_conv_id);
         if dest.is_some() {
             let conv = dest.unwrap();

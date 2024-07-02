@@ -497,15 +497,15 @@ impl ListItem {
                 }
             }
             ComponentType::Messages => {
+                if ctx.props().pined {
+                    classes.push("top-pinned-conversation")
+                }
                 if !self.is_mobile {
                     if self.conv_state.conv.item_id == props.id {
                         classes.push("selected");
                     } else {
                         classes.push("hover");
                     }
-                }
-                if ctx.props().pined {
-                    classes.push("top-pinned-conversation")
                 }
             }
             _ => {}
