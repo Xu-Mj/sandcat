@@ -1,6 +1,7 @@
 use gloo::timers::callback::Timeout;
 use gloo::utils::{document, window};
 use log::error;
+use sandcat_sdk::model::notification::Notification;
 use web_sys::Node;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -286,15 +287,24 @@ impl Component for MsgItem {
             }
             MsgItemMsg::ForwardMsg(list) => {
                 log::info!("forward msg: {:?}", list);
-                list.into_iter().for_each(|item| {
-                    let mut msg = ctx.props().msg.clone();
-                    msg.send_id.clone_from(&ctx.props().user_id);
-                    msg.friend_id = item.into();
-                    msg.server_id = AttrValue::default();
-                    msg.local_id = nanoid::nanoid!().into();
-                    msg.is_read = 1;
-                    msg.is_self = true;
-                    Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
+                let mut msg = ctx.props().msg.clone();
+                let user_id = ctx.props().user_id.clone();
+                spawn_local(async move {
+                    for item in list.into_iter() {
+                        msg.send_id.clone_from(&user_id);
+                        msg.friend_id = item.into();
+                        msg.server_id = AttrValue::default();
+                        msg.local_id = nanoid::nanoid!().into();
+                        msg.is_read = 1;
+                        msg.is_self = true;
+                        if let Err(err) = db::db_ins().messages.add_message(&mut msg).await {
+                            log::error!("{:?}", err);
+                            Notification::error("forword message error: store message error")
+                                .notify();
+                        }
+                        Dispatch::<SendMessageState>::global()
+                            .reduce_mut(|s| s.msg = Msg::Single(msg.clone()));
+                    }
                 });
                 self.show_friendlist = false;
                 true

@@ -28,3 +28,4 @@
 - bug: hello message is reversed
 - bug: need to refresh contacts list after offline message synced
 - bug: add friend page need to listen input change event
+- we need to split the forward message type
