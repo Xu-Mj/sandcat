@@ -504,6 +504,9 @@ impl ListItem {
                         classes.push("hover");
                     }
                 }
+                if ctx.props().pined {
+                    classes.push("top-pinned-conversation")
+                }
             }
             _ => {}
         }

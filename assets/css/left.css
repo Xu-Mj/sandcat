@@ -251,6 +251,10 @@
         background-color: var(--hover-color);
     }
 
+    .top-pinned-conversation {
+        background-color:var(--color-background-pinned); /* 浅蓝色 */
+    }
+
     .item {
         width: 100%;
         height: 4rem;

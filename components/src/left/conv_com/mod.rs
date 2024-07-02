@@ -341,7 +341,8 @@ impl Chats {
 
         // store data to db
         let update_conv = |conv: &mut Conversation| {
-            notify_unread_count(conv, !conv.mute);
+            // from mute to unmute need to increment unread count
+            notify_unread_count(conv, conv.mute);
             conv.mute = !conv.mute;
             let updated_conv = conv.clone();
 
