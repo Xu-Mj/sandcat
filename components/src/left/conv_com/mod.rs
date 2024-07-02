@@ -294,20 +294,26 @@ impl Chats {
         }
     }
 
-    fn delete_item(&mut self) {
+    fn delete_item(&mut self) -> bool {
         // delete database data
         let id = self.context_menu_pos.2.clone();
         spawn_local(async move {
-            if let Err(e) = db::db_ins().convs.delete(id.as_str()).await {
+            if let Err(e) = db::db_ins().convs.delete(&id).await {
                 log::error!("delete conversation error: {:?}", e);
             }
         });
 
-        if let Some(conv) = self.list.shift_remove(self.context_menu_pos.2.as_str()) {
-            if conv.unread_count > 0 {
+        let notify_unread = |unread_count: usize| {
+            if unread_count > 0 {
                 Dispatch::<UnreadState>::global()
-                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(conv.unread_count));
+                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(unread_count));
             }
+        };
+
+        if let Some(conv) = self.list.shift_remove(&self.context_menu_pos.2) {
+            notify_unread(conv.unread_count);
+        } else if let Some(conv) = self.pinned_list.shift_remove(&self.context_menu_pos.2) {
+            notify_unread(conv.unread_count);
         }
 
         // set right content type
@@ -317,33 +323,43 @@ impl Chats {
 
         self.show_context_menu = false;
         self.context_menu_pos = (0, 0, AttrValue::default(), false, false);
+        true
     }
 
     fn mute(&mut self) -> bool {
-        if let Some(conv) = self.list.get_mut(&self.context_menu_pos.2) {
-            // if concel mute need to notify unread count event
-            if conv.mute {
-                // notify
-                Dispatch::<UnreadState>::global()
-                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(conv.unread_count));
-            } else {
-                Dispatch::<UnreadState>::global()
-                    .reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(conv.unread_count));
-            }
+        // notify unread count
+        let notify_unread_count = |conv: &Conversation, increment: bool| {
+            let update_fn = |s: &mut UnreadState| {
+                if increment {
+                    s.msg_count = s.msg_count.saturating_add(conv.unread_count)
+                } else {
+                    s.msg_count = s.msg_count.saturating_sub(conv.unread_count)
+                }
+            };
+            Dispatch::<UnreadState>::global().reduce_mut(update_fn);
+        };
 
+        // store data to db
+        let update_conv = |conv: &mut Conversation| {
+            notify_unread_count(conv, !conv.mute);
             conv.mute = !conv.mute;
-            let conv = conv.clone();
+            let updated_conv = conv.clone();
 
             spawn_local(async move {
-                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                if let Err(e) = db::db_ins().convs.put_conv(&updated_conv).await {
                     log::error!("mute conversation err: {:?}", e);
                 }
             });
+        };
 
-            self.show_context_menu = false;
-            return true;
+        if let Some(conv) = self.list.get_mut(&self.context_menu_pos.2) {
+            update_conv(conv);
+        } else if let Some(conv) = self.pinned_list.get_mut(&self.context_menu_pos.2) {
+            update_conv(conv);
         }
-        false
+
+        self.show_context_menu = false;
+        true
     }
 
     fn pin(&mut self, to_pin: bool) -> bool {

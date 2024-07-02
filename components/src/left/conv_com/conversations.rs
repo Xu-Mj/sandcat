@@ -209,10 +209,7 @@ impl Component for Chats {
                 self.context_menu_pos = (0, 0, AttrValue::default(), false, false);
                 true
             }
-            ChatsMsg::DeleteItem => {
-                self.delete_item();
-                true
-            }
+            ChatsMsg::DeleteItem => self.delete_item(),
             ChatsMsg::None => false,
             ChatsMsg::RemoveConvStateChanged(state) => {
                 if state.id.is_empty() {

@@ -213,129 +213,154 @@ impl Component for ListItem {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        // handle mobile long press event
-        let (touch_start, touch_end) = if self.is_mobile {
-            (
-                Some(ctx.link().callback(ListItemMsg::TouchStart)),
-                Some(ctx.link().callback(ListItemMsg::TouchEnd)),
-            )
-        } else {
-            (None, None)
-        };
-        // 根据参数渲染组件
         let props = &ctx.props().props;
-        let onclick;
-        let mut unread_count = html! {};
-        let mut classes = Classes::from("item");
-        match ctx.props().component_type {
-            ComponentType::Contacts => {
-                onclick = ctx.link().callback(move |_| ListItemMsg::FriendItemClicked);
-                if !self.is_mobile {
-                    if self.friend_state.friend.item_id == props.id {
-                        classes.push("selected");
-                    } else {
-                        classes.push("hover")
-                    }
-                }
-            }
-            ComponentType::Messages => {
-                onclick = ctx.link().callback(move |_| ListItemMsg::CleanUnreadCount);
-                if !self.is_mobile {
-                    if self.conv_state.conv.item_id == props.id {
-                        classes.push("selected");
-                    } else {
-                        classes.push("hover")
-                    }
-                }
-
-                if self.unread_count > 0 {
-                    let mut unread_str = self.unread_count.to_string();
-                    if self.unread_count >= 100 {
-                        unread_str = "99+".to_string();
-                    }
-                    if ctx.props().mute {
-                        unread_str = format!("[{}条]", unread_str);
-                        unread_count = html! {
-                        <span class="unread-count-mute">{unread_str}</span>
-                        }
-                    } else {
-                        unread_count = html! {
-                            <span class="unread-count">{unread_str}</span>
-                        }
-                    }
-                };
-            }
-            ComponentType::Setting => {
-                onclick = ctx.link().callback(move |_| ListItemMsg::GoToSetting)
-            }
-            ComponentType::Default => {
-                onclick = ctx.link().callback(move |_| ListItemMsg::GoToSetting)
-            }
-        };
-
-        // 判断距离现在多久
-        let mut time_str = String::new();
-        if props.time > 0 {
-            let now = chrono::Utc::now().timestamp_millis();
-            let step = now - props.time;
-            let time_flag = if step < 60 * 1000 * 24 {
-                "%H:%M"
-            } else if (60 * 1000 * 24..60 * 1000 * 48).contains(&step) {
-                "昨天 %H:%M"
-            } else {
-                "%a %b %e %H:%M"
-            };
-            // a: week b: month e: day T: time Y: year
-            let utc_date = chrono::Utc
-                .timestamp_millis_opt(props.time)
-                .unwrap()
-                .with_timezone(&chrono::Local);
-            time_str = utc_date.format(time_flag).to_string();
-        }
-        let mut name = props.name.clone();
-        if !props.remark.is_empty() {
-            name = props.remark.clone();
-        }
-        let mut right = html!();
-        match ctx.props().component_type {
-            ComponentType::Contacts => {
-                right = html! {
-                    <div class="name-time">
-                        <span>{name}</span>
-                    </div>
-                }
-            }
-            ComponentType::Messages => {
-                right = html! {
-                    <>
-                        <div class="name-time">
-                            <span>{&props.name}</span>
-                            <span class="time">{time_str}</span>
-                        </div>
-                        <div class="remark">{&props.remark}</div>
-                    </>
-                }
-            }
-            ComponentType::Setting => {}
-            ComponentType::Default => {}
-        }
+        let (touch_start, touch_end) = self.get_touch_events(ctx);
+        let unread_count = self.get_unread_count_html(ctx, self.unread_count);
+        let right = self.get_right_html(ctx, props);
+        let classes = self.get_classes(ctx, props);
+        let onclick = self.get_onclick(ctx);
         let oncontextmenu = ctx.link().callback(ListItemMsg::OnContextMenu);
+
         html! {
-        <div ref={self.node_ref.clone()}
-            class={classes}
-            {onclick}
-            title={&props.name}
-            {oncontextmenu}
-            ontouchstart={touch_start}
-            ontouchend={touch_end}>
-            {self.get_avatar(ctx)}
-            <div class="item-info">
-                {unread_count}
-                {right}
+            <div ref={self.node_ref.clone()}
+                class={classes}
+                {onclick}
+                title={&props.name}
+                {oncontextmenu}
+                ontouchstart={touch_start}
+                ontouchend={touch_end}>
+                {self.get_avatar(ctx)}
+                <div class="item-info">
+                    {unread_count}
+                    {right}
+                </div>
             </div>
-        </div>
         }
     }
+    // fn view(&self, ctx: &Context<Self>) -> Html {
+    //     // handle mobile long press event
+    //     let (touch_start, touch_end) = if self.is_mobile {
+    //         (
+    //             Some(ctx.link().callback(ListItemMsg::TouchStart)),
+    //             Some(ctx.link().callback(ListItemMsg::TouchEnd)),
+    //         )
+    //     } else {
+    //         (None, None)
+    //     };
+    //     // 根据参数渲染组件
+    //     let props = &ctx.props().props;
+    //     let onclick;
+    //     let mut unread_count = html! {};
+    //     let mut classes = Classes::from("item");
+    //     match ctx.props().component_type {
+    //         ComponentType::Contacts => {
+    //             onclick = ctx.link().callback(move |_| ListItemMsg::FriendItemClicked);
+    //             if !self.is_mobile {
+    //                 if self.friend_state.friend.item_id == props.id {
+    //                     classes.push("selected");
+    //                 } else {
+    //                     classes.push("hover")
+    //                 }
+    //             }
+    //         }
+    //         ComponentType::Messages => {
+    //             onclick = ctx.link().callback(move |_| ListItemMsg::CleanUnreadCount);
+    //             if !self.is_mobile {
+    //                 if self.conv_state.conv.item_id == props.id {
+    //                     classes.push("selected");
+    //                 } else {
+    //                     classes.push("hover")
+    //                 }
+    //             }
+
+    //             if self.unread_count > 0 {
+    //                 let mut unread_str = self.unread_count.to_string();
+    //                 if self.unread_count >= 100 {
+    //                     unread_str = "99+".to_string();
+    //                 }
+    //                 if ctx.props().mute {
+    //                     unread_str = format!("[{}条]", unread_str);
+    //                     unread_count = html! {
+    //                     <span class="unread-count-mute">{unread_str}</span>
+    //                     }
+    //                 } else {
+    //                     unread_count = html! {
+    //                         <span class="unread-count">{unread_str}</span>
+    //                     }
+    //                 }
+    //             };
+    //         }
+    //         ComponentType::Setting => {
+    //             onclick = ctx.link().callback(move |_| ListItemMsg::GoToSetting)
+    //         }
+    //         ComponentType::Default => {
+    //             onclick = ctx.link().callback(move |_| ListItemMsg::GoToSetting)
+    //         }
+    //     };
+
+    //     // 判断距离现在多久
+    //     let mut time_str = String::new();
+    //     if props.time > 0 {
+    //         let now = chrono::Utc::now().timestamp_millis();
+    //         let step = now - props.time;
+    //         let time_flag = if step < 60 * 1000 * 24 {
+    //             "%H:%M"
+    //         } else if (60 * 1000 * 24..60 * 1000 * 48).contains(&step) {
+    //             "昨天 %H:%M"
+    //         } else {
+    //             "%a %b %e %H:%M"
+    //         };
+    //         // a: week b: month e: day T: time Y: year
+    //         let utc_date = chrono::Utc
+    //             .timestamp_millis_opt(props.time)
+    //             .unwrap()
+    //             .with_timezone(&chrono::Local);
+    //         time_str = utc_date.format(time_flag).to_string();
+    //     }
+    //     let mut name = props.name.clone();
+    //     if !props.remark.is_empty() {
+    //         name = props.remark.clone();
+    //     }
+    //     let mut right = html!();
+    //     match ctx.props().component_type {
+    //         ComponentType::Contacts => {
+    //             right = html! {
+    //                 <div class="name-time">
+    //                     <span>{name}</span>
+    //                 </div>
+    //             }
+    //         }
+    //         ComponentType::Messages => {
+    //             right = html! {
+    //                 <>
+    //                     <div class="name-time">
+    //                         <span>{&props.name}</span>
+    //                         <span class="time">{time_str}</span>
+    //                     </div>
+    //                     <div class="remark">{&props.remark}</div>
+    //                 </>
+    //             }
+    //         }
+    //         ComponentType::Setting => {}
+    //         ComponentType::Default => {}
+    //     }
+    //     let oncontextmenu = ctx.link().callback(ListItemMsg::OnContextMenu);
+    //     html! {
+    //     <div ref={self.node_ref.clone()}
+    //         class={classes}
+    //         {onclick}
+    //         title={&props.name}
+    //         {oncontextmenu}
+    //         ontouchstart={touch_start}
+    //         ontouchend={touch_end}>
+    //         {self.get_avatar(ctx)}
+    //         <div class="item-info">
+    //             {unread_count}
+    //             {right}
+    //         </div>
+    //     </div>
+    //     }
+    // }
 }
 
 impl ListItem {
@@ -366,6 +391,133 @@ impl ListItem {
             <div class="item-avatar" style={avatar_style}>
                 {avatar}
             </div>
+        }
+    }
+}
+
+impl ListItem {
+    fn get_time_str(timestamp: i64) -> String {
+        if timestamp <= 0 {
+            return String::new();
+        }
+        let now = chrono::Utc::now().timestamp_millis();
+        let step = now - timestamp;
+        let time_flag = if step < 60 * 1000 * 24 {
+            "%H:%M"
+        } else if (60 * 1000 * 24..60 * 1000 * 48).contains(&step) {
+            "昨天 %H:%M"
+        } else {
+            "%a %b %e %H:%M"
+        };
+        chrono::Utc
+            .timestamp_millis_opt(timestamp)
+            .unwrap()
+            .with_timezone(&chrono::Local)
+            .format(time_flag)
+            .to_string()
+    }
+
+    // 获取未读消息 HTML
+    fn get_unread_count_html(&self, ctx: &Context<Self>, unread_count: usize) -> Html {
+        if unread_count == 0 {
+            return html! {};
+        }
+
+        let mut unread_str = unread_count.to_string();
+        if unread_count >= 100 {
+            unread_str = "99+".to_string();
+        }
+        if ctx.props().mute {
+            unread_str = format!("[{}条]", unread_str);
+            html! {
+                <span class="unread-count-mute">{unread_str}</span>
+            }
+        } else {
+            html! {
+                <span class="unread-count">{unread_str}</span>
+            }
+        }
+    }
+
+    // 获取触摸事件
+    fn get_touch_events(
+        &self,
+        ctx: &Context<Self>,
+    ) -> (Option<Callback<TouchEvent>>, Option<Callback<TouchEvent>>) {
+        if self.is_mobile {
+            (
+                Some(ctx.link().callback(ListItemMsg::TouchStart)),
+                Some(ctx.link().callback(ListItemMsg::TouchEnd)),
+            )
+        } else {
+            (None, None)
+        }
+    }
+
+    // 获取右侧内容 HTML
+    fn get_right_html(&self, ctx: &Context<Self>, props: &CommonProps) -> Html {
+        let mut name = props.name.clone();
+        if !props.remark.is_empty() {
+            name = props.remark.clone();
+        }
+        match ctx.props().component_type {
+            ComponentType::Contacts => {
+                html! {
+                    <div class="name-time">
+                        <span>{name}</span>
+                    </div>
+                }
+            }
+            ComponentType::Messages => {
+                html! {
+                    <>
+                        <div class="name-time">
+                            <span>{props.name.clone()}</span>
+                            <span class="time">{Self::get_time_str(props.time)}</span>
+                        </div>
+                        <div class="remark">{props.remark.clone()}</div>
+                    </>
+                }
+            }
+            ComponentType::Setting | ComponentType::Default => html! {},
+        }
+    }
+
+    // 获取组件的样式类
+    fn get_classes(&self, ctx: &Context<Self>, props: &CommonProps) -> Classes {
+        let mut classes = Classes::from("item");
+        match ctx.props().component_type {
+            ComponentType::Contacts => {
+                if !self.is_mobile {
+                    if self.friend_state.friend.item_id == props.id {
+                        classes.push("selected");
+                    } else {
+                        classes.push("hover");
+                    }
+                }
+            }
+            ComponentType::Messages => {
+                if !self.is_mobile {
+                    if self.conv_state.conv.item_id == props.id {
+                        classes.push("selected");
+                    } else {
+                        classes.push("hover");
+                    }
+                }
+            }
+            _ => {}
+        }
+        classes
+    }
+
+    // 获取点击事件
+    fn get_onclick(&self, ctx: &Context<Self>) -> Callback<MouseEvent> {
+        match ctx.props().component_type {
+            ComponentType::Contacts => ctx.link().callback(|_| ListItemMsg::FriendItemClicked),
+            ComponentType::Messages => ctx.link().callback(|_| ListItemMsg::CleanUnreadCount),
+            ComponentType::Setting | ComponentType::Default => {
+                ctx.link().callback(|_| ListItemMsg::GoToSetting)
+            }
         }
     }
 }
