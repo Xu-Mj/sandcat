@@ -121,6 +121,8 @@ impl Chats {
         let friend_id = conv.friend_id.clone();
         let mut clean = false;
         let unread_count = conv.unread_count;
+        // query from pinned list first
+
         if let Some(mut old) = self.list.shift_remove(&friend_id) {
             // deal with unread message count
             if !old.mute && !is_self && self.conv_state.conv.item_id != friend_id {

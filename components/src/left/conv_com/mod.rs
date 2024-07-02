@@ -459,116 +459,119 @@ impl Chats {
 
         // if use searching, do not rerender the UI, just update the data
         let need_rerender = !self.is_searching;
-        // log::debug!("in update app state changed: {:?} ; id: {}", self.list.clone(), self.app_state.current_conv_id);
+
+        let update_conv = |conv: &mut Conversation| {
+            conv.unread_count = 0;
+            // self.list.shift_insert(index, cur_conv_id, conv.clone());
+            let conv = conv.clone();
+            spawn_local(async move {
+                db::db_ins().convs.put_conv(&conv).await.unwrap();
+            });
+        };
+
         // 判断是否需要更新当前会话
         // look up from pinned list first
         if let Some(conv) = self.pinned_list.get_mut(&cur_conv_id) {
-            conv.unread_count = 0;
-            // self.list.shift_insert(index, cur_conv_id, conv.clone());
-            let conv = conv.clone();
-            spawn_local(async move {
-                db::db_ins().convs.put_conv(&conv).await.unwrap();
-            });
+            update_conv(conv);
             return need_rerender;
         }
 
-        let dest = self.list.get_mut(&cur_conv_id);
-        if dest.is_some() {
-            let conv = dest.unwrap();
-            conv.unread_count = 0;
-            // self.list.shift_insert(index, cur_conv_id, conv.clone());
-            let conv = conv.clone();
-            spawn_local(async move {
-                db::db_ins().convs.put_conv(&conv).await.unwrap();
-            });
-            need_rerender
-        } else {
-            // not exists, create a new conversation
-            let friend_id = cur_conv_id;
-            let conv_type = self.conv_state.conv.content_type.clone();
-            log::debug!("conv type in messages: {:?}", conv_type.clone());
+        if let Some(conv) = self.list.get_mut(&cur_conv_id) {
+            update_conv(conv);
+            return need_rerender;
+        }
 
-            ctx.link().send_future(async move {
-                // i18n
-                let bundle = utils::create_bundle(CONVERSATION);
-                // query information by conv_type
-                let conv = match conv_type {
-                    RightContentType::Friend => {
-                        let friend = db::db_ins().friends.get(friend_id.as_str()).await;
-                        // todo查询上一条消息
-                        let result = db::db_ins()
-                            .messages
-                            .get_last_msg(friend_id.as_str())
-                            .await
-                            .unwrap_or_default();
-                        let content = if result.id != 0 {
-                            get_msg_type(&bundle, result.content_type, &result.content)
-                        } else {
-                            AttrValue::default()
-                        };
-                        Conversation {
-                            // id: 0,
-                            name: friend.name,
-                            remark: friend.remark,
-                            avatar: friend.avatar,
-                            last_msg: content,
-                            last_msg_time: result.create_time,
-                            last_msg_type: result.content_type,
-                            unread_count: 0,
-                            friend_id,
-                            conv_type,
-                            mute: false,
-                            is_pined: 0,
-                        }
-                    }
-                    RightContentType::Group => {
-                        let group = db::db_ins()
-                            .groups
-                            .get(friend_id.as_str())
-                            .await
-                            .unwrap()
-                            .unwrap();
-                        // todo查询上一条消息
-                        let result = db::db_ins()
-                            .group_msgs
-                            .get_last_msg(friend_id.as_str())
-                            .await
-                            .unwrap_or_default();
-                        let content = if result.id != 0 {
-                            get_msg_type(&bundle, result.content_type, &result.content)
-                        } else {
-                            AttrValue::default()
-                        };
-                        Conversation {
-                            // id: 0,
-                            name: group.name,
-                            remark: group.remark,
-                            avatar: group.avatar,
-                            last_msg: content,
-                            last_msg_time: result.create_time,
-                            last_msg_type: result.content_type,
-                            unread_count: 0,
-                            friend_id,
-                            conv_type,
-                            mute: false,
-                            is_pined: 0,
-                        }
-                    }
-                    _ => {
-                        log::warn!("not support this type {:?} for now", conv_type);
-                        return ChatsMsg::None;
-                    }
-                };
+        // not exists, create a new conversation
+        let friend_id = cur_conv_id;
+        let conv_type = self.conv_state.conv.content_type.clone();
 
-                db::db_ins().convs.put_conv(&conv).await.unwrap();
-                log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
-                if need_rerender {
-                    ChatsMsg::InsertConv(conv)
-                } else {
-                    ChatsMsg::InsertConvWithoutUpdate(conv)
+        let create_new_conv = async move {
+            // query information by conv_type
+            let conv = match conv_type {
+                RightContentType::Friend => Self::create_friend_conversation(friend_id).await,
+                RightContentType::Group => Self::create_group_conversation(friend_id).await,
+                _ => {
+                    log::warn!("not support this type {:?} for now", conv_type);
+                    return ChatsMsg::None;
                 }
-            });
-            false
+            };
+
+            db::db_ins().convs.put_conv(&conv).await.unwrap();
+            log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
+            if need_rerender {
+                ChatsMsg::InsertConv(conv)
+            } else {
+                ChatsMsg::InsertConvWithoutUpdate(conv)
+            }
+        };
+
+        ctx.link().send_future(create_new_conv);
+        false
+    }
+
+    // 创建好友会话
+    async fn create_friend_conversation(friend_id: AttrValue) -> Conversation {
+        let friend = db::db_ins().friends.get(&friend_id).await;
+        let result = db::db_ins()
+            .messages
+            .get_last_msg(&friend_id)
+            .await
+            .unwrap_or_default();
+        let content = if result.id != 0 {
+            get_msg_type(
+                &utils::create_bundle(CONVERSATION),
+                result.content_type,
+                &result.content,
+            )
+        } else {
+            AttrValue::default()
+        };
+
+        Conversation {
+            name: friend.name,
+            remark: friend.remark,
+            avatar: friend.avatar,
+            last_msg: content,
+            last_msg_time: result.create_time,
+            last_msg_type: result.content_type,
+            unread_count: 0,
+            friend_id,
+            conv_type: RightContentType::Friend,
+            mute: false,
+            is_pined: 0,
+        }
+    }
+
+    // 创建群组会话
+    async fn create_group_conversation(group_id: AttrValue) -> Conversation {
+        let group = db::db_ins().groups.get(&group_id).await.unwrap().unwrap();
+        let result = db::db_ins()
+            .group_msgs
+            .get_last_msg(&group_id)
+            .await
+            .unwrap_or_default();
+        let content = if result.id != 0 {
+            get_msg_type(
+                &utils::create_bundle(CONVERSATION),
+                result.content_type,
+                &result.content,
+            )
+        } else {
+            AttrValue::default()
+        };
+
+        Conversation {
+            name: group.name,
+            remark: group.remark,
+            avatar: group.avatar,
+            last_msg: content,
+            last_msg_time: result.create_time,
+            last_msg_type: result.content_type,
+            unread_count: 0,
+            friend_id: group_id,
+            conv_type: RightContentType::Group,
+            mute: false,
+            is_pined: 0,
         }
     }
 }
