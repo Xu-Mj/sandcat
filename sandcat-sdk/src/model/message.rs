@@ -26,6 +26,7 @@ pub struct Message {
     #[serde(default)]
     pub id: i32,
     pub seq: i64,
+    pub send_seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -90,6 +91,7 @@ impl From<InviteCancelMsg> for Message {
         Message {
             id: 0,
             seq: value.seq,
+            send_seq: value.send_seq,
             local_id: value.local_id,
             server_id: value.server_id,
             send_id: value.send_id,
@@ -127,6 +129,7 @@ impl From<InviteAnswerMsg> for Message {
         Message {
             id: 0,
             seq: value.seq,
+            send_seq: value.send_seq,
             local_id: value.local_id,
             server_id: value.server_id,
             send_id: value.send_id,
@@ -160,6 +163,7 @@ impl From<InviteNotAnswerMsg> for Message {
         Message {
             id: 0,
             seq: value.seq,
+            send_seq: value.send_seq,
             local_id: value.local_id,
             server_id: value.server_id,
             send_id: value.send_id,
@@ -194,6 +198,7 @@ impl From<Hangup> for Message {
         Message {
             id: 0,
             seq: value.seq,
+            send_seq: value.send_seq,
             local_id: value.local_id,
             server_id: value.server_id,
             send_id: value.send_id,
@@ -228,6 +233,7 @@ impl Message {
         Message {
             id: 0,
             seq: value.seq,
+            send_seq: value.send_seq,
             local_id: value.local_id,
             server_id: value.server_id,
             send_id: value.send_id,
@@ -258,6 +264,7 @@ impl Message {
         Self {
             id: 0,
             seq: msg.seq,
+            send_seq: msg.send_seq,
             local_id: msg.local_id,
             server_id: msg.server_id,
             send_id: msg.send_id,
@@ -314,6 +321,7 @@ impl Msg {
         Message {
             id: msg.id,
             seq: msg.seq,
+            send_seq: msg.send_seq,
             local_id: msg.local_id.clone(),
             server_id: msg.server_id.clone(),
             send_id: msg.send_id.clone(),
@@ -355,6 +363,7 @@ pub enum RespMsgType {
 /// server received message and return the result(success/failed)
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct ServerResponse {
+    pub send_seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_status: SendStatus,
@@ -433,6 +442,7 @@ pub struct InviteMsg {
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteNotAnswerMsg {
     pub seq: i64,
+    pub send_seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -452,6 +462,7 @@ pub struct InviteNotAnswerMsg {
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteCancelMsg {
     pub seq: i64,
+    pub send_seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -478,6 +489,7 @@ pub enum InviteType {
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct InviteAnswerMsg {
     pub seq: i64,
+    pub send_seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -528,6 +540,7 @@ pub struct Agree {
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct Hangup {
     pub seq: i64,
+    pub send_seq: i64,
     pub local_id: AttrValue,
     pub server_id: AttrValue,
     pub send_id: AttrValue,
@@ -595,6 +608,7 @@ impl TryFrom<pb::message::Msg> for Message {
         Ok(Self {
             id: 0,
             seq: value.seq,
+            send_seq: value.send_seq,
             local_id: value.local_id.into(),
             server_id: value.server_id.into(),
             send_id: value.send_id.into(),
@@ -676,6 +690,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::InviteAnswer(InviteAnswerMsg {
                 seq: msg.seq,
+                send_seq: msg.send_seq,
                 local_id: msg.local_id.into(),
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
@@ -696,6 +711,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::NotAnswer(InviteNotAnswerMsg {
                 seq: msg.seq,
+                send_seq: msg.send_seq,
                 local_id: msg.local_id.into(),
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
@@ -713,6 +729,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::InviteCancel(InviteCancelMsg {
                 seq: msg.seq,
+                send_seq: msg.send_seq,
                 local_id: msg.local_id.into(),
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
@@ -736,6 +753,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         }))),
         MsgType::Hangup => Ok(Msg::SingleCall(SingleCall::HangUp(Hangup {
             seq: msg.seq,
+            send_seq: msg.send_seq,
             local_id: msg.local_id.into(),
             server_id: msg.server_id.into(),
             send_id: msg.send_id.into(),
@@ -757,6 +775,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             let invite_type = get_invite_type(msg.content_type)?;
             Ok(Msg::SingleCall(SingleCall::InviteAnswer(InviteAnswerMsg {
                 seq: msg.seq,
+                send_seq: msg.send_seq,
                 local_id: msg.local_id.into(),
                 server_id: msg.server_id.into(),
                 send_id: msg.send_id.into(),
@@ -801,6 +820,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
                 RespMsgType::Group
             };
             Ok(Msg::ServerRecResp(ServerResponse {
+                send_seq: msg.send_seq,
                 local_id: msg.local_id.into(),
                 send_status: if msg.content_type == ContentType::Error as i32 {
                     SendStatus::Failed
