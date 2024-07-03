@@ -214,8 +214,15 @@ impl Chats {
                             error!("save friend error:{:?}", err);
                             return;
                         }
-
-                        CreateConvState::update(friend);
+                        let mut conv = Conversation::from(friend);
+                        conv.last_msg = AttrValue::from("new friend");
+                        conv.last_msg_type = ContentType::Text;
+                        conv.last_msg_time = chrono::Utc::now().timestamp_millis();
+                        if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                            error!("save new conversation error: {:?}", e);
+                            return;
+                        }
+                        CreateConvState::update(conv);
                     });
                 }
                 Msg::RecRelationshipDel((friend_id, seq)) => {

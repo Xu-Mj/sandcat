@@ -702,7 +702,15 @@ impl Chats {
                         error!("save friend error:{:?}", err);
                         return;
                     }
-                    CreateConvState::update(friend.clone());
+                    let mut conv = Conversation::from(friend.clone());
+                    conv.last_msg = AttrValue::from("new friend");
+                    conv.last_msg_type = ContentType::Text;
+                    conv.last_msg_time = chrono::Utc::now().timestamp_millis();
+                    if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                        error!("save new conversation error: {:?}", e);
+                        return;
+                    }
+                    CreateConvState::update(conv);
 
                     // send message to contact component to update the friend list
                     Dispatch::<FriendShipState>::global().reduce_mut(|s| {
@@ -710,8 +718,6 @@ impl Chats {
                         s.ship = None;
                         s.state_type = FriendShipStateType::RecResp;
                     });
-
-                    // ChatsMsg::SendMessage(Msg::Single(msg))
                 });
             }
             Msg::ServerRecResp(msg) => {

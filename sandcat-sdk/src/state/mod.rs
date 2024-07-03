@@ -10,6 +10,7 @@ use yewdux::{Dispatch, Store};
 use i18n::LanguageType;
 
 use crate::model::{
+    conversation::Conversation,
     friend::{Friend, FriendShipWithUser},
     group::Group,
     message::{InviteMsg, Message, Msg, ServerResponse},
@@ -144,33 +145,13 @@ pub struct SendResultState {
 
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct CreateConvState {
-    pub friend: Friend,
-    // pub friend_id: AttrValue,
-    // pub last_msg: AttrValue,
-    // pub last_msg_time: i64,
-    // pub friend_name: AttrValue,
-    // pub avatar: AttrValue,
+    pub conv: Conversation,
 }
 
 impl CreateConvState {
-    pub fn update(friend: Friend) {
-        Dispatch::<Self>::global().reduce_mut(|s| s.friend = friend);
+    pub fn update(conv: Conversation) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.conv = conv);
     }
-    // pub fn update(
-    //     friend_id: AttrValue,
-    //     last_msg: AttrValue,
-    //     last_msg_time: i64,
-    //     friend_name: AttrValue,
-    //     avatar: AttrValue,
-    // ) {
-    //     Dispatch::<Self>::global().reduce_mut(|s| {
-    //         s.avatar = avatar;
-    //         s.friend_name = friend_name;
-    //         s.last_msg = last_msg;
-    //         s.last_msg_time = last_msg_time;
-    //         s.friend_id = friend_id;
-    //     });
-    // }
 }
 
 #[derive(Default, Clone, PartialEq, Debug, Store)]

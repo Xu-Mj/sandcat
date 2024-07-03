@@ -388,8 +388,7 @@ impl Component for Chats {
                 false
             }
             ChatsMsg::CreateConvStateChanged(state) => {
-                let mut conv = Conversation::from(state.friend.clone());
-                conv.last_msg_time = chrono::Utc::now().timestamp_millis();
+                let conv = state.conv.clone();
                 self.list.shift_insert(0, conv.friend_id.clone(), conv);
                 true
             }

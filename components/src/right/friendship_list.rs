@@ -2,6 +2,8 @@ use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
 use log::error;
+use sandcat_sdk::model::conversation::Conversation;
+use sandcat_sdk::model::ContentType;
 use sandcat_sdk::state::CreateConvState;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{HtmlInputElement, MouseEvent};
@@ -172,7 +174,15 @@ impl Component for FriendShipList {
                                 return;
                             }
 
-                            CreateConvState::update(*friend);
+                            let mut conv = Conversation::from(*friend);
+                            conv.last_msg = AttrValue::from("new friend");
+                            conv.last_msg_type = ContentType::Text;
+                            conv.last_msg_time = chrono::Utc::now().timestamp_millis();
+                            if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                                error!("save new conversation error: {:?}", e);
+                                return;
+                            }
+                            CreateConvState::update(conv);
                         });
                         // 发送通知给contacts，刷新列表
                     }
