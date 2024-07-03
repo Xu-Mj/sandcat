@@ -131,11 +131,17 @@ impl Chats {
             let mut local_seq = db::db_ins().seq.get().await.unwrap_or_default();
             let mut messages = Vec::new();
             log::debug!("local seq: {:?}; server seq:{:?}", local_seq, server_seq);
-            if local_seq.local_seq < server_seq.seq {
+            if local_seq.local_seq < server_seq.seq || local_seq.send_seq < server_seq.send_seq {
                 log::debug!("pull offline messages");
                 // request offline messages
                 messages = match api::messages()
-                    .pull_offline_msg(user_id.as_str(), local_seq.local_seq, server_seq.seq)
+                    .pull_offline_msg(
+                        user_id.as_str(),
+                        local_seq.send_seq,
+                        server_seq.send_seq,
+                        local_seq.local_seq,
+                        server_seq.seq,
+                    )
                     .await
                 {
                     Ok(messages) => messages,

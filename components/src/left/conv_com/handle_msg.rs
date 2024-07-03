@@ -5,14 +5,17 @@ use yewdux::Dispatch;
 
 use sandcat_sdk::{
     api, db,
+    error::Error,
     model::{
         conversation::Conversation,
         friend::FriendStatus,
         message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
         notification::Notification,
+        seq::Seq,
         voice::Voice,
         ContentType, FriendShipStateType, RightContentType,
     },
+    pb::message::Msg as PbMsg,
     state::{
         AudioDownloadedState, FriendShipState, SendMessageState, SendResultState, UnreadState,
     },
@@ -288,7 +291,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
-                    self.handle_lack_msg(ctx, m.seq);
+                    self.handle_rec_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
@@ -297,7 +300,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
-                    self.handle_lack_msg(ctx, m.seq);
+                    self.handle_rec_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
@@ -306,7 +309,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
-                    self.handle_lack_msg(ctx, m.seq);
+                    self.handle_rec_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
@@ -315,7 +318,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
-                    self.handle_lack_msg(ctx, m.seq);
+                    self.handle_rec_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
@@ -324,50 +327,122 @@ impl Chats {
         }
     }
 
-    pub fn handle_lack_msg(&mut self, ctx: &Context<Self>, end: i64) {
+    pub fn handle_rec_lack_msg(&mut self, ctx: &Context<Self>, end: i64) {
+        self.handle_lack_msg(ctx, end, false);
+    }
+
+    pub fn handle_send_lack_msg(&mut self, ctx: &Context<Self>, end: i64) {
+        self.handle_lack_msg(ctx, end, true);
+    }
+
+    pub fn handle_lack_msg(&mut self, ctx: &Context<Self>, end: i64, is_send: bool) {
         log::debug!(
             "handle_lack_msg: self seq{}, end seq{}",
             self.seq.local_seq,
             end
         );
-        if self.seq.local_seq > end - 1 {
+        if (!is_send && self.seq.local_seq > end - 1) || (is_send && self.seq.send_seq > end - 1) {
             return;
         }
-        let mut need_repull = false;
-        if self.seq.local_seq < end - 1 {
-            // repull the lack messages
-            need_repull = true;
-        }
 
-        let start = self.seq.local_seq;
+        let (need_repull, start, other_seq) = if is_send {
+            (
+                self.seq.send_seq < end - 1,
+                self.seq.local_seq,
+                self.seq.send_seq,
+            )
+        } else {
+            (
+                self.seq.local_seq < end - 1,
+                self.seq.send_seq,
+                self.seq.local_seq,
+            )
+        };
+
+        // let start = self.seq.local_seq;
         let user_id = ctx.props().user_id.clone();
 
-        self.seq.local_seq = end;
+        if is_send {
+            self.seq.send_seq = end;
+        } else {
+            self.seq.local_seq = end;
+        }
+        // let send_seq = self.seq.send_seq;
         let seq = self.seq.clone();
 
         ctx.link().send_future(async move {
-            if let Err(e) = db::db_ins().seq.put(&seq).await {
-                error!("save seq error: {:?}", e);
-                Notification::error("save seq error").notify();
-                return ChatsMsg::None;
-            }
-            if need_repull {
-                let messages = match api::messages()
-                    .pull_offline_msg(user_id.as_str(), start, end)
-                    .await
-                {
-                    Ok(messages) => messages,
-                    Err(e) => {
-                        error!("pull offline msg error: {:?}", e);
-                        Notification::error("pull offline msg error").notify();
-                        return ChatsMsg::None;
-                    }
-                };
-                ChatsMsg::HandleLackMessages(messages)
-            } else {
-                ChatsMsg::None
-            }
+            Self::handle_seq_update(seq, need_repull, &user_id, other_seq, start, end, is_send)
+                .await
+            // if let Err(e) = db::db_ins().seq.put(&seq).await {
+            //     error!("save seq error: {:?}", e);
+            //     Notification::error("save seq error").notify();
+            //     return ChatsMsg::None;
+            // }
+            // if need_repull {
+            //     let messages = match api::messages()
+            //         .pull_offline_msg(user_id.as_str(), send_seq, send_seq, start, end)
+            //         .await
+            //     {
+            //         Ok(messages) => messages,
+            //         Err(e) => {
+            //             error!("pull offline msg error: {:?}", e);
+            //             Notification::error("pull offline msg error").notify();
+            //             return ChatsMsg::None;
+            //         }
+            //     };
+            //     ChatsMsg::HandleLackMessages(messages)
+            // } else {
+            //     ChatsMsg::None
+            // }
         });
+    }
+
+    async fn handle_seq_update(
+        seq: Seq,
+        need_repull: bool,
+        user_id: &str,
+        send_seq: i64,
+        start: i64,
+        end: i64,
+        is_send: bool,
+    ) -> ChatsMsg {
+        // todo handle error
+        if let Err(e) = db::db_ins().seq.put(&seq).await {
+            error!("save seq error: {:?}", e);
+            Notification::error("save seq error").notify();
+            return ChatsMsg::None;
+        }
+
+        // todo handle error
+        if need_repull {
+            match Self::pull_offline_msgs(user_id, is_send, send_seq, start, end).await {
+                Ok(messages) => ChatsMsg::HandleLackMessages(messages),
+                Err(e) => {
+                    error!("pull offline msg error: {:?}", e);
+                    Notification::error("pull offline msg error").notify();
+                    ChatsMsg::None
+                }
+            }
+        } else {
+            ChatsMsg::None
+        }
+    }
+
+    async fn pull_offline_msgs(
+        user_id: &str,
+        is_send: bool,
+        send_seq: i64,
+        start: i64,
+        end: i64,
+    ) -> Result<Vec<PbMsg>, Error> {
+        let (send_start, send_end, rec_start, rec_end) = if is_send {
+            (start, end, send_seq, send_seq)
+        } else {
+            (send_seq, send_seq, start, end)
+        };
+        api::messages()
+            .pull_offline_msg(user_id, send_start, send_end, rec_start, rec_end)
+            .await
     }
 
     pub async fn download_voice_and_save(
@@ -423,7 +498,7 @@ impl Chats {
                     || self.conv_state.conv.content_type == RightContentType::Group)
                     && self.conv_state.conv.item_id == msg.friend_id;
 
-                self.handle_lack_msg(ctx, msg.seq);
+                self.handle_rec_lack_msg(ctx, msg.seq);
                 spawn_local(async move {
                     // ctx.link().send_future(async move {
                     // split audio data
@@ -465,7 +540,7 @@ impl Chats {
                 match group_msg {
                     GroupMsg::Invitation((msg, seq)) => {
                         // receive create group message
-                        self.handle_lack_msg(ctx, *seq);
+                        self.handle_rec_lack_msg(ctx, *seq);
                         self.handle_group_invitation(ctx, msg.clone());
                     }
                     GroupMsg::Message(msg) => {
@@ -488,7 +563,7 @@ impl Chats {
                             || self.conv_state.conv.content_type == RightContentType::Group)
                             && self.conv_state.conv.item_id == msg.friend_id;
 
-                        self.handle_lack_msg(ctx, msg.seq);
+                        self.handle_rec_lack_msg(ctx, msg.seq);
                         ctx.link().send_future(async move {
                             // 数据入库
                             if msg.content_type == ContentType::Audio {
@@ -518,7 +593,7 @@ impl Chats {
                         return self.operate_msg(ctx, conv, is_self);
                     }
                     GroupMsg::MemberExit((mem_id, group_id, seq)) => {
-                        self.handle_lack_msg(ctx, *seq);
+                        self.handle_rec_lack_msg(ctx, *seq);
                         // todo modify conversation list
                         // delete member information from da
                         let mem_id = mem_id.clone();
@@ -537,7 +612,7 @@ impl Chats {
                         });
                     }
                     GroupMsg::Dismiss((group_id, seq)) => {
-                        self.handle_lack_msg(ctx, *seq);
+                        self.handle_rec_lack_msg(ctx, *seq);
                         // delete group from db
                         // let user_id = ctx.props().user_id.clone();
                         // we can consume the group_msg here because it is behind in the reference
@@ -572,7 +647,7 @@ impl Chats {
                     GroupMsg::Update((group, seq)) => {
                         self.handle_group_update(group.clone());
 
-                        self.handle_lack_msg(ctx, *seq);
+                        self.handle_rec_lack_msg(ctx, *seq);
 
                         // todo send message received
                     }
@@ -599,7 +674,7 @@ impl Chats {
                 });
 
                 // handle sequence
-                self.handle_lack_msg(ctx, seq);
+                self.handle_rec_lack_msg(ctx, seq);
             }
             Msg::ReadNotice(_) | Msg::SingleDeliveredNotice(_) => {}
             Msg::OfflineSync(_) => {}
@@ -613,7 +688,7 @@ impl Chats {
             }
             Msg::FriendshipDeliveredNotice(_) => {}
             Msg::RelationshipRes((friend, seq)) => {
-                self.handle_lack_msg(ctx, seq);
+                self.handle_rec_lack_msg(ctx, seq);
                 // 收到好友同意消息
                 let send_id = ctx.props().user_id.clone();
                 // 需要通知联系人列表更新
@@ -695,7 +770,7 @@ impl Chats {
                         }
                     }
                 });
-                self.handle_lack_msg(ctx, seq);
+                self.handle_rec_lack_msg(ctx, seq);
             }
         }
         false

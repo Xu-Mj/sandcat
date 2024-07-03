@@ -249,7 +249,7 @@ impl Chats {
                             }
                         }
                     });
-                    self.handle_lack_msg(ctx, seq);
+                    self.handle_rec_lack_msg(ctx, seq);
                 }
                 _ => {}
             }
