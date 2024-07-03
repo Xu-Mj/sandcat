@@ -27,10 +27,15 @@ impl Chats {
         last_msg: AttrValue,
         mut msg: Message,
         conv_type: RightContentType,
+        cur_user_id: AttrValue,
     ) {
-        let friend_id = msg.send_id.clone();
-        msg.send_id = msg.friend_id.clone();
-        msg.friend_id = friend_id;
+        if cur_user_id != msg.send_id {
+            let friend_id = msg.send_id.clone();
+            msg.send_id = msg.friend_id.clone();
+            msg.friend_id = friend_id;
+        } else {
+            msg.is_self = true;
+        }
 
         let conv = Conversation {
             friend_id: msg.friend_id.clone(),
@@ -96,7 +101,13 @@ impl Chats {
             let conv_type = self.get_msg_type(&msg);
             match msg {
                 Msg::Single(msg) => {
-                    self.handle_offline_msg_map(&mut map, msg.content.clone(), msg, conv_type);
+                    self.handle_offline_msg_map(
+                        &mut map,
+                        msg.content.clone(),
+                        msg,
+                        conv_type,
+                        ctx.props().user_id.clone(),
+                    );
                 }
                 Msg::Group(group_msg) => match group_msg {
                     GroupMsg::Invitation((msg, _)) => {
@@ -152,6 +163,7 @@ impl Chats {
                             last_msg,
                             Message::from(msg),
                             conv_type,
+                            ctx.props().user_id.clone(),
                         );
                     }
                     SingleCall::InviteAnswer(msg) => {
@@ -162,6 +174,7 @@ impl Chats {
                                 last_msg,
                                 Message::from(msg),
                                 conv_type,
+                                ctx.props().user_id.clone(),
                             );
                         }
                     }
@@ -172,6 +185,7 @@ impl Chats {
                             last_msg,
                             Message::from(msg),
                             conv_type,
+                            ctx.props().user_id.clone(),
                         );
                     }
                     SingleCall::HangUp(msg) => {
@@ -181,6 +195,7 @@ impl Chats {
                             last_msg,
                             Message::from(msg),
                             conv_type,
+                            ctx.props().user_id.clone(),
                         );
                     }
                     _ => {}

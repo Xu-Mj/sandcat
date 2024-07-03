@@ -30,3 +30,6 @@
 - bug: add friend page need to listen input change event
 - we need to split the forward message type
 - handle request seq error
+- global unread message count is not correct
+- we need to increase the unread count when the current component is not in the message component
+- the conversation last message is not correct after offline message synced
