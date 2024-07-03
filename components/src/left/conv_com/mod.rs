@@ -112,6 +112,7 @@ impl Chats {
             LanguageType::EnUS => en_us::CONVERSATION,
         };
         let i18n = utils::create_bundle(res);
+
         Dialog::loading(&tr!(i18n, LOADING));
 
         let id = ctx.props().user_id.clone();

@@ -336,11 +336,6 @@ impl Chats {
     }
 
     pub fn handle_lack_msg(&mut self, ctx: &Context<Self>, end: i64, is_send: bool) {
-        log::debug!(
-            "handle_lack_msg: self seq{}, end seq{}",
-            self.seq.local_seq,
-            end
-        );
         if (!is_send && self.seq.local_seq > end - 1) || (is_send && self.seq.send_seq > end - 1) {
             return;
         }
@@ -739,6 +734,8 @@ impl Chats {
             Msg::ServerRecResp(msg) => {
                 // need to use the local to mark the message as send-success
                 // log::debug!("receive server response: {:?}", msg);
+                // handle send sequence
+                let send_seq = msg.send_seq;
                 // update database
                 spawn_local(async move {
                     match msg.resp_msg_type {
@@ -758,6 +755,7 @@ impl Chats {
                     }
                     Dispatch::<SendResultState>::global().reduce_mut(|s| s.msg = msg);
                 });
+                self.handle_send_lack_msg(ctx, send_seq);
             }
             Msg::RecRelationshipDel((friend_id, seq)) => {
                 // update database
