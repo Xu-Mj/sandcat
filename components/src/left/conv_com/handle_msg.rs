@@ -55,7 +55,7 @@ impl Chats {
             Msg::Group(group_msg) => {
                 match group_msg {
                     GroupMsg::Invitation((msg, _)) => {
-                        self.handle_group_invitation(ctx, msg.clone());
+                        Self::handle_group_invitation(ctx, msg.clone());
                     }
                     GroupMsg::Dismiss((group_id, _)) => {
                         self.handle_group_dismiss(ctx, group_id.clone());
@@ -260,6 +260,7 @@ impl Chats {
             self.update_old_conv(old, conv, is_self, false)
         } else {
             ctx.link().send_future(async move {
+                log::debug!("create new conversation:{:?}", conv);
                 if let Some(result) = Self::create_new_conversation(
                     conv,
                     friend_id,
@@ -369,27 +370,6 @@ impl Chats {
         ctx.link().send_future(async move {
             Self::handle_seq_update(seq, need_repull, &user_id, other_seq, start, end, is_send)
                 .await
-            // if let Err(e) = db::db_ins().seq.put(&seq).await {
-            //     error!("save seq error: {:?}", e);
-            //     Notification::error("save seq error").notify();
-            //     return ChatsMsg::None;
-            // }
-            // if need_repull {
-            //     let messages = match api::messages()
-            //         .pull_offline_msg(user_id.as_str(), send_seq, send_seq, start, end)
-            //         .await
-            //     {
-            //         Ok(messages) => messages,
-            //         Err(e) => {
-            //             error!("pull offline msg error: {:?}", e);
-            //             Notification::error("pull offline msg error").notify();
-            //             return ChatsMsg::None;
-            //         }
-            //     };
-            //     ChatsMsg::HandleLackMessages(messages)
-            // } else {
-            //     ChatsMsg::None
-            // }
         });
     }
 
@@ -536,7 +516,7 @@ impl Chats {
                     GroupMsg::Invitation((msg, seq)) => {
                         // receive create group message
                         self.handle_rec_lack_msg(ctx, *seq);
-                        self.handle_group_invitation(ctx, msg.clone());
+                        Self::handle_group_invitation(ctx, msg.clone());
                     }
                     GroupMsg::Message(msg) => {
                         let mut msg = msg.clone();
@@ -640,7 +620,7 @@ impl Chats {
                         }
                     }
                     GroupMsg::Update((group, seq)) => {
-                        self.handle_group_update(group.clone());
+                        Self::handle_group_update(group.clone());
 
                         self.handle_rec_lack_msg(ctx, *seq);
 

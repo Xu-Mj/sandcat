@@ -18,7 +18,7 @@ use yewdux::Dispatch;
 use super::{conversations::ChatsMsg, Chats};
 
 impl Chats {
-    pub fn handle_group_invitation(&mut self, ctx: &Context<Self>, msg: GroupInvitation) {
+    pub fn handle_group_invitation(ctx: &Context<Self>, msg: GroupInvitation) {
         // create group conversation directly
         let clone_ctx = ctx.link().clone();
         spawn_local(async move {
@@ -201,7 +201,7 @@ impl Chats {
 
         Ok(message)
     }
-    pub fn handle_group_update(&mut self, group: Group) {
+    pub fn handle_group_update(group: Group) {
         // update conversation
         Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
             s.id = group.id.clone();

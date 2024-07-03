@@ -452,7 +452,7 @@ impl Chats {
         )
     }
 
-    fn get_msg_type(&self, msg: &Msg) -> RightContentType {
+    fn get_msg_type(msg: &Msg) -> RightContentType {
         match msg {
             Msg::Group(_) => RightContentType::Group,
             Msg::Single(_) | Msg::SingleCall(_) => RightContentType::Friend,
