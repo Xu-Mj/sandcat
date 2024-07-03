@@ -3,7 +3,6 @@ use std::rc::Rc;
 use gloo::timers::callback::Timeout;
 use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
-use sandcat_sdk::model::notification::Notification;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
@@ -14,15 +13,15 @@ use sandcat_sdk::db;
 use sandcat_sdk::model::conversation::Conversation;
 use sandcat_sdk::model::group::Group;
 use sandcat_sdk::model::message::Msg;
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::seq::Seq;
-use sandcat_sdk::model::{
-    ComponentType, CurrentItem, RightContentType, OFFLINE_TIME, REFRESH_TOKEN, TOKEN,
-};
+use sandcat_sdk::model::{ComponentType, CurrentItem, OFFLINE_TIME, REFRESH_TOKEN, TOKEN};
 use sandcat_sdk::pb::message::Msg as PbMsg;
+use sandcat_sdk::state::CreateConvState;
 use sandcat_sdk::state::{
-    AddFriendState, AddFriendStateItem, ComponentTypeState, CreateConvState, I18nState, MuteState,
-    RemoveConvState, SendMessageState, UpdateConvState,
+    AddFriendState, AddFriendStateItem, ComponentTypeState, CreateGroupConvState, I18nState,
+    MuteState, RemoveConvState, SendMessageState, UpdateConvState,
 };
 use sandcat_sdk::state::{ConvState, UnreadState};
 use utils::tr;
@@ -80,6 +79,7 @@ pub enum ChatsMsg {
     /// do nothing
     None,
     /// create a conversation item by received state
+    CreateGroupConvStateChanged(Rc<CreateGroupConvState>),
     CreateConvStateChanged(Rc<CreateConvState>),
     /// update a conversation item by received state
     UpdateConvStateChanged(Rc<UpdateConvState>),
@@ -231,17 +231,11 @@ impl Component for Chats {
             }
             ChatsMsg::Mute => self.mute(),
             ChatsMsg::Pin(is_pined) => self.pin(is_pined),
-            ChatsMsg::CreateConvStateChanged(state) => {
-                match state.type_ {
-                    RightContentType::Friend => {}
-                    RightContentType::Group => {
-                        if state.group.is_some() {
-                            let list = state.group.clone();
-                            self.create_group(ctx, list.unwrap());
-                            return true;
-                        }
-                    }
-                    _ => {}
+            ChatsMsg::CreateGroupConvStateChanged(state) => {
+                if state.group.is_some() {
+                    let list = state.group.clone();
+                    self.create_group(ctx, list.unwrap());
+                    return true;
                 }
                 false
             }
@@ -392,6 +386,12 @@ impl Component for Chats {
                     navigator.push(&Page::Login);
                 }
                 false
+            }
+            ChatsMsg::CreateConvStateChanged(state) => {
+                let mut conv = Conversation::from(state.friend.clone());
+                conv.last_msg_time = chrono::Utc::now().timestamp_millis();
+                self.list.shift_insert(0, conv.friend_id.clone(), conv);
+                true
             }
         }
     }

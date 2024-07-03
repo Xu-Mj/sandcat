@@ -10,18 +10,15 @@ use sandcat_sdk::{
     model::{
         conversation::Conversation,
         friend::FriendStatus,
-        message::{
-            convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall,
-            DEFAULT_HELLO_MESSAGE,
-        },
+        message::{convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall},
         notification::Notification,
         ContentType, RightContentType, OFFLINE_TIME,
     },
     pb::message::Msg as PbMsg,
-    state::RefreshMsgListState,
+    state::{CreateConvState, RefreshMsgListState},
 };
 
-use super::{conversations::ChatsMsg, Chats};
+use super::Chats;
 
 impl Chats {
     fn handle_offline_msg_map(
@@ -198,8 +195,8 @@ impl Chats {
                     });
                 }
                 Msg::RelationshipRes((friend, _)) => {
-                    let send_id = ctx.props().user_id.clone();
-                    ctx.link().send_future(async move {
+                    // let send_id = ctx.props().user_id.clone();
+                    spawn_local(async move {
                         if let Err(err) = db::db_ins()
                             .friendships
                             .agree_by_friend_id(friend.friend_id.as_str())
@@ -211,32 +208,14 @@ impl Chats {
                         // select friend if exist
                         let f = db::db_ins().friends.get(&friend.friend_id).await;
                         if !f.friend_id.is_empty() {
-                            return ChatsMsg::None;
+                            return;
                         }
                         if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
                             error!("save friend error:{:?}", err);
-                            return ChatsMsg::None;
-                        }
-                        // send hello message
-                        let mut msg = Message {
-                            local_id: nanoid::nanoid!().into(),
-                            send_id,
-                            friend_id: friend.friend_id.clone(),
-                            content_type: ContentType::Text,
-                            content: friend
-                                .hello
-                                .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
-                            create_time: chrono::Utc::now().timestamp_millis(),
-                            is_read: 1,
-                            is_self: true,
-                            ..Default::default()
-                        };
-                        if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
-                            error!("save message to db error: {:?}", e);
-                            Notification::error("save message to db error").notify();
+                            return;
                         }
 
-                        ChatsMsg::SendMessage(Msg::Single(msg))
+                        CreateConvState::update(friend);
                     });
                 }
                 Msg::RecRelationshipDel((friend_id, seq)) => {

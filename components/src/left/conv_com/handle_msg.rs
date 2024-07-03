@@ -9,7 +9,7 @@ use sandcat_sdk::{
     model::{
         conversation::Conversation,
         friend::FriendStatus,
-        message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
+        message::{GroupMsg, Msg, RespMsgType, SingleCall},
         notification::Notification,
         seq::Seq,
         voice::Voice,
@@ -17,7 +17,8 @@ use sandcat_sdk::{
     },
     pb::message::Msg as PbMsg,
     state::{
-        AudioDownloadedState, FriendShipState, SendMessageState, SendResultState, UnreadState,
+        AudioDownloadedState, CreateConvState, FriendShipState, SendMessageState, SendResultState,
+        UnreadState,
     },
 };
 
@@ -685,41 +686,23 @@ impl Chats {
             Msg::RelationshipRes((friend, seq)) => {
                 self.handle_rec_lack_msg(ctx, seq);
                 // 收到好友同意消息
-                let send_id = ctx.props().user_id.clone();
+                // let send_id = ctx.props().user_id.clone();
                 // 需要通知联系人列表更新
                 // 数据入库
-                ctx.link().send_future(async move {
+                spawn_local(async move {
                     if let Err(err) = db::db_ins()
                         .friendships
                         .agree_by_friend_id(friend.friend_id.as_str())
                         .await
                     {
                         error!("agree friendship error:{:?}", err);
-                        return ChatsMsg::None;
+                        return;
                     }
                     if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
                         error!("save friend error:{:?}", err);
-                        return ChatsMsg::None;
+                        return;
                     }
-                    // send hello message
-                    let mut msg = Message {
-                        local_id: nanoid::nanoid!().into(),
-                        send_id,
-                        friend_id: friend.friend_id.clone(),
-                        content_type: ContentType::Text,
-                        content: friend
-                            .hello
-                            .clone()
-                            .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
-                        create_time: chrono::Utc::now().timestamp_millis(),
-                        is_read: 1,
-                        is_self: true,
-                        ..Default::default()
-                    };
-                    if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
-                        log::error!("save message fail:{:?}", e);
-                        Notification::error("save message error").notify();
-                    }
+                    CreateConvState::update(friend.clone());
 
                     // send message to contact component to update the friend list
                     Dispatch::<FriendShipState>::global().reduce_mut(|s| {
@@ -728,7 +711,7 @@ impl Chats {
                         s.state_type = FriendShipStateType::RecResp;
                     });
 
-                    ChatsMsg::SendMessage(Msg::Single(msg))
+                    // ChatsMsg::SendMessage(Msg::Single(msg))
                 });
             }
             Msg::ServerRecResp(msg) => {

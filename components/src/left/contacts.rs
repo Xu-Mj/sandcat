@@ -1,21 +1,19 @@
 use fluent::{FluentBundle, FluentResource};
 use indexmap::IndexMap;
-use sandcat_sdk::state::ComponentTypeState;
-use sandcat_sdk::state::MobileState;
-use sandcat_sdk::state::Notify;
 use std::rc::Rc;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::group::Group;
 use sandcat_sdk::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
+use sandcat_sdk::state::ComponentTypeState;
+use sandcat_sdk::state::MobileState;
 use sandcat_sdk::state::{
-    AddFriendState, AppState, FriendListState, FriendShipState, I18nState, ItemType,
-    RemoveFriendState, UnreadState,
+    AddFriendState, FriendListState, FriendShipState, I18nState, ItemType, RemoveFriendState,
+    UnreadState,
 };
 use sandcat_sdk::{
     model::friend::Friend,
@@ -229,11 +227,11 @@ impl Component for Contacts {
                         if !msg_id.is_empty() {
                             Dispatch::<UnreadState>::global().reduce_mut(|s| s.contacts_count = 0);
                             // send read request
-                            let user = AppState::get();
-                            let user_id = user.login_user.id.as_str();
-                            if let Err(err) = api::messages().del_msg(user_id, msg_id).await {
-                                log::error!("{:?}", err);
-                            }
+                            // let user = AppState::get();
+                            // let user_id = user.login_user.id.as_str();
+                            // if let Err(err) = api::messages().del_msg(user_id, msg_id).await {
+                            //     log::error!("{:?}", err);
+                            // }
                         }
                     }
                 });

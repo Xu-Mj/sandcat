@@ -144,17 +144,44 @@ pub struct SendResultState {
 
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct CreateConvState {
-    pub type_: RightContentType,
-    // 可以是好友，或者其他实现了   ItemInfo的类型
-    // pub friend: Option<Friend>,
+    pub friend: Friend,
+    // pub friend_id: AttrValue,
+    // pub last_msg: AttrValue,
+    // pub last_msg_time: i64,
+    // pub friend_name: AttrValue,
+    // pub avatar: AttrValue,
+}
+
+impl CreateConvState {
+    pub fn update(friend: Friend) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.friend = friend);
+    }
+    // pub fn update(
+    //     friend_id: AttrValue,
+    //     last_msg: AttrValue,
+    //     last_msg_time: i64,
+    //     friend_name: AttrValue,
+    //     avatar: AttrValue,
+    // ) {
+    //     Dispatch::<Self>::global().reduce_mut(|s| {
+    //         s.avatar = avatar;
+    //         s.friend_name = friend_name;
+    //         s.last_msg = last_msg;
+    //         s.last_msg_time = last_msg_time;
+    //         s.friend_id = friend_id;
+    //     });
+    // }
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct CreateGroupConvState {
     // 创建群聊，接收一个NodeList，在chats中会生成群聊
     pub group: Option<Vec<String>>,
 }
 
-impl CreateConvState {
+impl CreateGroupConvState {
     pub fn create_group(&mut self, group: Vec<String>) {
         self.group = Some(group);
-        self.type_ = RightContentType::Group;
     }
 }
 

@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
 use log::error;
-use sandcat_sdk::db;
+use sandcat_sdk::state::CreateConvState;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::{HtmlInputElement, MouseEvent};
 use yew::{html, AttrValue, Component, Context, Html, NodeRef, Properties};
@@ -11,12 +11,12 @@ use yewdux::Dispatch;
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::UpIcon;
 use sandcat_sdk::api;
+use sandcat_sdk::db;
 use sandcat_sdk::model::friend::{
     Friend, FriendShipAgree, FriendShipWithUser, FriendStatus, ReadStatus,
 };
-use sandcat_sdk::model::message::{Message, Msg, SendStatus, DEFAULT_HELLO_MESSAGE};
-use sandcat_sdk::model::{ContentType, FriendShipStateType};
-use sandcat_sdk::state::{FriendShipState, SendMessageState};
+use sandcat_sdk::model::FriendShipStateType;
+use sandcat_sdk::state::FriendShipState;
 use utils::tr;
 
 use crate::constant::{
@@ -158,7 +158,7 @@ impl Component for FriendShipList {
                             s.ship = None;
                             s.state_type = FriendShipStateType::Res
                         });
-                        let send_id = ctx.props().user_id.clone();
+                        // let send_id = ctx.props().user_id.clone();
                         // update the is_operated field
                         spawn_local(async move {
                             if let Err(err) =
@@ -171,37 +171,13 @@ impl Component for FriendShipList {
                                 error!("save friend error:{:?}", err);
                                 return;
                             }
-                            let mut msg = Message {
-                                local_id: nanoid::nanoid!().into(),
-                                send_id,
-                                friend_id: friend.friend_id.clone(),
-                                content_type: ContentType::Text,
-                                content: friend
-                                    .hello
-                                    .clone()
-                                    .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
-                                create_time: chrono::Utc::now().timestamp_millis(),
-                                is_read: 1,
-                                is_self: true,
-                                send_status: SendStatus::Sending,
-                                ..Default::default()
-                            };
-                            let _ = db::db_ins()
-                                .messages
-                                .add_message(&mut msg)
-                                .await
-                                .map_err(|err| log::error!("添加好友打招呼消息入库失败:{:?}", err));
-                            log::debug!("发送打招呼:{:?}", &msg);
-                            Dispatch::<SendMessageState>::global()
-                                .reduce_mut(|s| s.msg = Msg::Single(msg));
+
+                            CreateConvState::update(*friend);
                         });
-                        // ship.status = AttrValue::from("1");
-                        // ship.read = ReadStatus::True;
                         // 发送通知给contacts，刷新列表
                     }
                     RequestStatus::Failed(id) => {
                         if let Some(item) = self.list.iter_mut().find(|item| item.fs_id == id) {
-                            // 000 标识请求失败
                             item.status = FriendStatus::Failed as i32;
                         }
                     }

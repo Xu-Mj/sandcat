@@ -4,6 +4,7 @@ use yew::AttrValue;
 use crate::model::ContentType;
 use crate::model::RightContentType;
 
+use super::friend::Friend;
 use super::group::Group;
 use super::message::Hangup;
 use super::message::InviteAnswerMsg;
@@ -142,6 +143,19 @@ impl From<Group> for Conversation {
     }
 }
 
+impl From<Friend> for Conversation {
+    fn from(value: Friend) -> Self {
+        Self {
+            conv_type: RightContentType::Friend,
+            friend_id: value.friend_id,
+            name: value.name,
+            remark: value.remark,
+            avatar: value.avatar,
+            last_msg: AttrValue::from("new friend"),
+            ..Default::default()
+        }
+    }
+}
 pub fn get_invite_type(t: &InviteType) -> (AttrValue, ContentType) {
     match t {
         InviteType::Video => (AttrValue::from("[视频通话]"), ContentType::VideoCall),

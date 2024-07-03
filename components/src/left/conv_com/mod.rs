@@ -31,8 +31,8 @@ use sandcat_sdk::{
         TOKEN, WS_ADDR,
     },
     state::{
-        ConvState, CreateConvState, I18nState, MobileState, MuteState, Notify, RecMessageState,
-        RemoveConvState, SendMessageState, UnreadState, UpdateConvState,
+        ConvState, CreateConvState, CreateGroupConvState, I18nState, MobileState, MuteState,
+        Notify, RecMessageState, RemoveConvState, SendMessageState, UnreadState, UpdateConvState,
     },
 };
 use utils::tr;
@@ -83,6 +83,7 @@ pub struct Chats {
     /// used to receive that contact list to delete the friends to remove the conversation
     _remove_conv_dis: Dispatch<RemoveConvState>,
     /// listen to the create conv event, like:
+    _create_group_conv_dis: Dispatch<CreateGroupConvState>,
     _create_conv_dis: Dispatch<CreateConvState>,
     // _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
     /// mute conversation,
@@ -153,6 +154,7 @@ impl Chats {
                     }
                 };
                 local_seq.local_seq = server_seq.seq;
+                local_seq.send_seq = server_seq.send_seq;
                 if let Err(e) = db::db_ins().seq.put(&local_seq).await {
                     error!("save local seq error: {:?}", e);
                     Notification::error("save local seq error").notify();
@@ -169,13 +171,14 @@ impl Chats {
             Dispatch::global().subscribe_silent(ctx.link().callback(ChatsMsg::SendMsg));
         let _remove_conv_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(ChatsMsg::RemoveConvStateChanged));
+        let _create_group_conv_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(ChatsMsg::CreateGroupConvStateChanged));
         let _create_conv_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(ChatsMsg::CreateConvStateChanged));
         let _mute_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(ChatsMsg::MuteStateChanged));
         let rec_msg_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(|_| ChatsMsg::None));
-        // same as conv state
 
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let addr = utils::get_local_storage(WS_ADDR).unwrap();
@@ -218,6 +221,7 @@ impl Chats {
             context_menu_pos: (0, 0, AttrValue::default(), false, false),
             _remove_conv_dis,
             _send_msg_dis,
+            _create_group_conv_dis,
             _create_conv_dis,
             _mute_dis,
             rec_msg_dis,
