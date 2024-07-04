@@ -1,9 +1,10 @@
+use html::Scope;
 use log::error;
-use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 
 use sandcat_sdk::{
     api, db,
+    error::Error,
     model::{
         conversation::Conversation,
         group::{Group, GroupMember, GroupRequest},
@@ -17,46 +18,54 @@ use yewdux::Dispatch;
 
 use super::{conversations::ChatsMsg, Chats};
 
+/// Handle group related messages
+/// 1. group invitations:
+/// save the group information and the members information to db
+/// and then create a new conversation, add it into our conversation list
+/// store it to db
+/// 2.  group dismiss:
+/// update group information set is_dismissed to true
+/// update the conversation list about the last message content
+/// 3. members leave:
+/// delete member from the db
+
 impl Chats {
-    pub fn handle_group_invitation(ctx: &Context<Self>, msg: GroupInvitation) {
+    pub async fn handle_group_invitation(ctx: Scope<Self>, msg: GroupInvitation) {
         // create group conversation directly
-        let clone_ctx = ctx.link().clone();
-        spawn_local(async move {
-            // store conversation
-            let info = Group::from(msg.info.unwrap());
-            let mut conv = Conversation::from(info.clone());
-            conv.unread_count = 0;
+        // store conversation
+        let info = Group::from(msg.info.unwrap());
+        let mut conv = Conversation::from(info.clone());
+        conv.unread_count = 0;
 
-            if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
-                error!("Failed to store conversation: {:?}", e);
-                Notification::error("Failed to store conversation").notify();
-                return;
-            }
+        if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+            error!("Failed to store conversation: {:?}", e);
+            Notification::error("Failed to store conversation").notify();
+            return;
+        }
 
-            // store group information
-            if let Err(err) = db::db_ins().groups.put(&info).await {
-                error!("store group error : {:?}", err);
-                Notification::error("Failed to store group").notify();
-                return;
-            };
+        // store group information
+        if let Err(err) = db::db_ins().groups.put(&info).await {
+            error!("store group error : {:?}", err);
+            Notification::error("Failed to store group").notify();
+            return;
+        };
 
-            // store group members
-            if let Err(e) = db::db_ins().group_members.put_list(msg.members).await {
-                error!("save group member error: {:?}", e);
-                Notification::error("Failed to store group member").notify();
-                return;
-            }
+        // store group members
+        if let Err(e) = db::db_ins().group_members.put_list(msg.members).await {
+            error!("save group member error: {:?}", e);
+            Notification::error("Failed to store group member").notify();
+            return;
+        }
 
-            // send back received message
-            clone_ctx.send_message(ChatsMsg::SendBackGroupInvitation(info.id.clone()));
+        // send back received message
+        ctx.send_message(ChatsMsg::SendBackGroupInvitation(info.id.clone()));
 
-            // send add friend state
-            clone_ctx.send_message(ChatsMsg::SendCreateGroupToContacts(info));
-            clone_ctx.send_message(ChatsMsg::InsertConv(conv));
-        });
+        // send add friend state
+        ctx.send_message(ChatsMsg::SendCreateGroupToContacts(info));
+        ctx.send_message(ChatsMsg::InsertConv(conv));
     }
 
-    pub fn create_group(&mut self, ctx: &Context<Self>, nodes: Vec<String>) {
+    pub fn create_group(ctx: &Context<Self>, nodes: Vec<String>) {
         // log::debug!("get group mems: {:?} ; ", nodes);
         let user_id = ctx.props().user_id.clone();
         let self_avatar = ctx.props().avatar.clone();
@@ -155,66 +164,56 @@ impl Chats {
             }
         });
     }
-    pub fn handle_group_dismiss(&mut self, ctx: &Context<Self>, group_id: String) {
-        let key = AttrValue::from(group_id.clone());
-        if let Some(conv) = self.list.get_mut(&key) {
-            conv.last_msg_time = chrono::Utc::now().timestamp_millis();
-            conv.last_msg_type = ContentType::Text;
-            let conv = conv.clone();
-            ctx.link().send_future(async move {
-                // query group information and owner info
-                match Self::dismiss_group(group_id, conv).await {
-                    Ok(message) => ChatsMsg::DismissGroup(key, message),
-                    Err(e) => {
-                        error!("dismiss group error: {:?}", e);
-                        Notification::error("Failed to dismiss group ").notify();
-                        ChatsMsg::None
-                    }
-                }
-            })
-        }
-    }
 
-    async fn dismiss_group(group_id: String, mut conv: Conversation) -> Result<String, String> {
-        let group = db::db_ins()
-            .groups
-            .get(&group_id)
-            .await
-            .map_err(|_| String::from("Query group error"))?
-            .ok_or_else(|| String::from("group not found"))?;
+    pub async fn dismiss_group(group_id: String) -> Result<Conversation, Error> {
+        // update group to dismissed
+        let group = db::db_ins().groups.dismiss(&group_id).await?;
 
+        // select owner info
         let mem = db::db_ins()
             .group_members
             .get_by_group_id_and_friend_id(&group_id, group.owner.as_str())
-            .await
-            .map_err(|_| String::from("Query group member error"))?
-            .ok_or_else(|| String::from("member not found"))?;
+            .await?
+            .ok_or(Error::NotFound("group member not found".into()))?;
 
-        let message = format!("{} dismissed this group", mem.group_name);
-        conv.last_msg = message.clone().into();
-        conv.unread_count = 0;
+        // get the conversation information
+        let conv = if let Ok(Some(mut conv)) = db::db_ins().convs.get_by_frined_id(&group_id).await
+        {
+            let message = format!("{} dismissed this group", mem.group_name);
+            conv.last_msg = message.clone().into();
+            conv.unread_count = 0;
+            conv
+        } else {
+            Conversation {
+                friend_id: group_id.into(),
+                avatar: group.avatar,
+                name: group.name,
+                last_msg: format!("{} dismissed this group", mem.group_name).into(),
+                unread_count: 0,
+                last_msg_time: chrono::Utc::now().timestamp_millis(),
+                last_msg_type: ContentType::Text,
+                remark: group.remark,
+                ..Default::default()
+            }
+        };
 
-        if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
-            log::error!("dismiss group error: {:?}", e);
-            return Err(String::from("dismiss group error"));
-        }
+        // create a new conversation to notify user the group was dismissed
+        db::db_ins().convs.put_conv(&conv).await?;
 
-        Ok(message)
+        Ok(conv)
     }
-    pub fn handle_group_update(group: Group) {
+
+    pub async fn handle_group_update(group: Group) {
+        // update group information
+        if let Err(err) = db::db_ins().groups.put(&group).await {
+            log::error!("update group fail:{:?}", err);
+            Notification::error("Failed to update group").notify();
+        }
         // update conversation
         Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
             s.id = group.id.clone();
             s.name = Some(group.name.clone());
             s.avatar = Some(group.avatar.clone());
-        });
-
-        // update group information
-        spawn_local(async move {
-            if let Err(err) = db::db_ins().groups.put(&group).await {
-                log::error!("update group fail:{:?}", err);
-                Notification::error("Failed to update group").notify();
-            }
         });
     }
 }

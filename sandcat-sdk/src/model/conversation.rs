@@ -31,6 +31,7 @@ pub struct Conversation {
     #[serde(default)]
     pub avatar: AttrValue,
     pub last_msg: AttrValue,
+    pub last_msg_is_self: bool,
     // 需要根据时间来排序
     pub last_msg_time: i64,
     pub last_msg_type: ContentType,
@@ -40,10 +41,17 @@ pub struct Conversation {
     pub is_pined: u8,
 }
 
+impl Conversation {
+    pub fn is_pinned(&self) -> bool {
+        self.is_pined == 1
+    }
+}
+
 impl From<Message> for Conversation {
     fn from(msg: Message) -> Self {
         Self {
             last_msg: msg.content,
+            last_msg_is_self: msg.is_self,
             last_msg_time: msg.send_time,
             last_msg_type: msg.content_type,
             conv_type: RightContentType::Default,
@@ -66,6 +74,7 @@ impl From<Hangup> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            last_msg_is_self: msg.is_self,
             unread_count: 1,
             ..Default::default()
         }
@@ -80,6 +89,7 @@ impl From<InviteNotAnswerMsg> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            last_msg_is_self: msg.is_self,
             unread_count: 1,
             ..Default::default()
         }
@@ -94,6 +104,7 @@ impl From<InviteCancelMsg> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            last_msg_is_self: msg.is_self,
             unread_count: 1,
             ..Default::default()
         }
@@ -123,6 +134,7 @@ impl From<InviteAnswerMsg> for Conversation {
             last_msg,
             last_msg_time: msg.create_time,
             last_msg_type,
+            last_msg_is_self: msg.is_self,
             unread_count: 1,
             avatar: msg.avatar,
             ..Default::default()

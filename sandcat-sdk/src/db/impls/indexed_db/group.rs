@@ -10,7 +10,7 @@ use web_sys::{IdbKeyRange, IdbRequest};
 use yew::{AttrValue, Event};
 
 use crate::db::groups::GroupInterface;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use crate::model::{
     group::{Group, GroupMember},
     message::Message,
@@ -202,11 +202,12 @@ impl GroupInterface for GroupRepo {
         Ok(())
     }
 
-    async fn dismiss(&self, id: &str) -> Result<()> {
+    async fn dismiss(&self, id: &str) -> Result<Group> {
         if let Ok(Some(mut group)) = self.get(id).await {
             group.deleted = true;
-            return self.put(&group).await;
+            self.put(&group).await?;
+            return Ok(group);
         }
-        Ok(())
+        Err(Error::NotFound("Group not found".to_string()))
     }
 }

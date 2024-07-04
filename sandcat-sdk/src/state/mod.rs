@@ -80,6 +80,24 @@ pub struct UnreadState {
     pub contacts_count: usize,
 }
 
+impl UnreadState {
+    pub fn incr_msg(count: usize) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(count));
+    }
+
+    pub fn incr_contact(count: usize) {
+        Dispatch::<Self>::global()
+            .reduce_mut(|s| s.contacts_count = s.contacts_count.saturating_add(count));
+    }
+    pub fn decr_msg(count: usize) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(count));
+    }
+
+    pub fn decr_contact(count: usize) {
+        Dispatch::<Self>::global()
+            .reduce_mut(|s| s.contacts_count = s.contacts_count.saturating_sub(count));
+    }
+}
 /// notify other components after received a message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct RecMessageState {

@@ -16,5 +16,5 @@ pub trait GroupInterface: Debug {
 
     async fn delete(&self, id: &str) -> Result<()>;
 
-    async fn dismiss(&self, id: &str) -> Result<()>;
+    async fn dismiss(&self, id: &str) -> Result<Group>;
 }

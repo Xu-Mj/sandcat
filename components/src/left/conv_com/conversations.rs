@@ -17,7 +17,6 @@ use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::seq::Seq;
 use sandcat_sdk::model::{ComponentType, CurrentItem, OFFLINE_TIME, REFRESH_TOKEN, TOKEN};
-use sandcat_sdk::pb::message::Msg as PbMsg;
 use sandcat_sdk::state::CreateConvState;
 use sandcat_sdk::state::{
     AddFriendState, AddFriendStateItem, ComponentTypeState, CreateGroupConvState, I18nState,
@@ -39,7 +38,6 @@ use super::Chats;
 type QueryResult = (
     IndexMap<AttrValue, Conversation>,
     IndexMap<AttrValue, Conversation>,
-    Vec<PbMsg>,
     Seq,
 );
 
@@ -94,7 +92,7 @@ pub enum ChatsMsg {
     DismissGroup(AttrValue, String),
     RecMsgNotify(Msg),
     /// handle the lack messages
-    HandleLackMessages(Vec<PbMsg>),
+    HandleLackMessages(Vec<Conversation>),
     /// switch language by received state
     SwitchLanguage(Rc<I18nState>),
     /// handle touch event for mobile
@@ -147,22 +145,21 @@ impl Component for Chats {
                             self.result.insert((*key).clone(), (*item).clone());
                         }
                     });
+                    return true;
                 }
-                true
+                false
             }
             ChatsMsg::CleanupSearchResult => {
                 self.is_searching = false;
                 self.result.clear();
                 true
             }
-            ChatsMsg::QueryConvList((pined_list, convs, messages, seq)) => {
+            ChatsMsg::QueryConvList((pined_list, convs, seq)) => {
                 self.pinned_list = pined_list;
                 self.list = convs;
                 self.query_complete = true;
                 // 数据查询完成，通知Home组件我已经做完必要的工作了
                 self.seq = seq;
-                // handle offline messages
-                self.handle_offline_messages(ctx, messages);
                 // unmount loading
                 Dialog::close_loading();
                 if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
@@ -170,6 +167,7 @@ impl Component for Chats {
                 }
                 true
             }
+
             ChatsMsg::InsertConv(conv) => {
                 self.list.shift_insert(0, conv.friend_id.clone(), conv);
                 true
@@ -185,7 +183,7 @@ impl Component for Chats {
                     return true;
                 }
                 // create group conversation and send 'create group' message
-                self.create_group(ctx, nodes);
+                Self::create_group(ctx, nodes);
                 // send message to contacts component
                 false
             }
@@ -234,7 +232,7 @@ impl Component for Chats {
             ChatsMsg::CreateGroupConvStateChanged(state) => {
                 if state.group.is_some() {
                     let list = state.group.clone();
-                    self.create_group(ctx, list.unwrap());
+                    Self::create_group(ctx, list.unwrap());
                     return true;
                 }
                 false
@@ -278,8 +276,11 @@ impl Component for Chats {
                 self.list.shift_insert(0, conv.friend_id.clone(), conv);
                 false
             }
-            ChatsMsg::HandleLackMessages(messages) => {
-                self.handle_offline_messages(ctx, messages);
+            ChatsMsg::HandleLackMessages(conv_list) => {
+                // todo 优化
+                conv_list.into_iter().for_each(|conv| {
+                    self.handle_conv(ctx, conv);
+                });
                 true
             }
             ChatsMsg::SwitchLanguage(state) => {

@@ -51,7 +51,7 @@ impl ConvRepo {
 impl Conversations for ConvRepo {
     // 使用put方法，不存在创建，存在则直接更新
     async fn put_conv(&self, conv: &Conversation) -> Result<()> {
-        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
+        let store = self.store(CONVERSATION_TABLE_NAME).await?;
         let value = serde_wasm_bindgen::to_value(&conv)?;
         let request = store.put(&value)?;
 
@@ -59,12 +59,39 @@ impl Conversations for ConvRepo {
         Ok(())
     }
 
-    async fn self_update_conv(&self, mut conv: Conversation) -> Result<Conversation> {
-        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
+    async fn dismiss_group(&self, conv_id: &str) -> Result<()> {
+        let store = self.store(CONVERSATION_TABLE_NAME).await?;
+        let request = store.get(&JsValue::from(conv_id))?;
+        let store = store.clone();
+        let (tx, rx) = oneshot::channel::<u8>();
+        let on_success_callback = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            if !result.is_undefined() && !result.is_null() {
+                let mut conv: Conversation = serde_wasm_bindgen::from_value(result).unwrap();
+                conv.last_msg = AttrValue::from("Group was dismissed");
+                store
+                    .put(&serde_wasm_bindgen::to_value(&conv).unwrap())
+                    .unwrap();
+            }
+            tx.send(0).unwrap();
+        });
+        request.set_onsuccess(Some(on_success_callback.as_ref().unchecked_ref()));
+        rx.await.unwrap();
+        Ok(())
+    }
+
+    async fn self_update_conv(&self, conv: &mut Conversation) -> Result<()> {
+        let store = self.store(CONVERSATION_TABLE_NAME).await?;
         let request = store.get(&JsValue::from(conv.friend_id.as_str()))?;
         let store = store.clone();
 
-        let (tx, rx) = oneshot::channel::<Conversation>();
+        let (tx, rx) = oneshot::channel::<usize>();
 
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
@@ -74,24 +101,29 @@ impl Conversations for ConvRepo {
                 .unwrap()
                 .result()
                 .unwrap();
-            if !result.is_undefined() && !result.is_null() {
+            let unread_count = if !result.is_undefined() && !result.is_null() {
                 let conv1: Conversation = serde_wasm_bindgen::from_value(result).unwrap();
-                conv.unread_count = conv1.unread_count;
-            }
-            let value = serde_wasm_bindgen::to_value(&conv).unwrap();
-            store.put(&value).unwrap();
-            tx.send(conv).unwrap();
+                conv1.unread_count
+            } else {
+                0
+            };
+            tx.send(unread_count).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         *self.on_update_success.borrow_mut() = Some(onsuccess);
 
+        let unread_count = rx.await.unwrap();
+        conv.unread_count = unread_count;
+        let value = serde_wasm_bindgen::to_value(&conv).unwrap();
+        store.put(&value).unwrap();
+
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
-        Ok(rx.await.unwrap())
+        Ok(())
     }
 
     async fn get_pined_convs(&self) -> Result<IndexMap<AttrValue, Conversation>> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Conversation>>();
-        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
+        let store = self.store(CONVERSATION_TABLE_NAME).await?;
         let index = store.index(CONVERSATION_IS_PINED_WITH_TIME_INDEX)?;
         // let request = index.open_cursor_with_range_and_direction(
         //     &JsValue::default(),
@@ -154,7 +186,7 @@ impl Conversations for ConvRepo {
 
     async fn get_convs(&self) -> Result<IndexMap<AttrValue, Conversation>> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Conversation>>();
-        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
+        let store = self.store(CONVERSATION_TABLE_NAME).await?;
         let index = store.index(CONVERSATION_IS_PINED_WITH_TIME_INDEX)?;
 
         let start_key = js_sys::Array::new();
@@ -240,7 +272,7 @@ impl Conversations for ConvRepo {
     }
 
     async fn delete(&self, friend_id: &str) -> Result<()> {
-        let store = self.store(&String::from(CONVERSATION_TABLE_NAME)).await?;
+        let store = self.store(CONVERSATION_TABLE_NAME).await?;
         store.delete(&JsValue::from(friend_id))?;
         Ok(())
     }

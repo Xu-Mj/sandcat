@@ -119,24 +119,22 @@ impl Chats {
         let id = ctx.props().user_id.clone();
         // query conversation list
         let user_id = id.clone();
-        ctx.link().send_future(async move {
+        let cloned_ctx = ctx.link().clone();
+        spawn_local(async move {
             let pined_convs = db::db_ins()
                 .convs
                 .get_pined_convs()
                 .await
                 .unwrap_or_default();
-            let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
-            // pull offline messages
             // get the seq
             // todo handle the error
             let server_seq = api::seq().get_seq(&user_id).await.unwrap_or_default();
             let mut local_seq = db::db_ins().seq.get().await.unwrap_or_default();
-            let mut messages = Vec::new();
             log::debug!("local seq: {:?}; server seq:{:?}", local_seq, server_seq);
             if local_seq.local_seq < server_seq.seq || local_seq.send_seq < server_seq.send_seq {
                 log::debug!("pull offline messages");
                 // request offline messages
-                messages = match api::messages()
+                match api::messages()
                     .pull_offline_msg(
                         user_id.as_str(),
                         local_seq.send_seq,
@@ -146,11 +144,13 @@ impl Chats {
                     )
                     .await
                 {
-                    Ok(messages) => messages,
+                    Ok(messages) => {
+                        Self::handle_offline_messages(cloned_ctx.clone(), user_id, messages).await
+                    }
                     Err(e) => {
                         error!("pull offline messages error: {:?}", e);
                         Notification::error("pull offline messages error").notify();
-                        return ChatsMsg::None;
+                        return;
                     }
                 };
                 local_seq.local_seq = server_seq.seq;
@@ -158,10 +158,12 @@ impl Chats {
                 if let Err(e) = db::db_ins().seq.put(&local_seq).await {
                     error!("save local seq error: {:?}", e);
                     Notification::error("save local seq error").notify();
-                    return ChatsMsg::None;
+                    return;
                 }
             }
-            ChatsMsg::QueryConvList((pined_convs, convs, messages, local_seq))
+            let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
+
+            cloned_ctx.send_message(ChatsMsg::QueryConvList((pined_convs, convs, local_seq)));
         });
         // we need use conv state to rerender the chats component, so use subscribe in create
         let conv_dispatch =
@@ -549,6 +551,7 @@ impl Chats {
             friend_id,
             conv_type: RightContentType::Friend,
             mute: false,
+            last_msg_is_self: false,
             is_pined: 0,
         }
     }
@@ -581,6 +584,7 @@ impl Chats {
             unread_count: 0,
             friend_id: group_id,
             conv_type: RightContentType::Group,
+            last_msg_is_self: false,
             mute: false,
             is_pined: 0,
         }
