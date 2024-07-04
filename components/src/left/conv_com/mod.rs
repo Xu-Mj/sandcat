@@ -31,8 +31,8 @@ use sandcat_sdk::{
         TOKEN, WS_ADDR,
     },
     state::{
-        ConvState, CreateConvState, I18nState, MobileState, MuteState, Notify, RecMessageState,
-        RemoveConvState, SendMessageState, UnreadState, UpdateConvState,
+        ConvState, CreateConvState, CreateGroupConvState, I18nState, MobileState, MuteState,
+        Notify, RecMessageState, RemoveConvState, SendMessageState, UnreadState, UpdateConvState,
     },
 };
 use utils::tr;
@@ -83,6 +83,7 @@ pub struct Chats {
     /// used to receive that contact list to delete the friends to remove the conversation
     _remove_conv_dis: Dispatch<RemoveConvState>,
     /// listen to the create conv event, like:
+    _create_group_conv_dis: Dispatch<CreateGroupConvState>,
     _create_conv_dis: Dispatch<CreateConvState>,
     // _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
     /// mute conversation,
@@ -112,47 +113,57 @@ impl Chats {
             LanguageType::EnUS => en_us::CONVERSATION,
         };
         let i18n = utils::create_bundle(res);
+
         Dialog::loading(&tr!(i18n, LOADING));
 
         let id = ctx.props().user_id.clone();
         // query conversation list
         let user_id = id.clone();
-        ctx.link().send_future(async move {
+        let cloned_ctx = ctx.link().clone();
+        spawn_local(async move {
             let pined_convs = db::db_ins()
                 .convs
                 .get_pined_convs()
                 .await
                 .unwrap_or_default();
-            let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
-            // pull offline messages
             // get the seq
             // todo handle the error
             let server_seq = api::seq().get_seq(&user_id).await.unwrap_or_default();
             let mut local_seq = db::db_ins().seq.get().await.unwrap_or_default();
-            let mut messages = Vec::new();
             log::debug!("local seq: {:?}; server seq:{:?}", local_seq, server_seq);
-            if local_seq.local_seq < server_seq.seq {
+            if local_seq.local_seq < server_seq.seq || local_seq.send_seq < server_seq.send_seq {
                 log::debug!("pull offline messages");
                 // request offline messages
-                messages = match api::messages()
-                    .pull_offline_msg(user_id.as_str(), local_seq.local_seq, server_seq.seq)
+                match api::messages()
+                    .pull_offline_msg(
+                        user_id.as_str(),
+                        local_seq.send_seq,
+                        server_seq.send_seq,
+                        local_seq.local_seq,
+                        server_seq.seq,
+                    )
                     .await
                 {
-                    Ok(messages) => messages,
+                    Ok(messages) => {
+                        Self::handle_offline_messages(cloned_ctx.clone(), user_id, messages).await
+                    }
                     Err(e) => {
                         error!("pull offline messages error: {:?}", e);
                         Notification::error("pull offline messages error").notify();
-                        return ChatsMsg::None;
+                        return;
                     }
                 };
                 local_seq.local_seq = server_seq.seq;
+                local_seq.send_seq = server_seq.send_seq;
                 if let Err(e) = db::db_ins().seq.put(&local_seq).await {
                     error!("save local seq error: {:?}", e);
                     Notification::error("save local seq error").notify();
-                    return ChatsMsg::None;
+                    return;
                 }
             }
-            ChatsMsg::QueryConvList((pined_convs, convs, messages, local_seq))
+            let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
+
+            cloned_ctx.send_message(ChatsMsg::QueryConvList((pined_convs, convs, local_seq)));
         });
         // we need use conv state to rerender the chats component, so use subscribe in create
         let conv_dispatch =
@@ -162,13 +173,14 @@ impl Chats {
             Dispatch::global().subscribe_silent(ctx.link().callback(ChatsMsg::SendMsg));
         let _remove_conv_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(ChatsMsg::RemoveConvStateChanged));
+        let _create_group_conv_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(ChatsMsg::CreateGroupConvStateChanged));
         let _create_conv_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(ChatsMsg::CreateConvStateChanged));
         let _mute_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(ChatsMsg::MuteStateChanged));
         let rec_msg_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(|_| ChatsMsg::None));
-        // same as conv state
 
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
         let addr = utils::get_local_storage(WS_ADDR).unwrap();
@@ -211,6 +223,7 @@ impl Chats {
             context_menu_pos: (0, 0, AttrValue::default(), false, false),
             _remove_conv_dis,
             _send_msg_dis,
+            _create_group_conv_dis,
             _create_conv_dis,
             _mute_dis,
             rec_msg_dis,
@@ -441,7 +454,7 @@ impl Chats {
         )
     }
 
-    fn get_msg_type(&self, msg: &Msg) -> RightContentType {
+    fn get_msg_type(msg: &Msg) -> RightContentType {
         match msg {
             Msg::Group(_) => RightContentType::Group,
             Msg::Single(_) | Msg::SingleCall(_) => RightContentType::Friend,
@@ -538,6 +551,7 @@ impl Chats {
             friend_id,
             conv_type: RightContentType::Friend,
             mute: false,
+            last_msg_is_self: false,
             is_pined: 0,
         }
     }
@@ -570,6 +584,7 @@ impl Chats {
             unread_count: 0,
             friend_id: group_id,
             conv_type: RightContentType::Group,
+            last_msg_is_self: false,
             mute: false,
             is_pined: 0,
         }

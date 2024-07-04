@@ -5,22 +5,29 @@ use yewdux::Dispatch;
 
 use sandcat_sdk::{
     api, db,
+    error::Error,
     model::{
         conversation::Conversation,
         friend::FriendStatus,
-        message::{GroupMsg, Message, Msg, RespMsgType, SingleCall, DEFAULT_HELLO_MESSAGE},
+        message::{GroupMsg, Msg, RespMsgType, SingleCall},
         notification::Notification,
         voice::Voice,
         ContentType, FriendShipStateType, RightContentType,
     },
+    pb::message::Msg as PbMsg,
     state::{
-        AudioDownloadedState, FriendShipState, SendMessageState, SendResultState, UnreadState,
+        AudioDownloadedState, CreateConvState, FriendShipState, SendMessageState, SendResultState,
+        UnreadState,
     },
 };
 
 use super::Chats;
 
 use crate::left::conv_com::conversations::ChatsMsg;
+
+/// handle send and receive message
+///
+///
 
 impl Chats {
     /// used to update the conversation list when a message is sent
@@ -37,24 +44,32 @@ impl Chats {
                     last_msg: msg.content.clone(),
                     last_msg_time: msg.create_time,
                     last_msg_type: msg.content_type,
+                    last_msg_is_self: msg.is_self,
                     conv_type,
                     friend_id: msg.friend_id.clone(),
                     unread_count: 0,
                     ..Default::default()
                 };
-                let is_self = msg.is_self;
                 if !msg.is_resend {
-                    return self.operate_msg(ctx, conv, is_self);
+                    return self.handle_conv(ctx, conv);
                 }
                 false
             }
             Msg::Group(group_msg) => {
                 match group_msg {
                     GroupMsg::Invitation((msg, _)) => {
-                        self.handle_group_invitation(ctx, msg.clone());
+                        let msg = msg.clone();
+                        let ctx = ctx.link().clone();
+                        spawn_local(async move {
+                            Self::handle_group_invitation(ctx, msg).await;
+                        });
                     }
                     GroupMsg::Dismiss((group_id, _)) => {
-                        self.handle_group_dismiss(ctx, group_id.clone());
+                        let group_id = group_id.clone();
+                        spawn_local(async move {
+                            // todo update conversation
+                            Self::dismiss_group(group_id).await.unwrap();
+                        });
                     }
                     // don't handle it now
                     _ => {}
@@ -78,134 +93,142 @@ impl Chats {
         msg: SingleCall,
         conv_type: RightContentType,
     ) -> bool {
-        match msg {
+        let conv = match msg {
             SingleCall::Invite(msg) => {
                 let mut conv = Conversation::from(msg);
                 conv.conv_type = conv_type;
-                self.operate_msg(ctx, conv, false)
+                conv.last_msg_is_self = true;
+                conv
             }
             SingleCall::InviteCancel(msg) => {
-                let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
                 conv.conv_type = conv_type;
-                self.operate_msg(ctx, conv, is_self)
+                conv
+                // self.handle_conv(ctx, conv, is_self)
             }
             SingleCall::NotAnswer(msg) => {
-                let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
                 conv.conv_type = conv_type;
-                self.operate_msg(ctx, conv, is_self)
+                conv
             }
             SingleCall::HangUp(msg) => {
-                let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
                 conv.conv_type = conv_type;
-                self.operate_msg(ctx, conv, is_self)
+                conv
             }
             SingleCall::InviteAnswer(msg) => {
-                let is_self = msg.is_self;
                 let mut conv = Conversation::from(msg);
                 conv.conv_type = conv_type;
-                self.operate_msg(ctx, conv, is_self)
+                conv
             }
-            _ => false,
-        }
+            _ => return false,
+        };
+        self.handle_conv(ctx, conv)
     }
 
-    fn update_unread_count(&self, conv: &Conversation, is_self: bool) {
-        if !conv.mute && !is_self && self.conv_state.conv.item_id != conv.friend_id {
+    fn update_unread_count(conv: &Conversation, current_id: &AttrValue) {
+        if !conv.mute && !conv.last_msg_is_self && *current_id != conv.friend_id {
             Dispatch::<UnreadState>::global()
                 .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(conv.unread_count));
         }
     }
 
-    async fn save_conversation_and_update_friend_info(
-        conv: &Conversation,
+    fn save_conversation_and_update_friend_info(
+        mut conv: Conversation,
         new_name: AttrValue,
         need_update_friend_info: bool,
         clean: bool,
     ) {
-        let mut conv = conv.clone();
-        if clean {
-            conv.unread_count = 0;
-        }
-        if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
-            error!("put conv error:{:?}", e);
-            Notification::error("put conv error").notify();
-        }
-
-        if need_update_friend_info && conv.conv_type == RightContentType::Friend {
-            if let Err(e) = db::db_ins()
-                .friends
-                .update_friend_avatar_nickname(&conv.friend_id, conv.avatar.clone(), new_name)
-                .await
-            {
-                error!("update friend info error:{:?}", e);
+        spawn_local(async move {
+            // let mut conv = conv.clone();
+            if clean {
+                conv.unread_count = 0;
             }
-        }
+            if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                error!("put conv error:{:?}", e);
+                Notification::error("put conv error").notify();
+            }
+
+            if need_update_friend_info && conv.conv_type == RightContentType::Friend {
+                if let Err(e) = db::db_ins()
+                    .friends
+                    .update_friend_avatar_nickname(&conv.friend_id, conv.avatar.clone(), new_name)
+                    .await
+                {
+                    error!("update friend info error:{:?}", e);
+                }
+            }
+
+            // unread count state notify
+            // Self::update_unread_count(conv, current_id);
+        });
     }
 
-    async fn create_new_conversation(
+    // async fn create_new_conversation(mut conv: Conversation, friend: Friend) {
+    //     conv.avatar = friend.avatar;
+    //     conv.name = friend.name;
+    //     conv.remark = friend.remark;
+
+    //     if conv.last_msg_is_self {
+    //         db::db_ins().convs.self_update_conv(&mut conv).await?;
+    //     } else {
+    //         db::db_ins().convs.put_conv(&conv).await?;
+    //     }
+    // }
+    fn create_new_conversation(
+        ctx: &Context<Self>,
         mut conv: Conversation,
         friend_id: AttrValue,
-        is_self: bool,
-        unread_count: usize,
         current_id: AttrValue,
-    ) -> Option<ChatsMsg> {
-        let friend = db::db_ins().friends.get(&friend_id).await;
-        if friend.friend_id.is_empty() {
-            return None;
-        }
+    ) {
+        let ctx = ctx.link().clone();
+        spawn_local(async move {
+            let friend = db::db_ins().friends.get(&friend_id).await;
+            if friend.friend_id.is_empty() {
+                return;
+            }
 
-        conv.avatar = friend.avatar;
-        conv.name = friend.name;
-        conv.remark = friend.remark;
+            conv.avatar = friend.avatar;
+            conv.name = friend.name;
+            conv.remark = friend.remark;
 
-        if is_self {
-            conv = match db::db_ins().convs.self_update_conv(conv).await {
-                Ok(conv) => conv,
-                Err(e) => {
+            if conv.last_msg_is_self {
+                if let Err(e) = db::db_ins().convs.self_update_conv(&mut conv).await {
                     error!("failed to update conv: {:?}", e);
                     Notification::error("update conv error").notify();
-                    return None;
+                    return;
                 }
-            };
-        } else {
-            if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+            } else if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                 error!("failed to update conv: {:?}", e);
                 Notification::error("update conv error").notify();
-                return None;
+                return;
+
+                // conv.unread_count = unread_count;
             }
-            conv.unread_count = unread_count;
-        }
+            Self::update_unread_count(&conv, &current_id);
 
-        if !is_self && current_id != friend_id {
-            Dispatch::<UnreadState>::global()
-                .reduce_mut(|state| state.msg_count = state.msg_count.saturating_add(unread_count));
-        }
-
-        log::debug!("create conversation: {:?}", &conv);
-        Some(ChatsMsg::InsertConv(conv))
+            log::debug!("create conversation: {:?}", &conv);
+            ctx.send_message(ChatsMsg::InsertConv(conv));
+        });
     }
 
     fn update_old_conv(
         &mut self,
-        mut old: Conversation,
+        old: Conversation,
         mut conv: Conversation,
-        is_self: bool,
-        is_pinned: bool,
+        // is_self: bool,
+        // is_pinned: bool,
     ) -> bool {
-        self.update_unread_count(&old, is_self);
+        // self.update_unread_count(&old, is_self);
         let mut clean = false;
         let friend_id = conv.friend_id.clone();
-        let unread_count = conv.unread_count;
         let current_id = self.conv_state.conv.item_id.clone();
 
         // handle unread message count
-        if friend_id != current_id {
-            old.unread_count += unread_count;
+        if friend_id != *current_id {
+            conv.unread_count += old.unread_count;
         } else {
-            old.unread_count = 0;
+            conv.unread_count = 0;
             clean = true;
         }
 
@@ -219,58 +242,37 @@ impl Chats {
         }
 
         conv.name = old.name;
-        conv.unread_count = old.unread_count;
         conv.mute = old.mute;
         conv.is_pined = old.is_pined;
 
-        if is_pinned {
+        if conv.is_pinned() {
             self.pinned_list
                 .shift_insert(0, friend_id.clone(), conv.clone());
         } else {
             self.list.shift_insert(0, friend_id.clone(), conv.clone());
         }
 
-        spawn_local(async move {
-            Self::save_conversation_and_update_friend_info(
-                &conv,
-                new_name,
-                need_update_friend_info,
-                clean,
-            )
-            .await;
-        });
+        Self::save_conversation_and_update_friend_info(
+            conv,
+            new_name,
+            need_update_friend_info,
+            clean,
+        );
         true
     }
 
-    pub fn operate_msg(&mut self, ctx: &Context<Self>, conv: Conversation, is_self: bool) -> bool {
+    pub fn handle_conv(&mut self, ctx: &Context<Self>, conv: Conversation) -> bool {
         let friend_id = conv.friend_id.clone();
-        let unread_count = conv.unread_count;
         let current_id = self.conv_state.conv.item_id.clone();
-
         // query pinned list first
         if let Some(old) = self.pinned_list.shift_remove(&friend_id) {
-            return self.update_old_conv(old, conv, is_self, true);
+            return self.update_old_conv(old, conv);
         }
 
         if let Some(old) = self.list.shift_remove(&friend_id) {
-            self.update_old_conv(old, conv, is_self, false)
+            self.update_old_conv(old, conv)
         } else {
-            ctx.link().send_future(async move {
-                if let Some(result) = Self::create_new_conversation(
-                    conv,
-                    friend_id,
-                    is_self,
-                    unread_count,
-                    current_id,
-                )
-                .await
-                {
-                    result
-                } else {
-                    ChatsMsg::None
-                }
-            });
-
+            Self::create_new_conversation(ctx, conv, friend_id, current_id);
             false
         }
     }
@@ -288,7 +290,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
-                    self.handle_lack_msg(ctx, m.seq);
+                    self.handle_rec_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
@@ -297,7 +299,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
-                    self.handle_lack_msg(ctx, m.seq);
+                    self.handle_rec_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
@@ -306,7 +308,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
-                    self.handle_lack_msg(ctx, m.seq);
+                    self.handle_rec_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
@@ -315,7 +317,7 @@ impl Chats {
                     m.send_id = m.friend_id.clone();
                     m.friend_id = friend_id;
                     m.is_self = false;
-                    self.handle_lack_msg(ctx, m.seq);
+                    self.handle_rec_lack_msg(ctx, m.seq);
                     self.handle_single_call_conv(ctx, msg.clone(), conv_type);
                     self.rec_msg_dis.reduce_mut(|s| s.msg = message);
                 }
@@ -324,74 +326,103 @@ impl Chats {
         }
     }
 
-    pub fn handle_lack_msg(&mut self, ctx: &Context<Self>, end: i64) {
-        log::debug!(
-            "handle_lack_msg: self seq{}, end seq{}",
-            self.seq.local_seq,
-            end
-        );
-        if self.seq.local_seq > end - 1 {
+    pub fn handle_rec_lack_msg(&mut self, ctx: &Context<Self>, end: i64) {
+        self.handle_lack_msg(ctx, end, false);
+    }
+
+    pub fn handle_send_lack_msg(&mut self, ctx: &Context<Self>, end: i64) {
+        self.handle_lack_msg(ctx, end, true);
+    }
+
+    pub fn handle_lack_msg(&mut self, ctx: &Context<Self>, end: i64, is_send: bool) {
+        if (!is_send && self.seq.local_seq > end - 1) || (is_send && self.seq.send_seq > end - 1) {
             return;
         }
-        let mut need_repull = false;
-        if self.seq.local_seq < end - 1 {
-            // repull the lack messages
-            need_repull = true;
-        }
 
-        let start = self.seq.local_seq;
+        let (need_repull, start, other_seq) = if is_send {
+            (
+                self.seq.send_seq < end - 1,
+                self.seq.local_seq,
+                self.seq.send_seq,
+            )
+        } else {
+            (
+                self.seq.local_seq < end - 1,
+                self.seq.send_seq,
+                self.seq.local_seq,
+            )
+        };
+
+        // let start = self.seq.local_seq;
         let user_id = ctx.props().user_id.clone();
 
-        self.seq.local_seq = end;
+        if is_send {
+            self.seq.send_seq = end;
+        } else {
+            self.seq.local_seq = end;
+        }
+        // let send_seq = self.seq.send_seq;
         let seq = self.seq.clone();
 
-        ctx.link().send_future(async move {
+        let ctx = ctx.link().clone();
+        spawn_local(async move {
+            // Self::handle_seq_update(seq, need_repull, &user_id, other_seq, start, end, is_send)
+            //     .await
             if let Err(e) = db::db_ins().seq.put(&seq).await {
                 error!("save seq error: {:?}", e);
                 Notification::error("save seq error").notify();
-                return ChatsMsg::None;
+                return;
             }
+
+            // todo handle error
             if need_repull {
-                let messages = match api::messages()
-                    .pull_offline_msg(user_id.as_str(), start, end)
-                    .await
-                {
-                    Ok(messages) => messages,
+                match Self::pull_offline_msgs(&user_id, is_send, other_seq, start, end).await {
+                    Ok(messages) => ctx.send_message(ChatsMsg::HandleLackMessages(
+                        Self::handle_offline_messages(ctx.clone(), user_id, messages).await,
+                    )),
                     Err(e) => {
                         error!("pull offline msg error: {:?}", e);
                         Notification::error("pull offline msg error").notify();
-                        return ChatsMsg::None;
                     }
-                };
-                ChatsMsg::HandleLackMessages(messages)
-            } else {
-                ChatsMsg::None
+                }
             }
         });
+    }
+
+    async fn pull_offline_msgs(
+        user_id: &str,
+        is_send: bool,
+        send_seq: i64,
+        start: i64,
+        end: i64,
+    ) -> Result<Vec<PbMsg>, Error> {
+        let (send_start, send_end, rec_start, rec_end) = if is_send {
+            (start, end, send_seq, send_seq)
+        } else {
+            (send_seq, send_seq, start, end)
+        };
+        api::messages()
+            .pull_offline_msg(user_id, send_start, send_end, rec_start, rec_end)
+            .await
     }
 
     pub async fn download_voice_and_save(
         url: &str,
         local_id: &str,
         duration: u8,
-    ) -> Result<(), String> {
+    ) -> Result<(), Error> {
         // request from file server
-        let data = api::file().download_voice(url).await.map_err(|e| {
-            error!("download voice error: {:?}", e);
-            String::from("download voice error")
-        })?;
+        let data = api::file().download_voice(url).await?;
+
+        let voice = Voice::new(local_id.to_string(), data, duration);
+        db::db_ins().voices.save(&voice).await?;
+
         Dispatch::<AudioDownloadedState>::global()
             .reduce_mut(|s| s.local_id = local_id.to_string().into());
-        let voice = Voice::new(local_id.to_string(), data, duration);
-        db::db_ins().voices.save(&voice).await.map_err(|e| {
-            log::error!("save voice to db error: {:?}", e);
-            String::from("save voice to db error")
-        })?;
         Ok(())
     }
 
-    // fn handle_avatar_nickname(&mut self, ctx: &Context<Self>, msg: &mut Msg)
-    pub fn handle_receive_message(&mut self, ctx: &Context<Self>, mut message: Msg) -> bool {
+    pub fn handle_receive_message(&mut self, ctx: &Context<Self>, message: Msg) -> bool {
         let conv_type = match message {
             Msg::Group(_) => RightContentType::Group,
             Msg::Single(_) | Msg::SingleCall(_) => RightContentType::Friend,
@@ -399,7 +430,7 @@ impl Chats {
         };
 
         match message {
-            Msg::Single(ref mut msg) => {
+            Msg::Single(mut msg) => {
                 // if the message is self message, then we don't need to swap the send_id and friend_id
                 if msg.send_id == ctx.props().user_id {
                     msg.is_self = true;
@@ -413,19 +444,14 @@ impl Chats {
 
                 let mut conv = Conversation::from(msg.clone());
                 conv.conv_type = conv_type;
-                let is_self = msg.is_self;
 
-                let mut msg = msg.clone();
-                // let msg_id = msg.server_id.to_string();
-
-                log::debug!("conversation state is {:?}", self.conv_state);
                 let is_send = (self.conv_state.conv.content_type == RightContentType::Friend
                     || self.conv_state.conv.content_type == RightContentType::Group)
                     && self.conv_state.conv.item_id == msg.friend_id;
 
-                self.handle_lack_msg(ctx, msg.seq);
+                self.handle_rec_lack_msg(ctx, msg.seq);
+                let scope = ctx.link().clone();
                 spawn_local(async move {
-                    // ctx.link().send_future(async move {
                     // split audio data
                     if msg.content_type == ContentType::Audio {
                         // request from file server
@@ -445,51 +471,44 @@ impl Chats {
                         error!("save message to db error: {:?}", e);
                         Notification::error("save message to db error").notify();
                     }
-                    // ChatsMsg::None
-                    // if let Err(err) = db::messages().await.add_message(&mut msg).await {
-                    //     HomeMsg::Notification(Notification::error_from_content(
-                    //         format!("Internal Error:{:?}", err).into(),
-                    //     ))
-                    // } else {
-                    //     HomeMsg::SendBackMsg(Msg::SingleDeliveredNotice(msg_id))
-                    // }
+
+                    // notify other components we have received new message
+                    if is_send {
+                        scope.send_message(ChatsMsg::RecMsgNotify(Msg::Single(msg)));
+                    }
                 });
 
-                // notify other components we have received new message
-                if is_send {
-                    ctx.link().send_message(ChatsMsg::RecMsgNotify(message));
-                }
-                return self.operate_msg(ctx, conv, is_self);
+                return self.handle_conv(ctx, conv);
             }
-            Msg::Group(ref group_msg) => {
+            Msg::Group(group_msg) => {
                 match group_msg {
                     GroupMsg::Invitation((msg, seq)) => {
                         // receive create group message
-                        self.handle_lack_msg(ctx, *seq);
-                        self.handle_group_invitation(ctx, msg.clone());
+                        self.handle_rec_lack_msg(ctx, seq);
+                        let ctx = ctx.link().clone();
+                        spawn_local(async move { Self::handle_group_invitation(ctx, msg).await });
                     }
-                    GroupMsg::Message(msg) => {
-                        let mut msg = msg.clone();
-                        // let _msg_id = msg.server_id.to_string();
+                    GroupMsg::Message(mut msg) => {
                         let conv = Conversation {
                             last_msg: msg.content.clone(),
                             last_msg_time: msg.send_time,
                             last_msg_type: msg.content_type,
+                            last_msg_is_self: msg.is_self,
                             conv_type,
                             friend_id: msg.friend_id.clone(),
                             unread_count: 1,
                             avatar: msg.avatar.clone(),
                             ..Default::default()
                         };
-                        let is_self = msg.send_id == ctx.props().user_id;
 
                         let is_send = (self.conv_state.conv.content_type
                             == RightContentType::Friend
                             || self.conv_state.conv.content_type == RightContentType::Group)
                             && self.conv_state.conv.item_id == msg.friend_id;
 
-                        self.handle_lack_msg(ctx, msg.seq);
-                        ctx.link().send_future(async move {
+                        self.handle_rec_lack_msg(ctx, msg.seq);
+                        let scope = ctx.link().clone();
+                        spawn_local(async move {
                             // 数据入库
                             if msg.content_type == ContentType::Audio {
                                 // request from file server
@@ -508,17 +527,17 @@ impl Chats {
                                 error!("save message to db error: {:?}", e);
                                 Notification::error("save message to db error").notify();
                             }
-                            ChatsMsg::None
+                            if is_send {
+                                scope.send_message(ChatsMsg::RecMsgNotify(Msg::Group(
+                                    GroupMsg::Message(msg),
+                                )));
+                            }
                         });
 
-                        if is_send {
-                            ctx.link().send_message(ChatsMsg::RecMsgNotify(message));
-                        }
-
-                        return self.operate_msg(ctx, conv, is_self);
+                        return self.handle_conv(ctx, conv);
                     }
                     GroupMsg::MemberExit((mem_id, group_id, seq)) => {
-                        self.handle_lack_msg(ctx, *seq);
+                        self.handle_rec_lack_msg(ctx, seq);
                         // todo modify conversation list
                         // delete member information from da
                         let mem_id = mem_id.clone();
@@ -537,18 +556,19 @@ impl Chats {
                         });
                     }
                     GroupMsg::Dismiss((group_id, seq)) => {
-                        self.handle_lack_msg(ctx, *seq);
+                        self.handle_rec_lack_msg(ctx, seq);
                         // delete group from db
                         // let user_id = ctx.props().user_id.clone();
                         // we can consume the group_msg here because it is behind in the reference
-                        let cloned_group_id = group_id.clone();
                         log::debug!("received dismiss message, group id : {}", group_id);
                         let is_send = (self.conv_state.conv.content_type
                             == RightContentType::Friend
                             || self.conv_state.conv.content_type == RightContentType::Group)
                             && self.conv_state.conv.item_id == group_id;
+
+                        let scope = ctx.link().clone();
                         spawn_local(async move {
-                            if let Err(err) = db::db_ins().groups.dismiss(&cloned_group_id).await {
+                            if let Err(err) = db::db_ins().groups.dismiss(&group_id).await {
                                 log::error!("remove group fail:{:?}", err);
                                 Notification::error("remove group error").notify();
                             } else {
@@ -562,17 +582,19 @@ impl Chats {
                                 //         )),
                                 //     )));
                             }
+                            // self.handle_group_dismiss(ctx, group_id.to_string());
+                            Self::dismiss_group(group_id.clone()).await.unwrap();
+                            if is_send {
+                                scope.send_message(ChatsMsg::RecMsgNotify(Msg::Group(
+                                    GroupMsg::Dismiss((group_id, seq)),
+                                )));
+                            }
                         });
-
-                        self.handle_group_dismiss(ctx, group_id.to_string());
-                        if is_send {
-                            ctx.link().send_message(ChatsMsg::RecMsgNotify(message));
-                        }
                     }
                     GroupMsg::Update((group, seq)) => {
-                        self.handle_group_update(group.clone());
+                        self.handle_rec_lack_msg(ctx, seq);
 
-                        self.handle_lack_msg(ctx, *seq);
+                        spawn_local(async move { Self::handle_group_update(group).await });
 
                         // todo send message received
                     }
@@ -583,6 +605,8 @@ impl Chats {
             Msg::RecRelationship((friendship, seq)) => {
                 // 收到好友请求
                 log::debug!("ReceiveFriendShipReq:{:?}", &friendship);
+                // handle sequence
+                self.handle_rec_lack_msg(ctx, seq);
 
                 // save friendship
                 spawn_local(async move {
@@ -597,9 +621,6 @@ impl Chats {
                         s.state_type = FriendShipStateType::Req;
                     });
                 });
-
-                // handle sequence
-                self.handle_lack_msg(ctx, seq);
             }
             Msg::ReadNotice(_) | Msg::SingleDeliveredNotice(_) => {}
             Msg::OfflineSync(_) => {}
@@ -613,43 +634,33 @@ impl Chats {
             }
             Msg::FriendshipDeliveredNotice(_) => {}
             Msg::RelationshipRes((friend, seq)) => {
-                self.handle_lack_msg(ctx, seq);
+                self.handle_rec_lack_msg(ctx, seq);
                 // 收到好友同意消息
-                let send_id = ctx.props().user_id.clone();
+                // let send_id = ctx.props().user_id.clone();
                 // 需要通知联系人列表更新
                 // 数据入库
-                ctx.link().send_future(async move {
+                spawn_local(async move {
                     if let Err(err) = db::db_ins()
                         .friendships
                         .agree_by_friend_id(friend.friend_id.as_str())
                         .await
                     {
                         error!("agree friendship error:{:?}", err);
-                        return ChatsMsg::None;
+                        return;
                     }
                     if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
                         error!("save friend error:{:?}", err);
-                        return ChatsMsg::None;
+                        return;
                     }
-                    // send hello message
-                    let mut msg = Message {
-                        local_id: nanoid::nanoid!().into(),
-                        send_id,
-                        friend_id: friend.friend_id.clone(),
-                        content_type: ContentType::Text,
-                        content: friend
-                            .hello
-                            .clone()
-                            .unwrap_or_else(|| AttrValue::from(DEFAULT_HELLO_MESSAGE)),
-                        create_time: chrono::Utc::now().timestamp_millis(),
-                        is_read: 1,
-                        is_self: true,
-                        ..Default::default()
-                    };
-                    if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
-                        log::error!("save message fail:{:?}", e);
-                        Notification::error("save message error").notify();
+                    let mut conv = Conversation::from(friend.clone());
+                    conv.last_msg = AttrValue::from("new friend");
+                    conv.last_msg_type = ContentType::Text;
+                    conv.last_msg_time = chrono::Utc::now().timestamp_millis();
+                    if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                        error!("save new conversation error: {:?}", e);
+                        return;
                     }
+                    CreateConvState::update(conv);
 
                     // send message to contact component to update the friend list
                     Dispatch::<FriendShipState>::global().reduce_mut(|s| {
@@ -657,13 +668,13 @@ impl Chats {
                         s.ship = None;
                         s.state_type = FriendShipStateType::RecResp;
                     });
-
-                    ChatsMsg::SendMessage(Msg::Single(msg))
                 });
             }
             Msg::ServerRecResp(msg) => {
                 // need to use the local to mark the message as send-success
                 // log::debug!("receive server response: {:?}", msg);
+                // handle send sequence
+                let send_seq = msg.send_seq;
                 // update database
                 spawn_local(async move {
                     match msg.resp_msg_type {
@@ -683,6 +694,7 @@ impl Chats {
                     }
                     Dispatch::<SendResultState>::global().reduce_mut(|s| s.msg = msg);
                 });
+                self.handle_send_lack_msg(ctx, send_seq);
             }
             Msg::RecRelationshipDel((friend_id, seq)) => {
                 // update database
@@ -695,7 +707,7 @@ impl Chats {
                         }
                     }
                 });
-                self.handle_lack_msg(ctx, seq);
+                self.handle_rec_lack_msg(ctx, seq);
             }
         }
         false

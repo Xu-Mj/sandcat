@@ -10,7 +10,10 @@ use crate::model::conversation::Conversation;
 pub trait Conversations: Debug {
     async fn put_conv(&self, conv: &Conversation) -> Result<()>;
 
-    async fn self_update_conv(&self, conv: Conversation) -> Result<Conversation>;
+    /// dismiss group; update conversation
+    async fn dismiss_group(&self, conv_id: &str) -> Result<()>;
+
+    async fn self_update_conv(&self, conv: &mut Conversation) -> Result<()>;
 
     async fn get_pined_convs(&self) -> Result<IndexMap<AttrValue, Conversation>>;
 

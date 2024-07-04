@@ -196,6 +196,7 @@ impl Messages for MessageRepo {
         Ok(rx.await.unwrap())
     }
 
+    /// todo test if set local id to unique, and put a message with same local id
     async fn add_message(&self, msg: &mut Message) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
         let index = store.index(MESSAGE_ID_INDEX)?;

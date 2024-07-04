@@ -31,7 +31,7 @@ use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
 use sandcat_sdk::state::{AppState, MobileState, Notify, ShowRight};
 use sandcat_sdk::state::{
-    ComponentTypeState, ConvState, CreateConvState, FriendListState, I18nState,
+    ComponentTypeState, ConvState, CreateGroupConvState, FriendListState, I18nState,
 };
 use sandcat_sdk::{api, db};
 use utils::tr;
@@ -199,7 +199,8 @@ impl Component for Right {
                 // todo need to handle the group invitation or create group
                 // create group conversation and send 'create group' message
                 if self.conv_state.conv.content_type == RightContentType::Friend {
-                    Dispatch::<CreateConvState>::global().reduce_mut(|s| s.create_group(nodes));
+                    Dispatch::<CreateGroupConvState>::global()
+                        .reduce_mut(|s| s.create_group(nodes));
                 } else if self.conv_state.conv.content_type == RightContentType::Group {
                     // invite the member
                     let user_id = self.state.login_user.id.to_string();

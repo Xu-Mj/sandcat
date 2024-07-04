@@ -14,6 +14,8 @@ pub struct MsgHttp;
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PullOfflineMsgReq {
     pub user_id: String,
+    pub send_start: i64,
+    pub send_end: i64,
     pub start: i64,
     pub end: i64,
 }
@@ -26,9 +28,18 @@ pub struct DelMsgReq {
 
 #[async_trait(?Send)]
 impl MsgApi for MsgHttp {
-    async fn pull_offline_msg(&self, user_id: &str, start: i64, end: i64) -> Result<Vec<Msg>> {
+    async fn pull_offline_msg(
+        &self,
+        user_id: &str,
+        send_start: i64,
+        send_end: i64,
+        start: i64,
+        end: i64,
+    ) -> Result<Vec<Msg>> {
         let request = PullOfflineMsgReq {
             user_id: user_id.to_string(),
+            send_start,
+            send_end,
             start,
             end,
         };

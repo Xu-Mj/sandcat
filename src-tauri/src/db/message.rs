@@ -12,6 +12,7 @@ use crate::AppState;
 pub struct Msg {
     pub id: i32,
     pub seq: i64,
+    pub send_seq: i64,
     pub local_id: String,
     pub server_id: String,
     pub send_id: String,
@@ -46,6 +47,7 @@ impl Into<Message> for Msg {
             is_read: self.is_read,
             id: self.id,
             seq: self.seq,
+            send_seq: self.send_seq,
             is_self: self.is_self,
             platform: self.platform,
             audio_duration: 0,

@@ -4,4 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct Seq {
     pub id: i64,
     pub local_seq: i64,
+    pub send_seq: i64,
 }

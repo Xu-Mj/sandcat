@@ -6,6 +6,7 @@ use crate::error::Result;
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Seq {
     pub seq: i64,
+    pub send_seq: i64,
 }
 
 #[async_trait(?Send)]

@@ -10,6 +10,7 @@ use yewdux::{Dispatch, Store};
 use i18n::LanguageType;
 
 use crate::model::{
+    conversation::Conversation,
     friend::{Friend, FriendShipWithUser},
     group::Group,
     message::{InviteMsg, Message, Msg, ServerResponse},
@@ -79,6 +80,24 @@ pub struct UnreadState {
     pub contacts_count: usize,
 }
 
+impl UnreadState {
+    pub fn incr_msg(count: usize) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(count));
+    }
+
+    pub fn incr_contact(count: usize) {
+        Dispatch::<Self>::global()
+            .reduce_mut(|s| s.contacts_count = s.contacts_count.saturating_add(count));
+    }
+    pub fn decr_msg(count: usize) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.msg_count = s.msg_count.saturating_sub(count));
+    }
+
+    pub fn decr_contact(count: usize) {
+        Dispatch::<Self>::global()
+            .reduce_mut(|s| s.contacts_count = s.contacts_count.saturating_sub(count));
+    }
+}
 /// notify other components after received a message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct RecMessageState {
@@ -144,17 +163,24 @@ pub struct SendResultState {
 
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct CreateConvState {
-    pub type_: RightContentType,
-    // 可以是好友，或者其他实现了   ItemInfo的类型
-    // pub friend: Option<Friend>,
+    pub conv: Conversation,
+}
+
+impl CreateConvState {
+    pub fn update(conv: Conversation) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.conv = conv);
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store)]
+pub struct CreateGroupConvState {
     // 创建群聊，接收一个NodeList，在chats中会生成群聊
     pub group: Option<Vec<String>>,
 }
 
-impl CreateConvState {
+impl CreateGroupConvState {
     pub fn create_group(&mut self, group: Vec<String>) {
         self.group = Some(group);
-        self.type_ = RightContentType::Group;
     }
 }
 
