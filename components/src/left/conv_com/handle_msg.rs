@@ -26,9 +26,6 @@ use super::Chats;
 use crate::left::conv_com::conversations::ChatsMsg;
 
 /// handle send and receive message
-///
-///
-
 impl Chats {
     /// used to update the conversation list when a message is sent
     pub fn handle_sent_msg(&mut self, ctx: &Context<Self>, msg: &Msg) -> bool {

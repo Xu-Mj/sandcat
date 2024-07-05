@@ -151,7 +151,7 @@ impl Messages for MessageRepo {
         let request = index
             .open_cursor_with_range_and_direction(&range, web_sys::IdbCursorDirection::Prev)?;
 
-        let messages = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
+        let messages = Rc::new(RefCell::new(IndexMap::new()));
         let messages = messages.clone();
         let mut tx = Some(tx);
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
@@ -265,7 +265,7 @@ impl Messages for MessageRepo {
         Ok(())
     }
 
-    async fn update_read_status(&self, friend_id: &str) -> Result<()> {
+    async fn update_read_status(&self, friend_id: &str) -> Result<Vec<i64>> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
         let rang = IdbKeyRange::only(&JsValue::from(friend_id))?;
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
@@ -276,7 +276,10 @@ impl Messages for MessageRepo {
 
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
 
-        let (tx, rx) = oneshot::channel::<()>();
+        let sequences = Rc::new(RefCell::new(Vec::new()));
+        let sequences = sequences.clone();
+
+        let (tx, rx) = oneshot::channel::<Vec<i64>>();
         let mut tx = Some(tx);
         let store = store.clone();
 
@@ -294,6 +297,7 @@ impl Messages for MessageRepo {
                 if let Ok(value) = cursor.value() {
                     // 反序列化
                     if let Ok(mut msg) = serde_wasm_bindgen::from_value::<Message>(value) {
+                        sequences.borrow_mut().push(msg.seq);
                         msg.is_read = 1;
                         store
                             .put(&serde_wasm_bindgen::to_value(&msg).unwrap())
@@ -302,15 +306,14 @@ impl Messages for MessageRepo {
                 }
                 let _ = cursor.continue_();
             } else {
-                tx.take().unwrap().send(()).unwrap();
+                tx.take().unwrap().send(sequences.borrow().clone()).unwrap();
             }
         }) as Box<dyn FnMut(&Event)>);
 
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
         *self.on_update_success.borrow_mut() = Some(success);
 
-        rx.await.unwrap();
-        Ok(())
+        Ok(rx.await.unwrap())
     }
 
     async fn unread_count(&self) -> usize {
