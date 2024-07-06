@@ -55,6 +55,7 @@ pub const CONVERSATION_IS_PINED_WITH_TIME_INDEX: &str = "is_pined_with_time";
 
 // pub const MESSAGE_USER_ID_INDEX: &str = "user_id";
 pub const MESSAGE_FRIEND_AND_SEND_TIME_INDEX: &str = "friend_id_and_send_time";
+pub const MESSAGE_FRIEND_AND_IS_READ_INDEX: &str = "friend_id_and_is_read";
 pub const MESSAGE_FRIEND_ID_INDEX: &str = "friend_id";
 pub const MESSAGE_ID_INDEX: &str = "local_id";
 // pub const MESSAGE_SEND_ID_INDEX: &str = "send_id";

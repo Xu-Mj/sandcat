@@ -138,6 +138,12 @@ pub struct SendMessageState {
     pub msg: Msg,
 }
 
+impl SendMessageState {
+    pub fn send(msg: Msg) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.msg = msg);
+    }
+}
+
 /// send audio message
 #[derive(Default, Clone, PartialEq, Debug, Store)]
 pub struct SendAudioMsgState {

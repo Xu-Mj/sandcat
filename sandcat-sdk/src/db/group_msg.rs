@@ -21,5 +21,7 @@ pub trait GroupMessages: Debug {
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()>;
 
+    async fn update_read_status(&self, friend_id: &str) -> Result<Vec<i64>>;
+
     async fn batch_delete(&self, group_id: &str) -> Result<()>;
 }

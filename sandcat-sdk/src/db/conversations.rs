@@ -13,8 +13,6 @@ pub trait Conversations: Debug {
     /// dismiss group; update conversation
     async fn dismiss_group(&self, conv_id: &str) -> Result<()>;
 
-    async fn self_update_conv(&self, conv: &mut Conversation) -> Result<()>;
-
     async fn get_pined_convs(&self) -> Result<IndexMap<AttrValue, Conversation>>;
 
     async fn get_convs(&self) -> Result<IndexMap<AttrValue, Conversation>>;

@@ -303,7 +303,6 @@ pub type FriendID = String;
 pub enum Msg {
     Single(Message),
     Group(GroupMsg),
-    // GroupInvitation(GroupInvitation),
     SendRelationshipReq(FriendShipRequest),
     RecRelationship((FriendShipWithUser, Sequence)),
     RecRelationshipDel((FriendID, Sequence)),
@@ -360,6 +359,7 @@ pub enum RespMsgType {
     Single,
     Group,
 }
+
 /// server received message and return the result(success/failed)
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq)]
 pub struct ServerResponse {
@@ -576,10 +576,8 @@ pub enum RelationStatus {
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
 pub struct ReadNotice {
-    pub msg_ids: Vec<String>,
-    pub send_id: String,
-    pub friend_id: String,
-    pub create_time: i64,
+    pub msg_seq: Vec<i64>,
+    pub user_id: String,
 }
 
 impl TryFrom<pb::message::Msg> for Message {
@@ -605,6 +603,7 @@ impl TryFrom<pb::message::Msg> for Message {
         } else {
             0
         };
+        let is_read = if value.is_read { 1 } else { 0 };
         Ok(Self {
             id: 0,
             seq: value.seq,
@@ -620,7 +619,7 @@ impl TryFrom<pb::message::Msg> for Message {
             create_time: value.create_time,
             send_time: value.send_time,
             send_status,
-            is_read: 0,
+            is_read,
             is_self: false,
             platform: value.platform,
             avatar: value.avatar.into(),
@@ -1012,9 +1011,6 @@ impl From<Msg> for PbMsg {
                             sdp_m_index: candidate.sdp_m_index,
                         };
                         let data = bincode::serialize(&data).unwrap();
-                        // pb_msg.sdp_mid = candidate.sdp_mid;
-                        // pb_msg.sdp_m_index = candidate.sdp_m_index.map(|c| c as i32);
-                        // pb_msg.content = candidate.candidate.as_bytes().to_vec();
                         pb_msg.content = data;
                     }
                 }
@@ -1034,10 +1030,15 @@ impl From<Msg> for PbMsg {
                 msg_type: MsgType::FriendApplyResp as i32,
                 ..Default::default()
             },
-            Msg::ReadNotice(_) => PbMsg {
-                msg_type: MsgType::Read as i32,
-                ..Default::default()
-            },
+            Msg::ReadNotice(read) => {
+                let data = bincode::serialize(&read).unwrap();
+
+                PbMsg {
+                    msg_type: MsgType::Read as i32,
+                    content: data,
+                    ..Default::default()
+                }
+            }
 
             Msg::SingleDeliveredNotice(_) => PbMsg::default(),
             Msg::FriendshipDeliveredNotice(_) => PbMsg::default(),

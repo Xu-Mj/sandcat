@@ -17,7 +17,9 @@ use super::{
     repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX,
     MESSAGE_TABLE_NAME,
 };
-use super::{SuccessCallback, MESSAGE_FRIEND_AND_SEND_TIME_INDEX};
+use super::{
+    SuccessCallback, MESSAGE_FRIEND_AND_IS_READ_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX,
+};
 
 #[derive(Debug)]
 pub struct MessageRepo {
@@ -56,11 +58,10 @@ impl MessageRepo {
 #[async_trait::async_trait(?Send)]
 impl Messages for MessageRepo {
     async fn get_last_msg(&self, friend_id: &str) -> Result<Message> {
-        // 使用channel异步获取数据
+        // use channel to get the result
         let (tx, rx) = oneshot::channel::<Message>();
         let store = self.store(MESSAGE_TABLE_NAME).await?;
 
-        // let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
         let rang = IdbKeyRange::only(&JsValue::from(friend_id))?;
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
 
@@ -85,7 +86,7 @@ impl Messages for MessageRepo {
                     .expect("result is IdbCursorWithValue; qed");
 
                 let value = cursor.value().unwrap();
-                // 反序列化
+
                 let msg: Message = serde_wasm_bindgen::from_value(value).unwrap();
 
                 let _ = tx.take().unwrap().send(msg);
@@ -132,10 +133,10 @@ impl Messages for MessageRepo {
     ) -> Result<IndexMap<AttrValue, Message>> {
         let mut counter = 0;
         let mut advanced = true;
-        // 使用channel异步获取数据
-        let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Message>>();
-        // let (tx, rx) = oneshot::channel::<Vec<Message>>();
         let store = self.store(MESSAGE_TABLE_NAME).await?;
+
+        // use channel to get the result
+        let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Message>>();
 
         let index = store.index(MESSAGE_FRIEND_AND_SEND_TIME_INDEX)?;
 
@@ -151,7 +152,7 @@ impl Messages for MessageRepo {
         let request = index
             .open_cursor_with_range_and_direction(&range, web_sys::IdbCursorDirection::Prev)?;
 
-        let messages = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
+        let messages = Rc::new(RefCell::new(IndexMap::new()));
         let messages = messages.clone();
         let mut tx = Some(tx);
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
@@ -173,7 +174,7 @@ impl Messages for MessageRepo {
                     return;
                 }
                 let value = cursor.value().unwrap();
-                // 反序列化
+
                 if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
                     let id = msg.local_id.clone();
                     messages.borrow_mut().insert(id, msg);
@@ -185,8 +186,8 @@ impl Messages for MessageRepo {
                 }
                 let _ = cursor.continue_();
             } else {
-                // 如果为null说明已经遍历完成
-                //将总的结果发送出来
+                // loop is complete if result is null
+                // use the channel to send the messages
                 let _ = tx.take().unwrap().send(messages.borrow().clone());
             }
         }) as Box<dyn FnMut(&Event)>);
@@ -237,6 +238,7 @@ impl Messages for MessageRepo {
         let send_status = msg.send_status.clone();
         let server_id = msg.server_id.clone();
         let send_time = msg.send_time;
+        let send_seq = msg.send_seq;
 
         let onsuccess = Closure::once(move |event: &Event| {
             let value = event
@@ -251,6 +253,7 @@ impl Messages for MessageRepo {
                 result.send_status = send_status;
                 result.server_id = server_id;
                 result.send_time = send_time;
+                result.send_seq = send_seq;
 
                 store
                     .put(&serde_wasm_bindgen::to_value(&result).unwrap())
@@ -265,18 +268,23 @@ impl Messages for MessageRepo {
         Ok(())
     }
 
-    async fn update_read_status(&self, friend_id: &str) -> Result<()> {
+    async fn update_read_status(&self, friend_id: &str) -> Result<Vec<i64>> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
-        let rang = IdbKeyRange::only(&JsValue::from(friend_id))?;
-        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
-        let request = index.open_cursor_with_range_and_direction(
-            &JsValue::from(&rang),
-            web_sys::IdbCursorDirection::Prev,
-        )?;
+        let index = store.index(MESSAGE_FRIEND_AND_IS_READ_INDEX)?;
+
+        let friend_unread = js_sys::Array::new();
+        friend_unread.push(&JsValue::from(friend_id));
+        friend_unread.push(&JsValue::from(0));
+
+        let range = IdbKeyRange::only(&JsValue::from(friend_unread))?;
+        let request = index.open_cursor_with_range(&range)?;
 
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
 
-        let (tx, rx) = oneshot::channel::<()>();
+        let sequences = Rc::new(RefCell::new(Vec::new()));
+        let sequences = sequences.clone();
+
+        let (tx, rx) = oneshot::channel::<Vec<i64>>();
         let mut tx = Some(tx);
         let store = store.clone();
 
@@ -292,8 +300,10 @@ impl Messages for MessageRepo {
                     .dyn_ref::<web_sys::IdbCursorWithValue>()
                     .expect("result is IdbCursorWithValue; qed");
                 if let Ok(value) = cursor.value() {
-                    // 反序列化
                     if let Ok(mut msg) = serde_wasm_bindgen::from_value::<Message>(value) {
+                        if !msg.is_self {
+                            sequences.borrow_mut().push(msg.seq);
+                        }
                         msg.is_read = 1;
                         store
                             .put(&serde_wasm_bindgen::to_value(&msg).unwrap())
@@ -302,15 +312,14 @@ impl Messages for MessageRepo {
                 }
                 let _ = cursor.continue_();
             } else {
-                tx.take().unwrap().send(()).unwrap();
+                tx.take().unwrap().send(sequences.borrow().clone()).unwrap();
             }
         }) as Box<dyn FnMut(&Event)>);
 
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
         *self.on_update_success.borrow_mut() = Some(success);
 
-        rx.await.unwrap();
-        Ok(())
+        Ok(rx.await.unwrap())
     }
 
     async fn unread_count(&self) -> usize {
@@ -356,7 +365,7 @@ impl Messages for MessageRepo {
                     .dyn_ref::<web_sys::IdbCursorWithValue>()
                     .expect("result is IdbCursorWithValue; qed");
                 let value = cursor.value().unwrap();
-                // 反序列化
+
                 if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
                     store.delete(&JsValue::from(msg.id)).unwrap();
                 }

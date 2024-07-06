@@ -14,9 +14,10 @@ use crate::db::{
     FRIEND_ADDRESS_INDEX, FRIEND_GENDER_INDEX, FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX,
     FRIEND_REMARK_INDEX, FRIEND_TABLE_NAME, FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX,
     GROUP_ID_AND_USER_ID, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,
-    GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX,
-    MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME,
-    MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX, SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
+    GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_AND_IS_READ_INDEX,
+    MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
+    MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX,
+    SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
 };
 
 use super::DB_NAME;
@@ -90,6 +91,14 @@ impl Repository {
             store
                 .create_index_with_str_sequence(MESSAGE_FRIEND_AND_SEND_TIME_INDEX, &indexes)
                 .unwrap();
+
+            let indexes = Array::new();
+            indexes.push(&JsValue::from("friend_id"));
+            indexes.push(&JsValue::from("is_read"));
+            let indexes = JsValue::from(indexes);
+            store
+                .create_index_with_str_sequence(MESSAGE_FRIEND_AND_IS_READ_INDEX, &indexes)
+                .unwrap();
             store
                 .create_index_with_str(MESSAGE_FRIEND_ID_INDEX, "friend_id")
                 .unwrap();
@@ -116,6 +125,23 @@ impl Repository {
             store
                 .create_index_with_str_and_optional_parameters(MESSAGE_ID_INDEX, "local_id", &param)
                 .unwrap();
+
+            let indexes = Array::new();
+            indexes.push(&JsValue::from("friend_id"));
+            indexes.push(&JsValue::from("send_time"));
+            let indexes = JsValue::from(indexes);
+            store
+                .create_index_with_str_sequence(MESSAGE_FRIEND_AND_SEND_TIME_INDEX, &indexes)
+                .unwrap();
+
+            let indexes = Array::new();
+            indexes.push(&JsValue::from("friend_id"));
+            indexes.push(&JsValue::from("is_read"));
+            let indexes = JsValue::from(indexes);
+            store
+                .create_index_with_str_sequence(MESSAGE_FRIEND_AND_IS_READ_INDEX, &indexes)
+                .unwrap();
+
             store
                 .create_index_with_str(MESSAGE_FRIEND_ID_INDEX, "friend_id")
                 .unwrap();

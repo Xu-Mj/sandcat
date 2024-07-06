@@ -21,7 +21,6 @@ pub struct ConvRepo {
     repo: Repository,
     on_err_callback: Closure<dyn FnMut(&Event)>,
     /// use `RefCell` that we can modify this attr through the `&self`
-    on_update_success: SuccessCallback,
     get_conv_success: SuccessCallback,
 }
 
@@ -41,7 +40,6 @@ impl ConvRepo {
         Self {
             repo,
             on_err_callback,
-            on_update_success: Rc::new(RefCell::new(None)),
             get_conv_success: Rc::new(RefCell::new(None)),
         }
     }
@@ -86,49 +84,10 @@ impl Conversations for ConvRepo {
         Ok(())
     }
 
-    async fn self_update_conv(&self, conv: &mut Conversation) -> Result<()> {
-        let store = self.store(CONVERSATION_TABLE_NAME).await?;
-        let request = store.get(&JsValue::from(conv.friend_id.as_str()))?;
-        let store = store.clone();
-
-        let (tx, rx) = oneshot::channel::<usize>();
-
-        let onsuccess = Closure::once(move |event: &Event| {
-            let result = event
-                .target()
-                .unwrap()
-                .dyn_ref::<IdbRequest>()
-                .unwrap()
-                .result()
-                .unwrap();
-            let unread_count = if !result.is_undefined() && !result.is_null() {
-                let conv1: Conversation = serde_wasm_bindgen::from_value(result).unwrap();
-                conv1.unread_count
-            } else {
-                0
-            };
-            tx.send(unread_count).unwrap();
-        });
-        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        *self.on_update_success.borrow_mut() = Some(onsuccess);
-
-        let unread_count = rx.await.unwrap();
-        conv.unread_count = unread_count;
-        let value = serde_wasm_bindgen::to_value(&conv).unwrap();
-        store.put(&value).unwrap();
-
-        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
-        Ok(())
-    }
-
     async fn get_pined_convs(&self) -> Result<IndexMap<AttrValue, Conversation>> {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Conversation>>();
         let store = self.store(CONVERSATION_TABLE_NAME).await?;
         let index = store.index(CONVERSATION_IS_PINED_WITH_TIME_INDEX)?;
-        // let request = index.open_cursor_with_range_and_direction(
-        //     &JsValue::default(),
-        //     web_sys::IdbCursorDirection::Prev,
-        // )?;
 
         let start_key = js_sys::Array::new();
         start_key.push(&JsValue::from(1));

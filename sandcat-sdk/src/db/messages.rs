@@ -22,7 +22,7 @@ pub trait Messages: Debug {
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()>;
 
-    async fn update_read_status(&self, friend_id: &str) -> Result<()>;
+    async fn update_read_status(&self, friend_id: &str) -> Result<Vec<i64>>;
 
     async fn unread_count(&self) -> usize;
 
