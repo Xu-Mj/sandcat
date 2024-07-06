@@ -161,17 +161,6 @@ impl Chats {
         });
     }
 
-    // async fn create_new_conversation(mut conv: Conversation, friend: Friend) {
-    //     conv.avatar = friend.avatar;
-    //     conv.name = friend.name;
-    //     conv.remark = friend.remark;
-
-    //     if conv.last_msg_is_self {
-    //         db::db_ins().convs.self_update_conv(&mut conv).await?;
-    //     } else {
-    //         db::db_ins().convs.put_conv(&conv).await?;
-    //     }
-    // }
     fn create_new_conversation(
         ctx: &Context<Self>,
         mut conv: Conversation,
@@ -199,8 +188,6 @@ impl Chats {
                 error!("failed to update conv: {:?}", e);
                 Notification::error("update conv error").notify();
                 return;
-
-                // conv.unread_count = unread_count;
             }
             Self::update_unread_count(&conv, &current_id);
 
@@ -209,14 +196,7 @@ impl Chats {
         });
     }
 
-    fn update_old_conv(
-        &mut self,
-        old: Conversation,
-        mut conv: Conversation,
-        // is_self: bool,
-        // is_pinned: bool,
-    ) -> bool {
-        // self.update_unread_count(&old, is_self);
+    fn update_old_conv(&mut self, old: Conversation, mut conv: Conversation) -> bool {
         let mut clean = false;
         let friend_id = conv.friend_id.clone();
         let current_id = self.conv_state.conv.item_id.clone();
@@ -350,7 +330,6 @@ impl Chats {
             )
         };
 
-        // let start = self.seq.local_seq;
         let user_id = ctx.props().user_id.clone();
 
         if is_send {
@@ -358,20 +337,16 @@ impl Chats {
         } else {
             self.seq.local_seq = end;
         }
-        // let send_seq = self.seq.send_seq;
         let seq = self.seq.clone();
 
         let ctx = ctx.link().clone();
         spawn_local(async move {
-            // Self::handle_seq_update(seq, need_repull, &user_id, other_seq, start, end, is_send)
-            //     .await
             if let Err(e) = db::db_ins().seq.put(&seq).await {
                 error!("save seq error: {:?}", e);
                 Notification::error("save seq error").notify();
                 return;
             }
 
-            // todo handle error
             if need_repull {
                 match Self::pull_offline_msgs(&user_id, is_send, other_seq, start, end).await {
                     Ok(messages) => ctx.send_message(ChatsMsg::HandleLackMessages(
@@ -539,7 +514,6 @@ impl Chats {
                         // delete member information from da
                         let mem_id = mem_id.clone();
                         let group_id = group_id.clone();
-                        // let ctx = ctx.link().clone();
                         spawn_local(async move {
                             log::debug!(
                                 "received group member exits message {group_id} --> {mem_id}, delete member from group"

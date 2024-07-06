@@ -603,6 +603,7 @@ impl TryFrom<pb::message::Msg> for Message {
         } else {
             0
         };
+        let is_read = if value.is_read { 1 } else { 0 };
         Ok(Self {
             id: 0,
             seq: value.seq,
@@ -618,7 +619,7 @@ impl TryFrom<pb::message::Msg> for Message {
             create_time: value.create_time,
             send_time: value.send_time,
             send_status,
-            is_read: 0,
+            is_read,
             is_self: false,
             platform: value.platform,
             avatar: value.avatar.into(),
