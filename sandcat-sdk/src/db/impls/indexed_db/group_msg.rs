@@ -24,6 +24,7 @@ pub struct GroupMsgRepo {
     on_err_callback: Closure<dyn FnMut(&Event)>,
     on_get_list_success: SuccessCallback,
     on_batch_del_success: SuccessCallback,
+    on_update_state_success: SuccessCallback,
     on_update_success: SuccessCallback,
 }
 
@@ -46,6 +47,7 @@ impl GroupMsgRepo {
             on_update_success: Rc::new(RefCell::new(None)),
             on_get_list_success: Rc::new(RefCell::new(None)),
             on_batch_del_success: Rc::new(RefCell::new(None)),
+            on_update_state_success: Rc::new(RefCell::new(None)),
         }
     }
 }
@@ -196,6 +198,8 @@ impl GroupMessages for GroupMsgRepo {
         });
         req.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         req.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
+        *self.on_update_state_success.borrow_mut() = Some(onsuccess);
         Ok(())
     }
 
