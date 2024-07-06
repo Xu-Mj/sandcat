@@ -455,17 +455,8 @@ impl Chats {
                         spawn_local(async move { Self::handle_group_invitation(ctx, msg).await });
                     }
                     GroupMsg::Message(mut msg) => {
-                        let conv = Conversation {
-                            last_msg: msg.content.clone(),
-                            last_msg_time: msg.send_time,
-                            last_msg_type: msg.content_type,
-                            last_msg_is_self: msg.is_self,
-                            conv_type,
-                            friend_id: msg.friend_id.clone(),
-                            unread_count: 1,
-                            avatar: msg.avatar.clone(),
-                            ..Default::default()
-                        };
+                        let mut conv = Conversation::from(msg.clone());
+                        conv.conv_type = conv_type;
 
                         let is_send = (self.conv_state.conv.content_type
                             == RightContentType::Friend
@@ -475,7 +466,6 @@ impl Chats {
                         self.handle_rec_lack_msg(ctx, msg.seq);
                         let scope = ctx.link().clone();
                         spawn_local(async move {
-                            // 数据入库
                             if msg.content_type == ContentType::Audio {
                                 // request from file server
                                 if let Err(e) = Self::download_voice_and_save(

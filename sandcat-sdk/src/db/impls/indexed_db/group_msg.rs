@@ -176,9 +176,14 @@ impl GroupMessages for GroupMsgRepo {
         let store = self.store(GROUP_MSG_TABLE_NAME).await.unwrap();
         let index = store.index(MESSAGE_ID_INDEX).unwrap();
         let req = index.get(&JsValue::from(msg.local_id.as_str()))?;
+
         let store = store.clone();
+
         let send_status = msg.send_status.clone();
         let server_id = msg.server_id.clone();
+        let send_seq = msg.send_seq;
+        let send_time = msg.send_time;
+
         let onsuccess = Closure::once(move |event: &Event| {
             let value = event
                 .target()
@@ -191,6 +196,9 @@ impl GroupMessages for GroupMsgRepo {
                 let mut result: Message = serde_wasm_bindgen::from_value(value).unwrap();
                 result.send_status = send_status;
                 result.server_id = server_id;
+                result.send_seq = send_seq;
+                result.send_time = send_time;
+
                 store
                     .put(&serde_wasm_bindgen::to_value(&result).unwrap())
                     .unwrap();

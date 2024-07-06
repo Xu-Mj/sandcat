@@ -238,6 +238,7 @@ impl Messages for MessageRepo {
         let send_status = msg.send_status.clone();
         let server_id = msg.server_id.clone();
         let send_time = msg.send_time;
+        let send_seq = msg.send_seq;
 
         let onsuccess = Closure::once(move |event: &Event| {
             let value = event
@@ -252,6 +253,7 @@ impl Messages for MessageRepo {
                 result.send_status = send_status;
                 result.server_id = server_id;
                 result.send_time = send_time;
+                result.send_seq = send_seq;
 
                 store
                     .put(&serde_wasm_bindgen::to_value(&result).unwrap())
