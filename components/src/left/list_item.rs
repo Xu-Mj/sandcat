@@ -89,34 +89,15 @@ impl Component for ListItem {
             ListItemMsg::GoToSetting => false,
             ListItemMsg::CleanUnreadCount => {
                 // set message is_read to true
-                let friend_id = ctx.props().props.id.clone();
-                let unread_count = self.unread_count;
                 log::debug!("clean unread count");
-                spawn_local(async move {
-                    if let Ok(msg_seq) = db::db_ins().messages.update_read_status(&friend_id).await
-                    {
-                        if msg_seq.is_empty() {
-                            return;
-                        }
-                        Dispatch::<UnreadState>::global().reduce_mut(|s| {
-                            s.msg_count = s.msg_count.saturating_sub(unread_count);
-                        });
-                        let user_id = Dispatch::<AppState>::global()
-                            .get()
-                            .login_user
-                            .id
-                            .clone()
-                            .to_string();
-                        // send read status to server
-                        SendMessageState::send(Msg::ReadNotice(ReadNotice { msg_seq, user_id }))
-                    }
-                });
+                self.clean_unread_count(ctx);
+
                 self.unread_count = 0;
                 // show right if mobile
                 if self.is_mobile {
                     ShowRight::Show.notify();
-                    // return false;
                 }
+
                 // do not update if current item is the same
                 if self.conv_state.conv.item_id == ctx.props().props.id {
                     return false;
@@ -138,7 +119,6 @@ impl Component for ListItem {
             ListItemMsg::FriendItemClicked => {
                 if self.is_mobile {
                     ShowRight::Show.notify();
-                    // return false;
                 }
                 if self.friend_state.friend.item_id == ctx.props().props.id {
                     return false;
@@ -149,7 +129,6 @@ impl Component for ListItem {
                         item_id: ctx.props().props.id.clone(),
                         content_type: ctx.props().conv_type.clone(),
                     };
-                    // current_item::save_friend(&friend).unwrap();
                     s.friend = friend;
                 });
                 false
@@ -304,7 +283,6 @@ impl ListItem {
             .to_string()
     }
 
-    // 获取未读消息 HTML
     fn get_unread_count_html(&self, ctx: &Context<Self>, unread_count: usize) -> Html {
         if unread_count == 0 {
             return html! {};
@@ -326,7 +304,7 @@ impl ListItem {
         }
     }
 
-    // 获取触摸事件
+    // get touch events
     fn get_touch_events(
         &self,
         ctx: &Context<Self>,
@@ -341,7 +319,7 @@ impl ListItem {
         }
     }
 
-    // 获取右侧内容 HTML
+    // get right content  HTML
     fn get_right_html(&self, ctx: &Context<Self>, props: &CommonProps) -> Html {
         let mut name = props.name.clone();
         if !props.remark.is_empty() {
@@ -370,7 +348,7 @@ impl ListItem {
         }
     }
 
-    // 获取组件的样式类
+    // get item style classes
     fn get_classes(&self, ctx: &Context<Self>, props: &CommonProps) -> Classes {
         let mut classes = Classes::from("item");
         match ctx.props().component_type {
@@ -400,7 +378,7 @@ impl ListItem {
         classes
     }
 
-    // 获取点击事件
+    // get onclick event
     fn get_onclick(&self, ctx: &Context<Self>) -> Callback<MouseEvent> {
         match ctx.props().component_type {
             ComponentType::Contacts => ctx.link().callback(|_| ListItemMsg::FriendItemClicked),
@@ -409,5 +387,44 @@ impl ListItem {
                 ctx.link().callback(|_| ListItemMsg::GoToSetting)
             }
         }
+    }
+
+    /// clean unread count
+    fn clean_unread_count(&self, ctx: &Context<Self>) {
+        let right_type = ctx.props().conv_type.clone();
+        let friend_id = ctx.props().props.id.clone();
+        log::debug!("clean unread count");
+
+        spawn_local(async move {
+            if right_type == RightContentType::Friend {
+                if let Ok(msg_seq) = db::db_ins().messages.update_read_status(&friend_id).await {
+                    if msg_seq.is_empty() {
+                        return;
+                    }
+                    Self::clean_unread_count_notify(msg_seq).await;
+                }
+            } else if right_type == RightContentType::Group {
+                if let Ok(msg_seq) = db::db_ins().group_msgs.update_read_status(&friend_id).await {
+                    if msg_seq.is_empty() {
+                        return;
+                    }
+                    Self::clean_unread_count_notify(msg_seq).await;
+                }
+            }
+        });
+    }
+
+    async fn clean_unread_count_notify(msg_seq: Vec<i64>) {
+        Dispatch::<UnreadState>::global().reduce_mut(|s| {
+            s.msg_count = s.msg_count.saturating_sub(msg_seq.len());
+        });
+        let user_id = Dispatch::<AppState>::global()
+            .get()
+            .login_user
+            .id
+            .clone()
+            .to_string();
+        // send read status to server
+        SendMessageState::send(Msg::ReadNotice(ReadNotice { msg_seq, user_id }))
     }
 }

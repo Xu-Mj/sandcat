@@ -13,10 +13,10 @@ use crate::db::group_msg::GroupMessages;
 use crate::error::Result;
 use crate::model::message::{Message, ServerResponse};
 
-use super::SuccessCallback;
 use super::{
     repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
 };
+use super::{SuccessCallback, MESSAGE_FRIEND_AND_IS_READ_INDEX};
 
 #[derive(Debug)]
 pub struct GroupMsgRepo {
@@ -24,6 +24,7 @@ pub struct GroupMsgRepo {
     on_err_callback: Closure<dyn FnMut(&Event)>,
     on_get_list_success: SuccessCallback,
     on_batch_del_success: SuccessCallback,
+    on_update_success: SuccessCallback,
 }
 
 impl Deref for GroupMsgRepo {
@@ -42,6 +43,7 @@ impl GroupMsgRepo {
         Self {
             repo,
             on_err_callback,
+            on_update_success: Rc::new(RefCell::new(None)),
             on_get_list_success: Rc::new(RefCell::new(None)),
             on_batch_del_success: Rc::new(RefCell::new(None)),
         }
@@ -195,6 +197,60 @@ impl GroupMessages for GroupMsgRepo {
         req.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         req.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
         Ok(())
+    }
+
+    async fn update_read_status(&self, friend_id: &str) -> Result<Vec<i64>> {
+        let store = self.store(GROUP_MSG_TABLE_NAME).await?;
+        let index = store.index(MESSAGE_FRIEND_AND_IS_READ_INDEX)?;
+
+        let friend_unread = js_sys::Array::new();
+        friend_unread.push(&JsValue::from(friend_id));
+        friend_unread.push(&JsValue::from(0));
+
+        let range = IdbKeyRange::only(&JsValue::from(friend_unread))?;
+        let request = index.open_cursor_with_range(&range)?;
+
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
+        let sequences = Rc::new(RefCell::new(Vec::new()));
+        let sequences = sequences.clone();
+
+        let (tx, rx) = oneshot::channel::<Vec<i64>>();
+        let mut tx = Some(tx);
+        let store = store.clone();
+
+        let success = Closure::wrap(Box::new(move |event: &Event| {
+            let target = event.target().expect("msg");
+            let req = target
+                .dyn_ref::<IdbRequest>()
+                .expect("Event target is IdbRequest; qed");
+            let result = req.result().unwrap_or_else(|_err| JsValue::null());
+
+            if !result.is_null() {
+                let cursor = result
+                    .dyn_ref::<web_sys::IdbCursorWithValue>()
+                    .expect("result is IdbCursorWithValue; qed");
+                if let Ok(value) = cursor.value() {
+                    if let Ok(mut msg) = serde_wasm_bindgen::from_value::<Message>(value) {
+                        if !msg.is_self {
+                            sequences.borrow_mut().push(msg.seq);
+                        }
+                        msg.is_read = 1;
+                        store
+                            .put(&serde_wasm_bindgen::to_value(&msg).unwrap())
+                            .unwrap();
+                    }
+                }
+                let _ = cursor.continue_();
+            } else {
+                tx.take().unwrap().send(sequences.borrow().clone()).unwrap();
+            }
+        }) as Box<dyn FnMut(&Event)>);
+
+        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        *self.on_update_success.borrow_mut() = Some(success);
+
+        Ok(rx.await.unwrap())
     }
 
     async fn batch_delete(&self, group_id: &str) -> Result<()> {
