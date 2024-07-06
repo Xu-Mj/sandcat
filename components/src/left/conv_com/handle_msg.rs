@@ -178,13 +178,7 @@ impl Chats {
             conv.name = friend.name;
             conv.remark = friend.remark;
 
-            if conv.last_msg_is_self {
-                if let Err(e) = db::db_ins().convs.self_update_conv(&mut conv).await {
-                    error!("failed to update conv: {:?}", e);
-                    Notification::error("update conv error").notify();
-                    return;
-                }
-            } else if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+            if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                 error!("failed to update conv: {:?}", e);
                 Notification::error("update conv error").notify();
                 return;
