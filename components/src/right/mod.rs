@@ -388,7 +388,10 @@ impl Component for Right {
                 // 处理没有选中会话的情况
                 if self.conv_state.conv.item_id.is_empty() {
                     html! {
-                        <h2 class="choose-conv">{tr!(self.i18n, HELLO)}</h2>
+                        <div class="choose-conv">
+                            <CatHeadIcon/>
+                            <h2 >{tr!(self.i18n, HELLO)}</h2>
+                        </div>
                     }
                 } else {
                     html! {

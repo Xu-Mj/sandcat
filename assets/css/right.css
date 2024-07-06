@@ -41,6 +41,16 @@
 
 .choose-conv {
     margin: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+
+    svg {
+        width: 6rem;
+        height: 6rem;
+    }
 }
 
 .right-top-bar {
@@ -548,7 +558,7 @@
             max-height: 4rem;
             overflow: hidden;
             display: -webkit-inline-box;
-            -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             /* show ellipsis */
             text-overflow: ellipsis;
