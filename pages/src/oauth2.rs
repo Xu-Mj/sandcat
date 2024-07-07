@@ -80,6 +80,7 @@ impl Component for OAuth2 {
                 false
             }
             Msg::Failed(err) => {
+                Dialog::close_loading();
                 Dialog::error(&err);
                 false
             }
