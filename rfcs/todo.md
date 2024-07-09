@@ -28,8 +28,7 @@
 - bug: hello message is reversed
 - bug: need to refresh contacts list after offline message synced
 - bug: add friend page need to listen input change event
-- we need to split the forward message type
+- we need to split the forward message type: Single/Group
 - handle request seq error
 - global unread message count is not correct
 - we need to increase the unread count when the current component is not in the message component
-- what is self update conversation?
