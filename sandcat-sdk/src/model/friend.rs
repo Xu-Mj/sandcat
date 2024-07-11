@@ -61,33 +61,21 @@ pub enum ReadStatus {
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
 pub struct Friend {
     pub fs_id: AttrValue,
+    pub friend_id: AttrValue,
+    pub account: AttrValue,
     pub name: AttrValue,
     pub avatar: AttrValue,
     pub gender: AttrValue,
     pub age: i32,
     pub region: Option<AttrValue>,
     pub status: i32,
-    pub hello: Option<AttrValue>,
     pub remark: Option<AttrValue>,
+    pub email: Option<AttrValue>,
     pub source: AttrValue,
-    pub accept_time: i64,
-    pub account: AttrValue,
-    pub friend_id: AttrValue,
     pub signature: AttrValue,
     pub create_time: i64,
-    pub email: Option<AttrValue>,
+    pub update_time: i64,
 }
-
-// #[derive(PartialEq, Serialize, Deserialize, Default)]
-// pub enum FriendStatus {
-//     #[default]
-//     Default,
-//     Apply,
-//     Agree,
-//     Deny,
-//     BlackList,
-//     Delete,
-// }
 
 #[derive(Serialize, Debug, Default, Clone, Deserialize, PartialEq)]
 pub struct FriendShipWithUser {
@@ -104,8 +92,6 @@ pub struct FriendShipWithUser {
     pub source: AttrValue,
     pub region: Option<AttrValue>,
     pub create_time: i64,
-    #[serde(default)]
-    pub accept_time: i64,
     #[serde(default)]
     pub read: ReadStatus,
     #[serde(default)]
@@ -153,7 +139,6 @@ impl From<FriendshipWithUser4Response> for FriendShipWithUser {
             create_time: value.create_time,
             is_self: false,
             gender: value.gender,
-            accept_time: 0,
             remark: value.remark,
             is_operated: false,
             email: value.email,
