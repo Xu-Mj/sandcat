@@ -656,7 +656,7 @@ impl Chats {
                 spawn_local(async move {
                     let mut friend = db::db_ins().friends.get(&friend_id).await;
                     if !friend.friend_id.is_empty() {
-                        friend.status = FriendStatus::Delete as i32;
+                        friend.status = FriendStatus::Deleted as i32;
                         if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
                             error!("save friend error:{:?}", err);
                         }

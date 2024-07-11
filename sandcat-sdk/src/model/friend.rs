@@ -2,30 +2,29 @@ use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
 use super::{ItemInfo, RightContentType};
+
 #[derive(Debug, Default, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum FriendStatus {
-    Default = 0,
     #[default]
-    Pending = 1,
-    Accepted = 2,
-    Rejected = 3,
-    Blacked = 4,
-    Cancelled = 5,
-    Delete = 6,
-    Failed = 7,
+    Pending = 0,
+    Accepted = 1,
+    Rejected = 2,
+    /// / blacklist
+    Blacked = 3,
+    Deleted = 4,
+    Failed = 5,
 }
 
 impl From<i32> for FriendStatus {
     fn from(value: i32) -> Self {
         match value {
-            1 => FriendStatus::Pending,
-            2 => FriendStatus::Accepted,
-            3 => FriendStatus::Rejected,
-            4 => FriendStatus::Blacked,
-            5 => FriendStatus::Cancelled,
-            6 => FriendStatus::Delete,
-            7 => FriendStatus::Failed,
-            _ => FriendStatus::Default,
+            0 => FriendStatus::Pending,
+            1 => FriendStatus::Accepted,
+            2 => FriendStatus::Rejected,
+            3 => FriendStatus::Blacked,
+            4 => FriendStatus::Deleted,
+            5 => FriendStatus::Failed,
+            _ => FriendStatus::Pending,
         }
     }
 }

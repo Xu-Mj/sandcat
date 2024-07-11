@@ -446,7 +446,7 @@ impl Component for MessageList {
             }
             MessageListMsg::QueryFriend(item) => {
                 if let Some(item) = item.as_ref() {
-                    self.is_black = item.status() == FriendStatus::Delete;
+                    self.is_black = item.status() == FriendStatus::Deleted;
                 }
                 self.friend = item;
                 true
