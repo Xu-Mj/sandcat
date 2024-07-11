@@ -383,6 +383,7 @@ impl Component for Chats {
                 false
             }
             ChatsMsg::Unauthorized => {
+                // todo give user a tip which need to relogin
                 if let Some(navigator) = ctx.link().navigator() {
                     navigator.push(&Page::Login);
                 }
@@ -417,11 +418,11 @@ impl Component for Chats {
         let search_callback = ctx.link().callback(ChatsMsg::FilterConv);
         let clean_callback = ctx.link().callback(move |_| ChatsMsg::CleanupSearchResult);
         let plus_click = ctx.link().callback(|_| ChatsMsg::ShowSelectFriendList);
-        let submit_back = ctx.link().callback(ChatsMsg::CreateGroup);
 
         // spawn friend list
         let mut friend_list = html!();
         if self.show_friend_list {
+            let submit_back = ctx.link().callback(ChatsMsg::CreateGroup);
             friend_list = html! {
                 <SelectFriendList
                     close_back={plus_click.clone()}
