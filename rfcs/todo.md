@@ -25,9 +25,7 @@
 - add password modify
 - we need to give the user a message if their email is already used
 - encrypt the password before send to server
-- bug: hello message is reversed
 - bug: need to refresh contacts list after offline message synced
-- bug: add friend page need to listen input change event
 - we need to split the forward message type: Single/Group
 - handle request seq error
 - global unread message count is not correct
