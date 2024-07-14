@@ -27,8 +27,8 @@ use sandcat_sdk::{
         notification::Notification,
         seq::Seq,
         user::Claims,
-        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType, REFRESH_TOKEN,
-        TOKEN, WS_ADDR,
+        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType, OFFLINE_TIME,
+        REFRESH_TOKEN, TOKEN, WS_ADDR,
     },
     state::{
         ConvState, CreateConvState, CreateGroupConvState, I18nState, MobileState, MuteState,
@@ -126,6 +126,8 @@ impl Chats {
                 .get_pined_convs()
                 .await
                 .unwrap_or_default();
+            // pull friends
+            Self::pull_friends(&user_id).await;
             // get the seq
             // todo handle the error
             let server_seq = api::seq().get_seq(&user_id).await.unwrap_or_default();
@@ -238,6 +240,24 @@ impl Chats {
             is_knocked: false,
             token_getter: None,
             refresh_token_getter: None,
+        }
+    }
+
+    pub async fn pull_friends(user_id: &str) {
+        let offline_time = utils::get_local_storage(OFFLINE_TIME)
+            .unwrap_or_default()
+            .parse::<i64>()
+            .unwrap_or_default();
+        match api::friends()
+            .get_friend_list_by_id(user_id, offline_time)
+            .await
+        {
+            Ok(res) => {
+                db::db_ins().friends.put_friend_list(&res).await;
+            }
+            Err(e) => {
+                error!("获取联系人列表错误: {:?}", e)
+            }
         }
     }
 

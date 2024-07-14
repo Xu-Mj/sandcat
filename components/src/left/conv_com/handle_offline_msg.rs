@@ -5,12 +5,12 @@ use log::{error, warn};
 use yew::prelude::*;
 
 use sandcat_sdk::{
-    api, db,
+    db,
     model::{
         conversation::Conversation,
         friend::FriendStatus,
         message::{convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall},
-        ContentType, RightContentType, OFFLINE_TIME,
+        ContentType, RightContentType,
     },
     pb::message::Msg as PbMsg,
     state::{RefreshMsgListState, UnreadState},
@@ -253,21 +253,7 @@ impl Chats {
 
         // sync friend list again
         // pull friends list
-        let offline_time = utils::get_local_storage(OFFLINE_TIME)
-            .unwrap_or_default()
-            .parse::<i64>()
-            .unwrap_or_default();
-        match api::friends()
-            .get_friend_list_by_id(&user_id, offline_time)
-            .await
-        {
-            Ok(res) => {
-                db::db_ins().friends.put_friend_list(&res).await;
-            }
-            Err(e) => {
-                error!("获取联系人列表错误: {:?}", e)
-            }
-        }
+        Self::pull_friends(&user_id).await;
 
         // send handle finished state to notify main thread
         // sort
