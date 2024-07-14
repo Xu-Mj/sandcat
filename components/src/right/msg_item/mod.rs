@@ -239,7 +239,7 @@ impl MsgItem {
                 let img_preview = if self.show_img_preview {
                     html! {
                         <div class="img-preview pointer" onclick={onclick.clone()}>
-                            <img src={src} />
+                            <img alt="preview-img" src={src} />
                         </div>
                     }
                 } else {
@@ -251,7 +251,7 @@ impl MsgItem {
                     <div class="msg-item-content pointer" {oncontextmenu}>
                         <div class="img-mask">
                         </div>
-                        <img class="msg-item-img" src={img_url} {onclick}/>
+                        <img class="msg-item-img" alt="image" src={img_url} {onclick}/>
                     </div>
                 </>
                 }
@@ -281,7 +281,7 @@ impl MsgItem {
                 html! {
                     <div class="msg-item-emoji" {oncontextmenu}>
                         // <span class="msg-item-emoji">
-                            <img class="emoji" src={msg.content.clone()} />
+                            <img class="emoji" alt="emoji" src={msg.content.clone()} />
                         // </span>
                     </div>
                 }

@@ -386,9 +386,9 @@ impl Component for MsgItem {
         }
 
         let avatar = if ctx.props().msg.is_self {
-            html!(<img class="avatar" src={utils::get_avatar_url(&self.avatar)} />)
+            html!(<img class="avatar" alt="avatar" src={utils::get_avatar_url(&self.avatar)} />)
         } else {
-            html!(<img class="avatar pointer" src={utils::get_avatar_url(&self.avatar)} onclick={_avatar_click} />)
+            html!(<img class="avatar pointer" alt="avatar" src={utils::get_avatar_url(&self.avatar)} onclick={_avatar_click} />)
         };
 
         // context menu

@@ -182,6 +182,7 @@ impl Component for Top {
                     <div class="top-left pointer" {onclick}>
                         <img
                             class="avatar"
+                            alt="avatar"
                             title={&self.app_state.login_user.name}
                             src={utils::get_avatar_url(&self.app_state.login_user.avatar)} />
                         <div class="top-left-name">

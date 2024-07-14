@@ -936,7 +936,7 @@ impl Component for PhoneCall {
             video_or_audio_notify = html! {
                 <div class="video-or-audio-notify box-shadow" >
                     // 头像。昵称。挂断。接听
-                    <img src={utils::get_avatar_url(&info.avatar())}/>
+                    <img alt="avatar" src={utils::get_avatar_url(&info.avatar())}/>
                     <span class="video-or-audio-notify-text" >
                         {format!("{} {}", info.name(), tr!(self.i18n, INCOMING_CALL))}
                     </span>
@@ -1067,7 +1067,7 @@ impl Component for PhoneCall {
                             {ontouchmove}
                             {ontouchend}>
                             {zoom}
-                            <img class="audio-avatar" src={utils::get_avatar_url(&avatar)} />
+                            <img class="audio-avatar" alt="avatar" src={utils::get_avatar_url(&avatar)} />
                             <audio ref={self.friend_audio_node.clone()}/>
                             <div class={call_duration_class}>{duration}</div>
                             <div class="call-operate" >
