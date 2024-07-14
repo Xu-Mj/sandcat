@@ -217,7 +217,6 @@ impl Component for Register {
                 true
             }
             RegisterMsg::UpdateTime => {
-                log::debug!("update time");
                 self.time -= 1;
                 if self.time == 0 {
                     self.code_timer.take().unwrap().cancel();
@@ -227,7 +226,6 @@ impl Component for Register {
                 true
             }
             RegisterMsg::Request(status) => {
-                log::debug!("request: {:?}", status);
                 match status {
                     RequestStatus::Pendding => self.req_status = RequestStatus::Pendding,
                     RequestStatus::Success => {
@@ -247,7 +245,6 @@ impl Component for Register {
                 true
             }
             RegisterMsg::OnPwdInput(event) => {
-                log::debug!("pwd: {}", &self.pwd);
                 self.pwd = event
                     .target_dyn_into::<HtmlInputElement>()
                     .unwrap()
@@ -263,7 +260,6 @@ impl Component for Register {
                 true
             }
             RegisterMsg::OnRePwdInput(event) => {
-                log::debug!("re pwd");
                 let re_pwd = event.target_dyn_into::<HtmlInputElement>().unwrap().value();
                 self.re_pwd_is_modify = true;
                 self.pwd_is_same = re_pwd == self.pwd;
@@ -276,6 +272,7 @@ impl Component for Register {
               } */
         }
     }
+
     fn view(&self, ctx: &Context<Self>) -> Html {
         let avatars = self.avatars.iter().map(|(path,avatar)| {
             let mut classes = classes!("register-avatar");
