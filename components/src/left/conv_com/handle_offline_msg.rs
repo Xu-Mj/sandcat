@@ -253,7 +253,7 @@ impl Chats {
 
         // sync friend list again
         // pull friends list
-        Self::pull_friends(&user_id).await;
+        // Self::pull_friends(&user_id).await;
 
         // send handle finished state to notify main thread
         // sort

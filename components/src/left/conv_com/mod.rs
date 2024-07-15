@@ -121,11 +121,6 @@ impl Chats {
         let user_id = id.clone();
         let cloned_ctx = ctx.link().clone();
         spawn_local(async move {
-            let pined_convs = db::db_ins()
-                .convs
-                .get_pined_convs()
-                .await
-                .unwrap_or_default();
             // pull friends
             Self::pull_friends(&user_id).await;
             // get the seq
@@ -163,6 +158,11 @@ impl Chats {
                     return;
                 }
             }
+            let pined_convs = db::db_ins()
+                .convs
+                .get_pined_convs()
+                .await
+                .unwrap_or_default();
             let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
 
             cloned_ctx.send_message(ChatsMsg::QueryConvList((pined_convs, convs, local_seq)));
@@ -248,6 +248,7 @@ impl Chats {
             .unwrap_or_default()
             .parse::<i64>()
             .unwrap_or_default();
+        log::debug!("offline time: {}", offline_time);
         match api::friends()
             .get_friend_list_by_id(user_id, offline_time)
             .await

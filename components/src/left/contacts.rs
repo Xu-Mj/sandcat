@@ -9,12 +9,12 @@ use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::db;
 use sandcat_sdk::model::group::Group;
 use sandcat_sdk::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use sandcat_sdk::state::ComponentTypeState;
 use sandcat_sdk::state::MobileState;
 use sandcat_sdk::state::{
     AddFriendState, FriendListState, FriendShipState, I18nState, ItemType, RemoveFriendState,
     UnreadState,
 };
+use sandcat_sdk::state::{ComponentTypeState, RefreshMsgListState};
 use sandcat_sdk::{
     model::friend::Friend,
     model::{CommonProps, ComponentType},
@@ -52,6 +52,7 @@ pub struct Contacts {
     _add_friend_dis: Dispatch<AddFriendState>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
+    _refresh_dis: Dispatch<RefreshMsgListState>,
     touch_start: i32,
     is_mobile: bool,
 }
@@ -62,11 +63,16 @@ pub enum QueryState<T> {
     // Failure,
 }
 
+type QueryProps = (
+    IndexMap<AttrValue, Friend>,
+    IndexMap<AttrValue, Group>,
+    usize,
+);
+
 pub enum ContactsMsg {
     FilterContact(AttrValue),
     CleanupSearchResult,
-    QueryFriends(QueryState<IndexMap<AttrValue, Friend>>),
-    QueryGroups(QueryState<IndexMap<AttrValue, Group>>),
+    QueryList(QueryProps),
     ShowAddFriend,
     RecFriendShipReq(Rc<FriendShipState>),
     FriendListStateChanged(Rc<FriendListState>),
@@ -78,6 +84,7 @@ pub enum ContactsMsg {
     SwitchLanguage(Rc<I18nState>),
     OnTouchStart(TouchEvent),
     OnTouchEnd(TouchEvent),
+    RefreshList,
 }
 
 impl Component for Contacts {
@@ -86,26 +93,9 @@ impl Component for Contacts {
     type Properties = ContactsProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        // 查询联系人列表
-        ctx.link()
-            .send_message(ContactsMsg::QueryFriends(QueryState::Querying));
-        ctx.link().send_future(async {
-            let friends = db::db_ins().friends.get_list().await.unwrap_or_default();
-            ContactsMsg::QueryFriends(QueryState::Success(friends))
-        });
-        ctx.link().send_future(async {
-            let friends = db::db_ins().groups.get_list().await.unwrap_or_default();
-            ContactsMsg::QueryGroups(QueryState::Success(friends))
-        });
-        // 查询好友请求列表
-        ctx.link().send_future(async {
-            let count = db::db_ins()
-                .friendships
-                .get_unread_count()
-                .await
-                .unwrap_or_default();
-            ContactsMsg::QueryFriendship(count)
-        });
+        // query friend/group/count
+        Self::query_list(ctx);
+
         // register state
         let fs_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(ContactsMsg::RecFriendShipReq));
@@ -117,6 +107,9 @@ impl Component for Contacts {
             Dispatch::global().subscribe_silent(ctx.link().callback(ContactsMsg::RemoveFriend));
         let _add_friend_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(ContactsMsg::AddFriend));
+
+        let _refresh_dis =
+            Dispatch::global().subscribe_silent(ctx.link().callback(|_| ContactsMsg::RefreshList));
 
         let lang_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::SwitchLanguage));
@@ -144,6 +137,7 @@ impl Component for Contacts {
             _add_friend_dis,
             lang_state,
             _lang_dispatch: lang_dispatch,
+            _refresh_dis,
         }
     }
 
@@ -169,16 +163,6 @@ impl Component for Contacts {
                 self.result.clear();
                 true
             }
-            ContactsMsg::QueryFriends(friends) => match friends {
-                QueryState::Success(list) => {
-                    self.friends = list;
-                    true
-                }
-                // QueryState::Failure => {
-                //     false
-                // }
-                QueryState::Querying => false,
-            },
             ContactsMsg::ShowAddFriend => {
                 self.is_add_friend = !self.is_add_friend;
                 true
@@ -242,16 +226,6 @@ impl Component for Contacts {
                 self.show_context_menu = true;
                 true
             }
-            ContactsMsg::QueryGroups(groups) => match groups {
-                QueryState::Success(list) => {
-                    self.groups = list;
-                    true
-                }
-                // QueryState::Failure => {
-                //     false
-                // }
-                QueryState::Querying => false,
-            },
             ContactsMsg::RemoveFriend(state) => {
                 let mut friend_id = AttrValue::default();
                 match state.type_ {
@@ -321,6 +295,17 @@ impl Component for Contacts {
                 }
                 self.touch_start = 0;
                 false
+            }
+            ContactsMsg::RefreshList => {
+                log::debug!("refresh list in contacts");
+                Self::query_list(ctx);
+                false
+            }
+            ContactsMsg::QueryList((friends, groups, count)) => {
+                self.friends = friends;
+                self.groups = groups;
+                self.friendships_unread_count = count;
+                true
             }
         }
     }
@@ -402,6 +387,21 @@ impl Component for Contacts {
                 }
             </div>
         }
+    }
+}
+
+impl Contacts {
+    fn query_list(ctx: &Context<Self>) {
+        ctx.link().send_future(async move {
+            let friends = db::db_ins().friends.get_list().await.unwrap_or_default();
+            let groups = db::db_ins().groups.get_list().await.unwrap_or_default();
+            let count = db::db_ins()
+                .friendships
+                .get_unread_count()
+                .await
+                .unwrap_or_default();
+            ContactsMsg::QueryList((friends, groups, count))
+        });
     }
 }
 
