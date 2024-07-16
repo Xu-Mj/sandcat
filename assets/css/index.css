@@ -37,7 +37,8 @@
 
 /* semantic color variables for this project */
 :root[theme="light"] {
-    --color-background: var(--vt-c-white);
+    /* --color-background: var(--vt-c-white); */
+    --color-background: rgba(255, 255, 255, .8);
     --color-background-soft: var(--vt-c-white-soft);
     --color-background-mute: var(--vt-c-white-mute);
 
@@ -60,7 +61,8 @@
 }
 
 :root[theme="dark"] {
-    --color-background: var(--vt-c-black-mute);
+    /* --color-background: var(--vt-c-black-mute); */
+    --color-background: rgba(0, 0, 0, .8);
     --color-background-soft: var(--vt-c-black-soft);
     --color-background-mute: var(--vt-c-black-mute);
 
