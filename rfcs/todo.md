@@ -21,6 +21,7 @@
 - local storage is shared with same address, it will influence the other user.
 - add login state ui: logining, login failed, login success
 - adjust oauth2 login ui
+- oauth2 request address need to fix
 - add google oauth2 login
 - add password modify
 - we need to give the user a message if their email is already used

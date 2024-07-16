@@ -490,6 +490,8 @@ impl Component for Chats {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
+        self.token_getter = None;
+        self.refresh_token_getter = None;
         self.ws.borrow_mut().cleanup();
         // record the offline time
         let now = chrono::Utc::now().timestamp_millis();

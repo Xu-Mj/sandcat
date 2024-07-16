@@ -102,6 +102,7 @@ pub struct FriendShipWithUser {
     #[serde(default)]
     pub is_operated: bool,
     pub email: Option<AttrValue>,
+    #[serde(default)]
     pub msg_id: AttrValue,
 }
 
