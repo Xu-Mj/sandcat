@@ -133,17 +133,17 @@ html {
     line-height: 1.6;
     font-size: medium;
     font-family: Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Fira Sans',
-    'Droid Sans',
-    'Helvetica Neue',
-    sans-serif;
+        -apple-system,
+        BlinkMacSystemFont,
+        'Segoe UI',
+        Roboto,
+        Oxygen,
+        Ubuntu,
+        Cantarell,
+        'Fira Sans',
+        'Droid Sans',
+        'Helvetica Neue',
+        sans-serif;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -165,9 +165,9 @@ input {
     position: absolute;
     background-color: var(--color-background);
     box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
-    10px 10px 10px rgba(60, 60, 60, 0.12),
-    -10px -10px 15px rgba(60, 60, 60, 0.12),
-    -10px -10px 15px rgba(60, 60, 60, 0.12);
+        10px 10px 10px rgba(60, 60, 60, 0.12),
+        -10px -10px 15px rgba(60, 60, 60, 0.12),
+        -10px -10px 15px rgba(60, 60, 60, 0.12);
     border: none;
     outline: none;
     user-select: none;
@@ -179,9 +179,9 @@ input {
 
 .box-shadow {
     box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
-    10px 10px 10px rgba(60, 60, 60, 0.12),
-    -2px -2px 15px rgba(60, 60, 60, 0.12),
-    -1px -1px 15px rgba(60, 60, 60, 0.12);
+        10px 10px 10px rgba(60, 60, 60, 0.12),
+        -2px -2px 15px rgba(60, 60, 60, 0.12),
+        -1px -1px 15px rgba(60, 60, 60, 0.12);
 }
 
 .pointer {
@@ -218,7 +218,7 @@ input {
         width: 100%;
     }
 
-    > fieldset {
+    >fieldset {
         width: 100%;
         height: 100%;
         padding: 1rem;
@@ -256,7 +256,7 @@ input {
             color: var(--color-text);
             white-space: nowrap;
 
-            > img {
+            >img {
                 width: 2rem;
                 height: 2rem;
                 border-radius: .3rem;
@@ -277,7 +277,7 @@ input {
         align-items: center;
         justify-content: space-evenly;
 
-        > div {
+        >div {
             width: 5rem;
             height: 2rem;
             background-color: var(--color-background-btn);
@@ -305,7 +305,7 @@ input {
         outline: none;
     }
 
-    & > :not(:last-child) {
+    &> :not(:last-child) {
         border-bottom: 1px solid #ccc;
     }
 
@@ -458,6 +458,12 @@ input {
         align-items: center;
         font-size: small;
         cursor: pointer;
+
+        svg {
+            path {
+                stroke: var(--color-text);
+            }
+        }
     }
 
     .plus-icon-mobile {
@@ -498,6 +504,10 @@ input {
             svg {
                 width: 1rem;
                 height: 1rem;
+
+                path {
+                    stroke: var(--color-text);
+                }
             }
         }
 
