@@ -16,17 +16,18 @@
     color: var(--color-text);
     background-color: var(--color-background);
     transition: background-color 0.5s;
+
+    &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        backdrop-filter: blur(10px);
+    }
 }
 
-.home::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    backdrop-filter: blur(10px);
-}
 
 .home-mobile {
     height: 100vh;

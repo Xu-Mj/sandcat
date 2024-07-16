@@ -733,7 +733,7 @@
                 position: absolute;
                 right: 1rem;
                 bottom: 1rem;
-                background-color: var(--color-background-btn);
+                background-color: var(--color-background-btn) !important;
                 color: var(--sender-btn-color-text);
                 border-radius: .2rem;
                 border: none;

@@ -401,7 +401,8 @@ impl Component for Sender {
                             {oninput}
                             onpaste={ctx.link().callback(SenderMsg::OnPaste)}
                             onkeydown={ctx.link().callback(SenderMsg::OnEnterKeyDown)}
-                            onkeyup={ctx.link().callback(SenderMsg::OnEnterKeyUp)}>
+                            onkeyup={ctx.link().callback(SenderMsg::OnEnterKeyUp)}
+                            aria-label="MessageInput">
                         </textarea>
                         // sender footer contains related message, warn message and send button
                         <div class="sender-footer">
