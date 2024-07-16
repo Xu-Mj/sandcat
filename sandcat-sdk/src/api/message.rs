@@ -12,5 +12,5 @@ pub trait MsgApi {
         end: i64,
     ) -> Result<Vec<Msg>>;
 
-    async fn del_msg(&self, user_id: &str, msg_id: Vec<String>) -> Result<()>;
+    async fn del_msg(&self, user_id: &str, msg_id: Vec<i64>) -> Result<()>;
 }

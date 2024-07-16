@@ -248,13 +248,16 @@ impl Chats {
             .unwrap_or_default()
             .parse::<i64>()
             .unwrap_or_default();
-        log::debug!("offline time: {}", offline_time);
+
         match api::friends()
             .get_friend_list_by_id(user_id, offline_time)
             .await
         {
             Ok(res) => {
-                db::db_ins().friends.put_friend_list(&res).await;
+                db::db_ins().friends.put_friend_list(&res.friends).await;
+                if let Err(err) = db::db_ins().friendships.put_fs_batch(&res.fs).await {
+                    error!("save friends error: {:?}", err);
+                }
             }
             Err(e) => {
                 error!("获取联系人列表错误: {:?}", e)

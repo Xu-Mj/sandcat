@@ -10,6 +10,7 @@ pub trait Friendships: Debug {
     async fn agree_by_friend_id(&self, friend_id: &str) -> Result<()>;
 
     async fn put_friendship(&self, friendship: &FriendShipWithUser) -> Result<()>;
+    async fn put_fs_batch(&self, friendship: &[FriendShipWithUser]) -> Result<()>;
 
     async fn get_friendship(&self, friendship_id: &str) -> Result<Option<FriendShipWithUser>>;
 

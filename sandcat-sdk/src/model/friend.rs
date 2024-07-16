@@ -30,10 +30,13 @@ impl From<i32> for FriendStatus {
 }
 
 #[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
+pub struct FriendRelationSync {
+    pub friends: Vec<Friend>,
+    pub fs: Vec<FriendShipWithUser>,
+}
+
+#[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
 pub struct FriendShipRequest {
-    // #[serde(skip_serializing_if = "is_zero")]
-    // #[serde(default)]
-    // pub id: i32,
     pub user_id: AttrValue,
     pub friend_id: AttrValue,
     pub apply_msg: Option<AttrValue>,

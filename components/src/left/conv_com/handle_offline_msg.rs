@@ -1,14 +1,13 @@
 use std::collections::HashMap;
 
 use html::Scope;
-use log::{error, warn};
+use log::error;
 use yew::prelude::*;
 
 use sandcat_sdk::{
-    db,
+    api, db,
     model::{
         conversation::Conversation,
-        friend::FriendStatus,
         message::{convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall},
         ContentType, RightContentType,
     },
@@ -92,6 +91,8 @@ impl Chats {
         }
 
         let mut map: HashMap<AttrValue, Conversation> = HashMap::with_capacity(messages.len());
+        // store relationship's sequence
+        let mut relation_list = Vec::with_capacity(messages.len());
 
         for item in messages.into_iter() {
             // let friend_id = item.send_id.clone();
@@ -206,66 +207,85 @@ impl Chats {
                     _ => {}
                 },
                 // handle the friendship related
-                Msg::RecRelationship((fs, _)) => {
-                    // receive the friend request, ignore the sequence
-                    if let Err(err) = db::db_ins().friendships.put_friendship(&fs).await {
-                        error!("save friend error:{:?}", err);
-                    }
+                Msg::RecRelationship((_fs, seq)) => {
+                    relation_list.push(seq);
+                    //
+                    // if let Err(err) = db::db_ins().friendships.put_friendship(&fs).await {
+                    //     error!("save friend error:{:?}", err);
+                    // }
                 }
-                Msg::RelationshipRes((friend, _)) => {
-                    if let Err(err) = db::db_ins()
-                        .friendships
-                        .agree_by_friend_id(friend.friend_id.as_str())
-                        .await
-                    {
-                        warn!("agree friendship error:{:?}", err);
-                    }
+                Msg::RelationshipRes((_friend, seq)) => {
+                    relation_list.push(seq);
+                    // if let Err(err) = db::db_ins()
+                    //     .friendships
+                    //     .agree_by_friend_id(friend.friend_id.as_str())
+                    //     .await
+                    // {
+                    //     warn!("agree friendship error:{:?}", err);
+                    // }
 
-                    if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
-                        error!("save friend error:{:?}", err);
-                        continue;
-                    }
+                    // if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                    //     error!("save friend error:{:?}", err);
+                    //     continue;
+                    // }
 
-                    let mut conv = Conversation::from(friend);
-                    conv.last_msg = AttrValue::from("new friend");
-                    conv.last_msg_type = ContentType::Text;
-                    conv.last_msg_time = chrono::Utc::now().timestamp_millis();
-                    if let Some(v) = map.get_mut(&conv.friend_id) {
-                        v.last_msg = conv.last_msg.clone();
-                        v.last_msg_time = conv.last_msg_time;
-                        v.last_msg_type = conv.last_msg_type;
-                    } else {
-                        map.insert(conv.friend_id.clone(), conv);
-                    }
+                    // let mut conv = Conversation::from(friend);
+                    // conv.last_msg = AttrValue::from("new friend");
+                    // conv.last_msg_type = ContentType::Text;
+                    // conv.last_msg_time = chrono::Utc::now().timestamp_millis();
+                    // if let Some(v) = map.get_mut(&conv.friend_id) {
+                    //     v.last_msg = conv.last_msg.clone();
+                    //     v.last_msg_time = conv.last_msg_time;
+                    //     v.last_msg_type = conv.last_msg_type;
+                    // } else {
+                    //     map.insert(conv.friend_id.clone(), conv);
+                    // }
                 }
-                Msg::RecRelationshipDel((friend_id, _seq)) => {
-                    let mut friend = db::db_ins().friends.get(&friend_id).await;
-                    if !friend.friend_id.is_empty() {
-                        friend.status = FriendStatus::Deleted as i32;
-                        if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
-                            error!("save friend error:{:?}", err);
-                        }
-                    }
+                Msg::RecRelationshipDel((_friend_id, seq)) => {
+                    relation_list.push(seq);
+                    // let mut friend = db::db_ins().friends.get(&friend_id).await;
+                    // if !friend.friend_id.is_empty() {
+                    //     friend.status = FriendStatus::Deleted as i32;
+                    //     if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                    //         error!("save friend error:{:?}", err);
+                    //     }
+                    // }
                 }
                 _ => {}
             }
         }
 
-        // sync friend list again
-        // pull friends list
-        // Self::pull_friends(&user_id).await;
-
         // send handle finished state to notify main thread
         // sort
-        let list: Vec<Conversation> = map.into_values().collect();
+        let mut list: Vec<Conversation> = map.into_values().collect();
         let mut unread_count = 0;
         // save to db
-        for conv in list.iter() {
+        for conv in list.iter_mut() {
             unread_count += conv.unread_count;
+            match conv.conv_type {
+                RightContentType::Friend => {
+                    let friend = db::db_ins().friends.get(&conv.friend_id).await;
+                    conv.avatar = friend.avatar;
+                    conv.name = friend.name;
+                }
+                RightContentType::Group => {
+                    if let Ok(Some(group)) = db::db_ins().groups.get(&conv.friend_id).await {
+                        conv.avatar = group.avatar;
+                        conv.name = group.name;
+                    }
+                }
+                _ => {}
+            }
             if let Err(e) = db::db_ins().convs.put_conv(conv).await {
                 error!("save conversation error: {:?}", e);
             }
         }
+
+        // send relationship received to server
+        if let Err(err) = api::messages().del_msg(&user_id, relation_list).await {
+            error!("send relationship received to server error:{:?}", err);
+        }
+
         UnreadState::incr_msg(unread_count);
         // send sync offline message complete message to msg_list component
         Dispatch::<RefreshMsgListState>::global().reduce_mut(|s| s.refresh = !s.refresh);
