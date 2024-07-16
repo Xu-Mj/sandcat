@@ -194,46 +194,44 @@ impl PostCard {
 
     fn query(ctx: &Context<Self>) {
         let id = ctx.props().id.clone();
-        log::debug!("friend_id :{:?}", &id);
-        if !id.is_empty() {
-            match ctx.props().conv_type {
-                RightContentType::Friend => {
-                    ctx.link()
-                        .send_message(PostCardMsg::QueryFriend(QueryState::Querying));
-                    let clone_id = id.clone();
-                    ctx.link().send_future(async move {
-                        let user_info = db::db_ins().friends.get(&clone_id).await;
-                        log::debug!("user info :{:?}", user_info);
-                        PostCardMsg::QueryFriend(QueryState::Success(Some(user_info)))
-                    });
-                    ctx.link().send_future(async move {
-                        // send http request
-                        match api::friends().query_friend(&id).await {
-                            Ok(friend) => {
-                                PostCardMsg::QueryFriendByHttp(QueryState::Success(friend))
-                            }
-                            Err(e) => {
-                                error!("query friend error: {:?}", e);
-                                PostCardMsg::QueryFriendByHttp(QueryState::Failed)
-                            }
+        if id.is_empty() {
+            return;
+        }
+        match ctx.props().conv_type {
+            RightContentType::Friend => {
+                ctx.link()
+                    .send_message(PostCardMsg::QueryFriend(QueryState::Querying));
+                let clone_id = id.clone();
+                ctx.link().send_future(async move {
+                    let user_info = db::db_ins().friends.get(&clone_id).await;
+                    log::debug!("user info :{:?}", user_info);
+                    PostCardMsg::QueryFriend(QueryState::Success(Some(user_info)))
+                });
+                ctx.link().send_future(async move {
+                    // send http request
+                    match api::friends().query_friend(&id).await {
+                        Ok(friend) => PostCardMsg::QueryFriendByHttp(QueryState::Success(friend)),
+                        Err(e) => {
+                            error!("query friend error: {:?}", e);
+                            PostCardMsg::QueryFriendByHttp(QueryState::Failed)
                         }
-                    })
-                }
-                RightContentType::Group => {
-                    ctx.link()
-                        .send_message(PostCardMsg::QueryFriend(QueryState::Querying));
-                    ctx.link().send_future(async move {
-                        match db::db_ins().groups.get(id.as_str()).await {
-                            Ok(Some(group)) => {
-                                log::debug!("group info :{:?}", group);
-                                PostCardMsg::QueryGroup(QueryState::Success(Some(group)))
-                            }
-                            _ => PostCardMsg::QueryGroup(QueryState::Failed),
-                        }
-                    })
-                }
-                _ => {}
+                    }
+                })
             }
+            RightContentType::Group => {
+                ctx.link()
+                    .send_message(PostCardMsg::QueryFriend(QueryState::Querying));
+                ctx.link().send_future(async move {
+                    match db::db_ins().groups.get(id.as_str()).await {
+                        Ok(Some(group)) => {
+                            log::debug!("group info :{:?}", group);
+                            PostCardMsg::QueryGroup(QueryState::Success(Some(group)))
+                        }
+                        _ => PostCardMsg::QueryGroup(QueryState::Failed),
+                    }
+                })
+            }
+            _ => {}
         }
     }
 
@@ -379,11 +377,7 @@ impl PostCard {
                         {"···"}
                     </span>
                     {set_drawer}
-                // <div>
                     <div class="header-info">
-                        // <div >
-                        //     <img class="postcard-avatar" src={self.info.as_ref().unwrap().avatar()} />
-                        // </div>
                         {self.get_avatar(&friend.avatar)}
                         <div class="info">
                             <span class="name">
@@ -397,8 +391,6 @@ impl PostCard {
                             </span>
                         </div>
                     </div>
-
-                // </div>
                 <div class="postcard-remark">
                     {tr!(self.i18n, REMARK)}{friend.remark.clone()}
                 </div>
@@ -421,17 +413,18 @@ impl PostCard {
 
     fn get_group_html(&self, ctx: &Context<Self>, set_drawer: Html) -> Html {
         if let Some(group) = self.group.as_ref() {
+            let class = match *MobileState::get() {
+                MobileState::Desktop => "pc-wrapper pc-wrapper-size",
+                MobileState::Mobile => "pc-wrapper pc-wrapper-size-mobile",
+            };
             html! {
-                <div class="pc-wrapper">
+                <div {class}>
                     <span class="postcard-setting" onclick={ctx.link().callback(|_| PostCardMsg::ShowSetDrawer)}>
                         {"···"}
                     </span>
                     {set_drawer}
                 <div class="header">
                     <div class="header-info">
-                        // <div >
-                        //     <img class="postcard-avatar" src={self.info.as_ref().unwrap().avatar()} />
-                        // </div>
                         {self.get_avatar(&group.avatar)}
                         <div class="info">
                             <span class="name">
