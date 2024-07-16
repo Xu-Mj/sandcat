@@ -258,6 +258,12 @@ impl Chats {
                 if let Err(err) = db::db_ins().friendships.put_fs_batch(&res.fs).await {
                     error!("save friends error: {:?}", err);
                 }
+                // update offline_time(last sync time)
+                utils::set_local_storage(
+                    OFFLINE_TIME,
+                    &chrono::Utc::now().timestamp_millis().to_string(),
+                )
+                .unwrap();
             }
             Err(e) => {
                 error!("获取联系人列表错误: {:?}", e)
