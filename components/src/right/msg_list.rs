@@ -193,6 +193,7 @@ impl MessageList {
         self.page_size = 20;
         self.new_msg_count = 0;
         self.is_all = false;
+        self.friend = None;
         self.scroll_state = ScrollState::None;
     }
 
