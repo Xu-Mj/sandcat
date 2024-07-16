@@ -60,8 +60,8 @@ impl Component for Top {
     fn create(ctx: &Context<Self>) -> Self {
         let dispatch = Dispatch::global().subscribe(ctx.link().callback(TopMsg::AppStateChanged));
         let com_s_dis = Dispatch::global().subscribe(ctx.link().callback(TopMsg::ComStateChanged));
-        let _conn_dis =
-            Dispatch::global().subscribe(ctx.link().callback(TopMsg::ConnectionStateChanged));
+        let _conn_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(TopMsg::ConnectionStateChanged));
         let unread_dis =
             Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
         let res = match I18nState::get().lang {
@@ -98,7 +98,7 @@ impl Component for Top {
             }
             TopMsg::ConnectionStateChanged(state) => {
                 self.connect_state = state;
-                // todo record offline time
+
                 if *self.connect_state == ConnectState::DisConnect {
                     let now = chrono::Utc::now().timestamp_millis();
                     if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
@@ -182,6 +182,7 @@ impl Component for Top {
                     <div class="top-left pointer" {onclick}>
                         <img
                             class="avatar"
+                            alt="avatar"
                             title={&self.app_state.login_user.name}
                             src={utils::get_avatar_url(&self.app_state.login_user.avatar)} />
                         <div class="top-left-name">

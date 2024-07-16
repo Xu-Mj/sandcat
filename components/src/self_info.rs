@@ -358,9 +358,9 @@ impl Component for SelfInfo {
                     {user.region}
                 </div>
                 <div class="info-panel-btn">
-                    <button type="submit" onclick={on_submit}>{tr!(self.i18n, SUBMIT)}</button>
-                    <button type="button" onclick={on_cancel}>{tr!(self.i18n, CANCEL)}</button>
-                    <button type="button" onclick={ctx.link().callback(|_| SelfInfoMsg::Logout)}>{tr!(self.i18n, LOGOUT)}</button>
+                    <button type="submit" aria-label={tr!(self.i18n, SUBMIT)} onclick={on_submit}>{tr!(self.i18n, SUBMIT)}</button>
+                    <button type="button" aria-label={tr!(self.i18n, CANCEL)} onclick={on_cancel}>{tr!(self.i18n, CANCEL)}</button>
+                    <button type="button" aria-label={tr!(self.i18n, LOGOUT)} onclick={ctx.link().callback(|_| SelfInfoMsg::Logout)}>{tr!(self.i18n, LOGOUT)}</button>
                 </div>
             </div>
             </>

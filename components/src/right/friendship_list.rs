@@ -269,7 +269,7 @@ impl Component for FriendShipList {
                 html! {
                     <div class="friendship-item" /* {onclick} */>
                         <div class="item-left">
-                            <img class="avatar" src={utils::get_avatar_url(&item.avatar)} />
+                            <img class="avatar" alt="avatar" src={utils::get_avatar_url(&item.avatar)} />
                         // </div>
                         <div class="item-info">
                         //     <div class="name-time">

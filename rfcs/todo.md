@@ -21,15 +21,14 @@
 - local storage is shared with same address, it will influence the other user.
 - add login state ui: logining, login failed, login success
 - adjust oauth2 login ui
+- oauth2 request address need to fix
 - add google oauth2 login
 - add password modify
 - we need to give the user a message if their email is already used
 - encrypt the password before send to server
-- bug: hello message is reversed
 - bug: need to refresh contacts list after offline message synced
-- bug: add friend page need to listen input change event
-- we need to split the forward message type
+- we need to split the forward message type: Single/Group
 - handle request seq error
 - global unread message count is not correct
 - we need to increase the unread count when the current component is not in the message component
-- what is self update conversation?
+- need to update group name in friend list after update group info

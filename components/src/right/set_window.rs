@@ -290,7 +290,7 @@ impl Component for SetWindow {
                 if let Some(friend) = self.friend.as_ref() {
                     avatars = html! {
                         <div class="avatar-name">
-                            <img src={utils::get_avatar_url(&friend.avatar)} />
+                            <img alt="avatar" src={utils::get_avatar_url(&friend.avatar)} />
                             <span>{&friend.name}</span>
                         </div>
                     };
@@ -312,7 +312,7 @@ impl Component for SetWindow {
                     .map(|item| {
                         html! {
                             <div class="avatar-name">
-                                <img src={utils::get_avatar_url(&item.avatar)} />
+                                <img alt="avatar" src={utils::get_avatar_url(&item.avatar)} />
                                 <span>{&item.group_name}</span>
                             </div>
                         }

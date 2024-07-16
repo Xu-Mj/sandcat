@@ -131,7 +131,7 @@ impl Component for RelatedMsg {
                 let img_preview = if self.show_img_preview {
                     html! {
                         <div class="img-preview pointer" onclick={onclick.clone()}>
-                            <img src={src} />
+                            <img alt="preview-img" src={src} />
                         </div>
                     }
                 } else {
@@ -143,7 +143,7 @@ impl Component for RelatedMsg {
                     <div class="img-mask">
                     </div>
                     {format!("{}: ",ctx.props().nickname)}
-                    <img class="msg-item-img" src={img_url} {onclick}/>
+                    <img class="msg-item-img" alt="image" src={img_url} {onclick}/>
                 </>
                 }
             }
@@ -166,7 +166,7 @@ impl Component for RelatedMsg {
             }
             ContentType::Emoji => {
                 html! {
-                    <img class="emoji" src={msg.content.clone()} />
+                    <img class="emoji" alt="emoji" src={msg.content.clone()} />
                 }
             }
             _ => html!(),

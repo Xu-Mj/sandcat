@@ -5,6 +5,7 @@
     min-width: 1280px;
     min-height: 720px;
     max-width: 1960px;
+    position: relative;
     /* max-height: 1080px; */
     display: flex;
     justify-content: center;
@@ -15,6 +16,16 @@
     color: var(--color-text);
     background-color: var(--color-background);
     transition: background-color 0.5s;
+}
+
+.home::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    backdrop-filter: blur(10px);
 }
 
 .home-mobile {

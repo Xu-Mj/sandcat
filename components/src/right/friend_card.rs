@@ -74,7 +74,7 @@ impl Component for FriendCard {
                 onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >
                 <div class="friend-card-header">
-                    <img src={utils::get_avatar_url(&self.friend.avatar)} class="friend-card-avatar"/>
+                    <img alt="avatar" src={utils::get_avatar_url(&self.friend.avatar)} class="friend-card-avatar"/>
                     <div class="friend-card-info">
                         // <span><b>{&self.friend.remark}</b></span>
                         <span>{tr!(self.i18n, NICKNAME)}{&self.friend.name}</span>

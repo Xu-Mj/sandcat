@@ -23,7 +23,7 @@ pub struct PullOfflineMsgReq {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct DelMsgReq {
     pub user_id: String,
-    pub msg_id: Vec<String>,
+    pub msg_id: Vec<i64>,
 }
 
 #[async_trait(?Send)]
@@ -54,7 +54,7 @@ impl MsgApi for MsgHttp {
         Ok(messages)
     }
 
-    async fn del_msg(&self, user_id: &str, msg_id: Vec<String>) -> Result<()> {
+    async fn del_msg(&self, user_id: &str, msg_id: Vec<i64>) -> Result<()> {
         let request = DelMsgReq {
             user_id: user_id.to_string(),
             msg_id,

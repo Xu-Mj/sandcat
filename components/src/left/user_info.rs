@@ -178,7 +178,7 @@ impl Component for UserInfoCom {
                         <input class="apply-input" ref={self.remark_node.clone()} type="text"/>
                     </div>
                     <div class="apply-friend" >
-                        <button disabled={self.apply_state != FriendShipRequestState::NotApply} {onclick}  >{apply_btn}</button>
+                        <button aria-label={apply_btn.clone()} disabled={self.apply_state != FriendShipRequestState::NotApply} {onclick} >{apply_btn}</button>
                     </div>
                 </div>
             }
@@ -187,7 +187,7 @@ impl Component for UserInfoCom {
         <>
         <div class={"user-info"} ref={self.node.clone()}>
             <div class="friend-card-header">
-                    <img src={utils::get_avatar_url(&ctx.props().info.avatar)} class="friend-card-avatar"/>
+                    <img alt="avatar" src={utils::get_avatar_url(&ctx.props().info.avatar)} class="friend-card-avatar"/>
                     <div class="friend-card-info">
                         // <span><b>{&self.friend.remark}</b></span>
                         <span>{tr!(self.i18n, NICKNAME)}{&ctx.props().info.name}</span>

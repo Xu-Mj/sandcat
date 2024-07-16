@@ -74,6 +74,15 @@ impl Friendships for FriendShipRepo {
         Ok(())
     }
 
+    async fn put_fs_batch(&self, friendship: &[FriendShipWithUser]) -> Result<()> {
+        let store = self.store(&String::from(FRIENDSHIP_TABLE_NAME)).await?;
+        for fs in friendship.iter() {
+            let value = serde_wasm_bindgen::to_value(fs)?;
+            store.put(&value)?;
+        }
+        Ok(())
+    }
+
     async fn get_friendship(&self, friendship_id: &str) -> Result<Option<FriendShipWithUser>> {
         // 声明一个channel，接收查询结果
         let (tx, rx) = oneshot::channel::<Option<FriendShipWithUser>>();

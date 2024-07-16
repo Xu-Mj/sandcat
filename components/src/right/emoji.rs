@@ -112,7 +112,7 @@ impl Component for EmojiSpan {
         let content = if ctx.props().is_unicode {
             html!({ &emoji.url })
         } else {
-            html!(<img src={emoji.url.clone()} />)
+            html!(<img alt="emoji" src={emoji.url.clone()} />)
         };
         html! {
         <span class="emoji"

@@ -2,39 +2,41 @@ use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
 use super::{ItemInfo, RightContentType};
+
 #[derive(Debug, Default, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum FriendStatus {
-    Default = 0,
     #[default]
-    Pending = 1,
-    Accepted = 2,
-    Rejected = 3,
-    Blacked = 4,
-    Cancelled = 5,
-    Delete = 6,
-    Failed = 7,
+    Pending = 0,
+    Accepted = 1,
+    Rejected = 2,
+    /// / blacklist
+    Blacked = 3,
+    Deleted = 4,
+    Failed = 5,
 }
 
 impl From<i32> for FriendStatus {
     fn from(value: i32) -> Self {
         match value {
-            1 => FriendStatus::Pending,
-            2 => FriendStatus::Accepted,
-            3 => FriendStatus::Rejected,
-            4 => FriendStatus::Blacked,
-            5 => FriendStatus::Cancelled,
-            6 => FriendStatus::Delete,
-            7 => FriendStatus::Failed,
-            _ => FriendStatus::Default,
+            0 => FriendStatus::Pending,
+            1 => FriendStatus::Accepted,
+            2 => FriendStatus::Rejected,
+            3 => FriendStatus::Blacked,
+            4 => FriendStatus::Deleted,
+            5 => FriendStatus::Failed,
+            _ => FriendStatus::Pending,
         }
     }
 }
 
 #[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
+pub struct FriendRelationSync {
+    pub friends: Vec<Friend>,
+    pub fs: Vec<FriendShipWithUser>,
+}
+
+#[derive(Debug, Default, Serialize, Clone, Deserialize, PartialEq)]
 pub struct FriendShipRequest {
-    // #[serde(skip_serializing_if = "is_zero")]
-    // #[serde(default)]
-    // pub id: i32,
     pub user_id: AttrValue,
     pub friend_id: AttrValue,
     pub apply_msg: Option<AttrValue>,
@@ -62,33 +64,21 @@ pub enum ReadStatus {
 #[derive(Serialize, Deserialize, Default, Clone, Debug, PartialEq)]
 pub struct Friend {
     pub fs_id: AttrValue,
+    pub friend_id: AttrValue,
+    pub account: AttrValue,
     pub name: AttrValue,
     pub avatar: AttrValue,
     pub gender: AttrValue,
     pub age: i32,
     pub region: Option<AttrValue>,
     pub status: i32,
-    pub hello: Option<AttrValue>,
     pub remark: Option<AttrValue>,
+    pub email: Option<AttrValue>,
     pub source: AttrValue,
-    pub accept_time: i64,
-    pub account: AttrValue,
-    pub friend_id: AttrValue,
     pub signature: AttrValue,
     pub create_time: i64,
-    pub email: Option<AttrValue>,
+    pub update_time: i64,
 }
-
-// #[derive(PartialEq, Serialize, Deserialize, Default)]
-// pub enum FriendStatus {
-//     #[default]
-//     Default,
-//     Apply,
-//     Agree,
-//     Deny,
-//     BlackList,
-//     Delete,
-// }
 
 #[derive(Serialize, Debug, Default, Clone, Deserialize, PartialEq)]
 pub struct FriendShipWithUser {
@@ -106,14 +96,13 @@ pub struct FriendShipWithUser {
     pub region: Option<AttrValue>,
     pub create_time: i64,
     #[serde(default)]
-    pub accept_time: i64,
-    #[serde(default)]
     pub read: ReadStatus,
     #[serde(default)]
     pub is_self: bool,
     #[serde(default)]
     pub is_operated: bool,
     pub email: Option<AttrValue>,
+    #[serde(default)]
     pub msg_id: AttrValue,
 }
 
@@ -154,7 +143,6 @@ impl From<FriendshipWithUser4Response> for FriendShipWithUser {
             create_time: value.create_time,
             is_self: false,
             gender: value.gender,
-            accept_time: 0,
             remark: value.remark,
             is_operated: false,
             email: value.email,

@@ -8,4 +8,4 @@ no-system-proxy = true
 #backend = "http://192.168.28.120:3000/"
 [watch]
 # Paths to ignore.
-ignore = [ ".git", "dist", ".gitignore", "target", "src-tauri"]
+ignore = [ ".git", "dist", ".gitignore", "src-tauri"]

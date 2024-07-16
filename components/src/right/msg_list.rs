@@ -193,6 +193,7 @@ impl MessageList {
         self.page_size = 20;
         self.new_msg_count = 0;
         self.is_all = false;
+        self.friend = None;
         self.scroll_state = ScrollState::None;
     }
 
@@ -446,7 +447,7 @@ impl Component for MessageList {
             }
             MessageListMsg::QueryFriend(item) => {
                 if let Some(item) = item.as_ref() {
-                    self.is_black = item.status() == FriendStatus::Delete;
+                    self.is_black = item.status() == FriendStatus::Deleted;
                 }
                 self.friend = item;
                 true
