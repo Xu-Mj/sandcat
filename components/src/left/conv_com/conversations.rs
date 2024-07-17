@@ -293,22 +293,28 @@ impl Component for Chats {
                 true
             }
             ChatsMsg::UpdateConvStateChanged(state) => {
-                if let Some(item) = self.list.get_mut(&state.id) {
+                let update_conv = |conv: &mut Conversation| {
                     if let Some(name) = &state.name {
-                        item.name.clone_from(name);
+                        conv.name.clone_from(name);
                     }
                     if let Some(avatar) = &state.avatar {
-                        item.avatar.clone_from(avatar);
+                        conv.avatar.clone_from(avatar);
                     }
-                    item.remark.clone_from(&state.remark);
+                    conv.remark.clone_from(&state.remark);
 
                     // save to db
-                    let conv = item.clone();
+                    let conv = conv.clone();
                     spawn_local(async move {
                         if let Err(err) = db::db_ins().convs.put_conv(&conv).await {
                             log::error!("update conv error: {:?}", err);
                         }
                     });
+                };
+                if let Some(item) = self.pinned_list.get_mut(&state.id) {
+                    update_conv(item);
+                    return true;
+                } else if let Some(item) = self.list.get_mut(&state.id) {
+                    update_conv(item);
                     return true;
                 }
                 false
