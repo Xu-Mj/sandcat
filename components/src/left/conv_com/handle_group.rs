@@ -12,7 +12,7 @@ use sandcat_sdk::{
         notification::Notification,
         ContentType,
     },
-    state::UpdateConvState,
+    state::{ItemType, UpdateFriendState},
 };
 use yewdux::Dispatch;
 
@@ -210,10 +210,11 @@ impl Chats {
             Notification::error("Failed to update group").notify();
         }
         // update conversation
-        Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
-            s.id = group.id.clone();
-            s.name = Some(group.name.clone());
-            s.avatar = Some(group.avatar.clone());
+        Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
+            s.id = group.id;
+            s.name = Some(group.name);
+            s.avatar = Some(group.avatar);
+            s.type_ = ItemType::Group;
         });
     }
 }

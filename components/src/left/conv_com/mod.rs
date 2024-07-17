@@ -32,7 +32,7 @@ use sandcat_sdk::{
     },
     state::{
         ConvState, CreateConvState, CreateGroupConvState, I18nState, MobileState, MuteState,
-        Notify, RecMessageState, RemoveConvState, SendMessageState, UnreadState, UpdateConvState,
+        Notify, RecMessageState, RemoveConvState, SendMessageState, UnreadState, UpdateFriendState,
     },
 };
 use utils::tr;
@@ -94,7 +94,7 @@ pub struct Chats {
     rec_msg_dis: Dispatch<RecMessageState>,
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
-    _update_dis: Dispatch<UpdateConvState>,
+    _update_dis: Dispatch<UpdateFriendState>,
     touch_start: i32,
     is_mobile: bool,
     is_knocked: bool,

@@ -20,7 +20,7 @@ use sandcat_sdk::model::{ComponentType, CurrentItem, OFFLINE_TIME, REFRESH_TOKEN
 use sandcat_sdk::state::CreateConvState;
 use sandcat_sdk::state::{
     AddFriendState, AddFriendStateItem, ComponentTypeState, CreateGroupConvState, I18nState,
-    MuteState, RemoveConvState, SendMessageState, UpdateConvState,
+    MuteState, RemoveConvState, SendMessageState, UpdateFriendState,
 };
 use sandcat_sdk::state::{ConvState, UnreadState};
 use utils::tr;
@@ -80,7 +80,7 @@ pub enum ChatsMsg {
     CreateGroupConvStateChanged(Rc<CreateGroupConvState>),
     CreateConvStateChanged(Rc<CreateConvState>),
     /// update a conversation item by received state
-    UpdateConvStateChanged(Rc<UpdateConvState>),
+    UpdateConvStateChanged(Rc<UpdateFriendState>),
     /// remove a conversation item by received state
     RemoveConvStateChanged(Rc<RemoveConvState>),
     /// receive mute message from right component
@@ -294,12 +294,15 @@ impl Component for Chats {
             }
             ChatsMsg::UpdateConvStateChanged(state) => {
                 if let Some(item) = self.list.get_mut(&state.id) {
-                    if let Some(name) = state.name.clone() {
-                        item.name = name;
+                    if let Some(name) = &state.name {
+                        item.name.clone_from(name);
                     }
-                    if let Some(avatar) = state.avatar.clone() {
-                        item.avatar = avatar;
+                    if let Some(avatar) = &state.avatar {
+                        item.avatar.clone_from(avatar);
                     }
+                    item.remark.clone_from(&state.remark);
+
+                    // save to db
                     let conv = item.clone();
                     spawn_local(async move {
                         if let Err(err) = db::db_ins().convs.put_conv(&conv).await {

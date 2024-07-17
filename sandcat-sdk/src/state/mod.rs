@@ -196,10 +196,12 @@ pub struct AddFriendState {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Store)]
-pub struct UpdateConvState {
+pub struct UpdateFriendState {
     pub id: AttrValue,
     pub name: Option<AttrValue>,
+    pub remark: Option<AttrValue>,
     pub avatar: Option<AttrValue>,
+    pub type_: ItemType,
 }
 
 /// 记录当前朋友列表状态

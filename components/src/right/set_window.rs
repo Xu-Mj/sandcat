@@ -1,6 +1,7 @@
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
 use log::error;
+use sandcat_sdk::state::ItemType;
 use wasm_bindgen::{closure::Closure, JsCast};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
@@ -19,7 +20,7 @@ use sandcat_sdk::{
         ItemInfo, RightContentType,
     },
     pb::message::GroupUpdate,
-    state::{MuteState, RefreshMsgListState, UpdateConvState},
+    state::{MuteState, RefreshMsgListState, UpdateFriendState},
 };
 use utils::tr;
 
@@ -184,9 +185,11 @@ impl Component for SetWindow {
                         let id = info.id.clone();
                         // update group name
                         self.update_group(ctx.props().user_id.clone());
-                        Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
+                        Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
                             s.id = id;
-                            s.name = Some(name)
+                            s.name = Some(name);
+                            s.avatar = None;
+                            s.type_ = ItemType::Group
                         });
                         return true;
                     }
@@ -435,9 +438,11 @@ impl SetWindow {
                     error!("save friend error:{:?}", err);
                     return;
                 }
-                Dispatch::<UpdateConvState>::global().reduce_mut(|s| {
+                Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
                     s.id = friend.friend_id;
-                    s.name = Some(friend.remark.unwrap())
+                    s.name = None;
+                    s.remark.clone_from(&friend.remark);
+                    s.type_ = ItemType::Friend;
                 });
             }
         });
