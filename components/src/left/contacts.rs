@@ -9,12 +9,12 @@ use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::db;
 use sandcat_sdk::model::group::Group;
 use sandcat_sdk::model::{CurrentItem, FriendShipStateType, ItemInfo, RightContentType};
-use sandcat_sdk::state::MobileState;
 use sandcat_sdk::state::{
     AddFriendState, FriendListState, FriendShipState, I18nState, ItemType, RemoveFriendState,
     UnreadState,
 };
 use sandcat_sdk::state::{ComponentTypeState, RefreshMsgListState};
+use sandcat_sdk::state::{MobileState, UpdateFriendState};
 use sandcat_sdk::{
     model::friend::Friend,
     model::{CommonProps, ComponentType},
@@ -53,6 +53,8 @@ pub struct Contacts {
     lang_state: Rc<I18nState>,
     _lang_dispatch: Dispatch<I18nState>,
     _refresh_dis: Dispatch<RefreshMsgListState>,
+    /// update friend/group name/avatar
+    _update_dis: Dispatch<UpdateFriendState>,
     touch_start: i32,
     is_mobile: bool,
 }
@@ -76,6 +78,7 @@ pub enum ContactsMsg {
     ShowAddFriend,
     RecFriendShipReq(Rc<FriendShipState>),
     FriendListStateChanged(Rc<FriendListState>),
+    UpdateFriendStateChanged(Rc<UpdateFriendState>),
     QueryFriendship(usize),
     NewFriendClicked,
     ShowContextMenu((i32, i32), AttrValue, bool, bool),
@@ -111,6 +114,9 @@ impl Component for Contacts {
         let _refresh_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(|_| ContactsMsg::RefreshList));
 
+        let _update_dis = Dispatch::global()
+            .subscribe_silent(ctx.link().callback(ContactsMsg::UpdateFriendStateChanged));
+
         let lang_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ContactsMsg::SwitchLanguage));
         let lang_state = lang_dispatch.get();
@@ -138,6 +144,7 @@ impl Component for Contacts {
             lang_state,
             _lang_dispatch: lang_dispatch,
             _refresh_dis,
+            _update_dis,
         }
     }
 
@@ -305,6 +312,31 @@ impl Component for Contacts {
                 self.friends = friends;
                 self.groups = groups;
                 self.friendships_unread_count = count;
+                true
+            }
+            ContactsMsg::UpdateFriendStateChanged(state) => {
+                match state.type_ {
+                    ItemType::Group => {
+                        if let Some(group) = self.groups.get_mut(&state.id) {
+                            if let Some(name) = &state.name {
+                                group.name.clone_from(name);
+                            }
+                            if let Some(avatar) = &state.avatar {
+                                group.avatar.clone_from(avatar);
+                            }
+                        }
+                    }
+                    ItemType::Friend => {
+                        if let Some(friend) = self.friends.get_mut(&state.id) {
+                            if let Some(name) = &state.name {
+                                friend.name.clone_from(name);
+                            }
+                            if let Some(avatar) = &state.avatar {
+                                friend.avatar.clone_from(avatar);
+                            }
+                        }
+                    }
+                }
                 true
             }
         }
