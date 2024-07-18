@@ -157,10 +157,10 @@ larger = Larger
 
 pub const POSTCARD: &str = r#"
 account = account:
-remark = remark:
+remark = remark
 region = region:
-signature = signature:
-announcement = anno:
+signature = signature
+announcement = anno
 "#;
 
 pub const ACTION: &str = r#"

@@ -151,10 +151,10 @@ larger = 更大
 
 pub const POSTCARD: &str = r#"
 account = 账号:
-remark = 备注:
+remark = 备注
 region = 地区:
-signature = 个性签名:
-announcement = 群公告:
+signature = 个性签名
+announcement = 群公告
 "#;
 
 pub const ACTION: &str = r#"

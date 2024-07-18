@@ -1,6 +1,8 @@
 use fluent::{FluentBundle, FluentResource};
 use log::error;
+use sandcat_sdk::state::UpdateFriendState;
 use wasm_bindgen_futures::spawn_local;
+use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
 use i18n::{en_us, zh_cn, LanguageType};
@@ -14,6 +16,7 @@ use sandcat_sdk::state::MobileState;
 use sandcat_sdk::state::Notify;
 use sandcat_sdk::state::{ItemType, RemoveConvState, RemoveFriendState};
 use utils::tr;
+use yewdux::Dispatch;
 
 use crate::action::Action;
 use crate::constant::ACCOUNT;
@@ -139,12 +142,14 @@ impl Component for PostCard {
             }
             PostCardMsg::UpdateRemark => {
                 let user_id = ctx.props().user_id.clone().to_string();
+                let remark = self.node.cast::<HtmlInputElement>().unwrap().value();
                 match ctx.props().conv_type {
                     RightContentType::Friend => {
-                        let friend = self.friend.as_ref().unwrap().clone();
+                        let mut friend = self.friend.as_ref().unwrap().clone();
+                        friend.remark = Some(remark.into());
                         util::update_friend_remark(user_id, friend);
                     }
-                    RightContentType::Group => todo!(),
+                    RightContentType::Group => self.update_group(remark),
                     _ => {}
                 }
                 false
@@ -257,6 +262,23 @@ impl PostCard {
         self.friend = None;
     }
 
+    fn update_group(&self, remark: String) {
+        let mut group = self.group.as_ref().unwrap().clone();
+        group.remark = Some(remark.into());
+        spawn_local(async move {
+            if let Err(err) = db::db_ins().groups.put(&group).await {
+                error!("update group error: {:?}", err);
+            }
+            Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
+                s.id = group.id;
+                s.name = None;
+                s.remark = group.remark;
+                s.avatar = None;
+                s.type_ = ItemType::Group
+            });
+        });
+    }
+
     fn update_friend(&mut self, info: FriendInfo) -> bool {
         let mut need_update = false;
         if let Some(ref mut friend) = self.friend {
@@ -292,6 +314,7 @@ impl PostCard {
         }
         need_update
     }
+
     fn delete_friend(&self, user_id: String, id: AttrValue) {
         spawn_local(async move {
             // send delete friend request
@@ -379,6 +402,9 @@ impl PostCard {
                 MobileState::Desktop => "pc-wrapper pc-wrapper-size",
                 MobileState::Mobile => "pc-wrapper pc-wrapper-size-mobile",
             };
+
+            let onchange = ctx.link().callback(|_| PostCardMsg::UpdateRemark);
+
             html! {
                 <div {class}>
                     <span class="postcard-setting" onclick={ctx.link().callback(|_| PostCardMsg::ShowSetDrawer)}>
@@ -400,11 +426,11 @@ impl PostCard {
                         </div>
                     </div>
                 <div class="postcard-remark">
-                    {tr!(self.i18n, REMARK)}
-                    <input ref={self.node.clone()} value={friend.remark.clone()} placeholder={tr!(self.i18n, REMARK)} />
+                    <b>{tr!(self.i18n, REMARK)}{":\t\t"}</b>
+                    <input ref={self.node.clone()} value={friend.remark.clone()} placeholder={tr!(self.i18n, REMARK)} {onchange} />
                 </div>
                 <div class="sign">
-                    {tr!(self.i18n, SIGNATURE)}{friend.signature.clone()}
+                    <b>{tr!(self.i18n, SIGNATURE)}{":\t\t"}</b>{friend.signature.clone()}
                 </div>
 
                 <Action friend_id={&friend.friend_id}
@@ -426,6 +452,8 @@ impl PostCard {
                 MobileState::Desktop => "pc-wrapper pc-wrapper-size",
                 MobileState::Mobile => "pc-wrapper pc-wrapper-size-mobile",
             };
+
+            let onchange = ctx.link().callback(|_| PostCardMsg::UpdateRemark);
             html! {
                 <div {class}>
                     <span class="postcard-setting" onclick={ctx.link().callback(|_| PostCardMsg::ShowSetDrawer)}>
@@ -440,18 +468,18 @@ impl PostCard {
                                 {&group.name}
                             </span>
                             <span class="num">
-                                {tr!(self.i18n, ACCOUNT)}{&group.id}
+                                <b>{tr!(self.i18n, ACCOUNT)}</b>{&group.id}
                             </span>
                         </div>
                     </div>
 
                 </div>
                 <div class="postcard-remark">
-                    {tr!(self.i18n, REMARK)}
-                    <input ref={self.node.clone()} value={group.remark.clone()} placeholder={tr!(self.i18n, REMARK)} />
+                    <b>{tr!(self.i18n, REMARK)}{":\t\t"}</b>
+                    <input ref={self.node.clone()} value={group.remark.clone()} placeholder={tr!(self.i18n, REMARK)} {onchange} />
                 </div>
                 <div class="sign">
-                    {tr!(self.i18n, ANNOUNCEMENT)}{&group.announcement}
+                    <b>{tr!(self.i18n, ANNOUNCEMENT)}{":\t\t"}</b>{&group.announcement}
                 </div>
 
                 <Action friend_id={&group.id}
