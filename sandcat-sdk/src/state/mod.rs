@@ -118,11 +118,26 @@ pub struct RemoveConvState {
 
 impl Notify for RemoveConvState {}
 
+impl RemoveConvState {
+    pub fn remove(id: AttrValue) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.id = id);
+    }
+}
+
 /// to notify contacts component to remove friend item by id
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct RemoveFriendState {
     pub id: AttrValue,
     pub type_: ItemType,
+}
+
+impl RemoveFriendState {
+    pub fn remove(id: AttrValue, type_: ItemType) {
+        Dispatch::<Self>::global().reduce_mut(|s| {
+            s.id = id;
+            s.type_ = type_;
+        });
+    }
 }
 
 #[derive(Default, Debug, Clone, PartialEq)]

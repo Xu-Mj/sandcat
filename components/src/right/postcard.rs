@@ -1,18 +1,17 @@
 use fluent::{FluentBundle, FluentResource};
 use log::error;
-use sandcat_sdk::model::friend::Friend;
-use sandcat_sdk::pb::message::FriendInfo;
-use sandcat_sdk::state::MobileState;
-use sandcat_sdk::state::Notify;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
-use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
+use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::model::group::{Group, GroupDelete};
 use sandcat_sdk::model::{ItemInfo, RightContentType};
+use sandcat_sdk::pb::message::FriendInfo;
+use sandcat_sdk::state::MobileState;
+use sandcat_sdk::state::Notify;
 use sandcat_sdk::state::{ItemType, RemoveConvState, RemoveFriendState};
 use utils::tr;
 
@@ -290,12 +289,9 @@ impl PostCard {
                         }
                         log::debug!("delete friend success");
                         // send state message to remove conversation from conversation lis
-                        Dispatch::<RemoveConvState>::global().reduce_mut(|s| s.id = id.clone());
+                        RemoveConvState::remove(id.clone());
                         // send state message to remove friend from friend list
-                        Dispatch::<RemoveFriendState>::global().reduce_mut(|s| {
-                            s.id = id;
-                            s.type_ = ItemType::Friend;
-                        });
+                        RemoveFriendState::remove(id, ItemType::Friend);
                     }
                 }
                 Err(e) => {
@@ -323,12 +319,9 @@ impl PostCard {
                         log::error!("delete conversation failed: {:?}", e);
                     }
                     // send state message to remove conversation from conversation lis
-                    Dispatch::<RemoveConvState>::global().reduce_mut(|s| s.id = id.clone());
+                    RemoveConvState::remove(id.clone());
                     // send state message to remove friend from friend list
-                    Dispatch::<RemoveFriendState>::global().reduce_mut(|s| {
-                        s.id = id;
-                        s.type_ = ItemType::Group;
-                    });
+                    RemoveFriendState::remove(id, ItemType::Group);
                     return;
                 }
             }
@@ -351,12 +344,9 @@ impl PostCard {
                         log::error!("delete conversation failed: {:?}", e);
                     }
                     // send state message to remove conversation from conversation lis
-                    Dispatch::<RemoveConvState>::global().reduce_mut(|s| s.id = id.clone());
+                    RemoveConvState::remove(id.clone());
                     // send state message to remove friend from friend list
-                    Dispatch::<RemoveFriendState>::global().reduce_mut(|s| {
-                        s.id = id;
-                        s.type_ = ItemType::Group;
-                    });
+                    RemoveFriendState::remove(id, ItemType::Group);
                 }
                 Err(e) => {
                     log::error!("send delete group request error: {:?}", e);
