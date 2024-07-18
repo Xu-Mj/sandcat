@@ -1036,6 +1036,14 @@
             height: 3rem;
             line-height: 3rem;
         }
+
+        .postcard-remark {
+            input {
+                padding: .3rem .5rem;
+                border: none;
+                background-color: var(--color-background-input);
+            }
+        }
     }
 }
 
