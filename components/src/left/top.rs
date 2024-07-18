@@ -64,6 +64,7 @@ impl Component for Top {
             .subscribe_silent(ctx.link().callback(TopMsg::ConnectionStateChanged));
         let unread_dis =
             Dispatch::global().subscribe(ctx.link().callback(TopMsg::UnreadStateChanged));
+        log::debug!("create top unread count:{:?}", unread_dis.get());
         let res = match I18nState::get().lang {
             LanguageType::ZhCN => zh_cn::TOP,
             LanguageType::EnUS => en_us::TOP,

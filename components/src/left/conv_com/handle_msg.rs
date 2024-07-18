@@ -123,7 +123,7 @@ impl Chats {
         self.handle_conv(ctx, conv)
     }
 
-    fn update_unread_count(conv: &Conversation, current_id: &AttrValue) {
+    fn incr_unread_count(conv: &Conversation, current_id: &AttrValue) {
         if !conv.mute && !conv.last_msg_is_self && *current_id != conv.friend_id {
             Dispatch::<UnreadState>::global()
                 .reduce_mut(|s| s.msg_count = s.msg_count.saturating_add(conv.unread_count));
@@ -183,7 +183,7 @@ impl Chats {
                 Notification::error("update conv error").notify();
                 return;
             }
-            Self::update_unread_count(&conv, &current_id);
+            Self::incr_unread_count(&conv, &current_id);
 
             log::debug!("create conversation: {:?}", &conv);
             ctx.send_message(ChatsMsg::InsertConv(conv));
@@ -223,6 +223,7 @@ impl Chats {
             self.list.shift_insert(0, friend_id.clone(), conv.clone());
         }
 
+        Self::incr_unread_count(&conv, &current_id);
         Self::save_conversation_and_update_friend_info(
             conv,
             new_name,
