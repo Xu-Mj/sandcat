@@ -10,6 +10,7 @@ pub mod sender;
 pub mod set_drawer;
 pub mod set_window;
 pub mod setting;
+pub mod util;
 
 use std::rc::Rc;
 

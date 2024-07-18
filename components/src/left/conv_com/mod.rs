@@ -462,15 +462,18 @@ impl Chats {
         oncontextmenu: Callback<((i32, i32), AttrValue, bool, bool)>,
     ) -> Html {
         let remark = get_msg_type(&self.i18n, item.last_msg_type, &item.last_msg);
-        let name = if let Some(remark) = &item.remark {
-            remark.clone()
-        } else {
-            item.name.clone()
-        };
+        let name = item.remark.clone().map_or(item.name.clone(), |remark| {
+            if remark.is_empty() {
+                item.name.clone()
+            } else {
+                remark.clone()
+            }
+        });
         html!(
             <ListItem
                 component_type={ComponentType::Messages}
-                props={CommonProps{name,
+                props={CommonProps{
+                    name,
                     avatar:item.avatar.clone().into(),
                     time:item.last_msg_time,
                     remark,

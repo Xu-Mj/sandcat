@@ -46,6 +46,7 @@ pub const PHONE: &str = "phone";
 pub const EMAIL: &str = "email";
 pub const ADDRESS: &str = "address";
 pub const SIGNATURE: &str = "signature";
+pub const ANNOUNCEMENT: &str = "announcement";
 pub const LOGOUT: &str = "logout";
 pub const SEND: &str = "send";
 pub const VERIFY_NEEDED: &str = "verify_needed";

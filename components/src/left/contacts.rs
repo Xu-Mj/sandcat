@@ -315,6 +315,7 @@ impl Component for Contacts {
                 true
             }
             ContactsMsg::UpdateFriendStateChanged(state) => {
+                log::debug!("update friend state changed:{:?}", state);
                 match state.type_ {
                     ItemType::Group => {
                         if let Some(group) = self.groups.get_mut(&state.id) {
@@ -324,6 +325,7 @@ impl Component for Contacts {
                             if let Some(avatar) = &state.avatar {
                                 group.avatar.clone_from(avatar);
                             }
+                            group.remark.clone_from(&state.remark);
                         }
                     }
                     ItemType::Friend => {
@@ -334,6 +336,7 @@ impl Component for Contacts {
                             if let Some(avatar) = &state.avatar {
                                 friend.avatar.clone_from(avatar);
                             }
+                            friend.remark.clone_from(&state.remark);
                         }
                     }
                 }
