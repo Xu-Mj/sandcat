@@ -137,7 +137,6 @@ impl Chats {
         clean: bool,
     ) {
         spawn_local(async move {
-            // let mut conv = conv.clone();
             if clean {
                 conv.unread_count = 0;
             }
@@ -155,9 +154,6 @@ impl Chats {
                     error!("update friend info error:{:?}", e);
                 }
             }
-
-            // unread count state notify
-            // Self::update_unread_count(conv, current_id);
         });
     }
 
