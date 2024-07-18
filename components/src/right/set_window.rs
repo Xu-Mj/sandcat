@@ -1,7 +1,5 @@
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
-use log::error;
-use sandcat_sdk::state::ItemType;
 use wasm_bindgen::{closure::Closure, JsCast};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
@@ -20,11 +18,13 @@ use sandcat_sdk::{
         ItemInfo, RightContentType,
     },
     pb::message::GroupUpdate,
-    state::{MuteState, RefreshMsgListState, UpdateFriendState},
+    state::{ItemType, MuteState, RefreshMsgListState, UpdateFriendState},
 };
 use utils::tr;
 
 use crate::constant::{ADD, DELETE, GROUP_ANNOUNCEMENT, GROUP_DESC, GROUP_NAME, MUTE, REMARK};
+
+use super::util;
 
 pub struct SetWindow {
     members: Vec<GroupMember>,
@@ -263,21 +263,20 @@ impl Component for SetWindow {
                     let r = event
                         .target_unchecked_into::<web_sys::HtmlInputElement>()
                         .value();
-                    if let Some(remark) = friend.remark.as_ref() {
-                        if *remark != r {
-                            friend.remark = Some(r.into());
-                            // update friend remark
-                            let user_id = ctx.props().user_id.clone().to_string();
-                            let friend = friend.clone();
-                            self.update_friend_remark(user_id, friend);
-                        }
-                    } else {
-                        friend.remark = Some(r.clone().into());
 
-                        let friend = friend.clone();
+                    let update_friend = |friend: &mut Friend, remark: String| {
+                        friend.remark = Some(remark.into());
+                        // update friend remark
                         let user_id = ctx.props().user_id.clone().to_string();
                         let friend = friend.clone();
-                        self.update_friend_remark(user_id, friend);
+                        util::update_friend_remark(user_id, friend);
+                    };
+                    if let Some(remark) = friend.remark.as_ref() {
+                        if *remark != r {
+                            update_friend(friend, r);
+                        }
+                    } else {
+                        update_friend(friend, r);
                     }
                 }
                 false
@@ -419,32 +418,6 @@ impl SetWindow {
                     log::error!("update group name error: {:?}", e)
                 }
             };
-        });
-    }
-
-    fn update_friend_remark(&self, user_id: String, friend: Friend) {
-        spawn_local(async move {
-            let remark = friend.remark.as_ref().unwrap();
-            if api::friends()
-                .update_remark(
-                    user_id,
-                    friend.friend_id.clone().to_string(),
-                    remark.to_string(),
-                )
-                .await
-                .is_ok()
-            {
-                if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
-                    error!("save friend error:{:?}", err);
-                    return;
-                }
-                Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
-                    s.id = friend.friend_id;
-                    s.name = None;
-                    s.remark.clone_from(&friend.remark);
-                    s.type_ = ItemType::Friend;
-                });
-            }
         });
     }
 }

@@ -160,6 +160,7 @@ account = account:
 remark = remark:
 region = region:
 signature = signature:
+announcement = anno:
 "#;
 
 pub const ACTION: &str = r#"

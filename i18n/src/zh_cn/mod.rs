@@ -154,6 +154,7 @@ account = 账号:
 remark = 备注:
 region = 地区:
 signature = 个性签名:
+announcement = 群公告:
 "#;
 
 pub const ACTION: &str = r#"

@@ -8,7 +8,7 @@ use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::model::group::{Group, GroupDelete};
-use sandcat_sdk::model::{ItemInfo, RightContentType};
+use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::pb::message::FriendInfo;
 use sandcat_sdk::state::MobileState;
 use sandcat_sdk::state::Notify;
@@ -17,10 +17,13 @@ use utils::tr;
 
 use crate::action::Action;
 use crate::constant::ACCOUNT;
+use crate::constant::ANNOUNCEMENT;
 use crate::constant::REGION;
 use crate::constant::REMARK;
 use crate::constant::SIGNATURE;
 use crate::right::set_drawer::SetDrawer;
+
+use super::util;
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct PostCardProps {
@@ -38,6 +41,7 @@ pub enum PostCardMsg {
     Delete,
     ShowSetDrawer,
     QueryFriendByHttp(QueryState<FriendInfo>),
+    UpdateRemark,
 }
 
 pub enum QueryState<T> {
@@ -47,6 +51,7 @@ pub enum QueryState<T> {
 }
 
 pub struct PostCard {
+    node: NodeRef,
     group: Option<Group>,
     friend: Option<Friend>,
     is_group_owner: bool,
@@ -68,6 +73,7 @@ impl Component for PostCard {
         let i18n = utils::create_bundle(res);
 
         PostCard {
+            node: NodeRef::default(),
             show_set_drawer: false,
             is_group_owner: false,
             i18n,
@@ -130,6 +136,18 @@ impl Component for PostCard {
                 }
 
                 true
+            }
+            PostCardMsg::UpdateRemark => {
+                let user_id = ctx.props().user_id.clone().to_string();
+                match ctx.props().conv_type {
+                    RightContentType::Friend => {
+                        let friend = self.friend.as_ref().unwrap().clone();
+                        util::update_friend_remark(user_id, friend);
+                    }
+                    RightContentType::Group => todo!(),
+                    _ => {}
+                }
+                false
             }
         }
     }
@@ -382,7 +400,8 @@ impl PostCard {
                         </div>
                     </div>
                 <div class="postcard-remark">
-                    {tr!(self.i18n, REMARK)}{friend.remark.clone()}
+                    {tr!(self.i18n, REMARK)}
+                    <input ref={self.node.clone()} value={friend.remark.clone()} placeholder={tr!(self.i18n, REMARK)} />
                 </div>
                 <div class="sign">
                     {tr!(self.i18n, SIGNATURE)}{friend.signature.clone()}
@@ -428,10 +447,11 @@ impl PostCard {
 
                 </div>
                 <div class="postcard-remark">
-                    {tr!(self.i18n, REMARK)}{group.remark.clone()}
+                    {tr!(self.i18n, REMARK)}
+                    <input ref={self.node.clone()} value={group.remark.clone()} placeholder={tr!(self.i18n, REMARK)} />
                 </div>
                 <div class="sign">
-                    {tr!(self.i18n, SIGNATURE)}{group.signature()}
+                    {tr!(self.i18n, ANNOUNCEMENT)}{&group.announcement}
                 </div>
 
                 <Action friend_id={&group.id}
