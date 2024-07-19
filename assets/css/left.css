@@ -20,12 +20,14 @@
 
 /* 左侧列表 */
 .left-container {
+    width: 30%;
+    min-width: 20%;
+    height: 100%;
+    position: relative;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: center;
-    width: 30%;
-    height: 100%;
     user-select: none;
 
     border-right: 1px solid var(--color-border);
@@ -76,6 +78,20 @@
             color: white;
             cursor: pointer;
         }
+    }
+}
+
+/* left resizer, drag it to resize the left container */
+.left-resizer {
+    width: .5rem;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    right: 0;
+    cursor: ew-resize;
+    z-index: 3;
+    &:hover {
+        background-color: #e4e9ec;
     }
 }
 
