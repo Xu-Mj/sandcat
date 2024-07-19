@@ -1,5 +1,6 @@
 use std::rc::Rc;
 
+use gloo::utils::document;
 use indexmap::IndexMap;
 use log::error;
 use sandcat_sdk::api;
@@ -8,7 +9,7 @@ use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::state::{AudioDownloadedState, ItemType, UpdateFriendState};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
-use web_sys::{Blob, BlobPropertyBag, HtmlAudioElement, HtmlElement, Url};
+use web_sys::{Blob, BlobPropertyBag, HtmlAudioElement, HtmlDivElement, HtmlElement, Url};
 use yew::prelude::*;
 use yewdux::Dispatch;
 
@@ -39,6 +40,8 @@ pub struct MessageList {
     audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
     audio_data_url: Option<String>,
     is_mobile: bool,
+    mouse_move: Option<Closure<dyn FnMut(MouseEvent)>>,
+    mouse_up: Option<Closure<dyn FnMut(MouseEvent)>>,
 
     // listen sync offline message, query message list
     _sync_msg_dis: Dispatch<RefreshMsgListState>,
@@ -69,6 +72,8 @@ pub enum MessageListMsg {
     AudioDownloaded(Rc<AudioDownloadedState>),
     DelItem(AttrValue),
     MsgSendTimeout(AttrValue),
+    ResizerMouseDown(MouseEvent),
+    ResizerMouseUp,
 }
 
 /// 接收对方用户信息即可，
@@ -395,6 +400,8 @@ impl Component for MessageList {
             audio_on_stop: None,
             audio_data_url: None,
             is_mobile: MobileState::is_mobile(),
+            mouse_move: None,
+            mouse_up: None,
 
             _sync_msg_dis,
             _rec_msg_dis,
@@ -510,6 +517,62 @@ impl Component for MessageList {
                 }
                 false
             }
+            // todo consider to extract this to a pub function
+            MessageListMsg::ResizerMouseDown(event) => {
+                event.prevent_default();
+                event.stop_propagation();
+
+                //  set onmousemove event for document
+                if event.target().is_some() {
+                    // get left container
+                    let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
+
+                    // mouse move event
+                    let listener = Closure::wrap(Box::new(move |event: MouseEvent| {
+                        let y = event.client_y();
+                        // set the width of the element; ignore error
+                        let _ = node.style().set_property("height", &format!("{}px", y));
+                    })
+                        as Box<dyn FnMut(MouseEvent)>);
+                    if let Err(err) = document().add_event_listener_with_callback(
+                        "mousemove",
+                        listener.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to add mousemove event listener: {:?}", err);
+                    };
+
+                    // register mouse up for document
+                    let ctx = ctx.link().clone();
+                    let mouse_up = Closure::wrap(Box::new(move |_: MouseEvent| {
+                        ctx.send_message(MessageListMsg::ResizerMouseUp);
+                    })
+                        as Box<dyn FnMut(MouseEvent)>);
+
+                    if let Err(err) = document().add_event_listener_with_callback(
+                        "mouseup",
+                        mouse_up.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to add mouseup event listener: {:?}", err);
+                    };
+
+                    self.mouse_move = Some(listener);
+                    self.mouse_up = Some(mouse_up);
+                }
+                false
+            }
+            MessageListMsg::ResizerMouseUp => {
+                if let Some(listener) = self.mouse_move.take() {
+                    // remove mousemove event
+                    if let Err(err) = document().remove_event_listener_with_callback(
+                        "mousemove",
+                        listener.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to remove mousemove event listener: {:?}", err);
+                    };
+                }
+                self.mouse_up = None;
+                false
+            }
         }
     }
 
@@ -591,20 +654,19 @@ impl Component for MessageList {
             })
             .collect::<Html>();
 
-        let (class, msg_list_class) = if self.is_mobile {
-            ("resize", "msg-list")
+        let msg_list_class = if self.is_mobile {
+            "msg-list"
         } else {
-            ("resize resize-size", "msg-list scrollbar")
+            "msg-list scrollbar"
         };
 
         html! {
             <>
-                <div {class}>
-                    <audio ref={self.audio_ref.clone()}/>
-                    {new_msg_count}
-                    <div ref={self.node_ref.clone()} class={msg_list_class} {onscroll}>
-                        {list}
-                    </div>
+                <audio ref={self.audio_ref.clone()}/>
+                {new_msg_count}
+                <div ref={self.node_ref.clone()} class={msg_list_class} {onscroll}>
+                    {list}
+                    <div class="msg-list-resizer" onmousedown={ctx.link().callback(MessageListMsg::ResizerMouseDown)}></div>
                 </div>
                 <Sender
                     friend_id={&props.friend_id}
