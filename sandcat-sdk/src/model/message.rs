@@ -898,6 +898,12 @@ impl From<Msg> for PbMsg {
                         pb_msg.related_msg_id = msg.related_msg_id.map(|v| v.to_string());
                     }
                     GroupMsg::Invitation(info) => {
+                        pb_msg.send_id = info
+                            .0
+                            .info
+                            .as_ref()
+                            .map(|v| v.owner.to_string())
+                            .unwrap_or_default();
                         pb_msg.msg_type = MsgType::GroupInvitation as i32;
                         pb_msg.content = bincode::serialize(&info).unwrap();
                     }
