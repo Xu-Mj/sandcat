@@ -507,8 +507,8 @@ impl Component for Chats {
         if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
             log::error!("record offline time to local storage error: {:?}", err);
         }
-        spawn_local(async {
-            db::repository::Repository::delete_db().await;
-        });
+        // spawn_local(async {
+        //     db::repository::Repository::delete_db().await;
+        // });
     }
 }

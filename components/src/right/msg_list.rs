@@ -5,7 +5,7 @@ use log::error;
 use sandcat_sdk::api;
 use sandcat_sdk::model::message::SendStatus;
 use sandcat_sdk::model::notification::Notification;
-use sandcat_sdk::state::AudioDownloadedState;
+use sandcat_sdk::state::{AudioDownloadedState, ItemType, UpdateFriendState};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::{Blob, BlobPropertyBag, HtmlAudioElement, HtmlElement, Url};
@@ -136,7 +136,6 @@ impl MessageList {
 
     fn query_friend(&self, ctx: &Context<Self>) {
         let id = ctx.props().friend_id.clone();
-        log::debug!("message list props id: {} in query method", id.clone());
         if !id.is_empty() {
             // 查询数据库
             let conv_type = ctx.props().conv_type.clone();
@@ -147,7 +146,11 @@ impl MessageList {
                 match conv_type {
                     RightContentType::Friend => {
                         let mut result = db::db_ins().friends.get(&id).await;
-                        // update friend info
+                        log::debug!(
+                            "message list props id: {} in query method; friend :{:?}",
+                            id.clone(),
+                            result
+                        );
 
                         // todo optimize query time, we should load the friend info asynchronously
                         if let Ok(user) = api::friends().query_friend(&id).await {
@@ -170,6 +173,14 @@ impl MessageList {
                                     {
                                         error!("save friend error:{:?}", err);
                                     }
+
+                                    // send update event
+                                    Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
+                                        s.id.clone_from(&result.friend_id);
+                                        s.name = Some(result.name.clone());
+                                        s.remark = None;
+                                        s.type_ = ItemType::Friend;
+                                    });
                                 }
                             }
                         }
@@ -506,9 +517,7 @@ impl Component for MessageList {
         self.reset();
         self.query_friend(ctx);
         self.query(ctx);
-        // 这里不能让组件重新绘制，
-        // 因为query方法会触发组件的渲染，
-        // 重复渲染会导致页面出现难以预料的问题
+        // do not re-render component, it will rerender in query
         false
     }
 
