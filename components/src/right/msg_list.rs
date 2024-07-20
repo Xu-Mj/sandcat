@@ -1,14 +1,15 @@
 use std::rc::Rc;
 
+use gloo::utils::document;
 use indexmap::IndexMap;
 use log::error;
 use sandcat_sdk::api;
 use sandcat_sdk::model::message::SendStatus;
 use sandcat_sdk::model::notification::Notification;
-use sandcat_sdk::state::AudioDownloadedState;
+use sandcat_sdk::state::{AudioDownloadedState, ItemType, UpdateFriendState};
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
-use web_sys::{Blob, BlobPropertyBag, HtmlAudioElement, HtmlElement, Url};
+use web_sys::{Blob, BlobPropertyBag, HtmlAudioElement, HtmlDivElement, HtmlElement, Url};
 use yew::prelude::*;
 use yewdux::Dispatch;
 
@@ -39,6 +40,8 @@ pub struct MessageList {
     audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
     audio_data_url: Option<String>,
     is_mobile: bool,
+    mouse_move: Option<Closure<dyn FnMut(MouseEvent)>>,
+    mouse_up: Option<Closure<dyn FnMut(MouseEvent)>>,
 
     // listen sync offline message, query message list
     _sync_msg_dis: Dispatch<RefreshMsgListState>,
@@ -69,6 +72,8 @@ pub enum MessageListMsg {
     AudioDownloaded(Rc<AudioDownloadedState>),
     DelItem(AttrValue),
     MsgSendTimeout(AttrValue),
+    ResizerMouseDown(MouseEvent),
+    ResizerMouseUp,
 }
 
 /// 接收对方用户信息即可，
@@ -136,7 +141,6 @@ impl MessageList {
 
     fn query_friend(&self, ctx: &Context<Self>) {
         let id = ctx.props().friend_id.clone();
-        log::debug!("message list props id: {} in query method", id.clone());
         if !id.is_empty() {
             // 查询数据库
             let conv_type = ctx.props().conv_type.clone();
@@ -147,7 +151,11 @@ impl MessageList {
                 match conv_type {
                     RightContentType::Friend => {
                         let mut result = db::db_ins().friends.get(&id).await;
-                        // update friend info
+                        log::debug!(
+                            "message list props id: {} in query method; friend :{:?}",
+                            id.clone(),
+                            result
+                        );
 
                         // todo optimize query time, we should load the friend info asynchronously
                         if let Ok(user) = api::friends().query_friend(&id).await {
@@ -170,6 +178,14 @@ impl MessageList {
                                     {
                                         error!("save friend error:{:?}", err);
                                     }
+
+                                    // send update event
+                                    Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
+                                        s.id.clone_from(&result.friend_id);
+                                        s.name = Some(result.name.clone());
+                                        s.remark = None;
+                                        s.type_ = ItemType::Friend;
+                                    });
                                 }
                             }
                         }
@@ -384,6 +400,8 @@ impl Component for MessageList {
             audio_on_stop: None,
             audio_data_url: None,
             is_mobile: MobileState::is_mobile(),
+            mouse_move: None,
+            mouse_up: None,
 
             _sync_msg_dis,
             _rec_msg_dis,
@@ -499,6 +517,71 @@ impl Component for MessageList {
                 }
                 false
             }
+            // todo consider to extract this to a pub function
+            MessageListMsg::ResizerMouseDown(event) => {
+                event.prevent_default();
+                event.stop_propagation();
+
+                //  set onmousemove event for document
+                if event.target().is_some() {
+                    // get left container
+                    let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
+
+                    // mouse move event
+                    let listener = Closure::wrap(Box::new(move |event: MouseEvent| {
+                        let y = event.client_y();
+                        // set the width of the element; ignore error
+                        let _ = node.style().set_property("height", &format!("{}px", y));
+                    })
+                        as Box<dyn FnMut(MouseEvent)>);
+
+                    // register mouse up for document
+                    let ctx = ctx.link().clone();
+                    let mouse_up = Closure::wrap(Box::new(move |_: MouseEvent| {
+                        ctx.send_message(MessageListMsg::ResizerMouseUp);
+                    })
+                        as Box<dyn FnMut(MouseEvent)>);
+
+                    let document = document();
+
+                    if let Err(err) = document.add_event_listener_with_callback(
+                        "mousemove",
+                        listener.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to add mousemove event listener: {:?}", err);
+                    };
+                    if let Err(err) = document.add_event_listener_with_callback(
+                        "mouseup",
+                        mouse_up.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to add mouseup event listener: {:?}", err);
+                    };
+
+                    self.mouse_move = Some(listener);
+                    self.mouse_up = Some(mouse_up);
+                }
+                false
+            }
+            MessageListMsg::ResizerMouseUp => {
+                let document = document();
+                if let Some(listener) = self.mouse_move.as_ref() {
+                    if let Err(err) = document.remove_event_listener_with_callback(
+                        "mousemove",
+                        listener.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to remove mousemove event listener: {:?}", err);
+                    };
+                }
+                if let Some(mouse_up) = self.mouse_up.as_ref() {
+                    if let Err(err) = document.remove_event_listener_with_callback(
+                        "mouseup",
+                        mouse_up.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to remove mouseup event listener: {:?}", err);
+                    };
+                }
+                false
+            }
         }
     }
 
@@ -506,9 +589,7 @@ impl Component for MessageList {
         self.reset();
         self.query_friend(ctx);
         self.query(ctx);
-        // 这里不能让组件重新绘制，
-        // 因为query方法会触发组件的渲染，
-        // 重复渲染会导致页面出现难以预料的问题
+        // do not re-render component, it will rerender in query
         false
     }
 
@@ -582,20 +663,19 @@ impl Component for MessageList {
             })
             .collect::<Html>();
 
-        let (class, msg_list_class) = if self.is_mobile {
-            ("resize", "msg-list")
+        let msg_list_class = if self.is_mobile {
+            "msg-list"
         } else {
-            ("resize resize-size", "msg-list scrollbar")
+            "msg-list scrollbar"
         };
 
         html! {
             <>
-                <div {class}>
-                    <audio ref={self.audio_ref.clone()}/>
-                    {new_msg_count}
-                    <div ref={self.node_ref.clone()} class={msg_list_class} {onscroll}>
-                        {list}
-                    </div>
+                <audio ref={self.audio_ref.clone()}/>
+                {new_msg_count}
+                <div ref={self.node_ref.clone()} class={msg_list_class} {onscroll}>
+                    {list}
+                    <div class="msg-list-resizer" onmousedown={ctx.link().callback(MessageListMsg::ResizerMouseDown)}></div>
                 </div>
                 <Sender
                     friend_id={&props.friend_id}

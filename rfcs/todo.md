@@ -32,3 +32,4 @@
 - global unread message count is not correct
 - we need to increase the unread count when the current component is not in the message component
 - need to update group name in friend list after update group info
+- consider that add resize state to local configuration

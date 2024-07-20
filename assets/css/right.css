@@ -3,7 +3,9 @@
     display: flex;
     flex-direction: column;
     justify-content: center;
+    flex: 1;
     width: 70%;
+    min-width: 50%;
     height: 100%;
     position: relative;
     --avatar-width: 2.5rem;
@@ -291,13 +293,13 @@
         }
     }
 
-    .resize-size {
+    /* .resize-size {
         max-height: 80%;
     }
 
     .resize {
         width: 100%;
-        /* height: 100%; */
+        height: 100%;
         flex: 1;
         min-height: 40%;
         resize: vertical;
@@ -305,40 +307,41 @@
         padding-top: 3.8rem;
         position: relative;
 
-        .msg-list-new-msg-count {
+    } */
+
+    .msg-list-new-msg-count {
+        position: absolute;
+        width: 4rem;
+        height: 2rem;
+        bottom: 1.4rem;
+        cursor: pointer;
+        left: 25%;
+        background-color: white;
+        border-radius: .4rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+        filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
+
+        &::before {
+            content: '';
             position: absolute;
-            width: 4rem;
-            height: 2rem;
-            bottom: 1.4rem;
-            cursor: pointer;
-            left: 25%;
-            background-color: white;
-            border-radius: .4rem;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10;
-            filter: drop-shadow(0 0 5px rgba(0, 0, 0, .3));
-
-            &::before {
-                content: '';
-                position: absolute;
-                width: 0;
-                height: 0;
-                border: 10px solid transparent;
-                border-top-color: #ffffff;
-                bottom: -1rem;
-                left: 1.5rem;
-            }
+            width: 0;
+            height: 0;
+            border: 10px solid transparent;
+            border-top-color: #ffffff;
+            bottom: -1rem;
+            left: 1.5rem;
         }
-
     }
 
     /* 消息列表 */
 
     .msg-list {
         width: 100%;
-        height: 100%;
+        height: 80%;
+        min-height: 40%;
         display: flex;
         flex-direction: column-reverse;
         overflow-y: auto;
@@ -347,6 +350,19 @@
         padding: .8rem 1rem;
         position: relative;
         scroll-behavior: smooth;
+
+        .msg-list-resizer {
+            width: 100%;
+            height: .5rem;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            cursor: s-resize;
+
+            &:hover {
+                background-color: gray;
+            }
+        }
 
         svg {
             path {
@@ -615,6 +631,7 @@
     /* 右侧底部发送框 */
 
     .sender-size {
+        flex: 1;
         height: 20%;
         max-height: 60%;
         min-height: 20%;
