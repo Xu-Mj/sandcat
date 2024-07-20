@@ -107,7 +107,7 @@
     flex-direction: column;
     align-items: center;
     gap: .5rem;
-    background-color: var(--color-background);
+    background-color: var(--color-background-window);
     z-index: 3;
 
     .people {
@@ -232,7 +232,7 @@
         position: absolute;
         width: 15rem;
         height: 20rem;
-        background-color: var(--color-background);
+        background-color: var(--color-background-window);
         display: flex;
         flex-direction: column;
         top: 50%;
@@ -709,7 +709,7 @@
                 right: 1rem;
                 bottom: 3rem;
                 font-size: .8rem;
-                background-color: var(--color-background);
+                background-color: var(--color-background-window);
             }
 
             .empty-msg-tip-mobile {
@@ -720,7 +720,7 @@
                 top: 50%;
                 transform: translate(-50%, -50%);
                 font-size: .8rem;
-                background-color: var(--color-background);
+                background-color: var(--color-background-window);
             }
 
             .sender-footer {
@@ -829,7 +829,7 @@
             justify-content: flex-start;
             align-items: center;
             gap: 1rem;
-            background-color: var(--color-background);
+            background-color: var(--color-background-window);
             left: 50%;
             top: 10%;
             transform: translateX(-50%);
@@ -992,7 +992,7 @@
             position: absolute;
             right: 0;
             top: 1rem;
-            background-color: var(--color-background);
+            background-color: var(--color-background-window);
 
             &[tabindex] {
                 outline: none;
@@ -1095,7 +1095,7 @@
     display: flex;
     flex-direction: column;
     border-radius: .3rem;
-    background-color: var(--color-background);
+    background-color: var(--color-background-window);
 
     & ::-webkit-scrollbar {
         width: 3px;
