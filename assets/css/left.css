@@ -91,7 +91,7 @@
     cursor: ew-resize;
     z-index: 3;
     &:hover {
-        background-color: #e4e9ec;
+        background-color: gray;
     }
 }
 
