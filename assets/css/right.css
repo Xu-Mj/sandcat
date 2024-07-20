@@ -212,6 +212,8 @@
     display: flex;
     flex-direction: column;
     position: relative;
+    padding-top: 3rem;
+    color: black;
 
     .cat-head-icon {
         width: 100%;
