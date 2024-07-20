@@ -534,12 +534,6 @@ impl Component for MessageList {
                         let _ = node.style().set_property("height", &format!("{}px", y));
                     })
                         as Box<dyn FnMut(MouseEvent)>);
-                    if let Err(err) = document().add_event_listener_with_callback(
-                        "mousemove",
-                        listener.as_ref().unchecked_ref(),
-                    ) {
-                        error!("Failed to add mousemove event listener: {:?}", err);
-                    };
 
                     // register mouse up for document
                     let ctx = ctx.link().clone();
@@ -548,7 +542,15 @@ impl Component for MessageList {
                     })
                         as Box<dyn FnMut(MouseEvent)>);
 
-                    if let Err(err) = document().add_event_listener_with_callback(
+                    let document = document();
+
+                    if let Err(err) = document.add_event_listener_with_callback(
+                        "mousemove",
+                        listener.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to add mousemove event listener: {:?}", err);
+                    };
+                    if let Err(err) = document.add_event_listener_with_callback(
                         "mouseup",
                         mouse_up.as_ref().unchecked_ref(),
                     ) {
@@ -561,16 +563,23 @@ impl Component for MessageList {
                 false
             }
             MessageListMsg::ResizerMouseUp => {
-                if let Some(listener) = self.mouse_move.take() {
-                    // remove mousemove event
-                    if let Err(err) = document().remove_event_listener_with_callback(
+                let document = document();
+                if let Some(listener) = self.mouse_move.as_ref() {
+                    if let Err(err) = document.remove_event_listener_with_callback(
                         "mousemove",
                         listener.as_ref().unchecked_ref(),
                     ) {
                         error!("Failed to remove mousemove event listener: {:?}", err);
                     };
                 }
-                self.mouse_up = None;
+                if let Some(mouse_up) = self.mouse_up.as_ref() {
+                    if let Err(err) = document.remove_event_listener_with_callback(
+                        "mouseup",
+                        mouse_up.as_ref().unchecked_ref(),
+                    ) {
+                        error!("Failed to remove mouseup event listener: {:?}", err);
+                    };
+                }
                 false
             }
         }
