@@ -774,64 +774,65 @@
         text-align: center;
     }
 
-    .setting {
+}
+
+
+.setting {
+    width: 100%;
+    height: 100%;
+    margin-top: 3rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .rect-size {
+        width: 30rem;
+        height: 15rem;
+    }
+
+    .rect-size-mobile {
         width: 100%;
-        height: 100%;
-        margin-top: 3rem;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        padding: 1rem;
+    }
 
-        .rect-size {
-            width: 30rem;
-            height: 15rem;
+    .rect {
+        h2 {
+            margin-bottom: 2rem;
         }
 
-        .rect-size-mobile {
+        b {
+            font-weight: bold;
+        }
+
+        .font-size {
+            display: grid;
+            grid-template-columns: 2fr 4fr;
+            align-items: center;
+        }
+
+        .font-size-desktop> :last-child {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            align-items: center;
+        }
+
+        .font-size-mobile> :last-child {
+            display: grid;
+            grid-template-columns: 2fr 2fr;
+            align-items: center;
+        }
+
+        .setting-theme,
+        .language {
             width: 100%;
-            padding: 1rem;
-        }
+            height: 3rem;
+            display: grid;
+            grid-template-columns: 2fr 2fr 2fr;
+            align-items: center;
 
-        .rect {
-            h2 {
-                margin-bottom: 2rem;
-            }
-
-            b {
-                font-weight: bold;
-            }
-
-            .font-size {
-                display: grid;
-                grid-template-columns: 2fr 4fr;
-                align-items: center;
-            }
-
-            .font-size-desktop> :last-child {
-                display: grid;
-                grid-template-columns: 1fr 1fr 1fr 1fr;
-                align-items: center;
-            }
-
-            .font-size-mobile> :last-child {
-                display: grid;
-                grid-template-columns: 2fr 2fr;
-                align-items: center;
-            }
-
-            .setting-theme,
-            .language {
-                width: 100%;
-                height: 3rem;
-                display: grid;
-                grid-template-columns: 2fr 2fr 2fr;
-                align-items: center;
-
-            }
         }
     }
 }
-
 
 .friendship-list {
     width: 100%;
