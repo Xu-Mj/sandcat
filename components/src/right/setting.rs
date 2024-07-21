@@ -3,15 +3,17 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
-use yew::{classes, html, Component, Event, Properties};
+use yew::{classes, html, Component, Event, InputEvent, Properties};
 use yewdux::Dispatch;
 
 use i18n::{self, en_us, zh_cn, LanguageType};
-use sandcat_sdk::state::{FontSizeState, I18nState, MobileState, Notify, ThemeState};
+use sandcat_sdk::state::{
+    FontSizeState, I18nState, MobileState, Notify, ThemeState, TransparentState,
+};
 use utils::tr;
 
 use crate::constant::{
-    DARK, FONT_SIZE, LANGUAGE, LARGE, LARGER, LIGHT, MEDUIM, SETTING, SMALL, THEME,
+    DARK, FONT_SIZE, LANGUAGE, LARGE, LARGER, LIGHT, MEDUIM, SETTING, SMALL, THEME, TRANSPARENT,
 };
 
 pub struct Setting {
@@ -19,12 +21,14 @@ pub struct Setting {
     lang: LanguageType,
     theme: Rc<ThemeState>,
     font_size: Rc<FontSizeState>,
+    transparent: f32,
 }
 
 pub enum SettingMsg {
     SwitchLanguage(Event),
     SwitchTheme(Event),
     SwitchFontSize(Event),
+    TransparentChange(InputEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Properties)]
@@ -48,11 +52,13 @@ impl Component for Setting {
         let i18n = utils::create_bundle(content);
 
         let font_size = FontSizeState::get();
+        let transparent = TransparentState::get();
         Self {
             i18n,
             lang,
             theme,
             font_size,
+            transparent,
         }
     }
 
@@ -102,6 +108,17 @@ impl Component for Setting {
                 font_size.notify();
                 false
             }
+            SettingMsg::TransparentChange(event) => {
+                let input = event
+                    .target()
+                    .unwrap()
+                    .dyn_into::<HtmlInputElement>()
+                    .unwrap();
+                let value = input.value();
+                self.transparent = value.parse::<f32>().unwrap();
+                TransparentState::set(self.transparent);
+                true
+            }
         }
     }
 
@@ -109,6 +126,7 @@ impl Component for Setting {
         let onchange = ctx.link().callback(SettingMsg::SwitchLanguage);
         let on_font_size_change = ctx.link().callback(SettingMsg::SwitchFontSize);
         let on_theme_change = ctx.link().callback(SettingMsg::SwitchTheme);
+        let on_transparent_change = ctx.link().callback(SettingMsg::TransparentChange);
 
         let mut class = classes!("rect");
         let mut font_class = classes!("font-size");
@@ -187,6 +205,23 @@ impl Component for Setting {
                         <label for="dark">
                             <input type="radio" name="theme" id="dark" value="dark" onchange={on_theme_change} checked={*self.theme==ThemeState::Dark}/>{format!("\t{}", tr!(self.i18n, DARK))}
                         </label>
+                    </div>
+
+                    <div class="setting-transparent">
+                        <b>{tr!(self.i18n, TRANSPARENT)}</b>
+                        <label for="transparent">
+                            <input
+                                type="range"
+                                name="transparent"
+                                id="transparent"
+                                min="0"
+                                max="1"
+                                step="0.01"
+                                placeholder="transparent"
+                                value={self.transparent.to_string()}
+                                oninput={on_transparent_change} />
+                        </label>
+                            <span>{self.transparent}</span>
                     </div>
                 </div>
             </div>

@@ -128,6 +128,17 @@ pub fn set_font_size(size: &str) {
         .unwrap()
 }
 
+pub fn set_transparent(trans: &str) {
+    document()
+        .document_element()
+        .unwrap()
+        .dyn_into::<HtmlElement>()
+        .unwrap()
+        .style()
+        .set_property("--v-transparent", trans)
+        .unwrap()
+}
+
 pub fn get_avatar_url(avatar_id: &str) -> String {
     format!("/api/file/avatar/get/{avatar_id}")
 }
