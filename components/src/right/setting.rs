@@ -3,7 +3,7 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use wasm_bindgen::JsCast;
 use web_sys::HtmlInputElement;
-use yew::{classes, html, Component, Event, Properties};
+use yew::{classes, html, Component, Event, InputEvent, Properties};
 use yewdux::Dispatch;
 
 use i18n::{self, en_us, zh_cn, LanguageType};
@@ -21,13 +21,14 @@ pub struct Setting {
     lang: LanguageType,
     theme: Rc<ThemeState>,
     font_size: Rc<FontSizeState>,
+    transparent: f32,
 }
 
 pub enum SettingMsg {
     SwitchLanguage(Event),
     SwitchTheme(Event),
     SwitchFontSize(Event),
-    TransparentChange(Event),
+    TransparentChange(InputEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Properties)]
@@ -51,11 +52,13 @@ impl Component for Setting {
         let i18n = utils::create_bundle(content);
 
         let font_size = FontSizeState::get();
+        let transparent = TransparentState::get();
         Self {
             i18n,
             lang,
             theme,
             font_size,
+            transparent,
         }
     }
 
@@ -112,9 +115,9 @@ impl Component for Setting {
                     .dyn_into::<HtmlInputElement>()
                     .unwrap();
                 let value = input.value();
-                let transparent = value.parse::<f32>().unwrap();
-                TransparentState::set(transparent);
-                false
+                self.transparent = value.parse::<f32>().unwrap();
+                TransparentState::set(self.transparent);
+                true
             }
         }
     }
@@ -214,9 +217,11 @@ impl Component for Setting {
                                 min="0"
                                 max="1"
                                 step="0.01"
-                                value={TransparentState::get().to_string()}
-                                onchange={on_transparent_change} />
+                                placeholder="transparent"
+                                value={self.transparent.to_string()}
+                                oninput={on_transparent_change} />
                         </label>
+                            <span>{self.transparent}</span>
                     </div>
                 </div>
             </div>
