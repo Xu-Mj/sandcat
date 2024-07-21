@@ -33,12 +33,13 @@
     --vt-c-text-dark-1: var(--vt-c-white);
     --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
     scrollbar-gutter: stable;
+    --v-transparent: 0.9;
 }
 
 /* semantic color variables for this project */
 :root[theme="light"] {
     --color-background-window: var(--vt-c-white);
-    --color-background: rgba(255, 255, 255, .9);
+    --color-background: rgba(255, 255, 255, var(--v-transparent));
     --color-background-soft: var(--vt-c-white-soft);
     --color-background-mute: var(--vt-c-white-mute);
 
@@ -62,7 +63,7 @@
 
 :root[theme="dark"] {
     --color-background-window: var(--vt-c-black-mute);
-    --color-background: rgba(0, 0, 0, .9);
+    --color-background: rgba(0, 0, 0, , var(--v-transparent));
     --color-background-soft: var(--vt-c-black-soft);
     --color-background-mute: var(--vt-c-black-mute);
 
@@ -127,7 +128,7 @@ html {
     scroll-behavior: smooth;
     user-select: none;
     color: var(--color-text);
-    /* background-image: url('./images/home-background.jpg'); */
+    background-image: url('./images/home-background.jpg');
     background-size: cover;
     transition: color 0.5s;
     line-height: 1.6;

@@ -25,7 +25,6 @@ pub enum SettingMsg {
     SwitchLanguage(Event),
     SwitchTheme(Event),
     SwitchFontSize(Event),
-    None,
 }
 
 #[derive(Debug, Clone, PartialEq, Properties)]
@@ -78,8 +77,6 @@ impl Component for Setting {
                 }
                 true
             }
-            SettingMsg::None => false,
-
             SettingMsg::SwitchTheme(event) => {
                 let input = event
                     .target()
