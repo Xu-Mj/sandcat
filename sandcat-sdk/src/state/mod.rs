@@ -325,6 +325,22 @@ impl From<&str> for ThemeState {
 
 #[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
 #[store(storage = "local")]
+pub struct TransparentState {
+    pub value: f32,
+}
+
+impl TransparentState {
+    pub fn get() -> f32 {
+        Dispatch::<Self>::global().get().value
+    }
+
+    pub fn set(value: f32) {
+        Dispatch::<Self>::global().reduce_mut(|s| s.value = value);
+    }
+}
+
+#[derive(Default, Clone, PartialEq, Debug, Store, Serialize, Deserialize)]
+#[store(storage = "local")]
 #[serde(rename_all = "lowercase")]
 #[repr(i32)]
 pub enum MobileState {
