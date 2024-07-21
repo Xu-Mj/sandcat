@@ -399,7 +399,6 @@ impl Component for Recorder {
     }
 
     fn destroy(&mut self, _ctx: &Context<Self>) {
-        log::error!("destroy clean state");
         self.clean();
     }
 }
