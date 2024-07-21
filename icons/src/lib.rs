@@ -450,7 +450,7 @@ pub fn messages_icon(props: &SvgFillProps) -> Html {
 #[function_component(SettingIcon)]
 pub fn setting_icon(props: &SvgFillProps) -> Html {
     html! {
-        <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" class="icon">
         <circle cx="24" cy="12" r="3" fill={&props.fill}/>
         <circle cx="24" cy="24" r="3" fill={&props.fill}/>
         <circle cx="24" cy="35" r="3" fill={&props.fill}/>
