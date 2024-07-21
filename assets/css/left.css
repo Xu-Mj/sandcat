@@ -83,13 +83,14 @@
 
 /* left resizer, drag it to resize the left container */
 .left-resizer {
-    width: .5rem;
+    width: .3rem;
     height: 100%;
     position: absolute;
     top: 0;
     right: 0;
     cursor: ew-resize;
     z-index: 3;
+
     &:hover {
         background-color: gray;
     }
@@ -139,7 +140,7 @@
             height: 1.5rem;
         }
 
-        > span {
+        >span {
             border-radius: .4rem;
             display: flex;
             align-items: center;
@@ -264,7 +265,7 @@
     }
 
     .top-pinned-conversation {
-        background-color:var(--color-background-pinned);
+        background-color: var(--color-background-pinned);
     }
 
     /* selected color need to be under the pinned color */

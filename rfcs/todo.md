@@ -33,3 +33,5 @@
 - we need to increase the unread count when the current component is not in the message component
 - need to update group name in friend list after update group info
 - consider that add resize state to local configuration
+- bug: resizer position will jump lower when the right component is resized
+- keep cursor style while dragging the resizer
