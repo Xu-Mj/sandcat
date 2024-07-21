@@ -1,6 +1,4 @@
-use gloo::utils::document;
 use indexmap::IndexMap;
-use wasm_bindgen::{closure::Closure, JsCast};
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
@@ -10,7 +8,6 @@ use sandcat_sdk::state::MobileState;
 use crate::right::emoji::{get_emojis, get_unicode_emojis, Emoji, EmojiSpan};
 pub struct EmojiPanel {
     node: NodeRef,
-    click_closure: Option<Closure<dyn FnMut(MouseEvent)>>,
     data: IndexMap<String, EmojiType>,
     current_type: String,
     is_mobile: bool,
@@ -25,6 +22,7 @@ pub struct EmojiPanelProps {
 pub enum EmojiPanelMsg {
     Send(Emoji),
     ChangeEmojiType(String),
+    Close,
 }
 
 const BIGGER_EMOJI: &str = "bigger_emoji";
@@ -64,7 +62,6 @@ impl Component for EmojiPanel {
         let is_mobile = MobileState::is_mobile();
         Self {
             node: NodeRef::default(),
-            click_closure: None,
             data,
             current_type: UNICODE_EMOJI.to_owned(),
             is_mobile,
@@ -79,6 +76,9 @@ impl Component for EmojiPanel {
             EmojiPanelMsg::ChangeEmojiType(t) => {
                 self.current_type = t;
                 return true;
+            }
+            EmojiPanelMsg::Close => {
+                ctx.props().close.emit(());
             }
         }
         false
@@ -115,8 +115,9 @@ impl Component for EmojiPanel {
         let on_bigger_click = ctx
             .link()
             .callback(|_| EmojiPanelMsg::ChangeEmojiType(BIGGER_EMOJI.to_owned()));
+        let onblur = ctx.link().callback(|_| EmojiPanelMsg::Close);
         html! {
-            <div ref={self.node.clone()}  {class}>
+            <div tabindex="0" ref={self.node.clone()}  {class} {onblur}>
                 <div class={up_class}>
                     {up}
                 </div>
@@ -129,26 +130,27 @@ impl Component for EmojiPanel {
         }
     }
 
-    fn rendered(&mut self, ctx: &Context<Self>, first_render: bool) {
+    fn rendered(&mut self, _ctx: &Context<Self>, first_render: bool) {
         if !first_render {
             return;
         }
         if let Some(node) = self.node.cast::<HtmlDivElement>() {
-            let onclose = ctx.props().close.clone();
-            let node = node.clone();
-            // register click event to document
-            let func = Closure::wrap(Box::new(move |event: MouseEvent| {
-                if let Some(target) = event.target() {
-                    let target_node = target.dyn_into::<web_sys::Node>().unwrap();
-                    if !node.contains(Some(&target_node)) {
-                        onclose.emit(());
-                        // remove onclick event
-                        document().set_onclick(None);
-                    }
-                }
-            }) as Box<dyn FnMut(MouseEvent)>);
-            document().set_onclick(Some(func.as_ref().unchecked_ref()));
-            self.click_closure = Some(func);
+            // let onclose = ctx.props().close.clone();
+            // let node = node.clone();
+            // // register click event to document
+            // let func = Closure::wrap(Box::new(move |event: MouseEvent| {
+            //     if let Some(target) = event.target() {
+            //         let target_node = target.dyn_into::<web_sys::Node>().unwrap();
+            //         if !node.contains(Some(&target_node)) {
+            //             onclose.emit(());
+            //             // remove onclick event
+            //             document().set_onclick(None);
+            //         }
+            //     }
+            // }) as Box<dyn FnMut(MouseEvent)>);
+            // document().set_onclick(Some(func.as_ref().unchecked_ref()));
+            // self.click_closure = Some(func);
+            node.focus().unwrap();
         }
     }
 }

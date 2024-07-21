@@ -103,7 +103,10 @@ impl Component for Sender {
                 self.timer = None;
                 true
             }
-            SenderMsg::SendEmoji(emoji) => self.send_emoji(ctx, emoji),
+            SenderMsg::SendEmoji(emoji) => {
+                self.show_emoji = false;
+                self.send_emoji(ctx, emoji)
+            }
             SenderMsg::ShowEmoji => {
                 self.show_emoji = !self.show_emoji;
                 true
@@ -426,7 +429,7 @@ impl Component for Sender {
             return;
         }
 
-        if !ctx.props().disable && !self.is_mobile && !self.is_voice_mode {
+        if !ctx.props().disable && !self.is_mobile && !self.is_voice_mode && !self.show_emoji {
             self.input_ref
                 .cast::<HtmlElement>()
                 .map(|input| input.focus());
