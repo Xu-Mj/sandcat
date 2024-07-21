@@ -1,10 +1,7 @@
 # TODO LIST / UNRESOLVED QUESTIONS
 
-- the structure of the MESSAGE need to be same as server side MESSAGE structure
 - message item show send time while hover it
-- modify the group info
 - to sync the contacts list and apply list and apply response list
-- we need to update user information when we look up the friend info
 - we need to update user information when we click the conversation item -- need to optimize update time and use synchroniza way to update ui
 - decrease the state count; --every action will trigger a state change
 - reply busy when the user is in the call
@@ -13,10 +10,8 @@
 - need to test the invite new member for group
 - register page need to add check failed message for user input.
 - need to update group member info when we received a group message
-- move database init to the conversation component to decrease render time
-- call component need i18n
+- move database init to the conversation component to decrease render times
 - need to notify user when the authorization is expired
-- indexeddb need composite index, update message read status need to rebuild, get message list need to use friend id and order by send time.
 - there is a problem about relationship while two devices login both especially one offline and the other online, the offline turn to online, it is difficult to get the relationship between the two devices.
 - local storage is shared with same address, it will influence the other user.
 - add login state ui: logining, login failed, login success
@@ -25,8 +20,6 @@
 - add google oauth2 login
 - add password modify
 - we need to give the user a message if their email is already used
-- encrypt the password before send to server
-- bug: need to refresh contacts list after offline message synced
 - we need to split the forward message type: Single/Group
 - handle request seq error
 - global unread message count is not correct
