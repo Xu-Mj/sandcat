@@ -187,7 +187,7 @@ error = [错误]
 
 pub const RECORDER: &str = r#"
 press = 按住讲话
-recorde = 录音
+record = 录音
 stop = 停止
 send = 发送
 send_mobile = 松开发送
