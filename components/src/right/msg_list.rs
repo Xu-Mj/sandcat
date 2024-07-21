@@ -670,7 +670,7 @@ impl Component for MessageList {
         };
 
         html! {
-            <>
+            <div class="msg-container">
                 <audio ref={self.audio_ref.clone()}/>
                 {new_msg_count}
                 <div ref={self.node_ref.clone()} class={msg_list_class} {onscroll}>
@@ -687,7 +687,8 @@ impl Component for MessageList {
                     {on_file_send}
                     lang={ctx.props().lang}
                 />
-            </>
+            </div>
+
         }
     }
 

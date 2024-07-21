@@ -259,9 +259,7 @@ impl ListItem {
             </div>
         }
     }
-}
 
-impl ListItem {
     fn get_time_str(timestamp: i64) -> String {
         if timestamp <= 0 {
             return String::new();

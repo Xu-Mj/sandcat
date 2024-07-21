@@ -774,106 +774,6 @@
         text-align: center;
     }
 
-
-    .friendship-list {
-        width: 100%;
-        height: 100%;
-        margin-top: 3rem;
-        position: relative;
-
-        .friendship-item {
-            width: 100%;
-            height: 3rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-
-            .item-left {
-                display: flex;
-                gap: .4rem;
-                align-items: center;
-
-                .item-info {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: flex-start;
-
-
-                    .remark {
-                        font-size: small;
-                        color: gray;
-                    }
-                }
-            }
-
-            .friendship-action button {
-                border: none;
-                background-color: var(--color-background-btn);
-                color: var(--color-text);
-                width: 6rem;
-                height: 2rem;
-                cursor: pointer;
-            }
-        }
-
-        /* 好友验证窗口 */
-
-        .friendship-detail {
-            width: 18rem;
-            height: 12rem;
-            padding: 1rem;
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-            align-items: center;
-            gap: 1rem;
-            background-color: var(--color-background-window);
-            left: 50%;
-            top: 10%;
-            transform: translateX(-50%);
-
-            > :first-child {
-                width: 100%;
-                text-align: center;
-                font-size: large;
-                font-weight: bold;
-            }
-
-            > :nth-child(2),
-            :nth-child(3) {
-                display: grid;
-                grid-template-columns: 1fr 2fr;
-                width: 100%;
-
-                input {
-                    border: none;
-                    outline: none;
-                    padding: 0 .3rem;
-                    background-color: var(--color-background-input);
-                }
-            }
-
-            > :last-child {
-                width: 100%;
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                justify-items: center;
-
-                button {
-                    border: none;
-                    background-color: var(--color-background-btn);
-                    color: var(--color-text);
-                    width: 6rem;
-                    height: 2rem;
-                    cursor: pointer;
-                }
-            }
-
-        }
-    }
-
     .setting {
         width: 100%;
         height: 100%;
@@ -929,6 +829,106 @@
 
             }
         }
+    }
+}
+
+
+.friendship-list {
+    width: 100%;
+    height: 100%;
+    margin-top: 3rem;
+    position: relative;
+
+    .friendship-item {
+        width: 100%;
+        height: 3rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+
+        .item-left {
+            display: flex;
+            gap: .4rem;
+            align-items: center;
+
+            .item-info {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start;
+
+
+                .remark {
+                    font-size: small;
+                    color: gray;
+                }
+            }
+        }
+
+        .friendship-action button {
+            border: none;
+            background-color: var(--color-background-btn);
+            color: var(--color-text);
+            width: 6rem;
+            height: 2rem;
+            cursor: pointer;
+        }
+    }
+
+    /* 好友验证窗口 */
+
+    .friendship-detail {
+        width: 18rem;
+        height: 12rem;
+        padding: 1rem;
+        position: absolute;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 1rem;
+        background-color: var(--color-background-window);
+        left: 50%;
+        top: 10%;
+        transform: translateX(-50%);
+
+        > :first-child {
+            width: 100%;
+            text-align: center;
+            font-size: large;
+            font-weight: bold;
+        }
+
+        > :nth-child(2),
+        :nth-child(3) {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            width: 100%;
+
+            input {
+                border: none;
+                outline: none;
+                padding: 0 .3rem;
+                background-color: var(--color-background-input);
+            }
+        }
+
+        > :last-child {
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            justify-items: center;
+
+            button {
+                border: none;
+                background-color: var(--color-background-btn);
+                color: var(--color-text);
+                width: 6rem;
+                height: 2rem;
+                cursor: pointer;
+            }
+        }
+
     }
 }
 

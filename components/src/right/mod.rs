@@ -445,9 +445,7 @@ impl Component for Right {
                 </div>
                     {setting}
                     {friend_list}
-                <div class="msg-container">
                     {content}
-                </div>
             </div>
         }
     }
