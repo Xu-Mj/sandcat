@@ -146,6 +146,7 @@ pub const SETTING: &str = r#"
 setting = Setting
 language = Language:
 theme = Theme:
+transparent = transparent:
 light = Light
 dark = Dark
 font_size = Font Size:

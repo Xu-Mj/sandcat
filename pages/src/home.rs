@@ -9,12 +9,15 @@ use components::notification::NotificationCom;
 use components::right::Right;
 use sandcat_sdk::db::{self, QueryStatus, DB_NAME};
 use sandcat_sdk::model::user::User;
-use sandcat_sdk::state::{AppState, FontSizeState, MobileState, Notify, ShowRight, ThemeState};
+use sandcat_sdk::state::{
+    AppState, FontSizeState, MobileState, Notify, ShowRight, ThemeState, TransparentState,
+};
 
 pub struct Home {
     _theme_dis: Dispatch<ThemeState>,
     _right_dis: Dispatch<ShowRight>,
     _font_size_dis: Dispatch<FontSizeState>,
+    _trans_dis: Dispatch<TransparentState>,
     db_inited: bool,
 }
 
@@ -25,6 +28,7 @@ pub enum HomeMsg {
     SwitchTheme(Rc<ThemeState>),
     ShowRight,
     SwitchFontSize(Rc<FontSizeState>),
+    TransparentChange(Rc<TransparentState>),
 }
 
 #[derive(Properties, Clone, PartialEq)]
@@ -66,6 +70,11 @@ impl Component for Home {
                 false
             }
             HomeMsg::ShowRight => true,
+            HomeMsg::TransparentChange(state) => {
+                log::debug!("switch font size: {:?}", state);
+                utils::set_transparent(&state.value.to_string());
+                false
+            }
         }
     }
 
@@ -130,12 +139,15 @@ impl Home {
         let _right_dis = Dispatch::global().subscribe(ctx.link().callback(|_| HomeMsg::ShowRight));
         let _font_size_dis =
             Dispatch::global().subscribe(ctx.link().callback(HomeMsg::SwitchFontSize));
+        let _trans_dis =
+            Dispatch::global().subscribe(ctx.link().callback(HomeMsg::TransparentChange));
 
         Self {
             _theme_dis,
             _font_size_dis,
             db_inited: false,
             _right_dis,
+            _trans_dis,
         }
     }
 }

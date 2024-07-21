@@ -81,6 +81,7 @@ pub const LARGE: &str = "large";
 pub const LARGER: &str = "larger";
 pub const LANGUAGE: &str = "language";
 pub const THEME: &str = "theme";
+pub const TRANSPARENT: &str = "transparent";
 pub const LIGHT: &str = "light";
 pub const DARK: &str = "dark";
 pub const INCOMING_CALL: &str = "incoming_call";

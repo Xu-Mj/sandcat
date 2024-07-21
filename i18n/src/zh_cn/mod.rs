@@ -142,6 +142,7 @@ language = 语言:
 theme = 主题:
 light = 浅色
 dark = 暗黑
+transparent = 透明度:
 font_size = 字体大小:
 small = 小
 medium = 中

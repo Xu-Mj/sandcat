@@ -35,3 +35,4 @@
 - consider that add resize state to local configuration
 - bug: resizer position will jump lower when the right component is resized
 - keep cursor style while dragging the resizer
+- use indexeddb to store last sync/offline time instead of local storage
