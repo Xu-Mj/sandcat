@@ -30,7 +30,7 @@ use i18n::{en_us, zh_cn, LanguageType};
 use icons::{BackIcon, CatHeadIcon, CloseIcon, MaxIcon};
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
-use sandcat_sdk::state::{AppState, MobileState, Notify, ShowRight};
+use sandcat_sdk::state::{AppState, ItemType, MobileState, Notify, ShowRight};
 use sandcat_sdk::state::{
     ComponentTypeState, ConvState, CreateGroupConvState, FriendListState, I18nState,
 };
@@ -342,10 +342,12 @@ impl Component for Right {
                     Some(ctx.link().callback(RightMsg::TouchEnd)),
                 ),
             };
+
         let mut top_bar_info = html!(
                 <div class={right_top_bar_class}>
                     {back.clone()}<span></span><span></span>
                 </div>);
+
         if let Some(info) = &self.cur_conv_info {
             let onclick = ctx.link().callback(|event: MouseEvent| {
                 event.stop_propagation();
@@ -365,12 +367,18 @@ impl Component for Right {
             }
             if self.show_friend_list {
                 let submit_back = ctx.link().callback(RightMsg::CreateGroup);
+                let from = if self.conv_state.conv.content_type == RightContentType::Group {
+                    ItemType::Group
+                } else {
+                    ItemType::Friend
+                };
                 friend_list = html!(
                     <SelectFriendList
                         except={info.id()}
                         close_back={close}
                         {submit_back}
-                        lang={self.lang_state.lang} />);
+                        lang={self.lang_state.lang}
+                        {from} />);
             }
             top_bar_info = html! {
                 <div class={right_top_bar_class}>
@@ -384,6 +392,7 @@ impl Component for Right {
                 </div>
             }
         }
+
         let content = match self.com_state.component_type {
             ComponentType::Messages => {
                 // 处理没有选中会话的情况

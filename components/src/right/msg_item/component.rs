@@ -14,7 +14,7 @@ use sandcat_sdk::model::message::{GroupMsg, InviteType, Message, Msg, SendStatus
 use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::{I18nState, Notify, RelatedMsgState, SendMessageState};
+use sandcat_sdk::state::{I18nState, ItemType, Notify, RelatedMsgState, SendMessageState};
 
 use crate::right::friend_card::FriendCard;
 use crate::right::msg_item::related_msg::RelatedMsg;
@@ -412,12 +412,19 @@ impl Component for MsgItem {
         if self.show_friendlist {
             let close_back = ctx.link().callback(|_| MsgItemMsg::ShowForwardMsg);
             let submit_back = ctx.link().callback(MsgItemMsg::ForwardMsg);
+            let from = if ctx.props().conv_type == RightContentType::Group {
+                ItemType::Group
+            } else {
+                ItemType::Friend
+            };
+
             friendlist = html!(
                 <SelectFriendList
                     except={&ctx.props().friend_id}
                     {close_back}
                     {submit_back}
-                    lang={I18nState::get().lang} />)
+                    lang={I18nState::get().lang}
+                    {from} />)
         }
 
         // related message

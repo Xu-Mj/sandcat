@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use fluent::FluentBundle;
 use fluent::FluentResource;
 use gloo::utils::document;
@@ -12,6 +14,7 @@ use i18n::LanguageType;
 use sandcat_sdk::db;
 use sandcat_sdk::error::Error;
 use sandcat_sdk::model::friend::Friend;
+use sandcat_sdk::state::ItemType;
 use sandcat_sdk::state::MobileState;
 use utils::tr;
 
@@ -33,8 +36,11 @@ pub struct SelectFriendList {
 pub enum AddConvMsg {
     Add,
     Close,
-    QueryFriends(QueryStatus<IndexMap<AttrValue, Friend>>),
+    QueryFriends(QueryResult),
 }
+
+type QueryResult = QueryStatus<(IndexMap<AttrValue, Friend>, Option<HashSet<AttrValue>>)>;
+
 #[derive(Debug, Clone)]
 pub enum QueryStatus<T> {
     // 正在查询
@@ -53,6 +59,8 @@ pub struct AddConvProps {
     pub close_back: Callback<()>,
     pub submit_back: Callback<Vec<String>>,
     pub lang: LanguageType,
+    /// from group or single
+    pub from: ItemType,
 }
 
 impl Component for SelectFriendList {
@@ -64,12 +72,28 @@ impl Component for SelectFriendList {
         // query friend list
         ctx.link()
             .send_message(AddConvMsg::QueryFriends(QueryStatus::Querying));
-        ctx.link().send_future(async {
+
+        let from = ctx.props().from.clone();
+        let group_id = ctx.props().except.clone();
+        ctx.link().send_future(async move {
+            let mut exceptions = None;
+            if from == ItemType::Group && !group_id.is_empty() {
+                if let Ok(members) = db::db_ins()
+                    .group_members
+                    .get_list_by_group_id(&group_id)
+                    .await
+                {
+                    exceptions = Some(members.into_iter().map(|v| v.user_id).collect());
+                }
+            }
             match db::db_ins().friends.get_list().await {
-                Ok(friends) => AddConvMsg::QueryFriends(QueryStatus::Success(friends)),
+                Ok(friends) => {
+                    AddConvMsg::QueryFriends(QueryStatus::Success((friends, exceptions)))
+                }
                 Err(err) => AddConvMsg::QueryFriends(QueryStatus::Fail(err)),
             }
         });
+
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::SELECT_FRIENDS,
             LanguageType::EnUS => en_us::SELECT_FRIENDS,
@@ -113,8 +137,12 @@ impl Component for SelectFriendList {
             AddConvMsg::QueryFriends(result) => {
                 match result {
                     QueryStatus::Querying => self.querying = true,
-                    QueryStatus::Success(mut friends) => {
-                        friends.shift_remove(&ctx.props().except);
+                    QueryStatus::Success((mut friends, exceptions)) => {
+                        if let Some(exceptions) = exceptions {
+                            friends.retain(|_, v| !exceptions.contains(&v.friend_id));
+                        } else {
+                            friends.shift_remove(&ctx.props().except);
+                        }
                         self.data = friends;
                         self.querying = false;
                     }

@@ -50,7 +50,6 @@ pub enum SetWindowMsg {
     OnGroupAnnoChange(Event),
     OnGroupDescChange(Event),
     DeleteClicked,
-    None,
 }
 
 #[derive(Properties, PartialEq)]
@@ -76,6 +75,8 @@ impl Component for SetWindow {
     fn create(ctx: &Context<Self>) -> Self {
         let id = ctx.props().id.clone();
         let conv_type = ctx.props().conv_type.clone();
+
+        // query information
         ctx.link().send_future(async move {
             // init interfaces
             let mut members: Vec<GroupMember> = vec![];
@@ -103,6 +104,7 @@ impl Component for SetWindow {
                 }
                 _ => {}
             }
+
             // qeury conversation is mute
             let conv = db::db_ins()
                 .convs
@@ -112,11 +114,13 @@ impl Component for SetWindow {
                 .unwrap();
             SetWindowMsg::QueryInfo(Box::new(group), Box::new(friend), members, conv)
         });
+
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::SET_WINDOW,
             LanguageType::EnUS => en_us::SET_WINDOW,
         };
         let i18n = utils::create_bundle(res);
+
         Self {
             i18n,
             members: Vec::new(),
@@ -173,7 +177,6 @@ impl Component for SetWindow {
                 }
                 true
             }
-            SetWindowMsg::None => false,
             SetWindowMsg::OnGroupNameChange(event) => {
                 if let Some(info) = self.group.as_mut() {
                     let name = event
@@ -296,13 +299,13 @@ impl Component for SetWindow {
                             <span>{&friend.name}</span>
                         </div>
                     };
-                    let on_name_change = ctx.link().callback(SetWindowMsg::OnFriendNameChange);
+                    let on_remark_change = ctx.link().callback(SetWindowMsg::OnFriendNameChange);
                     info = html! {
                         <div class="group-name">
                             <div>
                                 {tr!(self.i18n, REMARK)}
                             </div>
-                            <input type="text" value={&friend.remark} onchange={on_name_change} />
+                            <input type="text" value={&friend.remark} onchange={on_remark_change} />
                         </div>
                     };
                 }
