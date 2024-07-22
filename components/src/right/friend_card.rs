@@ -65,6 +65,10 @@ impl Component for FriendCard {
 
     fn view(&self, ctx: &Context<Self>) -> Html {
         let friend = &ctx.props().friend;
+        let mut remark = html!();
+        if friend.remark.is_some() {
+            remark = html!(<span><b>{&friend.remark}</b></span>)
+        }
         html! {
             <div
                 class="friend-card box-shadow"
@@ -75,7 +79,7 @@ impl Component for FriendCard {
                 <div class="friend-card-header">
                     <img alt="avatar" src={utils::get_avatar_url(&friend.avatar)} class="friend-card-avatar"/>
                     <div class="friend-card-info">
-                        // <span><b>{&self.friend.remark}</b></span>
+                        {remark}
                         <span>{tr!(self.i18n, NICKNAME)}{&friend.name}</span>
                         <span>{tr!(self.i18n, ACCOUNT)}{&friend.account}</span>
                         <span>{tr!(self.i18n, REGION)}{friend.region.clone().unwrap_or_default()} </span>
