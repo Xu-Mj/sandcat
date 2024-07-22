@@ -38,7 +38,6 @@
 
 /* semantic color variables for this project */
 :root[theme="light"] {
-    --color-background-window: var(--vt-c-white);
     --color-background: rgba(255, 255, 255, var(--v-transparent));
     --color-background-soft: var(--vt-c-white-soft);
     --color-background-mute: var(--vt-c-white-mute);
@@ -62,7 +61,6 @@
 }
 
 :root[theme="dark"] {
-    --color-background-window: var(--vt-c-black-mute);
     --color-background: rgba(0, 0, 0, var(--v-transparent));
     --color-background-soft: var(--vt-c-black-soft);
     --color-background-mute: var(--vt-c-black-mute);
@@ -296,14 +294,15 @@ input {
 /* 朋友卡片 */
 
 .friend-card {
-    width: 18rem;
-    height: 16rem;
+    width: 20rem;
+    /* height: 16rem; */
     display: flex;
     flex-direction: column;
     padding: 1rem;
     position: fixed;
     background-color: var(--color-background);
     border-radius: .3rem;
+    gap: 1rem;
     z-index: 3;
 
     &[tabindex] {
@@ -321,6 +320,7 @@ input {
         justify-content: flex-start;
         align-items: center;
         gap: 1rem;
+        padding-bottom: 1rem;
     }
 
     .friend-card-avatar {

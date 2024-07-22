@@ -235,12 +235,14 @@
         position: absolute;
         width: 15rem;
         height: 20rem;
-        background-color: var(--color-background-window);
+        background-color: var(--color-background);
+        color: var(--color-text);
         display: flex;
         flex-direction: column;
         top: 50%;
         left: 50%;
-        padding: 1rem 1rem 0 1rem;
+        padding: 1rem;
+        border-radius: .3rem;
         transform: translate(-50%, -50%);
         box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
             10px 10px 10px rgba(60, 60, 60, 0.12),
@@ -264,8 +266,14 @@
                 align-items: center;
 
 
-                svg {
+                & svg {
                     height: .8rem;
+                    path{
+                        stroke: var(--color-text);
+                    }
+                    circle{
+                        stroke: var(--color-text);
+                    }
                 }
 
                 .file-sender-name {
@@ -281,19 +289,21 @@
 
         .file-sender-footer {
             width: 100%;
-            height: 2rem;
-            padding: .2rem;
+            height: 1.5rem;
             display: flex;
             justify-content: space-evenly;
 
             button {
                 width: 4rem;
-                height: 1.2rem;
+                height: 1.5rem;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 border: none;
+                border-radius: .2rem;
                 cursor: pointer;
+                background-color: var(--color-background-btn);
+                color: var(--color-text);
             }
         }
     }
@@ -712,7 +722,8 @@
                 right: 1rem;
                 bottom: 3rem;
                 font-size: .8rem;
-                background-color: var(--color-background-window);
+                background-color: var(--color-background);
+                color: var(--color-text);
             }
 
             .empty-msg-tip-mobile {
@@ -723,7 +734,8 @@
                 top: 50%;
                 transform: translate(-50%, -50%);
                 font-size: .8rem;
-                background-color: var(--color-background-window);
+                background-color: var(--color-background);
+                color: var(--color-text);
             }
 
             .sender-footer {
@@ -903,7 +915,7 @@
         justify-content: flex-start;
         align-items: center;
         gap: 1rem;
-        background-color: var(--color-background-window);
+        background-color: var(--color-background);
         left: 50%;
         top: 10%;
         transform: translateX(-50%);
@@ -1008,7 +1020,7 @@
             position: absolute;
             right: 0;
             top: 1rem;
-            background-color: var(--color-background-window);
+            background-color: var(--color-background);
 
             &[tabindex] {
                 outline: none;
@@ -1111,7 +1123,7 @@
     display: flex;
     flex-direction: column;
     border-radius: .3rem;
-    background-color: var(--color-background-window);
+    background-color: var(--color-background);
 
     & ::-webkit-scrollbar {
         width: 3px;
