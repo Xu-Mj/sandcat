@@ -14,11 +14,12 @@ use sandcat_sdk::state::{
 };
 
 pub struct Home {
+    db_inited: bool,
+    is_mobile: bool,
     _theme_dis: Dispatch<ThemeState>,
     _right_dis: Dispatch<ShowRight>,
     _font_size_dis: Dispatch<FontSizeState>,
     _trans_dis: Dispatch<TransparentState>,
-    db_inited: bool,
 }
 
 #[derive(Debug)]
@@ -71,8 +72,11 @@ impl Component for Home {
             }
             HomeMsg::ShowRight => true,
             HomeMsg::TransparentChange(state) => {
-                log::debug!("switch font size: {:?}", state);
-                utils::set_transparent(&state.value.to_string());
+                if self.is_mobile {
+                    utils::set_transparent("1");
+                } else {
+                    utils::set_transparent(&state.value.to_string());
+                }
                 false
             }
         }
@@ -119,6 +123,7 @@ impl Home {
             }
         });
 
+        let mut is_mobile = false;
         // query device info
         if let Ok(platform) = window().navigator().user_agent() {
             log::debug!("platform: {:?}", platform);
@@ -126,6 +131,7 @@ impl Home {
                 || platform.contains("Android")
                 || platform.contains("iPhone")
             {
+                is_mobile = true;
                 MobileState::Mobile.notify();
             } else {
                 MobileState::Desktop.notify();
@@ -143,6 +149,7 @@ impl Home {
             Dispatch::global().subscribe(ctx.link().callback(HomeMsg::TransparentChange));
 
         Self {
+            is_mobile,
             _theme_dis,
             _font_size_dis,
             db_inited: false,

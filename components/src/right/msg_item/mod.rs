@@ -61,6 +61,7 @@ impl MsgItem {
         if ctx.props().conv_type == RightContentType::Group && !ctx.props().msg.is_self {
             let friend_id = ctx.props().msg.send_id.clone();
             let group_id = ctx.props().msg.friend_id.clone();
+            log::debug!("query group member: {:?}, {:?}", friend_id, group_id);
             ctx.link().send_future(async move {
                 let member = db::db_ins()
                     .group_members

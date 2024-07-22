@@ -8,6 +8,7 @@
     min-width: 50%;
     height: 100%;
     position: relative;
+    background-color: var(--color-background);
     --avatar-width: 2.5rem;
     --avatar-height: 2.5rem;
 }
@@ -22,6 +23,7 @@
     top: 0;
     right: -100%;
     animation: right-in .2s linear forwards;
+    background-color: var(--color-background);
     --avatar-width: 2.5rem;
     --avatar-height: 2.5rem;
 }
@@ -665,7 +667,7 @@
         border-top: 1px solid var(--color-border);
 
         svg {
-            path {
+            path, circle {
                 stroke: var(--color-text);
             }
         }
