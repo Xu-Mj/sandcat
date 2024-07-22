@@ -114,6 +114,7 @@ cancel = 取消
 "#;
 
 pub const FRIEND_CARD: &str = r#"
+add = 添加好友
 apply = 申请
 applied = 已申请
 apply_msg = 申请消息

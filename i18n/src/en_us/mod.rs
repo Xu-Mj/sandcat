@@ -118,7 +118,7 @@ cancel = Cancel
 "#;
 
 pub const FRIEND_CARD: &str = r#"
-# user info
+add = Add Friend
 apply = Apply
 applied = applied
 apply_msg = apply message

@@ -21,6 +21,7 @@ pub const PIN: &str = "pin";
 pub const DELETE: &str = "delete";
 pub const MSG: &str = "msg";
 pub const CONTACTS: &str = "contact";
+pub const ADD_FRIEND: &str = "add";
 pub const APPLY: &str = "apply";
 pub const APPLYING: &str = "applying";
 pub const APPLIED: &str = "applied";

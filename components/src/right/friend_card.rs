@@ -9,7 +9,7 @@ use utils::tr;
 
 use crate::{
     action::Action,
-    constant::{ACCOUNT, NICKNAME, REGION},
+    constant::{ACCOUNT, ADD_FRIEND, NICKNAME, REGION},
 };
 
 #[derive(Default)]
@@ -69,12 +69,26 @@ impl Component for FriendCard {
         if friend.remark.is_some() {
             remark = html!(<span><b>{&friend.remark}</b></span>)
         }
+
+        let body = if friend.friend_id.is_empty() {
+            // not friend
+            html!(<button>{tr!(self.i18n, ADD_FRIEND)}</button>)
+        } else {
+            html!(<Action
+                friend_id={&friend.friend_id}
+                user_id={&ctx.props().user_id}
+                avatar={&ctx.props().avatar}
+                nickname={&ctx.props().nickname}
+                conv_type={RightContentType::Friend}
+                lang={ctx.props().lang}/>)
+        };
+
         html! {
             <div
                 class="friend-card box-shadow"
                 tabindex="-1"
                 ref={self.node_ref.clone()}
-                onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
+                // onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >
                 <div class="friend-card-header">
                     <img alt="avatar" src={utils::get_avatar_url(&friend.avatar)} class="friend-card-avatar"/>
@@ -86,13 +100,7 @@ impl Component for FriendCard {
                     </div>
                 </div>
                 <div class="friend-card-body">
-                    <Action
-                        friend_id={&friend.friend_id}
-                        user_id={&ctx.props().user_id}
-                        avatar={&ctx.props().avatar}
-                        nickname={&ctx.props().nickname}
-                        conv_type={RightContentType::Friend}
-                        lang={ctx.props().lang}/>
+                    {body}
                 </div>
             </div>
         }

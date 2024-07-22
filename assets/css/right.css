@@ -8,7 +8,6 @@
     min-width: 50%;
     height: 100%;
     position: relative;
-    background-color: var(--color-background);
     --avatar-width: 2.5rem;
     --avatar-height: 2.5rem;
 }
@@ -93,6 +92,12 @@
         align-items: center;
         justify-content: space-between;
         font-size: larger;
+
+        svg{
+            path{
+                stroke: var(--color-text);
+            }
+        }
     }
 
 }

@@ -296,8 +296,7 @@ input {
 /* 朋友卡片 */
 
 .friend-card {
-    width: 20rem;
-    /* height: 16rem; */
+    width: 22rem;
     display: flex;
     flex-direction: column;
     padding: 1rem;
