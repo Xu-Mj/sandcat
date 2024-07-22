@@ -5,6 +5,7 @@ use fluent::FluentResource;
 use gloo::utils::document;
 use indexmap::IndexMap;
 use wasm_bindgen::JsCast;
+use web_sys::HtmlDivElement;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 
@@ -26,6 +27,7 @@ use crate::constant::SELECT_FRIENDS;
 use crate::constant::SUBMIT;
 
 pub struct SelectFriendList {
+    node: NodeRef,
     data: IndexMap<AttrValue, Friend>,
     querying: bool,
     err: Option<Error>,
@@ -37,6 +39,7 @@ pub enum AddConvMsg {
     Add,
     Close,
     QueryFriends(QueryResult),
+    OnEscapeKeyDown(KeyboardEvent),
 }
 
 type QueryResult = QueryStatus<(IndexMap<AttrValue, Friend>, Option<HashSet<AttrValue>>)>;
@@ -100,6 +103,7 @@ impl Component for SelectFriendList {
         };
         let i18n = utils::create_bundle(res);
         Self {
+            node: NodeRef::default(),
             i18n,
             data: IndexMap::new(),
             querying: false,
@@ -157,6 +161,13 @@ impl Component for SelectFriendList {
                 ctx.props().close_back.emit(());
                 false
             }
+            AddConvMsg::OnEscapeKeyDown(event) => {
+                if event.key() == "Escape" {
+                    ctx.props().close_back.emit(());
+                }
+                event.stop_propagation();
+                false
+            }
         }
     }
 
@@ -195,7 +206,7 @@ impl Component for SelectFriendList {
         let close = ctx.link().callback(|_| AddConvMsg::Close);
 
         html! {
-            <div {class}>
+            <div tabindex="-1" ref={self.node.clone()} {class} onkeydown={ctx.link().callback(AddConvMsg::OnEscapeKeyDown)}>
                 <fieldset>
                     <legend>{tr!(self.i18n, SELECT_FRIENDS)}</legend>
                     {content}
@@ -206,5 +217,9 @@ impl Component for SelectFriendList {
                 </div>
             </div>
         }
+    }
+
+    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+        let _ = self.node.cast::<HtmlDivElement>().unwrap().focus();
     }
 }
