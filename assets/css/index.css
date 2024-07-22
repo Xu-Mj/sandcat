@@ -214,6 +214,10 @@ input {
     overflow: hidden;
     z-index: 10;
 
+    &[tabindex] {
+        outline: none;
+    }
+
     .empty-result {
         text-align: center;
         width: 100%;
