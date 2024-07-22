@@ -954,6 +954,7 @@
 
             input {
                 border: none;
+                border-radius: .2rem;
                 outline: none;
                 padding: 0 .3rem;
                 background-color: var(--color-background-input);
