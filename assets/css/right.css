@@ -895,6 +895,7 @@
 
         .friendship-action button {
             border: none;
+            border-radius: .2rem;
             background-color: var(--color-background-btn);
             color: var(--color-text);
             width: 6rem;
@@ -918,6 +919,7 @@
         background-color: var(--color-background);
         left: 50%;
         top: 10%;
+        border-radius: .3rem;
         transform: translateX(-50%);
 
         > :first-child {
@@ -948,12 +950,13 @@
             justify-items: center;
 
             button {
-                border: none;
                 background-color: var(--color-background-btn);
                 color: var(--color-text);
                 width: 6rem;
                 height: 2rem;
                 cursor: pointer;
+                border: none;
+                border-radius: .2rem;
             }
         }
 
