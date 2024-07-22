@@ -611,6 +611,7 @@ input {
             width: 100%;
             padding: .3rem .5rem;
             border: none;
+            border-radius: .2rem;
             background-color: var(--color-background-input);
             font-size: medium;
         }
@@ -644,6 +645,7 @@ input {
             background-color: var(--color-background-btn);
             color: var(--color-text);
             border: none;
+            border-radius: .2rem;
             cursor: pointer;
         }
     }

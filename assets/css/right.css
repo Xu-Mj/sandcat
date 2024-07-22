@@ -1014,9 +1014,10 @@
     }
 
     .pc-wrapper {
+        position: relative;
         display: flex;
         flex-direction: column;
-        position: relative;
+        gap: 1rem;
 
         &>*:not(:last-child, :first-child, :nth-child(2)) {
             border-bottom: 1px solid var(--color-border);
@@ -1044,7 +1045,8 @@
         }
 
         .header-info {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 4fr;
             gap: 1rem;
 
             .postcard-avatar {
@@ -1074,7 +1076,7 @@
                 flex-direction: column;
                 justify-content: center;
                 align-items: flex-start;
-                margin-left: 1rem;
+                gap: .5rem;
 
                 .name {
                     font-size: 1.5rem;
@@ -1089,12 +1091,19 @@
             width: 100%;
             height: 3rem;
             line-height: 3rem;
+            display: grid;
+            grid-template-columns: 1fr 4fr;
+            gap: 1rem;
+            align-items: center;
         }
 
         .postcard-remark {
             input {
+                width: 90%;
+                height: 2rem;
                 padding: .3rem .5rem;
                 border: none;
+                border-radius: .2rem;
                 background-color: var(--color-background-input);
             }
         }
