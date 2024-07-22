@@ -89,12 +89,12 @@
     top: 0;
     right: 0;
     cursor: ew-resize;
-    transition: all .5s;
+    transition: all .2s;
     z-index: 3;
 
     &:hover {
         background-color: gray;
-        transition-delay: .5s;
+        transition-delay: .3s;
     }
 }
 
