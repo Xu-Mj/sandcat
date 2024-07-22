@@ -688,6 +688,12 @@
                 display: flex;
                 gap: 1rem;
             }
+
+            span {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
         }
 
         .msg-input-wrapper {

@@ -1,5 +1,5 @@
 .right-click-panel {
-    background-color: var(--color-background);
+    background-color: var(--color-background-window);
     position: fixed;
     border-radius: .3rem;
     overflow: hidden;
