@@ -4,7 +4,7 @@ use web_sys::HtmlDivElement;
 use yew::prelude::*;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use sandcat_sdk::model::{user::UserWithMatchType, RightContentType};
+use sandcat_sdk::model::{friend::Friend, RightContentType};
 use utils::tr;
 
 use crate::{
@@ -14,7 +14,6 @@ use crate::{
 
 #[derive(Default)]
 pub struct FriendCard {
-    friend: UserWithMatchType,
     node_ref: NodeRef,
     i18n: FluentBundle<FluentResource>,
 }
@@ -26,7 +25,7 @@ pub enum FriendCardMsg {
 #[derive(Properties, Clone, PartialEq)]
 pub struct FriendCardProps {
     // container: Element,
-    pub friend_info: UserWithMatchType,
+    pub friend: Friend,
     pub user_id: AttrValue,
     pub avatar: AttrValue,
     pub nickname: AttrValue,
@@ -43,15 +42,14 @@ impl Component for FriendCard {
     type Properties = FriendCardProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let friend = ctx.props().friend_info.clone();
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::FRIEND_CARD,
             LanguageType::EnUS => en_us::FRIEND_CARD,
         };
         let i18n = utils::create_bundle(res);
+
         Self {
             i18n,
-            friend,
             ..Default::default()
         }
     }
@@ -66,6 +64,7 @@ impl Component for FriendCard {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        let friend = &ctx.props().friend;
         html! {
             <div
                 class="friend-card box-shadow"
@@ -74,17 +73,17 @@ impl Component for FriendCard {
                 onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >
                 <div class="friend-card-header">
-                    <img alt="avatar" src={utils::get_avatar_url(&self.friend.avatar)} class="friend-card-avatar"/>
+                    <img alt="avatar" src={utils::get_avatar_url(&friend.avatar)} class="friend-card-avatar"/>
                     <div class="friend-card-info">
                         // <span><b>{&self.friend.remark}</b></span>
-                        <span>{tr!(self.i18n, NICKNAME)}{&self.friend.name}</span>
-                        <span>{tr!(self.i18n, ACCOUNT)}{&self.friend.account}</span>
-                        <span>{tr!(self.i18n, REGION)}{&self.friend.region.clone().unwrap_or_default()} </span>
+                        <span>{tr!(self.i18n, NICKNAME)}{&friend.name}</span>
+                        <span>{tr!(self.i18n, ACCOUNT)}{&friend.account}</span>
+                        <span>{tr!(self.i18n, REGION)}{friend.region.clone().unwrap_or_default()} </span>
                     </div>
                 </div>
                 <div class="friend-card-body">
                     <Action
-                        friend_id={&ctx.props().friend_info.id}
+                        friend_id={&friend.friend_id}
                         user_id={&ctx.props().user_id}
                         avatar={&ctx.props().avatar}
                         nickname={&ctx.props().nickname}

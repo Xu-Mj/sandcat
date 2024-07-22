@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
-use super::{ItemInfo, RightContentType};
+use super::{group::GroupMember, ItemInfo, RightContentType};
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize, PartialEq, Eq)]
 pub enum FriendStatus {
@@ -78,6 +78,28 @@ pub struct Friend {
     pub signature: AttrValue,
     pub create_time: i64,
     pub update_time: i64,
+}
+
+impl From<GroupMember> for Friend {
+    fn from(value: GroupMember) -> Self {
+        Self {
+            fs_id: AttrValue::default(),
+            friend_id: AttrValue::default(),
+            account: value.user_id,
+            name: value.group_name,
+            avatar: value.avatar,
+            gender: value.gender,
+            age: value.age,
+            region: value.region,
+            status: 0,
+            remark: None,
+            email: None,
+            source: AttrValue::default(),
+            signature: AttrValue::default(),
+            create_time: 0,
+            update_time: 0,
+        }
+    }
 }
 
 #[derive(Serialize, Debug, Default, Clone, Deserialize, PartialEq)]

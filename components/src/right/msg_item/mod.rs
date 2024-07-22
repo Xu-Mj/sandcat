@@ -14,8 +14,8 @@ use yewdux::Dispatch;
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{ExclamationIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
 use sandcat_sdk::db;
+use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::model::message::{InviteMsg, InviteType, Message, SendStatus};
-use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::state::{I18nState, MobileState, Notify, SendCallState};
@@ -33,7 +33,7 @@ pub struct MsgItem {
     show_send_fail: bool,
     show_sending: bool,
     pointer: (i32, i32),
-    friend_info: Option<UserWithMatchType>,
+    friend_info: Option<Friend>,
     text_node: NodeRef,
     audio_icon_node: NodeRef,
     /// if timeout then show downloading icon
