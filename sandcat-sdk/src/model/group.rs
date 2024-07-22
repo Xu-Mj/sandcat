@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
+use crate::pb::message::GroupMemberRole;
+
 use super::{
     friend::{Friend, FriendStatus},
     user::User,
@@ -76,11 +78,9 @@ fn is_zero(id: &i32) -> bool {
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMemberFromServer {
     pub age: i32,
-    // #[serde(default)]
     pub group_id: AttrValue,
     pub user_id: AttrValue,
     pub group_name: AttrValue,
-    // pub account: AttrValue,
     pub avatar: AttrValue,
     pub joined_at: i64,
     pub region: Option<AttrValue>,
@@ -88,6 +88,7 @@ pub struct GroupMemberFromServer {
     pub is_friend: bool,
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,
+    pub role: i32,
 }
 
 impl GroupMemberFromServer {
@@ -104,6 +105,7 @@ impl GroupMemberFromServer {
             is_friend: true,
             remark: value.remark,
             signature: value.signature,
+            role: GroupMemberRole::Member as i32,
         }
     }
 }
@@ -125,6 +127,8 @@ pub struct GroupMember {
     pub is_friend: bool,
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,
+    #[serde(default)]
+    pub role: GroupMemberRole,
 }
 
 impl From<GroupMemberFromServer> for GroupMember {
@@ -142,6 +146,7 @@ impl From<GroupMemberFromServer> for GroupMember {
             is_friend: value.is_friend,
             remark: value.remark,
             signature: value.signature,
+            role: GroupMemberRole::try_from(value.role).unwrap_or(GroupMemberRole::Member),
         }
     }
 }
@@ -161,6 +166,7 @@ impl From<Friend> for GroupMember {
             age: value.age,
             is_friend: true,
             remark: value.remark,
+            role: GroupMemberRole::Member,
         }
     }
 }
@@ -180,6 +186,7 @@ impl From<User> for GroupMember {
             age: value.age,
             is_friend: false,
             remark: None,
+            role: GroupMemberRole::Member,
         }
     }
 }

@@ -836,6 +836,7 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
         MsgType::Service => todo!(),
         MsgType::FriendshipReceived => todo!(),
         MsgType::FriendDelete => Ok(Msg::RecRelationshipDel((msg.send_id, msg.seq))),
+        MsgType::FriendBlack => todo!(),
     }
 }
 
