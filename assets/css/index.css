@@ -539,6 +539,10 @@ input {
     border-radius: .3rem;
     transform: translate(-50%, -50%);
     padding: 1rem;
+
+    &[tabindex] {
+        outline: none;
+    }
 }
 
 .info-panel-size-mobile {
