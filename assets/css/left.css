@@ -417,6 +417,7 @@
 
         button {
             border: none;
+            border-radius: .2rem;
             background-color: #e4e9ec;
             width: 6rem;
             height: 2rem;

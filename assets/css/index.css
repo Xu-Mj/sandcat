@@ -354,6 +354,7 @@ input {
 
         button {
             border: none;
+            border-radius: .2rem;
             background-color: var(--color-background-btn);
             width: 6rem;
             height: 2rem;
@@ -396,7 +397,7 @@ input {
     justify-content: space-evenly;
     height: 5rem;
 
-    & div {
+    div {
         height: 100%;
         display: flex;
         justify-content: center;
@@ -407,14 +408,14 @@ input {
         font-size: small;
         color: #90CBFB;
 
-        & svg {
+        svg {
             width: 2rem;
             height: 2rem;
 
             path,
             circle {
                 stroke-width: 2;
-                stroke: #90CBFB;
+                stroke: #90CBFB !important;
             }
 
         }
