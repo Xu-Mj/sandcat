@@ -107,7 +107,7 @@ impl GroupApi for GroupHttp {
             user_id: user_id.to_string(),
             mem_ids,
         };
-        let resp = Request::get("/api/group/member")
+        let resp = Request::post("/api/group/member")
             .header(AUTHORIZE_HEADER, &token())
             .json(&req)?
             .send()

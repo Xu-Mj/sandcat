@@ -88,7 +88,7 @@ impl Component for FriendCard {
                 class="friend-card box-shadow"
                 tabindex="-1"
                 ref={self.node_ref.clone()}
-                // onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
+                onblur={ctx.link().callback(|_| FriendCardMsg::Destroy)}
                 >
                 <div class="friend-card-header">
                     <img alt="avatar" src={utils::get_avatar_url(&friend.avatar)} class="friend-card-avatar"/>

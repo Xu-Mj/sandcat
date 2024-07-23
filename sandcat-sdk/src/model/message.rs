@@ -653,11 +653,16 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             Ok(Msg::Group(GroupMsg::Invitation((info, msg.seq))))
         }
         MsgType::GroupInviteNew => {
-            let info: GroupInviteNewResponse =
+            let members: Vec<String> =
                 bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
+            let resp = GroupInviteNewResponse {
+                group_id: msg.group_id,
+                members,
+            };
+
             Ok(Msg::Group(GroupMsg::InviteNew((
                 msg.send_id,
-                info,
+                resp,
                 msg.seq,
             ))))
         }

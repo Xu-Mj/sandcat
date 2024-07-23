@@ -118,6 +118,7 @@ impl GroupMemberFromServer {
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMember {
     #[serde(skip_serializing_if = "is_zero")]
+    #[serde(default)]
     pub id: i32,
     pub age: i32,
     // #[serde(default)]
@@ -129,6 +130,7 @@ pub struct GroupMember {
     pub joined_at: i64,
     pub region: Option<AttrValue>,
     pub gender: AttrValue,
+    #[serde(default)]
     pub is_friend: bool,
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,

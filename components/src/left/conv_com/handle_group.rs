@@ -1,5 +1,5 @@
 use html::Scope;
-use log::error;
+use log::{debug, error};
 use yew::prelude::*;
 
 use sandcat_sdk::{
@@ -72,53 +72,67 @@ impl Chats {
         resp: GroupInviteNewResponse,
     ) {
         if resp.members.contains(&user_id.to_string()) {
+            debug!("be invited");
             // be invited
             // get group info and group members
-            if let Ok(response) = api::groups()
+            match api::groups()
                 .get_with_members(&user_id, &resp.group_id)
                 .await
             {
-                // save conversation
-                let mut conv = Conversation::from(response.group.clone());
-                conv.unread_count = 0;
+                Ok(response) => {
+                    debug!("get group info and group members");
+                    // save conversation
+                    let mut conv = Conversation::from(response.group.clone());
+                    conv.unread_count = 0;
 
-                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
-                    error!("Failed to store conversation: {:?}", e);
-                    Notification::error("Failed to store conversation").notify();
-                    return;
+                    if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                        error!("Failed to store conversation: {:?}", e);
+                        Notification::error("Failed to store conversation").notify();
+                        return;
+                    }
+
+                    // save group
+                    if let Err(err) = db::db_ins().groups.put(&response.group).await {
+                        error!("store group error: {:?}", err);
+                        Notification::error("Failed to store group info").notify();
+                        return;
+                    }
+
+                    // save group members
+                    if let Err(e) = db::db_ins().group_members.put_list(&response.members).await {
+                        error!("save group member error: {:?}", e);
+                        Notification::error("Failed to store group member").notify();
+                        return;
+                    }
+
+                    // send back received message
+                    ctx.send_message(ChatsMsg::SendBackGroupInvitation(resp.group_id.into()));
+
+                    // send add friend state
+                    ctx.send_message(ChatsMsg::SendCreateGroupToContacts(response.group));
+                    ctx.send_message(ChatsMsg::InsertConv(conv));
                 }
-
-                // save group
-                if let Err(err) = db::db_ins().groups.put(&response.group).await {
-                    error!("store group error: {:?}", err);
-                    Notification::error("Failed to store group info").notify();
-                    return;
+                Err(e) => {
+                    error!("get group info and group members error: {:?}", e);
+                    Notification::error("Failed to get group info and group members").notify();
                 }
-
-                // save group members
-                if let Err(e) = db::db_ins().group_members.put_list(&response.members).await {
-                    error!("save group member error: {:?}", e);
-                    Notification::error("Failed to store group member").notify();
-                    return;
-                }
-
-                // send back received message
-                ctx.send_message(ChatsMsg::SendBackGroupInvitation(resp.group_id.into()));
-
-                // send add friend state
-                ctx.send_message(ChatsMsg::SendCreateGroupToContacts(response.group));
-                ctx.send_message(ChatsMsg::InsertConv(conv));
             }
         } else {
             // get group members
-            if let Ok(members) = api::groups()
+            match api::groups()
                 .get_members(&user_id, &resp.group_id, resp.members)
                 .await
             {
-                // save members
-                if let Err(e) = db::db_ins().group_members.put_list(&members).await {
-                    error!("save group member error: {:?}", e);
-                    Notification::error("Failed to store group member").notify();
+                Ok(members) => {
+                    // save members
+                    if let Err(e) = db::db_ins().group_members.put_list(&members).await {
+                        error!("save group member error: {:?}", e);
+                        Notification::error("Failed to store group member").notify();
+                    }
+                }
+                Err(e) => {
+                    error!("get group members error: {:?}", e);
+                    Notification::error("Failed to get group members").notify();
                 }
             }
         }
