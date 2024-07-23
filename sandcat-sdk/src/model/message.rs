@@ -298,7 +298,7 @@ pub struct GroupInvitation {
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
 pub struct GroupInviteNewResponse {
     pub group_id: String,
-    pub members: Vec<GroupMemberFromServer>,
+    pub members: Vec<String>,
 }
 
 pub type MessageID = String;

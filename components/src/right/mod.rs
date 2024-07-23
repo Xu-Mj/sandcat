@@ -235,11 +235,11 @@ impl Component for Right {
                         let time = chrono::Utc::now().timestamp_millis();
                         // update local group member list
                         let friends = db::db_ins().friends.get_list_by_ids(nodes).await.unwrap();
-                        let members = friends
+                        let members: Vec<GroupMember> = friends
                             .into_iter()
                             .map(|friend| GroupMember::from_friend(&group, friend, time))
                             .collect();
-                        db::db_ins().group_members.put_list(members).await.unwrap();
+                        db::db_ins().group_members.put_list(&members).await.unwrap();
                     });
                 }
                 self.show_friend_list = false;

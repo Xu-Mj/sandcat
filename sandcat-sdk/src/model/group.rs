@@ -70,6 +70,12 @@ pub struct GroupDelete {
     pub is_dismiss: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GroupAndMembers {
+    pub group: Group,
+    pub members: Vec<GroupMember>,
+}
+
 fn is_zero(id: &i32) -> bool {
     *id == 0
 }

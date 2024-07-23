@@ -8,7 +8,7 @@ use sandcat_sdk::{
     model::{
         conversation::Conversation,
         group::{Group, GroupMember, GroupRequest},
-        message::GroupInvitation,
+        message::{GroupInvitation, GroupInviteNewResponse},
         notification::Notification,
         ContentType,
     },
@@ -51,8 +51,8 @@ impl Chats {
         };
 
         // store group members
-        let members = msg.members.into_iter().map(GroupMember::from).collect();
-        if let Err(e) = db::db_ins().group_members.put_list(members).await {
+        let members: Vec<GroupMember> = msg.members.into_iter().map(GroupMember::from).collect();
+        if let Err(e) = db::db_ins().group_members.put_list(&members).await {
             error!("save group member error: {:?}", e);
             Notification::error("Failed to store group member").notify();
             return;
@@ -64,6 +64,64 @@ impl Chats {
         // send add friend state
         ctx.send_message(ChatsMsg::SendCreateGroupToContacts(info));
         ctx.send_message(ChatsMsg::InsertConv(conv));
+    }
+
+    pub async fn handle_invite_new(
+        ctx: Scope<Self>,
+        user_id: String,
+        resp: GroupInviteNewResponse,
+    ) {
+        if resp.members.contains(&user_id.to_string()) {
+            // be invited
+            // get group info and group members
+            if let Ok(response) = api::groups()
+                .get_with_members(&user_id, &resp.group_id)
+                .await
+            {
+                // save conversation
+                let mut conv = Conversation::from(response.group.clone());
+                conv.unread_count = 0;
+
+                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                    error!("Failed to store conversation: {:?}", e);
+                    Notification::error("Failed to store conversation").notify();
+                    return;
+                }
+
+                // save group
+                if let Err(err) = db::db_ins().groups.put(&response.group).await {
+                    error!("store group error: {:?}", err);
+                    Notification::error("Failed to store group info").notify();
+                    return;
+                }
+
+                // save group members
+                if let Err(e) = db::db_ins().group_members.put_list(&response.members).await {
+                    error!("save group member error: {:?}", e);
+                    Notification::error("Failed to store group member").notify();
+                    return;
+                }
+
+                // send back received message
+                ctx.send_message(ChatsMsg::SendBackGroupInvitation(resp.group_id.into()));
+
+                // send add friend state
+                ctx.send_message(ChatsMsg::SendCreateGroupToContacts(response.group));
+                ctx.send_message(ChatsMsg::InsertConv(conv));
+            }
+        } else {
+            // get group members
+            if let Ok(members) = api::groups()
+                .get_members(&user_id, &resp.group_id, resp.members)
+                .await
+            {
+                // save members
+                if let Err(e) = db::db_ins().group_members.put_list(&members).await {
+                    error!("save group member error: {:?}", e);
+                    Notification::error("Failed to store group member").notify();
+                }
+            }
+        }
     }
 
     pub fn create_group(ctx: &Context<Self>, nodes: Vec<String>) {

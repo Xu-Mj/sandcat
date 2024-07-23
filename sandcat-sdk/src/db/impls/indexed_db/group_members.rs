@@ -53,10 +53,10 @@ impl GroupMembers for GroupMembersRepo {
         Ok(())
     }
 
-    async fn put_list(&self, members: Vec<GroupMember>) -> Result<()> {
+    async fn put_list(&self, members: &[GroupMember]) -> Result<()> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         for member in members {
-            let value = serde_wasm_bindgen::to_value(&member)?;
+            let value = serde_wasm_bindgen::to_value(member)?;
             store.put(&value)?;
         }
         Ok(())

@@ -3,10 +3,8 @@ use gloo_net::http::Request;
 use crate::api::group::GroupApi;
 use crate::api::{token, AUTHORIZE_HEADER};
 use crate::error::Result;
-use crate::model::group::GroupMember;
-use crate::pb::message::{
-    GetGroupAndMembersResp, GetMemberReq, GroupInviteNew, RemoveMemberRequest,
-};
+use crate::model::group::{GroupAndMembers, GroupMember};
+use crate::pb::message::{GetMemberReq, GroupInviteNew, RemoveMemberRequest};
 use crate::{
     model::{
         group::{Group, GroupDelete, GroupFromServer, GroupRequest},
@@ -87,11 +85,7 @@ impl GroupApi for GroupHttp {
         Ok(resp)
     }
 
-    async fn get_with_members(
-        &self,
-        user_id: &str,
-        group_id: &str,
-    ) -> Result<GetGroupAndMembersResp> {
+    async fn get_with_members(&self, user_id: &str, group_id: &str) -> Result<GroupAndMembers> {
         let resp = Request::get(format!("/api/group/member/{user_id}/{group_id}").as_str())
             .header(AUTHORIZE_HEADER, &token())
             .send()
