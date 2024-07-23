@@ -11,7 +11,7 @@ use yew::Event;
 
 use crate::db::group_members::GroupMembers;
 use crate::error::Result;
-use crate::model::group::{GroupMember, GroupMemberFromServer};
+use crate::model::group::GroupMember;
 
 use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
 use super::{SuccessCallback, GROUP_ID_INDEX};
@@ -53,7 +53,7 @@ impl GroupMembers for GroupMembersRepo {
         Ok(())
     }
 
-    async fn put_list(&self, members: Vec<GroupMemberFromServer>) -> Result<()> {
+    async fn put_list(&self, members: Vec<GroupMember>) -> Result<()> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         for member in members {
             let value = serde_wasm_bindgen::to_value(&member)?;

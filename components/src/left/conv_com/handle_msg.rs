@@ -9,6 +9,7 @@ use sandcat_sdk::{
     model::{
         conversation::Conversation,
         friend::FriendStatus,
+        group::GroupMember,
         message::{GroupMsg, Msg, RespMsgType, SingleCall},
         notification::Notification,
         voice::Voice,
@@ -450,6 +451,21 @@ impl Chats {
                         self.handle_rec_lack_msg(ctx, seq);
                         let ctx = ctx.link().clone();
                         spawn_local(async move { Self::handle_group_invitation(ctx, msg).await });
+                    }
+                    GroupMsg::InviteNew((_user_id, members, seq)) => {
+                        self.handle_rec_lack_msg(ctx, seq);
+                        spawn_local(async move {
+                            if let Err(e) = db::db_ins()
+                                .group_members
+                                .put_list(
+                                    members.members.into_iter().map(GroupMember::from).collect(),
+                                )
+                                .await
+                            {
+                                error!("save group member error: {:?}", e);
+                                Notification::error("Failed to store group member").notify();
+                            }
+                        });
                     }
                     GroupMsg::Message(mut msg) => {
                         let mut conv = Conversation::from(msg.clone());

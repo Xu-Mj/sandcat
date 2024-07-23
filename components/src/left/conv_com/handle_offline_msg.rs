@@ -8,6 +8,7 @@ use sandcat_sdk::{
     api, db,
     model::{
         conversation::Conversation,
+        group::GroupMember,
         message::{convert_server_msg, GroupMsg, InviteType, Message, Msg, SingleCall},
         ContentType, RightContentType,
     },
@@ -119,6 +120,15 @@ impl Chats {
                 Msg::Group(group_msg) => match group_msg {
                     GroupMsg::Invitation((msg, _)) => {
                         Self::handle_group_invitation(ctx.clone(), msg).await;
+                    }
+                    GroupMsg::InviteNew((_, members, _)) => {
+                        if let Err(e) = db::db_ins()
+                            .group_members
+                            .put_list(members.members.into_iter().map(GroupMember::from).collect())
+                            .await
+                        {
+                            error!("save group member error: {:?}", e);
+                        }
                     }
                     GroupMsg::Dismiss((group_id, _)) => {
                         if let Err(err) = Self::dismiss_group(group_id).await {

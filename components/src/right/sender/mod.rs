@@ -345,7 +345,7 @@ impl Sender {
             }
             // 存储消息、发送消息
             let friend_id = ctx.props().friend_id.clone();
-            let send_time = chrono::Local::now().timestamp_millis();
+            let send_time = chrono::Utc::now().timestamp_millis();
 
             let send_id = ctx.props().cur_user_id.clone();
             let platform = self.get_platform();

@@ -11,10 +11,7 @@ use yew::{AttrValue, Event};
 
 use crate::db::groups::GroupInterface;
 use crate::error::{Error, Result};
-use crate::model::{
-    group::{Group, GroupMember},
-    message::Message,
-};
+use crate::model::{group::Group, message::Message};
 
 use super::SuccessCallback;
 use super::{
@@ -156,10 +153,7 @@ impl GroupInterface for GroupRepo {
                 let cursor = result
                     .dyn_ref::<web_sys::IdbCursorWithValue>()
                     .expect("result is IdbCursorWithValue; qed");
-                let value = cursor.value().unwrap();
-                // 反序列化
-                let group: GroupMember = serde_wasm_bindgen::from_value(value).unwrap();
-                store.delete(&JsValue::from(group.id)).unwrap();
+                cursor.delete().unwrap();
                 let _ = cursor.continue_();
             }
         }) as Box<dyn FnMut(&Event)>);

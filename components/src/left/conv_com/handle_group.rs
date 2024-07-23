@@ -51,7 +51,8 @@ impl Chats {
         };
 
         // store group members
-        if let Err(e) = db::db_ins().group_members.put_list(msg.members).await {
+        let members = msg.members.into_iter().map(GroupMember::from).collect();
+        if let Err(e) = db::db_ins().group_members.put_list(members).await {
             error!("save group member error: {:?}", e);
             Notification::error("Failed to store group member").notify();
             return;

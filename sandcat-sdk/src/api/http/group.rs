@@ -31,7 +31,7 @@ impl GroupApi for GroupHttp {
     }
 
     async fn invite(&self, data: GroupInviteNew) -> Result<()> {
-        Request::post("/api/group/invite")
+        Request::put("/api/group/invite")
             .header(AUTHORIZE_HEADER, &token())
             .json(&data)?
             .send()

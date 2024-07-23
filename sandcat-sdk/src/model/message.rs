@@ -294,6 +294,13 @@ pub struct GroupInvitation {
     pub members: Vec<GroupMemberFromServer>,
 }
 
+/// group invite new member response from server
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq)]
+pub struct GroupInviteNewResponse {
+    pub group_id: String,
+    pub members: Vec<GroupMemberFromServer>,
+}
+
 pub type MessageID = String;
 pub type GroupID = String;
 pub type UserID = String;
@@ -384,6 +391,7 @@ pub enum GroupMsg {
     Message(Message),
     Update((Group, Sequence)),
     Invitation((GroupInvitation, Sequence)),
+    InviteNew((UserID, GroupInviteNewResponse, Sequence)),
     MemberExit((UserID, GroupID, Sequence)),
     Dismiss((GroupID, Sequence)),
     DismissOrExitReceived((UserID, GroupID)),
@@ -644,7 +652,15 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             let info = bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
             Ok(Msg::Group(GroupMsg::Invitation((info, msg.seq))))
         }
-        MsgType::GroupInviteNew => todo!(),
+        MsgType::GroupInviteNew => {
+            let info: GroupInviteNewResponse =
+                bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
+            Ok(Msg::Group(GroupMsg::InviteNew((
+                msg.send_id,
+                info,
+                msg.seq,
+            ))))
+        }
         MsgType::GroupMemberExit => Ok(Msg::Group(GroupMsg::MemberExit((
             msg.send_id,
             msg.group_id,
@@ -921,7 +937,7 @@ impl From<Msg> for PbMsg {
                     }
                     GroupMsg::DismissOrExitReceived(_) => {}
                     GroupMsg::InvitationReceived(_) => {}
-                    GroupMsg::Update(_) => { /* through http api */ }
+                    GroupMsg::Update(_) | GroupMsg::InviteNew(_) => { /* through http api */ }
                 }
                 pb_msg
             }

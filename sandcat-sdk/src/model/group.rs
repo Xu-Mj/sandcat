@@ -85,7 +85,6 @@ pub struct GroupMemberFromServer {
     pub joined_at: i64,
     pub region: Option<AttrValue>,
     pub gender: AttrValue,
-    pub is_friend: bool,
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,
     pub role: i32,
@@ -97,18 +96,18 @@ impl GroupMemberFromServer {
             age: value.age,
             group_id: group.id.clone(),
             user_id: value.friend_id,
-            group_name: group.name.clone(),
+            group_name: value.name,
             avatar: value.avatar,
             joined_at: time,
             region: value.region,
             gender: value.gender,
-            is_friend: true,
             remark: value.remark,
             signature: value.signature,
             role: GroupMemberRole::Member as i32,
         }
     }
 }
+
 /// Group member information
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMember {
@@ -127,8 +126,7 @@ pub struct GroupMember {
     pub is_friend: bool,
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,
-    #[serde(default)]
-    pub role: GroupMemberRole,
+    pub role: i32,
 }
 
 impl From<GroupMemberFromServer> for GroupMember {
@@ -143,10 +141,30 @@ impl From<GroupMemberFromServer> for GroupMember {
             joined_at: value.joined_at,
             region: value.region,
             gender: value.gender,
-            is_friend: value.is_friend,
+            is_friend: false,
             remark: value.remark,
             signature: value.signature,
-            role: GroupMemberRole::try_from(value.role).unwrap_or(GroupMemberRole::Member),
+            role: value.role,
+        }
+    }
+}
+
+impl GroupMember {
+    pub fn from_friend(group: &Group, value: Friend, time: i64) -> Self {
+        Self {
+            id: 0,
+            age: value.age,
+            group_id: group.id.clone(),
+            user_id: value.friend_id,
+            group_name: value.name,
+            avatar: value.avatar,
+            joined_at: time,
+            region: value.region,
+            gender: value.gender,
+            is_friend: true,
+            remark: value.remark,
+            signature: value.signature,
+            role: GroupMemberRole::Member as i32,
         }
     }
 }
@@ -166,7 +184,7 @@ impl From<Friend> for GroupMember {
             age: value.age,
             is_friend: true,
             remark: value.remark,
-            role: GroupMemberRole::Member,
+            role: GroupMemberRole::Member as i32,
         }
     }
 }
@@ -186,7 +204,7 @@ impl From<User> for GroupMember {
             age: value.age,
             is_friend: false,
             remark: None,
-            role: GroupMemberRole::Member,
+            role: GroupMemberRole::Member as i32,
         }
     }
 }

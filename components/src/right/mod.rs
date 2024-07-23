@@ -17,7 +17,7 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
 use log::error;
-use sandcat_sdk::model::group::GroupMemberFromServer;
+use sandcat_sdk::model::group::GroupMember;
 use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::pb::message::GroupInviteNew;
 use wasm_bindgen::JsCast;
@@ -230,14 +230,14 @@ impl Component for Right {
                         {
                             error!("invite member error:{:?}", e);
                             Notification::error("invite member error").notify();
-                            // return;
+                            return;
                         }
                         let time = chrono::Utc::now().timestamp_millis();
                         // update local group member list
                         let friends = db::db_ins().friends.get_list_by_ids(nodes).await.unwrap();
                         let members = friends
                             .into_iter()
-                            .map(|friend| GroupMemberFromServer::from_friend(&group, friend, time))
+                            .map(|friend| GroupMember::from_friend(&group, friend, time))
                             .collect();
                         db::db_ins().group_members.put_list(members).await.unwrap();
                     });
