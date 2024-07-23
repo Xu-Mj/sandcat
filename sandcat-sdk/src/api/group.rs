@@ -1,7 +1,7 @@
 use crate::{
     error::Result,
-    model::group::{Group, GroupDelete, GroupRequest},
-    pb::message::{GroupInviteNew, GroupUpdate, RemoveMemberRequest},
+    model::group::{Group, GroupDelete, GroupMember, GroupRequest},
+    pb::message::{GetGroupAndMembersResp, GroupInviteNew, GroupUpdate, RemoveMemberRequest},
 };
 
 #[async_trait::async_trait(?Send)]
@@ -15,4 +15,19 @@ pub trait GroupApi {
     async fn delete(&self, data: GroupDelete) -> Result<()>;
 
     async fn update(&self, user_id: &str, group: GroupUpdate) -> Result<Group>;
+
+    async fn get_by_id(&self, user_id: &str, group_id: &str) -> Result<Group>;
+
+    async fn get_with_members(
+        &self,
+        user_id: &str,
+        group_id: &str,
+    ) -> Result<GetGroupAndMembersResp>;
+
+    async fn get_members(
+        &self,
+        user_id: &str,
+        group_id: &str,
+        mem_ids: Vec<String>,
+    ) -> Result<Vec<GroupMember>>;
 }
