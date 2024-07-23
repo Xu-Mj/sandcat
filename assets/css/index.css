@@ -62,7 +62,7 @@
 }
 
 :root[theme="dark"] {
-    --color-background-window: var(var(--vt-c-black-mute));
+    --color-background-window: var(--vt-c-black-mute);
     --color-background: rgba(0, 0, 0, var(--v-transparent));
     --color-background-soft: var(--vt-c-black-soft);
     --color-background-mute: var(--vt-c-black-mute);

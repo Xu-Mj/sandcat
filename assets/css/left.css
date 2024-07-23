@@ -3,6 +3,7 @@
     position: fixed;
     border-radius: .3rem;
     overflow: hidden;
+    color: var(--color-text);
     z-index: 10;
 
     &[tabindex] {
