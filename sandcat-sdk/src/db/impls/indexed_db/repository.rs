@@ -157,6 +157,7 @@ impl Repository {
             store
                 .create_index_with_str(MESSAGE_IS_READ_INDEX, "is_read")
                 .unwrap();
+
             let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
             parameters.key_path(Some(&JsValue::from_str("friend_id")));
             let store = db
@@ -192,22 +193,31 @@ impl Repository {
                 )
                 .unwrap();
 
+            // create group_members table
+            let indexes = Array::new();
+            indexes.push(&JsValue::from("user_id"));
+            indexes.push(&JsValue::from("group_id"));
+            let indexes = JsValue::from(indexes);
+
+            let mut parameter = IdbObjectStoreParameters::new();
+            parameter.key_path(Some(&indexes));
             let store = db
                 .create_object_store_with_optional_parameters(
                     &String::from(GROUP_MEMBERS_TABLE_NAME),
-                    &parameters,
+                    &parameter,
                 )
                 .unwrap();
             store
                 .create_index_with_str(GROUP_ID_INDEX, "group_id")
                 .unwrap();
-            // create multipal index
-            let indexes = Array::new();
-            indexes.push(&JsValue::from("user_id"));
-            indexes.push(&JsValue::from("group_id"));
-            let indexes = JsValue::from(indexes);
+
+            // create composite index
             store
-                .create_index_with_str_sequence(GROUP_ID_AND_USER_ID, &indexes)
+                .create_index_with_str_sequence_and_optional_parameters(
+                    GROUP_ID_AND_USER_ID,
+                    &indexes,
+                    &param,
+                )
                 .unwrap();
 
             // create group_id and is_delete index
@@ -219,6 +229,7 @@ impl Repository {
                 .create_index_with_str_sequence(GROUP_ID_AND_IS_DELETE, &indexes)
                 .unwrap();
 
+            // create friendship table and index
             let mut parameter = IdbObjectStoreParameters::new();
             parameter.key_path(Some(&JsValue::from(FRIENDSHIP_ID_INDEX)));
             let store = db
@@ -242,6 +253,7 @@ impl Repository {
                 .create_index_with_str(FRIENDSHIP_UNREAD_INDEX, "read")
                 .unwrap();
 
+            // create friend table and index
             let mut p = IdbObjectStoreParameters::new();
             p.key_path(Some(&JsValue::from_str("friend_id")));
             let store = db

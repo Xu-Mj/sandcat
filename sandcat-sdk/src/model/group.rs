@@ -76,10 +76,6 @@ pub struct GroupAndMembers {
     pub members: Vec<GroupMember>,
 }
 
-fn is_zero(id: &i32) -> bool {
-    *id == 0
-}
-
 /// Group member information
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMemberFromServer {
@@ -117,9 +113,6 @@ impl GroupMemberFromServer {
 /// Group member information
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMember {
-    #[serde(skip_serializing_if = "is_zero")]
-    #[serde(default)]
-    pub id: i32,
     pub age: i32,
     // #[serde(default)]
     pub group_id: AttrValue,
@@ -142,7 +135,6 @@ pub struct GroupMember {
 impl From<GroupMemberFromServer> for GroupMember {
     fn from(value: GroupMemberFromServer) -> Self {
         Self {
-            id: 0,
             group_id: value.group_id,
             age: value.age,
             user_id: value.user_id,
@@ -163,7 +155,6 @@ impl From<GroupMemberFromServer> for GroupMember {
 impl GroupMember {
     pub fn from_friend(group: &Group, value: Friend, time: i64) -> Self {
         Self {
-            id: 0,
             age: value.age,
             group_id: group.id.clone(),
             user_id: value.friend_id,
@@ -184,7 +175,6 @@ impl GroupMember {
 impl From<Friend> for GroupMember {
     fn from(value: Friend) -> Self {
         Self {
-            id: 0,
             user_id: value.friend_id,
             group_id: AttrValue::default(),
             group_name: value.name,
@@ -205,7 +195,6 @@ impl From<Friend> for GroupMember {
 impl From<User> for GroupMember {
     fn from(value: User) -> Self {
         Self {
-            id: 0,
             user_id: value.id,
             group_id: AttrValue::default(),
             group_name: value.name,

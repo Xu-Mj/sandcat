@@ -131,6 +131,7 @@ impl Component for SelectFriendList {
                 false
             }
             AddConvMsg::QueryFriends(result) => {
+                log::debug!("query friends result: {:?}", result);
                 match result {
                     QueryStatus::Querying => self.querying = true,
                     QueryStatus::Success((mut friends, exceptions)) => {
