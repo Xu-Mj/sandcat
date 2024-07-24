@@ -213,7 +213,7 @@ impl Repository {
             // create group_id and is_delete index
             let indexes = Array::new();
             indexes.push(&JsValue::from("group_id"));
-            indexes.push(&JsValue::from("is_delete"));
+            indexes.push(&JsValue::from("is_deleted"));
             let indexes = JsValue::from(indexes);
             store
                 .create_index_with_str_sequence(GROUP_ID_AND_IS_DELETE, &indexes)

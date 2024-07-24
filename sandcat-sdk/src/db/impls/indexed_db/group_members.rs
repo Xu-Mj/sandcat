@@ -14,7 +14,7 @@ use crate::error::Result;
 use crate::model::group::GroupMember;
 
 use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
-use super::{SuccessCallback, GROUP_ID_INDEX};
+use super::{SuccessCallback, GROUP_ID_AND_IS_DELETE};
 
 #[derive(Debug)]
 pub struct GroupMembersRepo {
@@ -119,8 +119,13 @@ impl GroupMembers for GroupMembersRepo {
     async fn get_list_by_group_id(&self, group_id: &str) -> Result<Vec<GroupMember>> {
         let (tx, rx) = oneshot::channel::<Vec<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
-        let index = store.index(GROUP_ID_INDEX)?;
-        let range = IdbKeyRange::only(&JsValue::from(group_id))?;
+        let index = store.index(GROUP_ID_AND_IS_DELETE)?;
+
+        let indices = Array::new();
+        indices.push(&JsValue::from(group_id));
+        indices.push(&JsValue::from(0));
+
+        let range = IdbKeyRange::only(&JsValue::from(indices))?;
         let request = index.open_cursor_with_range(&range.into())?;
 
         let mut groups = Vec::new();
@@ -185,7 +190,7 @@ impl GroupMembers for GroupMembersRepo {
                 .unwrap();
             if !result.is_undefined() && !result.is_null() {
                 let mut member: GroupMember = serde_wasm_bindgen::from_value(result).unwrap();
-                member.is_deleted = 0;
+                member.is_deleted = 1;
 
                 if let Err(err) = store.put(&serde_wasm_bindgen::to_value(&member).unwrap()) {
                     error!("delete group member error: {:?}", err);

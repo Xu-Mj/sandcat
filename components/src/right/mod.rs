@@ -216,6 +216,16 @@ impl Component for Right {
                         if let Err(err) = api::groups().remove_mem(&req).await {
                             error!("remove member error: {:?}", err);
                             Notification::error(err.to_string()).notify();
+                        } else {
+                            // delete from db
+                            if let Err(err) = db::db_ins()
+                                .group_members
+                                .delete_batch(&req.group_id, &req.mem_id)
+                                .await
+                            {
+                                error!("delete member error: {:?}", err);
+                                Notification::error(err.to_string()).notify();
+                            }
                         }
                     });
                     return true;

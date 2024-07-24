@@ -334,7 +334,7 @@ impl Component for SetWindow {
         if self.is_group_admin {
             let members = self.members.clone();
             remove_mem = html! {
-                <div class="remove-mem pointer"
+                <div class="avatar-name pointer"
                     onclick={ctx.props().remove_click.reform(move |_| members.clone())}>
                     <RemoveRectIcon/>
                     <span>{tr!(self.i18n, REMOVE)}</span>
