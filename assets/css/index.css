@@ -339,10 +339,11 @@ input {
         word-wrap: break-word;
         overflow: hidden;
         white-space: pre-wrap;
+        color: var(--color-text);
 
-        &:not(:first-child) {
+        /* &:not(:first-child) {
             color: #999;
-        }
+        } */
     }
 
     .friend-card-body {

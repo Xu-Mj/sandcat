@@ -388,7 +388,7 @@ impl Component for SetWindow {
                 <div class="info">
                 {info}
                 </div>
-                <div class="setting">
+                <div class="set-window-setting">
                     {setting}
                 </div>
                 <div class="bottom pointer" onclick={ctx.link().callback(|_| SetWindowMsg::DeleteClicked)} >
