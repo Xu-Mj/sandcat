@@ -45,9 +45,10 @@ use crate::right::{msg_list::MessageList, postcard::PostCard};
 use crate::select_friends::SelectFriendList;
 
 pub struct Right {
+    node_ref: NodeRef,
     show_setting: bool,
     show_friend_list: bool,
-    node_ref: NodeRef,
+    remove_data: Option<Rc<Vec<GroupMember>>>,
     touch_start: Option<TouchInfo>,
     timeout: Option<Timeout>,
     i18n: FluentBundle<FluentResource>,
@@ -86,6 +87,7 @@ pub enum RightMsg {
     CleanTimer,
     TouchStart(TouchEvent),
     TouchEnd(TouchEvent),
+    RemoveMember(Rc<Vec<GroupMember>>),
 }
 
 impl Right {
@@ -145,6 +147,7 @@ impl Component for Right {
         Self {
             show_setting: false,
             show_friend_list: false,
+            remove_data: None,
             i18n,
             node_ref: NodeRef::default(),
             touch_start: None,
@@ -311,6 +314,11 @@ impl Component for Right {
                 self.touch_start = None;
                 false
             }
+            RightMsg::RemoveMember(members) => {
+                self.show_friend_list = true;
+                self.remove_data = Some(members);
+                true
+            }
         }
     }
 
@@ -354,6 +362,7 @@ impl Component for Right {
                 RightMsg::ShowSetting
             });
             let close = ctx.link().callback(|_| RightMsg::ShowSelectFriendList);
+            let remove_member = ctx.link().callback(RightMsg::RemoveMember);
 
             if self.show_setting {
                 setting = html! (
@@ -363,7 +372,8 @@ impl Component for Right {
                         conv_type={info.get_type()}
                         close={ctx.link().callback(|_| RightMsg::ShowSetting)}
                         plus_click={close.clone()}
-                        lang={self.lang_state.lang} />);
+                        lang={self.lang_state.lang}
+                        remove_click={remove_member} />);
             }
             if self.show_friend_list {
                 let submit_back = ctx.link().callback(RightMsg::CreateGroup);
@@ -374,6 +384,7 @@ impl Component for Right {
                 };
                 friend_list = html!(
                     <SelectFriendList
+                        data={self.remove_data.clone()}
                         except={info.id()}
                         close_back={close}
                         {submit_back}

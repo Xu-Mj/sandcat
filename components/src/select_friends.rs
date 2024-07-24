@@ -1,9 +1,11 @@
 use std::collections::HashSet;
+use std::rc::Rc;
 
 use fluent::FluentBundle;
 use fluent::FluentResource;
 use gloo::utils::document;
 use indexmap::IndexMap;
+use sandcat_sdk::model::group::GroupMember;
 use wasm_bindgen::JsCast;
 use web_sys::HtmlDivElement;
 use web_sys::HtmlInputElement;
@@ -46,16 +48,16 @@ type QueryResult = QueryStatus<(IndexMap<AttrValue, Friend>, Option<HashSet<Attr
 
 #[derive(Debug, Clone)]
 pub enum QueryStatus<T> {
-    // 正在查询
     Querying,
-    // 查询成功
     Success(T),
-    // 查询失败
     Fail(Error),
 }
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct AddConvProps {
+    /// remove group member data
+    #[prop_or_default]
+    pub data: Option<Rc<Vec<GroupMember>>>,
     // 该排除一个用户呢还是排除多个？
     #[prop_or_default]
     pub except: AttrValue,
@@ -72,30 +74,17 @@ impl Component for SelectFriendList {
     type Properties = AddConvProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        // query friend list
-        ctx.link()
-            .send_message(AddConvMsg::QueryFriends(QueryStatus::Querying));
-
-        let from = ctx.props().from.clone();
-        let group_id = ctx.props().except.clone();
-        ctx.link().send_future(async move {
-            let mut exceptions = None;
-            if from == ItemType::Group && !group_id.is_empty() {
-                if let Ok(members) = db::db_ins()
-                    .group_members
-                    .get_list_by_group_id(&group_id)
-                    .await
-                {
-                    exceptions = Some(members.into_iter().map(|v| v.user_id).collect());
-                }
+        let data = if let Some(data) = ctx.props().data.clone() {
+            let mut map = IndexMap::new();
+            for item in data.iter() {
+                map.insert(item.user_id.clone(), Friend::from(item.clone()));
             }
-            match db::db_ins().friends.get_list().await {
-                Ok(friends) => {
-                    AddConvMsg::QueryFriends(QueryStatus::Success((friends, exceptions)))
-                }
-                Err(err) => AddConvMsg::QueryFriends(QueryStatus::Fail(err)),
-            }
-        });
+            map
+        } else {
+            // query friend list
+            Self::query(ctx);
+            IndexMap::new()
+        };
 
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::SELECT_FRIENDS,
@@ -105,7 +94,7 @@ impl Component for SelectFriendList {
         Self {
             node: NodeRef::default(),
             i18n,
-            data: IndexMap::new(),
+            data,
             querying: false,
             err: None,
             is_mobile: MobileState::is_mobile(),
@@ -221,5 +210,33 @@ impl Component for SelectFriendList {
 
     fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
         let _ = self.node.cast::<HtmlDivElement>().unwrap().focus();
+    }
+}
+
+impl SelectFriendList {
+    pub fn query(ctx: &Context<Self>) {
+        ctx.link()
+            .send_message(AddConvMsg::QueryFriends(QueryStatus::Querying));
+
+        let from = ctx.props().from.clone();
+        let group_id = ctx.props().except.clone();
+        ctx.link().send_future(async move {
+            let mut exceptions = None;
+            if from == ItemType::Group && !group_id.is_empty() {
+                if let Ok(members) = db::db_ins()
+                    .group_members
+                    .get_list_by_group_id(&group_id)
+                    .await
+                {
+                    exceptions = Some(members.into_iter().map(|v| v.user_id).collect());
+                }
+            }
+            match db::db_ins().friends.get_list().await {
+                Ok(friends) => {
+                    AddConvMsg::QueryFriends(QueryStatus::Success((friends, exceptions)))
+                }
+                Err(err) => AddConvMsg::QueryFriends(QueryStatus::Fail(err)),
+            }
+        });
     }
 }

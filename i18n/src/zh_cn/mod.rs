@@ -229,6 +229,7 @@ quit = 退出群聊
 
 pub const SET_WINDOW: &str = r#"
 add = 添加
+remove = 移除
 delete = 清空聊天记录
 mute = 消息免打扰
 remark = 备注

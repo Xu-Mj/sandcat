@@ -1,13 +1,15 @@
+use std::rc::Rc;
+
 use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
 use wasm_bindgen::{closure::Closure, JsCast};
 use wasm_bindgen_futures::spawn_local;
-use web_sys::HtmlDivElement;
+use web_sys::{HtmlDivElement, HtmlInputElement};
 use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::PlusRectIcon;
+use icons::{PlusRectIcon, RemoveRectIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::{
     db,
@@ -17,24 +19,27 @@ use sandcat_sdk::{
         group::{Group, GroupMember},
         ItemInfo, RightContentType,
     },
-    pb::message::GroupUpdate,
+    pb::message::{GroupMemberRole, GroupUpdate},
     state::{ItemType, MuteState, RefreshMsgListState, UpdateFriendState},
 };
 use utils::tr;
 
-use crate::constant::{ADD, DELETE, GROUP_ANNOUNCEMENT, GROUP_DESC, GROUP_NAME, MUTE, REMARK};
+use crate::constant::{
+    ADD, DELETE, GROUP_ANNOUNCEMENT, GROUP_DESC, GROUP_NAME, MUTE, REMARK, REMOVE,
+};
 
 use super::util;
 
 pub struct SetWindow {
-    members: Vec<GroupMember>,
+    members: Rc<Vec<GroupMember>>,
     info: Option<Box<dyn ItemInfo>>,
     group: Option<Group>,
+    is_group_admin: bool,
     friend: Option<Friend>,
     conv: Conversation,
     node: NodeRef,
     i18n: FluentBundle<FluentResource>,
-    click_closure: Option<Closure<dyn FnMut(web_sys::MouseEvent)>>,
+    click_closure: Option<Closure<dyn FnMut(MouseEvent)>>,
 }
 
 pub enum SetWindowMsg {
@@ -45,7 +50,7 @@ pub enum SetWindowMsg {
         Conversation,
     ),
     MuteClicked,
-    OnFriendNameChange(Event),
+    OnFriendRemarkChange(Event),
     OnGroupNameChange(Event),
     OnGroupAnnoChange(Event),
     OnGroupDescChange(Event),
@@ -59,6 +64,7 @@ pub struct SetWindowProps {
     pub id: AttrValue,
     pub close: Callback<()>,
     pub plus_click: Callback<()>,
+    pub remove_click: Callback<Rc<Vec<GroupMember>>>,
     pub lang: LanguageType,
 }
 
@@ -73,47 +79,7 @@ impl Component for SetWindow {
     type Properties = SetWindowProps;
 
     fn create(ctx: &Context<Self>) -> Self {
-        let id = ctx.props().id.clone();
-        let conv_type = ctx.props().conv_type.clone();
-
-        // query information
-        ctx.link().send_future(async move {
-            // init interfaces
-            let mut members: Vec<GroupMember> = vec![];
-            let mut friend: Option<Friend> = None;
-            let mut group: Option<Group> = None;
-            match conv_type {
-                RightContentType::Friend => {
-                    let f = db::db_ins().friends.get(id.as_str()).await;
-                    friend = Some(f);
-                }
-                RightContentType::Group => {
-                    // query group information
-                    let g = db::db_ins().groups.get(id.as_str()).await.unwrap().unwrap();
-                    group = Some(g);
-                    // query members by group id
-                    if let Ok(m) = db::db_ins()
-                        .group_members
-                        .get_list_by_group_id(id.as_str())
-                        .await
-                    {
-                        for v in m.into_iter() {
-                            members.push(v);
-                        }
-                    }
-                }
-                _ => {}
-            }
-
-            // qeury conversation is mute
-            let conv = db::db_ins()
-                .convs
-                .get_by_frined_id(id.as_str())
-                .await
-                .unwrap()
-                .unwrap();
-            SetWindowMsg::QueryInfo(Box::new(group), Box::new(friend), members, conv)
-        });
+        Self::query(ctx);
 
         let res = match ctx.props().lang {
             LanguageType::ZhCN => zh_cn::SET_WINDOW,
@@ -123,12 +89,13 @@ impl Component for SetWindow {
 
         Self {
             i18n,
-            members: Vec::new(),
+            members: Rc::new(Vec::new()),
             info: None,
             conv: Conversation::default(),
             node: NodeRef::default(),
             click_closure: None,
             group: None,
+            is_group_admin: false,
             friend: None,
         }
     }
@@ -139,7 +106,7 @@ impl Component for SetWindow {
                 let onclose = ctx.props().close.clone();
                 let node = node.clone();
                 // register click event to document
-                let func = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+                let func = Closure::wrap(Box::new(move |event: MouseEvent| {
                     if let Some(target) = event.target() {
                         let target_node = target.dyn_into::<web_sys::Node>().unwrap();
                         if !node.contains(Some(&target_node)) {
@@ -148,7 +115,7 @@ impl Component for SetWindow {
                             document().set_onclick(None);
                         }
                     }
-                }) as Box<dyn FnMut(web_sys::MouseEvent)>);
+                }) as Box<dyn FnMut(MouseEvent)>);
                 document().set_onclick(Some(func.as_ref().unchecked_ref()));
                 self.click_closure = Some(func);
             }
@@ -160,8 +127,16 @@ impl Component for SetWindow {
             SetWindowMsg::QueryInfo(group, friend, members, mute) => {
                 self.group = *group;
                 self.friend = *friend;
-                self.members = members;
+                self.members = Rc::new(members);
                 self.conv = mute;
+
+                if ctx.props().conv_type == RightContentType::Group {
+                    self.is_group_admin = self.members.iter().any(|v| {
+                        v.user_id == ctx.props().user_id
+                            && (v.role == GroupMemberRole::Owner as i32
+                                || v.role == GroupMemberRole::Admin as i32)
+                    });
+                }
                 true
             }
             SetWindowMsg::MuteClicked => {
@@ -179,9 +154,7 @@ impl Component for SetWindow {
             }
             SetWindowMsg::OnGroupNameChange(event) => {
                 if let Some(info) = self.group.as_mut() {
-                    let name = event
-                        .target_unchecked_into::<web_sys::HtmlInputElement>()
-                        .value();
+                    let name = event.target_unchecked_into::<HtmlInputElement>().value();
                     if info.name != name {
                         info.name = name.into();
                         let name = info.name.clone();
@@ -201,9 +174,7 @@ impl Component for SetWindow {
             }
             SetWindowMsg::OnGroupAnnoChange(event) => {
                 if let Some(info) = self.group.as_mut() {
-                    let anno = event
-                        .target_unchecked_into::<web_sys::HtmlInputElement>()
-                        .value();
+                    let anno = event.target_unchecked_into::<HtmlInputElement>().value();
                     if info.announcement != anno {
                         info.announcement = anno.into();
                         self.update_group(ctx.props().user_id.clone());
@@ -214,9 +185,7 @@ impl Component for SetWindow {
             }
             SetWindowMsg::OnGroupDescChange(event) => {
                 if let Some(info) = self.group.as_mut() {
-                    let desc = event
-                        .target_unchecked_into::<web_sys::HtmlInputElement>()
-                        .value();
+                    let desc = event.target_unchecked_into::<HtmlInputElement>().value();
                     if info.description != desc {
                         info.description = desc.into();
                         self.update_group(ctx.props().user_id.clone());
@@ -261,11 +230,9 @@ impl Component for SetWindow {
                 }
                 false
             }
-            SetWindowMsg::OnFriendNameChange(event) => {
+            SetWindowMsg::OnFriendRemarkChange(event) => {
                 if let Some(friend) = self.friend.as_mut() {
-                    let r = event
-                        .target_unchecked_into::<web_sys::HtmlInputElement>()
-                        .value();
+                    let r = event.target_unchecked_into::<HtmlInputElement>().value();
 
                     let update_friend = |friend: &mut Friend, remark: String| {
                         friend.remark = Some(remark.into());
@@ -299,7 +266,7 @@ impl Component for SetWindow {
                             <span>{&friend.name}</span>
                         </div>
                     };
-                    let on_remark_change = ctx.link().callback(SetWindowMsg::OnFriendNameChange);
+                    let on_remark_change = ctx.link().callback(SetWindowMsg::OnFriendRemarkChange);
                     info = html! {
                         <div class="group-name">
                             <div>
@@ -361,6 +328,20 @@ impl Component for SetWindow {
                 <span>{tr!(self.i18n, ADD)}</span>
             </div>
         };
+
+        // remove button
+        let mut remove_mem = html!();
+        if self.is_group_admin {
+            let members = self.members.clone();
+            remove_mem = html! {
+                <div class="remove-mem pointer"
+                    onclick={ctx.props().remove_click.reform(move |_| members.clone())}>
+                    <RemoveRectIcon/>
+                    <span>{tr!(self.i18n, REMOVE)}</span>
+                </div>
+            };
+        }
+
         let mute_click = ctx.link().callback(|_| SetWindowMsg::MuteClicked);
         let mut switch = classes!("switch", "pointer");
         let mut slider = classes!("slider");
@@ -384,6 +365,7 @@ impl Component for SetWindow {
                 <div class="people">
                     {avatars}
                     {add_friend}
+                    {remove_mem}
                 </div>
                 <div class="info">
                 {info}
@@ -400,6 +382,49 @@ impl Component for SetWindow {
 }
 
 impl SetWindow {
+    fn query(ctx: &Context<Self>) {
+        let id = ctx.props().id.clone();
+        let conv_type = ctx.props().conv_type.clone();
+
+        // query information
+        ctx.link().send_future(async move {
+            // init interfaces
+            let mut members: Vec<GroupMember> = vec![];
+            let mut friend: Option<Friend> = None;
+            let mut group: Option<Group> = None;
+            match conv_type {
+                RightContentType::Friend => {
+                    let f = db::db_ins().friends.get(id.as_str()).await;
+                    friend = Some(f);
+                }
+                RightContentType::Group => {
+                    // query group information
+                    let g = db::db_ins().groups.get(id.as_str()).await.unwrap().unwrap();
+                    group = Some(g);
+                    // query members by group id
+                    if let Ok(m) = db::db_ins()
+                        .group_members
+                        .get_list_by_group_id(id.as_str())
+                        .await
+                    {
+                        for v in m.into_iter() {
+                            members.push(v);
+                        }
+                    }
+                }
+                _ => {}
+            }
+
+            // qeury conversation is mute
+            let conv = db::db_ins()
+                .convs
+                .get_by_frined_id(id.as_str())
+                .await
+                .unwrap()
+                .unwrap();
+            SetWindowMsg::QueryInfo(Box::new(group), Box::new(friend), members, conv)
+        });
+    }
     fn update_group(&self, user_id: AttrValue) {
         let group = self.group.as_ref().unwrap().clone();
         spawn_local(async move {

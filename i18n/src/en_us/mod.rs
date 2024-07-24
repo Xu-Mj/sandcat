@@ -236,6 +236,7 @@ quit = Quit
 
 pub const SET_WINDOW: &str = r#"
 add = Add
+remove = Remove
 delete = CleanChatHistory
 mute = Mute
 remark = Remark

@@ -74,6 +74,7 @@ pub const GROUP_NAME: &str = "group_name";
 pub const GROUP_ANNOUNCEMENT: &str = "group_announcement";
 pub const GROUP_DESC: &str = "group_desc";
 pub const ADD: &str = "add";
+pub const REMOVE: &str = "remove";
 pub const SETTING: &str = "setting";
 pub const FONT_SIZE: &str = "font_size";
 pub const SMALL: &str = "small";
