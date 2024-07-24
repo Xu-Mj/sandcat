@@ -135,6 +135,8 @@ pub struct GroupMember {
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,
     pub role: i32,
+    #[serde(default)]
+    pub is_deleted: bool,
 }
 
 impl From<GroupMemberFromServer> for GroupMember {
@@ -153,6 +155,7 @@ impl From<GroupMemberFromServer> for GroupMember {
             remark: value.remark,
             signature: value.signature,
             role: value.role,
+            is_deleted: false,
         }
     }
 }
@@ -173,6 +176,7 @@ impl GroupMember {
             remark: value.remark,
             signature: value.signature,
             role: GroupMemberRole::Member as i32,
+            is_deleted: false,
         }
     }
 }
@@ -193,6 +197,7 @@ impl From<Friend> for GroupMember {
             is_friend: true,
             remark: value.remark,
             role: GroupMemberRole::Member as i32,
+            is_deleted: false,
         }
     }
 }
@@ -213,6 +218,7 @@ impl From<User> for GroupMember {
             is_friend: false,
             remark: None,
             role: GroupMemberRole::Member as i32,
+            is_deleted: false,
         }
     }
 }

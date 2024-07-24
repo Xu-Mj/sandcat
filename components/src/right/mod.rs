@@ -19,7 +19,7 @@ use gloo::timers::callback::Timeout;
 use log::error;
 use sandcat_sdk::model::group::GroupMember;
 use sandcat_sdk::model::notification::Notification;
-use sandcat_sdk::pb::message::GroupInviteNew;
+use sandcat_sdk::pb::message::{GroupInviteNew, RemoveMemberRequest};
 use wasm_bindgen::JsCast;
 use web_sys::{CssAnimation, HtmlDivElement};
 use yew::platform::spawn_local;
@@ -200,6 +200,27 @@ impl Component for Right {
             }
             RightMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
+                self.show_setting = false;
+                if self.remove_data.is_some() {
+                    // remove member
+                    self.remove_data = None;
+                    let user_id = self.state.login_user.id.to_string();
+                    let group_id = self.conv_state.conv.item_id.to_string();
+                    // send remove member request
+                    spawn_local(async move {
+                        let req = RemoveMemberRequest {
+                            user_id,
+                            group_id,
+                            mem_id: nodes,
+                        };
+                        if let Err(err) = api::groups().remove_mem(&req).await {
+                            error!("remove member error: {:?}", err);
+                            Notification::error(err.to_string()).notify();
+                        }
+                    });
+                    return true;
+                }
+
                 // todo need to handle the group invitation or create group
                 // create group conversation and send 'create group' message
                 if self.conv_state.conv.content_type == RightContentType::Friend {
@@ -245,8 +266,6 @@ impl Component for Right {
                         db::db_ins().group_members.put_list(&members).await.unwrap();
                     });
                 }
-                self.show_friend_list = false;
-                self.show_setting = false;
                 true
             }
             RightMsg::SwitchLang(state) => {
@@ -382,10 +401,15 @@ impl Component for Right {
                 } else {
                     ItemType::Friend
                 };
+                let except = if self.remove_data.is_some() {
+                    self.state.login_user.id.clone()
+                } else {
+                    info.id()
+                };
                 friend_list = html!(
                     <SelectFriendList
                         data={self.remove_data.clone()}
-                        except={info.id()}
+                        {except}
                         close_back={close}
                         {submit_back}
                         lang={self.lang_state.lang}

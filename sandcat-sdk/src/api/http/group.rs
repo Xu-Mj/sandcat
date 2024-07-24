@@ -40,10 +40,10 @@ impl GroupApi for GroupHttp {
             .success()?;
         Ok(())
     }
-    async fn remove_mem(&self, data: RemoveMemberRequest) -> Result<()> {
+    async fn remove_mem(&self, data: &RemoveMemberRequest) -> Result<()> {
         Request::delete("/api/group/member")
             .header(AUTHORIZE_HEADER, &token())
-            .json(&data)?
+            .json(data)?
             .send()
             .await?
             .success()?;

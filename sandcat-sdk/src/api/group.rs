@@ -10,7 +10,7 @@ pub trait GroupApi {
 
     async fn invite(&self, data: GroupInviteNew) -> Result<()>;
 
-    async fn remove_mem(&self, data: RemoveMemberRequest) -> Result<()>;
+    async fn remove_mem(&self, data: &RemoveMemberRequest) -> Result<()>;
 
     async fn delete(&self, data: GroupDelete) -> Result<()>;
 

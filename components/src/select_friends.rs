@@ -77,6 +77,9 @@ impl Component for SelectFriendList {
         let data = if let Some(data) = ctx.props().data.clone() {
             let mut map = IndexMap::new();
             for item in data.iter() {
+                if ctx.props().except == item.user_id {
+                    continue;
+                }
                 map.insert(item.user_id.clone(), Friend::from(item.clone()));
             }
             map
