@@ -20,4 +20,6 @@ pub trait GroupMembers: Debug {
     async fn get_list_by_group_id(&self, group_id: &str) -> Result<Vec<GroupMember>>;
 
     async fn delete(&self, group_id: &str, user_id: &str) -> Result<()>;
+
+    async fn delete_batch(&self, group_id: &str, user_id: &[String]) -> Result<()>;
 }

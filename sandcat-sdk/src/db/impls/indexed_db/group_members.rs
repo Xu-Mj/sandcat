@@ -166,10 +166,15 @@ impl GroupMembers for GroupMembersRepo {
     async fn delete(&self, group_id: &str, user_id: &str) -> Result<()> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         let index = store.index(GROUP_ID_AND_USER_ID)?;
+
         let indices = Array::new();
         indices.push(&JsValue::from(user_id));
         indices.push(&JsValue::from(group_id));
+
         let request = index.get(&JsValue::from(indices))?;
+
+        let (tx, rx) = oneshot::channel::<u8>();
+
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()
@@ -179,14 +184,26 @@ impl GroupMembers for GroupMembersRepo {
                 .result()
                 .unwrap();
             if !result.is_undefined() && !result.is_null() {
-                let group: GroupMember = serde_wasm_bindgen::from_value(result).unwrap();
-                if let Err(err) = store.delete(&JsValue::from(group.id)) {
+                let mut member: GroupMember = serde_wasm_bindgen::from_value(result).unwrap();
+                member.is_deleted = 0;
+
+                if let Err(err) = store.put(&serde_wasm_bindgen::to_value(&member).unwrap()) {
                     error!("delete group member error: {:?}", err);
                 }
             }
+            tx.send(0).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
+        rx.await.unwrap();
+        Ok(())
+    }
+
+    async fn delete_batch(&self, group_id: &str, user_ids: &[String]) -> Result<()> {
+        for id in user_ids {
+            self.delete(group_id, id).await?;
+        }
         Ok(())
     }
 }
