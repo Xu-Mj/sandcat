@@ -12,6 +12,7 @@ use sandcat_sdk::{
         notification::Notification,
         ContentType,
     },
+    pb::message::GroupMemberRole,
     state::{ItemType, UpdateFriendState},
 };
 use yewdux::Dispatch;
@@ -191,9 +192,12 @@ impl Chats {
                 id: String::new(),
             };
 
-            values.push(GroupMember::from(user));
+            let mut member = GroupMember::from(user);
+            member.role = GroupMemberRole::Owner as i32;
+
+            values.push(member);
             // send create request
-            match api::groups().create(group_req, user_id.as_str()).await {
+            match api::groups().create(group_req, &user_id).await {
                 Ok(g) => {
                     log::debug!("group created: {:?}", g);
 
