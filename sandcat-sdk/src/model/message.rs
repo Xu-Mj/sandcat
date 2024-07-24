@@ -392,6 +392,7 @@ pub enum GroupMsg {
     Update((Group, Sequence)),
     Invitation((GroupInvitation, Sequence)),
     InviteNew((UserID, GroupInviteNewResponse, Sequence)),
+    RemoveMember((UserID, GroupInviteNewResponse, Sequence)),
     MemberExit((UserID, GroupID, Sequence)),
     Dismiss((GroupID, Sequence)),
     DismissOrExitReceived((UserID, GroupID)),
@@ -671,6 +672,20 @@ pub fn convert_server_msg(msg: PbMsg) -> Result<Msg, String> {
             msg.group_id,
             msg.seq,
         )))),
+        MsgType::GroupRemoveMember => {
+            let members: Vec<String> =
+                bincode::deserialize(&msg.content).map_err(|e| e.to_string())?;
+            let resp = GroupInviteNewResponse {
+                group_id: msg.group_id,
+                members,
+            };
+
+            Ok(Msg::Group(GroupMsg::RemoveMember((
+                msg.send_id,
+                resp,
+                msg.seq,
+            ))))
+        }
         MsgType::GroupDismiss => Ok(Msg::Group(GroupMsg::Dismiss((msg.group_id, msg.seq)))),
         MsgType::GroupDismissOrExitReceived => todo!(),
         MsgType::GroupInvitationReceived => todo!(),
@@ -942,7 +957,8 @@ impl From<Msg> for PbMsg {
                     }
                     GroupMsg::DismissOrExitReceived(_) => {}
                     GroupMsg::InvitationReceived(_) => {}
-                    GroupMsg::Update(_) | GroupMsg::InviteNew(_) => { /* through http api */ }
+                    GroupMsg::Update(_) | GroupMsg::InviteNew(_) | GroupMsg::RemoveMember(_) => { /* through http api */
+                    }
                 }
                 pb_msg
             }

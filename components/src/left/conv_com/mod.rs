@@ -165,6 +165,7 @@ impl Chats {
                 .unwrap_or_default();
             let convs = db::db_ins().convs.get_convs().await.unwrap_or_default();
 
+            // todo send refresh contacts list message to contacts component
             cloned_ctx.send_message(ChatsMsg::QueryConvList((pined_convs, convs, local_seq)));
         });
         // we need use conv state to rerender the chats component, so use subscribe in create

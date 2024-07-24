@@ -35,6 +35,7 @@ pub struct SetWindow {
     info: Option<Box<dyn ItemInfo>>,
     group: Option<Group>,
     is_group_admin: bool,
+    is_group_deleted: bool,
     friend: Option<Friend>,
     conv: Conversation,
     node: NodeRef,
@@ -96,6 +97,7 @@ impl Component for SetWindow {
             click_closure: None,
             group: None,
             is_group_admin: false,
+            is_group_deleted: false,
             friend: None,
         }
     }
@@ -131,11 +133,19 @@ impl Component for SetWindow {
                 self.conv = mute;
 
                 if ctx.props().conv_type == RightContentType::Group {
-                    self.is_group_admin = self.members.iter().any(|v| {
-                        v.user_id == ctx.props().user_id
-                            && (v.role == GroupMemberRole::Owner as i32
-                                || v.role == GroupMemberRole::Admin as i32)
-                    });
+                    if let Some(group) = self.group.as_ref() {
+                        self.is_group_deleted = group.deleted;
+                    }
+                    if let Some(member) = self
+                        .members
+                        .iter()
+                        .find(|&member| member.user_id == ctx.props().user_id)
+                    {
+                        self.is_group_admin = member.role == GroupMemberRole::Owner as i32
+                            || member.role == GroupMemberRole::Admin as i32;
+                    } else {
+                        self.is_group_deleted = true;
+                    }
                 }
                 true
             }
@@ -322,12 +332,15 @@ impl Component for SetWindow {
         }
 
         let add_click = ctx.props().plus_click.reform(|_| ());
-        let add_friend = html! {
-            <div class="avatar-name pointer" onclick={add_click}>
-                <PlusRectIcon/>
-                <span>{tr!(self.i18n, ADD)}</span>
-            </div>
-        };
+        let mut add_friend = html!();
+        if !self.is_group_deleted {
+            add_friend = html! {
+                <div class="avatar-name pointer" onclick={add_click}>
+                    <PlusRectIcon/>
+                    <span>{tr!(self.i18n, ADD)}</span>
+                </div>
+            };
+        }
 
         // remove button
         let mut remove_mem = html!();
