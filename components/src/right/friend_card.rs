@@ -94,9 +94,9 @@ impl Component for FriendCard {
                     <img alt="avatar" src={utils::get_avatar_url(&friend.avatar)} class="friend-card-avatar"/>
                     <div class="friend-card-info">
                         {remark}
-                        <span>{tr!(self.i18n, NICKNAME)}{&friend.name}</span>
-                        <span>{tr!(self.i18n, ACCOUNT)}{&friend.account}</span>
-                        <span>{tr!(self.i18n, REGION)}{friend.region.clone().unwrap_or_default()} </span>
+                        <span>{tr!(self.i18n, NICKNAME)}{"  "}{&friend.name}</span>
+                        <span>{tr!(self.i18n, ACCOUNT)}{"  "}{&friend.account}</span>
+                        <span>{tr!(self.i18n, REGION)}{"  "}{friend.region.clone().unwrap_or_default()} </span>
                     </div>
                 </div>
                 <div class="friend-card-body">

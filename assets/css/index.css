@@ -354,13 +354,14 @@ input {
         align-items: center;
 
         button {
-            border: none;
-            border-radius: .2rem;
-            background-color: var(--color-background-btn);
             width: 6rem;
             height: 2rem;
             padding: auto;
             cursor: pointer;
+            border: none;
+            border-radius: .2rem;
+            background-color: #2ecc71;
+            color: white;
         }
 
         .apply-detail {
