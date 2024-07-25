@@ -333,6 +333,28 @@
 
     } */
 
+    .msg-list-wrapper {
+        position: relative;
+        height: 80%;
+        min-height: 40%;
+        overflow: hidden;
+    }
+
+    .msg-list-resizer {
+        width: 100%;
+        height: .3rem;
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        transition: all .2s;
+        cursor: s-resize;
+
+        &:hover {
+            background-color: gray;
+            transition-delay: .3s;
+        }
+    }
+
     .msg-list-new-msg-count {
         position: absolute;
         width: 4rem;
@@ -364,8 +386,7 @@
 
     .msg-list {
         width: 100%;
-        height: 80%;
-        min-height: 40%;
+        height: 100%;
         display: flex;
         flex-direction: column-reverse;
         overflow-y: auto;
@@ -375,20 +396,6 @@
         position: relative;
         scroll-behavior: smooth;
 
-        .msg-list-resizer {
-            width: 100%;
-            height: .3rem;
-            position: absolute;
-            left: 0;
-            bottom: 0;
-            transition: all .2s;
-            cursor: s-resize;
-
-            &:hover {
-                background-color: gray;
-                transition-delay: .3s;
-            }
-        }
 
         svg {
             path {
@@ -525,7 +532,8 @@
             svg {
                 width: 3rem;
                 height: 3rem;
-                path{
+
+                path {
                     stroke: #666666;
                 }
             }
