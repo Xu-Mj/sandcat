@@ -43,6 +43,7 @@ pub enum MsgItemMsg {
     ShowForwardMsg,
     ForwardMsg(Vec<String>),
     RelatedMsg,
+    ShowVideoPlayer,
 }
 
 type FriendCardProps = (Friend, i32, i32);
@@ -316,6 +317,11 @@ impl Component for MsgItem {
                 RelatedMsgState::notify(nickname, msg);
                 true
             }
+            MsgItemMsg::ShowVideoPlayer => {
+                self.show_video_palyer = !self.show_video_palyer;
+                log::debug!("show video player:{:?}", self.show_video_palyer);
+                true
+            }
         }
     }
 
@@ -347,7 +353,7 @@ impl Component for MsgItem {
             Some(oncontextmenu),
             msg_content_classes,
         );
-        let _avatar_click = ctx.link().callback(MsgItemMsg::ShowFriendCard);
+        let avatar_click = ctx.link().callback(MsgItemMsg::ShowFriendCard);
 
         // send status
         let mut send_status = html!();
@@ -388,7 +394,7 @@ impl Component for MsgItem {
         let avatar = if ctx.props().msg.is_self {
             html!(<img class="avatar" alt="avatar" src={utils::get_avatar_url(&self.avatar)} />)
         } else {
-            html!(<img class="avatar pointer" alt="avatar" src={utils::get_avatar_url(&self.avatar)} onclick={_avatar_click} />)
+            html!(<img class="avatar pointer" alt="avatar" src={utils::get_avatar_url(&self.avatar)} onclick={avatar_click} />)
         };
 
         // context menu
@@ -428,7 +434,7 @@ impl Component for MsgItem {
         }
 
         // related message
-        let mut related_msg = html!(<>{content}{send_status}</>);
+        let mut content = html!(<>{content}{send_status}</>);
         if let Some(ref local_id) = ctx.props().msg.related_msg_id {
             log::debug!("related msg: {:?}", ctx.props().msg.related_msg_id);
             let (position, float) = if ctx.props().msg.is_self {
@@ -443,10 +449,10 @@ impl Component for MsgItem {
                 ItemType::Friend
             };
 
-            related_msg = html! {
+            content = html! {
                 <div class={format!("related-msg-wrapper {float}")}>
                     <div class={format!("related-msg-content {position}")}>
-                        {related_msg}
+                        {content}
                     </div>
                     <RelatedMsg {type_} local_id={local_id.clone()} nickname={self.nickname.clone()}/>
                 </div>
@@ -462,7 +468,7 @@ impl Component for MsgItem {
                 <div class="msg-item-avatar">
                     {avatar}
                 </div>
-                {related_msg}
+                {content}
             </div>
             </>
         }
