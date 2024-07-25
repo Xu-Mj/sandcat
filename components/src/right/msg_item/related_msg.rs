@@ -5,7 +5,7 @@ use yew::prelude::*;
 
 use sandcat_sdk::{
     db,
-    model::{message::Message, ContentType},
+    model::{file_msg::FileMsg, message::Message, ContentType},
     state::ItemType,
 };
 
@@ -162,15 +162,26 @@ impl Component for RelatedMsg {
                 </video>
             },
             ContentType::File => {
-                let full_original = msg.content.clone();
-                let mut parts = full_original.split("||");
-                let file_name_prefix = parts.next().unwrap_or(&full_original).to_string();
-                let file_name = parts.next().unwrap_or(&full_original).to_string();
+                let file = FileMsg::from(&msg.content);
 
+                let platform = if msg.platform == 0 {
+                    "Desktop"
+                } else {
+                    "Mobile"
+                };
+
+                let href = AttrValue::from(format!("/api/file/get/{}", file.server_name));
                 html! {
-                    <a href={file_name_prefix} download="" class="msg-item-file-name">
-                        {file_name}
-                    </a>
+                    <div class="msg-item-text" >
+                        <a {href} download="" class="msg-item-file-name">
+                            <div>
+                                <p>{&file.name}</p>
+                                <p>{&file.get_size()}</p>
+                            </div>
+                            {file.ext.get_icon()}
+                        </a>
+                        <div class="msg-item-platform">{platform}</div>
+                    </div>
                 }
             }
             ContentType::Emoji => {

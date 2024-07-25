@@ -233,9 +233,7 @@ impl MsgItem {
                     msg.file_content.clone()
                 };
                 let src = img_url.clone();
-                let onclick = ctx
-                    .link()
-                    .callback(move |_: MouseEvent| MsgItemMsg::PreviewImg);
+                let onclick = ctx.link().callback(|_| MsgItemMsg::PreviewImg);
                 let img_preview = if self.show_img_preview {
                     html! {
                         <div class="img-preview pointer" onclick={onclick.clone()}>
@@ -264,10 +262,6 @@ impl MsgItem {
                 </div>
             },
             ContentType::File => {
-                // let full_original = msg.content.clone();
-                // let mut parts = full_original.split("||");
-                // let file_name_prefix = parts.next().unwrap_or(&full_original).to_string();
-                // let file_name = parts.next().unwrap_or(&full_original).to_string();
                 let file = FileMsg::from(&msg.content);
 
                 let platform = if msg.platform == 0 {
