@@ -27,6 +27,7 @@ use crate::right::{msg_item::MsgItem, sender::Sender};
 
 pub struct MessageList {
     list: IndexMap<AttrValue, Message>,
+    wrapper_ref: NodeRef,
     node_ref: NodeRef,
     audio_ref: NodeRef,
     is_playing_audio: AttrValue,
@@ -58,7 +59,6 @@ pub struct MessageList {
 pub enum MessageListMsg {
     QueryMsgList(IndexMap<AttrValue, Message>),
     NextPage,
-    NextPageNone,
     SendFile(Message),
     ReceiveMsg(Rc<RecMessageState>),
     SentMsg(Rc<SendMessageState>),
@@ -74,6 +74,7 @@ pub enum MessageListMsg {
     MsgSendTimeout(AttrValue),
     ResizerMouseDown(MouseEvent),
     ResizerMouseUp,
+    OnScroll(Event),
 }
 
 /// 接收对方用户信息即可，
@@ -388,6 +389,7 @@ impl Component for MessageList {
         let self_ = Self {
             list: IndexMap::new(),
             is_playing_audio: AttrValue::default(),
+            wrapper_ref: NodeRef::default(),
             node_ref: NodeRef::default(),
             audio_ref: NodeRef::default(),
             page_size: 20,
@@ -434,7 +436,6 @@ impl Component for MessageList {
                 self.query(ctx);
                 false
             }
-            MessageListMsg::NextPageNone => false,
             MessageListMsg::SendFile(msg) => {
                 self.list.insert(msg.local_id.clone(), msg);
                 self.scroll_state = ScrollState::Bottom;
@@ -525,7 +526,7 @@ impl Component for MessageList {
                 //  set onmousemove event for document
                 if event.target().is_some() {
                     // get left container
-                    let node = self.node_ref.cast::<HtmlDivElement>().unwrap();
+                    let node = self.wrapper_ref.cast::<HtmlDivElement>().unwrap();
 
                     // mouse move event
                     let listener = Closure::wrap(Box::new(move |event: MouseEvent| {
@@ -582,6 +583,24 @@ impl Component for MessageList {
                 }
                 false
             }
+            MessageListMsg::OnScroll(event) => {
+                let node: HtmlElement = event.target().unwrap().dyn_into().unwrap();
+                let height = node.client_height() - node.scroll_height() + 1;
+                // 判断是否滑动到顶部，
+                if node.scroll_top() == height && !self.is_all {
+                    ctx.link().send_message(MessageListMsg::NextPage);
+                    return false;
+                }
+                // if the new message count is greater than 0, and the scroll state is bottom
+                // clean the new message count
+                // because of the div scroll deraction is reversed,
+                // so we should use the nagetive value
+                if node.scroll_top() > -10 && self.new_msg_count > 0 {
+                    self.new_msg_count = 0;
+                    return true;
+                }
+                false
+            }
         }
     }
 
@@ -599,19 +618,8 @@ impl Component for MessageList {
         }
 
         let props = ctx.props();
-        let is_all = self.is_all;
 
-        let onscroll = ctx.link().callback(move |event: Event| {
-            let node: HtmlElement = event.target().unwrap().dyn_into().unwrap();
-            let height = node.client_height() - node.scroll_height() + 1;
-            // 判断是否滑动到顶部，
-            if node.scroll_top() == height && !is_all {
-                // 翻页
-                return MessageListMsg::NextPage;
-            }
-            MessageListMsg::NextPageNone
-        });
-
+        let onscroll = ctx.link().callback(MessageListMsg::OnScroll);
         let on_file_send = ctx.link().callback(MessageListMsg::SendFile);
 
         // 未读消息数量
@@ -633,7 +641,6 @@ impl Component for MessageList {
             .list
             .iter()
             .map(|(_, msg)| {
-                // let mut avatar = friend.avatar().clone();
                 let (avatar, nickname) = if msg.is_self {
                     (&props.cur_user_avatar, &props.nickname)
                 } else {
@@ -671,10 +678,12 @@ impl Component for MessageList {
 
         html! {
             <div class="msg-container">
-                <audio ref={self.audio_ref.clone()}/>
-                {new_msg_count}
-                <div ref={self.node_ref.clone()} class={msg_list_class} {onscroll}>
-                    {list}
+                <div class="msg-list-wrapper" ref={self.wrapper_ref.clone()}>
+                    {new_msg_count}
+                    <audio ref={self.audio_ref.clone()}/>
+                    <div ref={self.node_ref.clone()} class={msg_list_class} {onscroll}>
+                        {list}
+                    </div>
                     <div class="msg-list-resizer" onmousedown={ctx.link().callback(MessageListMsg::ResizerMouseDown)}></div>
                 </div>
                 <Sender

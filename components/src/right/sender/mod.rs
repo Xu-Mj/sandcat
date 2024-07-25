@@ -1,5 +1,7 @@
 mod component;
 mod emoji;
+use std::str::FromStr;
+
 pub use component::*;
 
 use fluent::FluentBundle;
@@ -8,6 +10,7 @@ use futures_channel::oneshot;
 use gloo::timers::callback::Timeout;
 use gloo::utils::window;
 use log::error;
+use sandcat_sdk::model::file_msg::FileExt;
 use utils::tr;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
@@ -27,6 +30,7 @@ use yewdux::Dispatch;
 use icons::{CloseIcon, FileIcon, ImageIcon, PhoneIcon, VideoIcon};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
+use sandcat_sdk::model::file_msg::FileMsg;
 use sandcat_sdk::model::message::GroupMsg;
 use sandcat_sdk::model::message::Message;
 use sandcat_sdk::model::message::Msg;
@@ -280,7 +284,12 @@ impl Sender {
                 .await
                 .map_err(|err| log::error!("上传文件错误: {:?}", err))
                 .unwrap();
-            // let file_name = file.name();
+
+            let size = file.size() as usize;
+            let ext = FileExt::from_str(file_name_src.split('.').last().unwrap_or(""))
+                .unwrap_or_default();
+            let file_obj = FileMsg::new(file_name_src, file_name, size, ext);
+
             let mut file_content = JsValue::default();
             // 判断文件类型
 
@@ -308,8 +317,7 @@ impl Sender {
                 onload.forget();
                 file_content = rx.await.expect("获取文件内容错误");
             }
-            let file_name = format!("{}||{}", file_name, file_name_src);
-            SenderMsg::FileOnload(file_name, content_type, file_content)
+            SenderMsg::FileOnload(file_obj, content_type, file_content)
         });
     }
 

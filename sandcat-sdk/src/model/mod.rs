@@ -1,4 +1,5 @@
 pub mod conversation;
+pub mod file_msg;
 pub mod friend;
 pub mod group;
 pub mod message;

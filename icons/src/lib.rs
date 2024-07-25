@@ -517,6 +517,76 @@ pub fn msg_item_file_icon() -> Html {
     }
 }
 
+#[function_component(UnknownFileIcon)]
+pub fn unknown_file_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24">
+            <g fill="none" stroke="#666666" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" color="#666666">
+                <path d="M3.5 3.978A1.99 1.99 0 0 1 5.5 2c1.105 0 2 .886 2 1.978c0 .394-.116.76-.317 1.069C6.585 5.966 5.5 6.842 5.5 7.934v.495M5.5 11h.012M10.5 2h2.273c3.26 0 4.892 0 6.024.798c.324.228.612.5.855.805c.848 1.066.848 2.6.848 5.67v2.545c0 2.963 0 4.445-.469 5.628c-.754 1.903-2.348 3.403-4.37 4.113c-1.257.441-2.83.441-5.98.441c-1.798 0-2.698 0-3.416-.252c-1.155-.406-2.066-1.263-2.497-2.35c-.268-.676-.268-1.523-.268-3.216V14"/>
+                <path d="M20.5 12a3.333 3.333 0 0 1-3.333 3.333c-.666 0-1.451-.116-2.098.057a1.67 1.67 0 0 0-1.179 1.179c-.173.647-.057 1.432-.057 2.098A3.333 3.333 0 0 1 10.5 22"/>
+            </g>
+        </svg>
+    }
+}
+
+#[function_component(TextFileIcon)]
+pub fn text_file_icon() -> Html {
+    html! {
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 21 21">
+        <g fill="none" fill-rule="evenodd" stroke="#666666" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16.5 15.5v-7l-5-5h-5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2m-10-5h5m-5 2h7m-7 2h3"/>
+            <path d="M11.5 3.5v3a2 2 0 0 0 2 2h3"/>
+        </g>
+    </svg>
+    }
+}
+
+#[function_component(PdfFileIcon)]
+pub fn pdf_file_icon() -> Html {
+    html! {
+    <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 48 48" stroke-width="2">
+        <path fill="none" stroke="#666666" stroke-linecap="round" stroke-linejoin="round" d="M39.5 15.5h-9a2 2 0 0 1-2-2v-9h-18a2 2 0 0 0-2 2v35a2 2 0 0 0 2 2h27a2 2 0 0 0 2-2zm-11-11l11 11"/>
+        <path fill="none" stroke="#666666" stroke-linecap="round" stroke-linejoin="round" d="M29.939 24.535h4.492m-4.492 4.482h2.931m-2.931-4.482V33.5m-16.369-.017v-8.966h3.017a3.009 3.009 0 0 1 .002 6.018h-3.02m8.185 2.965v-9h1.526a4.5 4.5 0 0 1 4.5 4.5h0a4.5 4.5 0 0 1-4.5 4.5z"/>
+    </svg>
+    }
+}
+
+#[function_component(MdFileIcon)]
+pub fn md_file_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 256 256" stroke-width="2">
+            <path fill="#666666" d="m210.83 85.17l-56-56A4 4 0 0 0 152 28H56a12 12 0 0 0-12 12v72a4 4 0 0 0 8 0V40a4 4 0 0 1 4-4h92v52a4 4 0 0 0 4 4h52v132a4 4 0 0 0 8 0V88a4 4 0 0 0-1.17-2.83M156 41.65L198.34 84H156ZM144 148h-16a4 4 0 0 0-4 4v56a4 4 0 0 0 4 4h16a32 32 0 0 0 0-64m0 56h-12v-48h12a24 24 0 0 1 0 48m-44-52v56a4 4 0 0 1-8 0v-43.31l-20.72 29.6a4 4 0 0 1-6.56 0L44 164.69V208a4 4 0 0 1-8 0v-56a4 4 0 0 1 7.28-2.29L68 185l24.72-35.31A4 4 0 0 1 100 152"/>
+        </svg>
+    }
+}
+
+#[function_component(CsvFileIcon)]
+pub fn csv_file_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 256 256" stroke-width="2">
+            <path fill="#666666" d="M44 180c0 13.23 9 24 20 24a18.15 18.15 0 0 0 13.11-5.9a4 4 0 1 1 5.78 5.54A26.1 26.1 0 0 1 64 212c-15.44 0-28-14.36-28-32s12.56-32 28-32a26.1 26.1 0 0 1 18.89 8.36a4 4 0 1 1-5.78 5.54A18.15 18.15 0 0 0 64 156c-11 0-20 10.77-20 24m82.49-4.85c-10.53-3-15.08-4.91-14.42-10.08a8.51 8.51 0 0 1 3.75-6.49c6.25-4.23 18.77-2.24 23.06-1.11a4 4 0 0 0 2-7.74a61 61 0 0 0-10.47-1.61c-8.12-.54-14.54.75-19.1 3.82a16.66 16.66 0 0 0-7.22 12.13c-1.58 12.49 10.46 16 20.14 18.77c11.26 3.25 16.47 5.49 15.64 11.94a8.94 8.94 0 0 1-3.91 6.75c-6.27 4.17-18.61 2.05-22.83.88a4 4 0 1 0-2.15 7.7a58 58 0 0 0 14.21 1.89c5.18 0 10.83-.86 15.22-3.77a17 17 0 0 0 7.43-12.41c1.8-13.98-11.58-17.82-21.35-20.67m82.85-26.92a4 4 0 0 0-5.11 2.42L188 196.11l-16.23-45.46a4 4 0 1 0-7.54 2.7l20 56a4 4 0 0 0 7.54 0l20-56a4 4 0 0 0-2.43-5.12M212 88v24a4 4 0 0 1-8 0V92h-52a4 4 0 0 1-4-4V36H56a4 4 0 0 0-4 4v72a4 4 0 0 1-8 0V40a12 12 0 0 1 12-12h96a4 4 0 0 1 2.83 1.17l56 56A4 4 0 0 1 212 88m-13.66-4L156 41.65V84Z"/>
+        </svg>
+    }
+}
+
+#[function_component(XlsFileIcon)]
+pub fn xls_file_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 256 256" stroke-width="2">
+            <path fill="#666666" d="M152 208a4 4 0 0 1-4 4h-28a4 4 0 0 1-4-4v-56a4 4 0 0 1 8 0v52h24a4 4 0 0 1 4 4m-61.68-59.25a4 4 0 0 0-5.58.92L68 173.12l-16.75-23.45a4 4 0 0 0-6.5 4.66L63.08 180l-18.33 25.67a4 4 0 0 0 .93 5.58A3.9 3.9 0 0 0 48 212a4 4 0 0 0 3.25-1.67L68 186.88l16.74 23.45A4 4 0 0 0 88 212a3.9 3.9 0 0 0 2.32-.75a4 4 0 0 0 .93-5.58L72.91 180l18.34-25.67a4 4 0 0 0-.93-5.58m100.17 26.4c-10.53-3-15.08-4.91-14.43-10.08a8.57 8.57 0 0 1 3.75-6.49c6.26-4.23 18.77-2.24 23.07-1.11a4 4 0 0 0 2-7.74a61.3 61.3 0 0 0-10.48-1.61c-8.11-.54-14.54.75-19.09 3.82a16.63 16.63 0 0 0-7.22 12.13c-1.59 12.49 10.46 16 20.14 18.77c11.25 3.25 16.46 5.49 15.63 11.94a8.93 8.93 0 0 1-3.9 6.75c-6.28 4.17-18.61 2.05-22.83.88a4 4 0 1 0-2.15 7.7a57.7 57.7 0 0 0 14.21 1.89c5.17 0 10.83-.86 15.22-3.77a17 17 0 0 0 7.43-12.41c1.79-13.98-11.58-17.82-21.35-20.67M204 92h-52a4 4 0 0 1-4-4V36H56a4 4 0 0 0-4 4v72a4 4 0 0 1-8 0V40a12 12 0 0 1 12-12h96a4 4 0 0 1 2.83 1.17l56 56A4 4 0 0 1 212 88v24a4 4 0 0 1-8 0Zm-5.65-8L156 41.65V84Z"/>
+        </svg>
+    }
+}
+
+#[function_component(ZipFileIcon)]
+pub fn zip_file_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 256 256" stroke-width="2">
+            <path fill="#666666" d="M184 148h-16a4 4 0 0 0-4 4v56a4 4 0 0 0 8 0v-12h12a24 24 0 0 0 0-48m0 40h-12v-32h12a16 16 0 0 1 0 32m-52-36v56a4 4 0 0 1-8 0v-56a4 4 0 0 1 8 0m-40.53 2l-28.58 50H88a4 4 0 0 1 0 8H56a4 4 0 0 1-3.47-6l28.58-50H56a4 4 0 0 1 0-8h32a4 4 0 0 1 3.47 6m119.36-68.83l-56-56A4 4 0 0 0 152 28H56a12 12 0 0 0-12 12v72a4 4 0 0 0 8 0V40a4 4 0 0 1 4-4h92v52a4 4 0 0 0 4 4h52v20a4 4 0 0 0 8 0V88a4 4 0 0 0-1.17-2.83M156 84V41.65L198.34 84Z"/>
+        </svg>
+    }
+}
+
 #[function_component(FilePreviewIcon)]
 pub fn file_preview_icon() -> Html {
     html! {
@@ -542,8 +612,8 @@ pub fn phone_icon() -> Html {
 pub fn video_icon() -> Html {
     html! {
     <svg class="icon" width="20" height="20" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-     <path d="M4 10C4 8.89543 4.89543 8 6 8H34C35.1046 8 36 8.89543 36 10V19L44 13V36L36 30V38C36 39.1046 35.1046 40 34 40H6C4.89543 40 4 39.1046 4 38V10Z" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-     <circle cx="17" cy="21" r="5" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M4 10C4 8.89543 4.89543 8 6 8H34C35.1046 8 36 8.89543 36 10V19L44 13V36L36 30V38C36 39.1046 35.1046 40 34 40H6C4.89543 40 4 39.1046 4 38V10Z" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="17" cy="21" r="5" fill="none" stroke="#000000" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
      }
 }

@@ -12,8 +12,9 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{ExclamationIcon, MsgItemFileIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
+use icons::{ExclamationIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
 use sandcat_sdk::db;
+use sandcat_sdk::model::file_msg::FileMsg;
 use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::model::message::{InviteMsg, InviteType, Message, SendStatus};
 use sandcat_sdk::model::ContentType;
@@ -226,10 +227,8 @@ impl MsgItem {
             }
             ContentType::Image => {
                 let img_url = if msg.file_content.is_empty() {
-                    let full_original = &msg.content;
-                    let file_name_prefix =
-                        full_original.split("||").next().unwrap_or(full_original);
-                    AttrValue::from(format!("/api/file/get/{}", file_name_prefix))
+                    let file = FileMsg::from(&msg.content);
+                    AttrValue::from(format!("/api/file/get/{}", file.server_name))
                 } else {
                     msg.file_content.clone()
                 };
@@ -265,10 +264,11 @@ impl MsgItem {
                 </div>
             },
             ContentType::File => {
-                let full_original = msg.content.clone();
-                let mut parts = full_original.split("||");
-                let file_name_prefix = parts.next().unwrap_or(&full_original).to_string();
-                let file_name = parts.next().unwrap_or(&full_original).to_string();
+                // let full_original = msg.content.clone();
+                // let mut parts = full_original.split("||");
+                // let file_name_prefix = parts.next().unwrap_or(&full_original).to_string();
+                // let file_name = parts.next().unwrap_or(&full_original).to_string();
+                let file = FileMsg::from(&msg.content);
 
                 let platform = if msg.platform == 0 {
                     "Desktop"
@@ -276,17 +276,15 @@ impl MsgItem {
                     "Mobile"
                 };
 
+                let href = AttrValue::from(format!("/api/file/get/{}", file.server_name));
                 html! {
                     <div class={msg_content_classes} {oncontextmenu}>
-                        <a href={file_name_prefix} download="" class="msg-item-file-name">
+                        <a {href} download="" class="msg-item-file-name">
                             <div>
-                                <p>
-                                    {file_name}
-                                </p>
-                                <p>
-                                </p>
+                                <p>{&file.name}</p>
+                                <p>{&file.get_size()}</p>
                             </div>
-                            <MsgItemFileIcon />
+                            {file.ext.get_icon()}
                         </a>
                         <div class="msg-item-platform">{platform}</div>
                     </div>
@@ -295,9 +293,7 @@ impl MsgItem {
             ContentType::Emoji => {
                 html! {
                     <div class="msg-item-emoji" {oncontextmenu}>
-                        // <span class="msg-item-emoji">
-                            <img class="emoji" alt="emoji" src={msg.content.clone()} />
-                        // </span>
+                        <img class="emoji" alt="emoji" src={&msg.content} />
                     </div>
                 }
             }
