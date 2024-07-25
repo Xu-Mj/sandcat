@@ -5,9 +5,11 @@ use yew::prelude::*;
 
 use sandcat_sdk::{
     db,
-    model::{file_msg::FileMsg, message::Message, ContentType},
+    model::{message::Message, ContentType},
     state::ItemType,
 };
+
+use crate::right::msg_item::{get_file_html, get_img_html};
 
 pub struct RelatedMsg {
     text_node: NodeRef,
@@ -125,65 +127,16 @@ impl Component for RelatedMsg {
                 }
             }
             ContentType::Image => {
-                let img_url = if msg.file_content.is_empty() {
-                    let full_original = &msg.content;
-                    let file_name_prefix =
-                        full_original.split("||").next().unwrap_or(full_original);
-                    AttrValue::from(format!("/api/file/get/{}", file_name_prefix))
-                } else {
-                    msg.file_content.clone()
-                };
-                let src = img_url.clone();
-                let onclick = ctx
-                    .link()
-                    .callback(move |_: MouseEvent| Self::Message::PreviewImg);
-                let img_preview = if self.show_img_preview {
-                    html! {
-                        <div class="img-preview pointer" onclick={onclick.clone()}>
-                            <img alt="preview-img" src={src} />
-                        </div>
-                    }
-                } else {
-                    html!()
-                };
-                html! {
-                <>
-                    {img_preview}
-                    <div class="img-mask">
-                    </div>
-                    {format!("{}: ",ctx.props().nickname)}
-                    <img class="msg-item-img" alt="image" src={img_url} {onclick}/>
-                </>
-                }
+                let onclick = ctx.link().callback(|_| Self::Message::PreviewImg);
+                let nickname = Some(format!("{}:  ", ctx.props().nickname));
+                get_img_html(msg, None, self.show_img_preview, onclick, nickname)
             }
             ContentType::Video => html! {
                 <video class="msg-item-video">
                     <source src={&msg.content} type="video/mp4" />
                 </video>
             },
-            ContentType::File => {
-                let file = FileMsg::from(&msg.content);
-
-                let platform = if msg.platform == 0 {
-                    "Desktop"
-                } else {
-                    "Mobile"
-                };
-
-                let href = AttrValue::from(format!("/api/file/get/{}", file.server_name));
-                html! {
-                    <div class="msg-item-text" >
-                        <a {href} download="" class="msg-item-file-name">
-                            <div>
-                                <p>{&file.name}</p>
-                                <p>{&file.get_size()}</p>
-                            </div>
-                            {file.ext.get_icon()}
-                        </a>
-                        <div class="msg-item-platform">{platform}</div>
-                    </div>
-                }
-            }
+            ContentType::File => get_file_html(msg, "msg-item-text".to_string()),
             ContentType::Emoji => {
                 html! {
                     <img class="emoji" alt="emoji" src={msg.content.clone()} />
