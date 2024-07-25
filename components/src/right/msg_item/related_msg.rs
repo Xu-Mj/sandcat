@@ -1,11 +1,13 @@
 use log::error;
-use sandcat_sdk::{
-    db,
-    model::{message::Message, ContentType},
-};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlElement;
 use yew::prelude::*;
+
+use sandcat_sdk::{
+    db,
+    model::{message::Message, ContentType},
+    state::ItemType,
+};
 
 pub struct RelatedMsg {
     text_node: NodeRef,
@@ -16,6 +18,7 @@ pub struct RelatedMsg {
 
 #[derive(Debug, Clone, PartialEq, Properties)]
 pub struct Props {
+    pub type_: ItemType,
     pub local_id: AttrValue,
     pub nickname: AttrValue,
 }
@@ -33,9 +36,15 @@ impl Component for RelatedMsg {
 
     fn create(ctx: &Context<Self>) -> Self {
         let local_id = ctx.props().local_id.clone();
+        let type_ = ctx.props().type_.clone();
         let ctx = ctx.link().clone();
         spawn_local(async move {
-            if let Ok(Some(msg)) = db::db_ins().messages.get_msg_by_local_id(&local_id).await {
+            let msg = match type_ {
+                ItemType::Group => db::db_ins().group_msgs.get_msg_by_local_id(&local_id).await,
+                ItemType::Friend => db::db_ins().messages.get_msg_by_local_id(&local_id).await,
+            };
+
+            if let Ok(Some(msg)) = msg {
                 ctx.send_message(Self::Message::ShowRelated(msg));
             } else {
                 error!("related msg not found");

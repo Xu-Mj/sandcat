@@ -159,7 +159,6 @@ impl GroupMessages for GroupMsgRepo {
                     .expect("result is IdbCursorWithValue; qed");
 
                 let value = cursor.value().unwrap();
-                // 反序列化
                 let msg: Message = serde_wasm_bindgen::from_value(value).unwrap();
 
                 let _ = tx.take().unwrap().send(msg);
@@ -169,6 +168,36 @@ impl GroupMessages for GroupMsgRepo {
         }) as Box<dyn FnMut(&Event)>);
 
         request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        Ok(rx.await.unwrap())
+    }
+
+    async fn get_msg_by_local_id(&self, local_id: &str) -> Result<Option<Message>> {
+        let store = self.store(GROUP_MSG_TABLE_NAME).await?;
+        let index = store.index(MESSAGE_ID_INDEX)?;
+        let request = index.get(&JsValue::from(local_id))?;
+
+        let (tx, rx) = oneshot::channel::<Option<Message>>();
+
+        let onsuccess = Closure::once(move |event: &Event| {
+            let result = event
+                .target()
+                .unwrap()
+                .dyn_ref::<IdbRequest>()
+                .unwrap()
+                .result()
+                .unwrap();
+            let mut msg = None;
+            if !result.is_undefined() && !result.is_null() {
+                msg = Some(serde_wasm_bindgen::from_value(result).unwrap());
+            }
+            tx.send(msg).unwrap();
+        });
+
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+
+        let on_add_error = Closure::once(move |event: &Event| error!("query error: {:?}", event));
+        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+
         Ok(rx.await.unwrap())
     }
 
@@ -270,7 +299,6 @@ impl GroupMessages for GroupMsgRepo {
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
         let range = IdbKeyRange::only(&JsValue::from(group_id))?;
         let request = index.open_cursor_with_range(&range)?;
-        let store = store.clone();
 
         let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
             let target = event.target().expect("msg");
@@ -283,18 +311,19 @@ impl GroupMessages for GroupMsgRepo {
                 let cursor = result
                     .dyn_ref::<web_sys::IdbCursorWithValue>()
                     .expect("result is IdbCursorWithValue; qed");
-                let value = cursor.value().unwrap();
-                // 反序列化
-                if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
-                    store.delete(&JsValue::from(msg.id)).unwrap();
-                }
-                let _ = cursor.continue_();
+
+                cursor.delete().unwrap();
+
+                cursor.continue_().unwrap();
             }
         }) as Box<dyn FnMut(&Event)>);
+
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+
         *self.on_batch_del_success.borrow_mut() = Some(onsuccess);
 
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
         Ok(())
     }
 }

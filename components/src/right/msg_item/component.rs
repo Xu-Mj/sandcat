@@ -436,12 +436,19 @@ impl Component for MsgItem {
             } else {
                 ("related-msg-left", "colunm-float-left")
             };
+
+            let type_ = if ctx.props().conv_type == RightContentType::Group {
+                ItemType::Group
+            } else {
+                ItemType::Friend
+            };
+
             related_msg = html! {
                 <div class={format!("related-msg-wrapper {float}")}>
                     <div class={format!("related-msg-content {position}")}>
                         {related_msg}
                     </div>
-                    <RelatedMsg local_id={local_id.clone()} nickname={self.nickname.clone()}/>
+                    <RelatedMsg {type_} local_id={local_id.clone()} nickname={self.nickname.clone()}/>
                 </div>
             };
         }

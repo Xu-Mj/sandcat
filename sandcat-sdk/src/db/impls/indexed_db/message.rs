@@ -351,7 +351,6 @@ impl Messages for MessageRepo {
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
         let range = IdbKeyRange::only(&JsValue::from(friend_id))?;
         let request = index.open_cursor_with_range(&range)?;
-        let store = store.clone();
 
         let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
             let target = event.target().expect("msg");
@@ -364,11 +363,9 @@ impl Messages for MessageRepo {
                 let cursor = result
                     .dyn_ref::<web_sys::IdbCursorWithValue>()
                     .expect("result is IdbCursorWithValue; qed");
-                let value = cursor.value().unwrap();
 
-                if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
-                    store.delete(&JsValue::from(msg.id)).unwrap();
-                }
+                cursor.delete().unwrap();
+
                 let _ = cursor.continue_();
             }
         }) as Box<dyn FnMut(&Event)>);
