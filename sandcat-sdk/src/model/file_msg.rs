@@ -25,6 +25,22 @@ impl FileMsg {
             ext,
         }
     }
+
+    pub fn get_size(&self) -> String {
+        let size_in_kb = self.size as f64 / 1024.0;
+        let size_in_mb = size_in_kb / 1024.0;
+        let size_in_gb = size_in_mb / 1024.0;
+
+        if size_in_gb >= 1.0 {
+            format!("{:.2} GB", size_in_gb)
+        } else if size_in_mb >= 1.0 {
+            format!("{:.2} MB", size_in_mb)
+        } else if size_in_kb >= 1.0 {
+            format!("{:.2} KB", size_in_kb)
+        } else {
+            format!("{} B", self.size)
+        }
+    }
 }
 
 impl From<&AttrValue> for FileMsg {
