@@ -510,22 +510,35 @@
         /* 文件类型消息 */
 
         .msg-item-file-name {
-            width: 8rem;
-            height: 10rem;
-            background: url("/images/file-preview-icon.png") no-repeat center center;
-            background-size: cover;
+            width: 15rem;
+            height: 4rem;
+            padding: .5rem;
             display: flex;
-            align-items: flex-end;
+            align-items: flex-start;
+            justify-content: space-between;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             text-decoration: none;
-            color: inherit
+            color: inherit;
+
+            svg {
+                width: 3rem;
+                height: 3rem;
+                path{
+                    stroke: #666666;
+                }
+            }
         }
 
-        .msg-item-file-name:hover {
-            white-space: normal;
-            overflow: visible;
+        .msg-item-platform {
+            width: 15rem;
+            height: 1.5rem;
+            line-height: 1.5rem;
+            padding: .2rem 0 0 .5rem;
+            border-top: 1px solid gray;
+            font-size: small;
+            color: gray;
         }
 
         /* 消息内容 */

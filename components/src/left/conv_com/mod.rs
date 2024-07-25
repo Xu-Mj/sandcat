@@ -78,26 +78,33 @@ pub struct Chats {
     /// listen the conversation change
     /// used to change the right panel content
     conv_state: Rc<ConvState>,
+    /// listen the conversation state change
     conv_dispatch: Dispatch<ConvState>,
     /// listen the conversation remove,
     /// used to receive that contact list to delete the friends to remove the conversation
     _remove_conv_dis: Dispatch<RemoveConvState>,
     /// listen to the create conv event, like:
     _create_group_conv_dis: Dispatch<CreateGroupConvState>,
+    /// listen the create conv change event
     _create_conv_dis: Dispatch<CreateConvState>,
-    // _create_conv_listener: ContextHandle<Rc<CreateConvState>>,
-    /// mute conversation,
     /// used to receive the mute event from right panel
     _mute_dis: Dispatch<MuteState>,
     /// send the create friend/group event to contact list
     /// send the event to other components after receive a message
     rec_msg_dis: Dispatch<RecMessageState>,
+    /// language state
     lang_state: Rc<I18nState>,
+    /// listen the language state change event
     _lang_dispatch: Dispatch<I18nState>,
+    /// listen the update friend state event
     _update_dis: Dispatch<UpdateFriendState>,
+    /// user touch start position
     touch_start: i32,
+    /// whether the device is mobile
     is_mobile: bool,
+    /// whether the user is knocked to offline
     is_knocked: bool,
+    /// get token interval
     token_getter: Option<Timeout>,
     /// refresh token
     refresh_token_getter: Option<Timeout>,
@@ -150,14 +157,17 @@ impl Chats {
                         return;
                     }
                 };
+
                 local_seq.local_seq = server_seq.seq;
                 local_seq.send_seq = server_seq.send_seq;
+
                 if let Err(e) = db::db_ins().seq.put(&local_seq).await {
                     error!("save local seq error: {:?}", e);
                     Notification::error("save local seq error").notify();
                     return;
                 }
             }
+
             let pined_convs = db::db_ins()
                 .convs
                 .get_pined_convs()
@@ -168,6 +178,7 @@ impl Chats {
             // todo send refresh contacts list message to contacts component
             cloned_ctx.send_message(ChatsMsg::QueryConvList((pined_convs, convs, local_seq)));
         });
+
         // we need use conv state to rerender the chats component, so use subscribe in create
         let conv_dispatch =
             Dispatch::global().subscribe(ctx.link().callback(ChatsMsg::ConvStateChanged));
@@ -184,8 +195,8 @@ impl Chats {
             Dispatch::global().subscribe_silent(ctx.link().callback(ChatsMsg::MuteStateChanged));
         let rec_msg_dis =
             Dispatch::global().subscribe_silent(ctx.link().callback(|_| ChatsMsg::None));
-
         let rec_msg_listener = ctx.link().callback(ChatsMsg::ReceiveMsg);
+
         let addr = utils::get_local_storage(WS_ADDR).unwrap();
         let platform = MobileState::get();
         let is_mobile = *platform == MobileState::Mobile;
@@ -259,6 +270,7 @@ impl Chats {
                 if let Err(err) = db::db_ins().friendships.put_fs_batch(&res.fs).await {
                     error!("save friends error: {:?}", err);
                 }
+
                 // update offline_time(last sync time)
                 utils::set_local_storage(
                     OFFLINE_TIME,

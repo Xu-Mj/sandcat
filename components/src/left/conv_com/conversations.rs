@@ -369,16 +369,13 @@ impl Component for Chats {
                 if let Some(claims) = Self::decode_jwt(&token) {
                     let ctx = ctx.link().clone();
                     let timeout = claims.exp - chrono::Utc::now().timestamp() - 60;
+                    let callback = Some(Timeout::new((timeout as u32) * 1000, move || {
+                        ctx.send_message(ChatsMsg::RefreshToken(is_refresh));
+                    }));
                     if is_refresh {
-                        self.refresh_token_getter =
-                            Some(Timeout::new((timeout as u32) * 1000, move || {
-                                ctx.send_message(ChatsMsg::RefreshToken(is_refresh));
-                            }));
+                        self.refresh_token_getter = callback;
                     } else {
-                        self.token_getter =
-                            Some(Timeout::new((timeout as u32) * 1000, move || {
-                                ctx.send_message(ChatsMsg::RefreshToken(is_refresh));
-                            }));
+                        self.token_getter = callback;
                     }
                 }
                 false

@@ -12,7 +12,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{ExclamationIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
+use icons::{ExclamationIcon, MsgItemFileIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
 use sandcat_sdk::db;
 use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::model::message::{InviteMsg, InviteType, Message, SendStatus};
@@ -270,11 +270,25 @@ impl MsgItem {
                 let file_name_prefix = parts.next().unwrap_or(&full_original).to_string();
                 let file_name = parts.next().unwrap_or(&full_original).to_string();
 
+                let platform = if msg.platform == 0 {
+                    "Desktop"
+                } else {
+                    "Mobile"
+                };
+
                 html! {
-                    <div class="msg-item-content" {oncontextmenu}>
+                    <div class={msg_content_classes} {oncontextmenu}>
                         <a href={file_name_prefix} download="" class="msg-item-file-name">
-                            {file_name}
+                            <div>
+                                <p>
+                                    {file_name}
+                                </p>
+                                <p>
+                                </p>
+                            </div>
+                            <MsgItemFileIcon />
                         </a>
+                        <div class="msg-item-platform">{platform}</div>
                     </div>
                 }
             }
