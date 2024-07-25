@@ -227,10 +227,8 @@ impl MsgItem {
             }
             ContentType::Image => {
                 let img_url = if msg.file_content.is_empty() {
-                    let full_original = &msg.content;
-                    let file_name_prefix =
-                        full_original.split("||").next().unwrap_or(full_original);
-                    AttrValue::from(format!("/api/file/get/{}", file_name_prefix))
+                    let file = FileMsg::from(&msg.content);
+                    AttrValue::from(format!("/api/file/get/{}", file.server_name))
                 } else {
                     msg.file_content.clone()
                 };
@@ -278,12 +276,13 @@ impl MsgItem {
                     "Mobile"
                 };
 
+                let href = AttrValue::from(format!("/api/file/get/{}", file.server_name));
                 html! {
                     <div class={msg_content_classes} {oncontextmenu}>
-                        <a href={file.server_name} download="" class="msg-item-file-name">
+                        <a {href} download="" class="msg-item-file-name">
                             <div>
-                                <p>{file.name}</p>
-                                <p>{file.size}</p>
+                                <p>{&file.name}</p>
+                                <p>{&file.get_size()}</p>
                             </div>
                             {file.ext.get_icon()}
                         </a>

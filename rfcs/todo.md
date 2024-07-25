@@ -30,3 +30,4 @@
 - keep cursor style while dragging the resizer
 - use indexeddb to store last sync/offline time instead of local storage
 - bug: switch component will cause `closure invoke after being dropped` while setting window is showing
+- bug: file message cannot be related

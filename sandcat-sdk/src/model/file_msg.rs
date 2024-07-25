@@ -8,7 +8,7 @@ use icons::{
     CsvFileIcon, MdFileIcon, PdfFileIcon, TextFileIcon, UnknownFileIcon, XlsFileIcon, ZipFileIcon,
 };
 
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FileMsg {
     pub name: String,
     pub server_name: String,
@@ -39,6 +39,17 @@ impl FileMsg {
             format!("{:.2} KB", size_in_kb)
         } else {
             format!("{} B", self.size)
+        }
+    }
+}
+
+impl Default for FileMsg {
+    fn default() -> Self {
+        Self {
+            name: String::from("file"),
+            server_name: Default::default(),
+            size: Default::default(),
+            ext: Default::default(),
         }
     }
 }
