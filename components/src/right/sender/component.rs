@@ -1,3 +1,4 @@
+use std::mem;
 use std::rc::Rc;
 
 use wasm_bindgen::{JsCast, JsValue};
@@ -10,6 +11,7 @@ use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{CloseIcon, FileIcon, KeyboardIcon, SmileIcon, VoiceIcon};
+use sandcat_sdk::model::file_msg::FileMsg;
 use sandcat_sdk::model::voice::Voice;
 use sandcat_sdk::{
     model::message::{InviteMsg, InviteType, Message, SendStatus},
@@ -32,7 +34,7 @@ pub enum SenderMsg {
     SendFileIconClicked,
     FileInputChanged(Event),
     SendFile,
-    FileOnload(String, ContentType, JsValue),
+    FileOnload(FileMsg, ContentType, JsValue),
     OnEnterKeyUp(KeyboardEvent),
     OnEnterKeyDown(KeyboardEvent),
     OnPaste(Event),
@@ -131,14 +133,15 @@ impl Component for Sender {
                 false
             }
             SenderMsg::SendFile => {
-                for item in &self.file_list {
-                    self.send_file(ctx, item.file.clone());
+                let file_list = mem::take(&mut self.file_list);
+                for item in file_list.into_iter() {
+                    self.send_file(ctx, item.file);
                 }
-                self.file_list = vec![];
+
                 self.show_file_sender = false;
                 false
             }
-            SenderMsg::FileOnload(file_name, content_type, file_content) => {
+            SenderMsg::FileOnload(file, content_type, file_content) => {
                 let time = chrono::Utc::now().timestamp_millis();
                 let file_content = if let Some(file_content) = file_content.as_string() {
                     file_content.into()
@@ -148,7 +151,7 @@ impl Component for Sender {
 
                 let msg = Message {
                     local_id: nanoid::nanoid!().into(),
-                    content: file_name.clone().into(),
+                    content: file.to_string().into(),
                     is_self: true,
                     create_time: time,
                     friend_id: ctx.props().friend_id.clone(),
