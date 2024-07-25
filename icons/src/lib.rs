@@ -231,6 +231,15 @@ pub fn plus_rect_icon() -> Html {
     }
 }
 
+#[function_component(RemoveRectIcon)]
+pub fn remove_rect_icon() -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 15 15">
+            <path fill="none" stroke="#000000" d="M4 .5H1.5a1 1 0 0 0-1 1V4M6 .5h3m2 0h2.5a1 1 0 0 1 1 1V4M.5 6v3m14-3v3m-14 2v2.5a1 1 0 0 0 1 1H4M14.5 11v2.5a1 1 0 0 1-1 1H11m-7-7h7m-5 7h3"/>
+        </svg>
+    }
+}
+
 #[function_component(CatHeadIcon)]
 pub fn cat_head_icon() -> Html {
     html! {

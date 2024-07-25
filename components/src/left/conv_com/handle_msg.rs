@@ -451,6 +451,28 @@ impl Chats {
                         let ctx = ctx.link().clone();
                         spawn_local(async move { Self::handle_group_invitation(ctx, msg).await });
                     }
+                    GroupMsg::InviteNew((_user_id, resp, seq)) => {
+                        self.handle_rec_lack_msg(ctx, seq);
+                        let user_id = ctx.props().user_id.to_string();
+                        let ctx = ctx.link().clone();
+                        // todo send notify message to ui
+                        spawn_local(
+                            async move { Self::handle_invite_new(ctx, user_id, resp).await },
+                        );
+                    }
+                    GroupMsg::RemoveMember((_user_id, resp, seq)) => {
+                        self.handle_rec_lack_msg(ctx, seq);
+                        // todo send notify message to ui
+                        spawn_local(async move {
+                            if let Err(err) = db::db_ins()
+                                .group_members
+                                .delete_batch(&resp.group_id, &resp.members)
+                                .await
+                            {
+                                error!("delete group member error: {:?}", err);
+                            }
+                        });
+                    }
                     GroupMsg::Message(mut msg) => {
                         let mut conv = Conversation::from(msg.clone());
                         conv.conv_type = conv_type;

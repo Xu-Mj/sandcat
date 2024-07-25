@@ -13,11 +13,11 @@ use crate::db::{
     CONVERSATION_TABLE_NAME, FRIENDSHIP_ID_INDEX, FRIENDSHIP_TABLE_NAME, FRIENDSHIP_UNREAD_INDEX,
     FRIEND_ADDRESS_INDEX, FRIEND_GENDER_INDEX, FRIEND_NAME_INDEX, FRIEND_PHONE_INDEX,
     FRIEND_REMARK_INDEX, FRIEND_TABLE_NAME, FRIEND_TIME_INDEX, FRIEND_USER_ID_INDEX,
-    GROUP_ID_AND_USER_ID, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME, GROUP_MSG_TABLE_NAME,
-    GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX, MESSAGE_FRIEND_AND_IS_READ_INDEX,
-    MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
-    MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX, MESSAGE_TYPE_INDEX,
-    SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
+    GROUP_ID_AND_IS_DELETE, GROUP_ID_AND_USER_ID, GROUP_ID_INDEX, GROUP_MEMBERS_TABLE_NAME,
+    GROUP_MSG_TABLE_NAME, GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX,
+    MESSAGE_FRIEND_AND_IS_READ_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX,
+    MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX,
+    MESSAGE_TYPE_INDEX, SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
 };
 
 use super::DB_NAME;
@@ -157,6 +157,7 @@ impl Repository {
             store
                 .create_index_with_str(MESSAGE_IS_READ_INDEX, "is_read")
                 .unwrap();
+
             let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
             parameters.key_path(Some(&JsValue::from_str("friend_id")));
             let store = db
@@ -192,23 +193,43 @@ impl Repository {
                 )
                 .unwrap();
 
+            // create group_members table
+            let indexes = Array::new();
+            indexes.push(&JsValue::from("user_id"));
+            indexes.push(&JsValue::from("group_id"));
+            let indexes = JsValue::from(indexes);
+
+            let mut parameter = IdbObjectStoreParameters::new();
+            parameter.key_path(Some(&indexes));
             let store = db
                 .create_object_store_with_optional_parameters(
                     &String::from(GROUP_MEMBERS_TABLE_NAME),
-                    &parameters,
+                    &parameter,
                 )
                 .unwrap();
             store
                 .create_index_with_str(GROUP_ID_INDEX, "group_id")
                 .unwrap();
-            // create multipal index
+
+            // create composite index
+            store
+                .create_index_with_str_sequence_and_optional_parameters(
+                    GROUP_ID_AND_USER_ID,
+                    &indexes,
+                    &param,
+                )
+                .unwrap();
+
+            // create group_id and is_delete index
             let indexes = Array::new();
-            indexes.push(&JsValue::from("user_id"));
             indexes.push(&JsValue::from("group_id"));
+            indexes.push(&JsValue::from("is_deleted"));
             let indexes = JsValue::from(indexes);
             store
-                .create_index_with_str_sequence(GROUP_ID_AND_USER_ID, &indexes)
+                .create_index_with_str_sequence(GROUP_ID_AND_IS_DELETE, &indexes)
                 .unwrap();
+
+            // create friendship table and index
             let mut parameter = IdbObjectStoreParameters::new();
             parameter.key_path(Some(&JsValue::from(FRIENDSHIP_ID_INDEX)));
             let store = db
@@ -232,6 +253,7 @@ impl Repository {
                 .create_index_with_str(FRIENDSHIP_UNREAD_INDEX, "read")
                 .unwrap();
 
+            // create friend table and index
             let mut p = IdbObjectStoreParameters::new();
             p.key_path(Some(&JsValue::from_str("friend_id")));
             let store = db

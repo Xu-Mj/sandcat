@@ -11,7 +11,6 @@ use yew::AttrValue;
 use crate::db::friends::Friends;
 use crate::error::Result;
 use crate::model::friend::Friend;
-use crate::model::message::Message;
 
 use super::{repository::Repository, FRIEND_TABLE_NAME};
 use super::{SuccessCallback, MESSAGE_FRIEND_ID_INDEX, MESSAGE_TABLE_NAME};
@@ -232,9 +231,7 @@ impl Friends for FriendRepo {
             // default is Undefined
             if !result.is_undefined() && !result.is_null() {
                 let cursor = result.dyn_ref::<IdbCursorWithValue>().unwrap();
-                let value = cursor.value().unwrap();
-                let msg: Message = serde_wasm_bindgen::from_value(value).unwrap();
-                store.delete(&JsValue::from(msg.id)).unwrap();
+                cursor.delete().unwrap();
                 cursor.continue_().unwrap();
             }
         }) as Box<dyn FnMut(&Event)>);

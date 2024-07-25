@@ -120,6 +120,18 @@ impl Chats {
                     GroupMsg::Invitation((msg, _)) => {
                         Self::handle_group_invitation(ctx.clone(), msg).await;
                     }
+                    GroupMsg::InviteNew((_, resp, _)) => {
+                        Self::handle_invite_new(ctx.clone(), user_id.to_string(), resp).await;
+                    }
+                    GroupMsg::RemoveMember((_, resp, _)) => {
+                        if let Err(err) = db::db_ins()
+                            .group_members
+                            .delete_batch(&resp.group_id, &resp.members)
+                            .await
+                        {
+                            error!("delete group member error: {:?}", err);
+                        }
+                    }
                     GroupMsg::Dismiss((group_id, _)) => {
                         if let Err(err) = Self::dismiss_group(group_id).await {
                             error!("dismiss group failed: {:?}", err);

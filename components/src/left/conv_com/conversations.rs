@@ -1,13 +1,13 @@
 use std::rc::Rc;
 
 use gloo::timers::callback::Timeout;
-use i18n::{en_us, zh_cn, LanguageType};
 use indexmap::IndexMap;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
 
+use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::conversation::Conversation;
@@ -20,7 +20,7 @@ use sandcat_sdk::model::{ComponentType, CurrentItem, OFFLINE_TIME, REFRESH_TOKEN
 use sandcat_sdk::state::CreateConvState;
 use sandcat_sdk::state::{
     AddFriendState, AddFriendStateItem, ComponentTypeState, CreateGroupConvState, I18nState,
-    MuteState, RemoveConvState, SendMessageState, UpdateFriendState,
+    ItemType, MuteState, RemoveConvState, SendMessageState, UpdateFriendState,
 };
 use sandcat_sdk::state::{ConvState, UnreadState};
 use utils::tr;
@@ -436,7 +436,8 @@ impl Component for Chats {
                 <SelectFriendList
                     close_back={plus_click.clone()}
                     {submit_back}
-                    lang={self.lang_state.lang}/>
+                    lang={self.lang_state.lang}
+                    from={ItemType::Friend}/>
             };
         }
         let mut context_menu = html!();

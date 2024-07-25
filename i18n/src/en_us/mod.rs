@@ -118,7 +118,7 @@ cancel = Cancel
 "#;
 
 pub const FRIEND_CARD: &str = r#"
-# user info
+add = Add Friend
 apply = Apply
 applied = applied
 apply_msg = apply message
@@ -236,6 +236,7 @@ quit = Quit
 
 pub const SET_WINDOW: &str = r#"
 add = Add
+remove = Remove
 delete = CleanChatHistory
 mute = Mute
 remark = Remark

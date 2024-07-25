@@ -17,9 +17,9 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
 use log::error;
-use sandcat_sdk::model::group::GroupMemberFromServer;
+use sandcat_sdk::model::group::GroupMember;
 use sandcat_sdk::model::notification::Notification;
-use sandcat_sdk::pb::message::GroupInviteNew;
+use sandcat_sdk::pb::message::{GroupInviteNew, RemoveMemberRequest};
 use wasm_bindgen::JsCast;
 use web_sys::{CssAnimation, HtmlDivElement};
 use yew::platform::spawn_local;
@@ -30,7 +30,7 @@ use i18n::{en_us, zh_cn, LanguageType};
 use icons::{BackIcon, CatHeadIcon, CloseIcon, MaxIcon};
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
-use sandcat_sdk::state::{AppState, MobileState, Notify, ShowRight};
+use sandcat_sdk::state::{AppState, ItemType, MobileState, Notify, ShowRight};
 use sandcat_sdk::state::{
     ComponentTypeState, ConvState, CreateGroupConvState, FriendListState, I18nState,
 };
@@ -45,9 +45,10 @@ use crate::right::{msg_list::MessageList, postcard::PostCard};
 use crate::select_friends::SelectFriendList;
 
 pub struct Right {
+    node_ref: NodeRef,
     show_setting: bool,
     show_friend_list: bool,
-    node_ref: NodeRef,
+    remove_data: Option<Rc<Vec<GroupMember>>>,
     touch_start: Option<TouchInfo>,
     timeout: Option<Timeout>,
     i18n: FluentBundle<FluentResource>,
@@ -86,6 +87,7 @@ pub enum RightMsg {
     CleanTimer,
     TouchStart(TouchEvent),
     TouchEnd(TouchEvent),
+    RemoveMember(Rc<Vec<GroupMember>>),
 }
 
 impl Right {
@@ -145,6 +147,7 @@ impl Component for Right {
         Self {
             show_setting: false,
             show_friend_list: false,
+            remove_data: None,
             i18n,
             node_ref: NodeRef::default(),
             touch_start: None,
@@ -197,6 +200,37 @@ impl Component for Right {
             }
             RightMsg::CreateGroup(nodes) => {
                 self.show_friend_list = false;
+                self.show_setting = false;
+                if self.remove_data.is_some() {
+                    // remove member
+                    self.remove_data = None;
+                    let user_id = self.state.login_user.id.to_string();
+                    let group_id = self.conv_state.conv.item_id.to_string();
+                    // send remove member request
+                    spawn_local(async move {
+                        let req = RemoveMemberRequest {
+                            user_id,
+                            group_id,
+                            mem_id: nodes,
+                        };
+                        if let Err(err) = api::groups().remove_mem(&req).await {
+                            error!("remove member error: {:?}", err);
+                            Notification::error(err.to_string()).notify();
+                        } else {
+                            // delete from db
+                            if let Err(err) = db::db_ins()
+                                .group_members
+                                .delete_batch(&req.group_id, &req.mem_id)
+                                .await
+                            {
+                                error!("delete member error: {:?}", err);
+                                Notification::error(err.to_string()).notify();
+                            }
+                        }
+                    });
+                    return true;
+                }
+
                 // todo need to handle the group invitation or create group
                 // create group conversation and send 'create group' message
                 if self.conv_state.conv.content_type == RightContentType::Friend {
@@ -230,20 +264,18 @@ impl Component for Right {
                         {
                             error!("invite member error:{:?}", e);
                             Notification::error("invite member error").notify();
-                            // return;
+                            return;
                         }
                         let time = chrono::Utc::now().timestamp_millis();
                         // update local group member list
                         let friends = db::db_ins().friends.get_list_by_ids(nodes).await.unwrap();
-                        let members = friends
+                        let members: Vec<GroupMember> = friends
                             .into_iter()
-                            .map(|friend| GroupMemberFromServer::from_friend(&group, friend, time))
+                            .map(|friend| GroupMember::from_friend(&group, friend, time))
                             .collect();
-                        db::db_ins().group_members.put_list(members).await.unwrap();
+                        db::db_ins().group_members.put_list(&members).await.unwrap();
                     });
                 }
-                self.show_friend_list = false;
-                self.show_setting = false;
                 true
             }
             RightMsg::SwitchLang(state) => {
@@ -311,6 +343,11 @@ impl Component for Right {
                 self.touch_start = None;
                 false
             }
+            RightMsg::RemoveMember(members) => {
+                self.show_friend_list = true;
+                self.remove_data = Some(members);
+                true
+            }
         }
     }
 
@@ -342,16 +379,19 @@ impl Component for Right {
                     Some(ctx.link().callback(RightMsg::TouchEnd)),
                 ),
             };
+
         let mut top_bar_info = html!(
                 <div class={right_top_bar_class}>
                     {back.clone()}<span></span><span></span>
                 </div>);
+
         if let Some(info) = &self.cur_conv_info {
             let onclick = ctx.link().callback(|event: MouseEvent| {
                 event.stop_propagation();
                 RightMsg::ShowSetting
             });
             let close = ctx.link().callback(|_| RightMsg::ShowSelectFriendList);
+            let remove_member = ctx.link().callback(RightMsg::RemoveMember);
 
             if self.show_setting {
                 setting = html! (
@@ -361,16 +401,29 @@ impl Component for Right {
                         conv_type={info.get_type()}
                         close={ctx.link().callback(|_| RightMsg::ShowSetting)}
                         plus_click={close.clone()}
-                        lang={self.lang_state.lang} />);
+                        lang={self.lang_state.lang}
+                        remove_click={remove_member} />);
             }
             if self.show_friend_list {
                 let submit_back = ctx.link().callback(RightMsg::CreateGroup);
+                let from = if self.conv_state.conv.content_type == RightContentType::Group {
+                    ItemType::Group
+                } else {
+                    ItemType::Friend
+                };
+                let except = if self.remove_data.is_some() {
+                    self.state.login_user.id.clone()
+                } else {
+                    info.id()
+                };
                 friend_list = html!(
                     <SelectFriendList
-                        except={info.id()}
+                        data={self.remove_data.clone()}
+                        {except}
                         close_back={close}
                         {submit_back}
-                        lang={self.lang_state.lang} />);
+                        lang={self.lang_state.lang}
+                        {from} />);
             }
             top_bar_info = html! {
                 <div class={right_top_bar_class}>
@@ -384,6 +437,7 @@ impl Component for Right {
                 </div>
             }
         }
+
         let content = match self.com_state.component_type {
             ComponentType::Messages => {
                 // 处理没有选中会话的情况

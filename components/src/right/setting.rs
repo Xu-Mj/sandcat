@@ -159,29 +159,29 @@ impl Component for Setting {
                         </label>
                         <label for="medium">
                             <input type="radio"
-                            name="font_size"
-                            id="medium"
-                            value="medium"
-                            onchange={on_font_size_change.clone()}
-                            checked={*self.font_size==FontSizeState::Medium}/>
+                                name="font_size"
+                                id="medium"
+                                value="medium"
+                                onchange={on_font_size_change.clone()}
+                                checked={*self.font_size==FontSizeState::Medium}/>
                             {format!("\t{}", tr!(self.i18n, MEDUIM))}
                         </label>
                         <label for="large">
                             <input type="radio"
-                            name="font_size"
-                            id="large"
-                            value="large"
-                            onchange={on_font_size_change.clone()}
-                            checked={*self.font_size==FontSizeState::Large}/>
+                                name="font_size"
+                                id="large"
+                                value="large"
+                                onchange={on_font_size_change.clone()}
+                                checked={*self.font_size==FontSizeState::Large}/>
                             {format!("\t{}", tr!(self.i18n, LARGE))}
                         </label>
                         <label for="larger">
                             <input type="radio"
-                            name="font_size"
-                            id="larger"
-                            value="larger"
-                            onchange={on_font_size_change}
-                            checked={*self.font_size==FontSizeState::Larger}/>
+                                name="font_size"
+                                id="larger"
+                                value="larger"
+                                onchange={on_font_size_change}
+                                checked={*self.font_size==FontSizeState::Larger}/>
                             {format!("\t{}", tr!(self.i18n, LARGER))}
                         </label>
                         </div>
@@ -190,20 +190,44 @@ impl Component for Setting {
                     <div class="language">
                         <b>{tr!(self.i18n, LANGUAGE)}</b>
                         <label for="en_us">
-                            <input type="radio" name="language" id="en_us" value="en_us" onchange={onchange.clone()} checked={self.lang==LanguageType::EnUS}/>{"\tENG"}
+                            <input type="radio"
+                                name="language"
+                                id="en_us"
+                                value="en_us"
+                                onchange={onchange.clone()}
+                                checked={self.lang==LanguageType::EnUS}/>
+                            {"\tENG"}
                         </label>
                         <label for="zh_cn">
-                            <input type="radio" name="language" id="zh_cn" value="zh_cn" {onchange} checked={self.lang==LanguageType::ZhCN}/>{"\t中文"}
+                            <input type="radio"
+                                name="language"
+                                id="zh_cn"
+                                value="zh_cn"
+                                {onchange}
+                                checked={self.lang==LanguageType::ZhCN}/>
+                            {"\t中文"}
                         </label>
                     </div>
 
                     <div class="setting-theme">
                         <b>{tr!(self.i18n, THEME)}</b>
                         <label for="light">
-                            <input type="radio" name="theme" id="light" value="light" onchange={on_theme_change.clone()} checked={*self.theme==ThemeState::Light}/>{format!("\t{}", tr!(self.i18n, LIGHT))}
+                            <input type="radio"
+                                name="theme"
+                                id="light"
+                                value="light"
+                                onchange={on_theme_change.clone()}
+                                checked={*self.theme==ThemeState::Light}/>
+                            {format!("\t{}", tr!(self.i18n, LIGHT))}
                         </label>
                         <label for="dark">
-                            <input type="radio" name="theme" id="dark" value="dark" onchange={on_theme_change} checked={*self.theme==ThemeState::Dark}/>{format!("\t{}", tr!(self.i18n, DARK))}
+                            <input type="radio"
+                                name="theme"
+                                id="dark"
+                                value="dark"
+                                onchange={on_theme_change}
+                                checked={*self.theme==ThemeState::Dark}/>
+                            {format!("\t{}", tr!(self.i18n, DARK))}
                         </label>
                     </div>
 

@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
 
+use crate::pb::message::GroupMemberRole;
+
 use super::{
     friend::{Friend, FriendStatus},
     user::User,
@@ -68,26 +70,26 @@ pub struct GroupDelete {
     pub is_dismiss: bool,
 }
 
-fn is_zero(id: &i32) -> bool {
-    *id == 0
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GroupAndMembers {
+    pub group: Group,
+    pub members: Vec<GroupMember>,
 }
 
 /// Group member information
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMemberFromServer {
     pub age: i32,
-    // #[serde(default)]
     pub group_id: AttrValue,
     pub user_id: AttrValue,
     pub group_name: AttrValue,
-    // pub account: AttrValue,
     pub avatar: AttrValue,
     pub joined_at: i64,
     pub region: Option<AttrValue>,
     pub gender: AttrValue,
-    pub is_friend: bool,
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,
+    pub role: i32,
 }
 
 impl GroupMemberFromServer {
@@ -96,22 +98,21 @@ impl GroupMemberFromServer {
             age: value.age,
             group_id: group.id.clone(),
             user_id: value.friend_id,
-            group_name: group.name.clone(),
+            group_name: value.name,
             avatar: value.avatar,
             joined_at: time,
             region: value.region,
             gender: value.gender,
-            is_friend: true,
             remark: value.remark,
             signature: value.signature,
+            role: GroupMemberRole::Member as i32,
         }
     }
 }
+
 /// Group member information
 #[derive(Debug, Clone, Default, Deserialize, Serialize, PartialEq)]
 pub struct GroupMember {
-    #[serde(skip_serializing_if = "is_zero")]
-    pub id: i32,
     pub age: i32,
     // #[serde(default)]
     pub group_id: AttrValue,
@@ -122,15 +123,18 @@ pub struct GroupMember {
     pub joined_at: i64,
     pub region: Option<AttrValue>,
     pub gender: AttrValue,
+    #[serde(default)]
     pub is_friend: bool,
     pub remark: Option<AttrValue>,
     pub signature: AttrValue,
+    pub role: i32,
+    #[serde(default)]
+    pub is_deleted: u8,
 }
 
 impl From<GroupMemberFromServer> for GroupMember {
     fn from(value: GroupMemberFromServer) -> Self {
         Self {
-            id: 0,
             group_id: value.group_id,
             age: value.age,
             user_id: value.user_id,
@@ -139,9 +143,31 @@ impl From<GroupMemberFromServer> for GroupMember {
             joined_at: value.joined_at,
             region: value.region,
             gender: value.gender,
-            is_friend: value.is_friend,
+            is_friend: false,
             remark: value.remark,
             signature: value.signature,
+            role: value.role,
+            is_deleted: 0,
+        }
+    }
+}
+
+impl GroupMember {
+    pub fn from_friend(group: &Group, value: Friend, time: i64) -> Self {
+        Self {
+            age: value.age,
+            group_id: group.id.clone(),
+            user_id: value.friend_id,
+            group_name: value.name,
+            avatar: value.avatar,
+            joined_at: time,
+            region: value.region,
+            gender: value.gender,
+            is_friend: true,
+            remark: value.remark,
+            signature: value.signature,
+            role: GroupMemberRole::Member as i32,
+            is_deleted: 0,
         }
     }
 }
@@ -149,7 +175,6 @@ impl From<GroupMemberFromServer> for GroupMember {
 impl From<Friend> for GroupMember {
     fn from(value: Friend) -> Self {
         Self {
-            id: 0,
             user_id: value.friend_id,
             group_id: AttrValue::default(),
             group_name: value.name,
@@ -161,6 +186,8 @@ impl From<Friend> for GroupMember {
             age: value.age,
             is_friend: true,
             remark: value.remark,
+            role: GroupMemberRole::Member as i32,
+            is_deleted: 0,
         }
     }
 }
@@ -168,7 +195,6 @@ impl From<Friend> for GroupMember {
 impl From<User> for GroupMember {
     fn from(value: User) -> Self {
         Self {
-            id: 0,
             user_id: value.id,
             group_id: AttrValue::default(),
             group_name: value.name,
@@ -180,6 +206,8 @@ impl From<User> for GroupMember {
             age: value.age,
             is_friend: false,
             remark: None,
+            role: GroupMemberRole::Member as i32,
+            is_deleted: 0,
         }
     }
 }

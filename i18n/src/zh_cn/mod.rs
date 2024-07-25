@@ -114,6 +114,7 @@ cancel = 取消
 "#;
 
 pub const FRIEND_CARD: &str = r#"
+add = 添加好友
 apply = 申请
 applied = 已申请
 apply_msg = 申请消息
@@ -228,6 +229,7 @@ quit = 退出群聊
 
 pub const SET_WINDOW: &str = r#"
 add = 添加
+remove = 移除
 delete = 清空聊天记录
 mute = 消息免打扰
 remark = 备注

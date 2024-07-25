@@ -38,7 +38,7 @@
 
 /* semantic color variables for this project */
 :root[theme="light"] {
-    --color-background-window: var(--vt-c-white);
+    --color-background-window: var(--vt-c-white-mute);
     --color-background: rgba(255, 255, 255, var(--v-transparent));
     --color-background-soft: var(--vt-c-white-soft);
     --color-background-mute: var(--vt-c-white-mute);
@@ -214,6 +214,10 @@ input {
     overflow: hidden;
     z-index: 10;
 
+    &[tabindex] {
+        outline: none;
+    }
+
     .empty-result {
         text-align: center;
         width: 100%;
@@ -292,14 +296,14 @@ input {
 /* 朋友卡片 */
 
 .friend-card {
-    width: 18rem;
-    height: 16rem;
+    width: 22rem;
     display: flex;
     flex-direction: column;
     padding: 1rem;
     position: fixed;
     background-color: var(--color-background);
     border-radius: .3rem;
+    gap: 1rem;
     z-index: 3;
 
     &[tabindex] {
@@ -317,6 +321,7 @@ input {
         justify-content: flex-start;
         align-items: center;
         gap: 1rem;
+        padding-bottom: 1rem;
     }
 
     .friend-card-avatar {
@@ -334,10 +339,11 @@ input {
         word-wrap: break-word;
         overflow: hidden;
         white-space: pre-wrap;
+        color: var(--color-text);
 
-        &:not(:first-child) {
+        /* &:not(:first-child) {
             color: #999;
-        }
+        } */
     }
 
     .friend-card-body {
@@ -348,12 +354,14 @@ input {
         align-items: center;
 
         button {
-            border: none;
-            background-color: var(--color-background-btn);
             width: 6rem;
             height: 2rem;
             padding: auto;
             cursor: pointer;
+            border: none;
+            border-radius: .2rem;
+            background-color: #2ecc71;
+            color: white;
         }
 
         .apply-detail {
@@ -391,7 +399,7 @@ input {
     justify-content: space-evenly;
     height: 5rem;
 
-    & div {
+    div {
         height: 100%;
         display: flex;
         justify-content: center;
@@ -402,14 +410,14 @@ input {
         font-size: small;
         color: #90CBFB;
 
-        & svg {
+        svg {
             width: 2rem;
             height: 2rem;
 
             path,
             circle {
                 stroke-width: 2;
-                stroke: #90CBFB;
+                stroke: #90CBFB !important;
             }
 
         }
@@ -539,6 +547,10 @@ input {
     border-radius: .3rem;
     transform: translate(-50%, -50%);
     padding: 1rem;
+
+    &[tabindex] {
+        outline: none;
+    }
 }
 
 .info-panel-size-mobile {
@@ -603,6 +615,7 @@ input {
             width: 100%;
             padding: .3rem .5rem;
             border: none;
+            border-radius: .2rem;
             background-color: var(--color-background-input);
             font-size: medium;
         }
@@ -636,6 +649,7 @@ input {
             background-color: var(--color-background-btn);
             color: var(--color-text);
             border: none;
+            border-radius: .2rem;
             cursor: pointer;
         }
     }

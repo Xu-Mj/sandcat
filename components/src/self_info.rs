@@ -13,8 +13,10 @@ use web_sys::Event;
 use web_sys::File;
 use web_sys::FilePropertyBag;
 use web_sys::HtmlCanvasElement;
+use web_sys::HtmlDivElement;
 use web_sys::HtmlImageElement;
 use web_sys::HtmlInputElement;
+use yew::KeyboardEvent;
 use yew::{html, Callback, Component, NodeRef, Properties};
 use yew_router::scope_ext::RouterScopeExt;
 use yewdux::Dispatch;
@@ -35,6 +37,7 @@ use crate::constant::{
 };
 
 pub struct SelfInfo {
+    node: NodeRef,
     i18n: FluentBundle<FluentResource>,
     phone_node: NodeRef,
     name_node: NodeRef,
@@ -58,6 +61,7 @@ pub enum SelfInfoMsg {
     Logout,
     ShowAvatarSetter,
     SetAvatar(String),
+    OnEscDown(KeyboardEvent),
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -81,6 +85,7 @@ impl Component for SelfInfo {
         };
         let i18n = utils::create_bundle(res);
         Self {
+            node: NodeRef::default(),
             i18n,
             phone_node: NodeRef::default(),
             email_node: NodeRef::default(),
@@ -196,6 +201,13 @@ impl Component for SelfInfo {
                 self.show_avatar_setter = false;
                 true
             }
+            SelfInfoMsg::OnEscDown(event) => {
+                if event.key() == "Escape" {
+                    ctx.props().close.emit(());
+                }
+                event.stop_propagation();
+                false
+            }
         }
     }
     fn view(&self, ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
@@ -228,7 +240,7 @@ impl Component for SelfInfo {
 
         html! {
             <>
-            <div {class}>
+            <div tabindex="-1" {class} ref={self.node.clone()} onkeydown={ctx.link().callback(SelfInfoMsg::OnEscDown)}>
                 {avatar_setter}
                 <div class="info-panel-item-avatar">
                     <label for="avatar" {onclick}>
@@ -365,6 +377,10 @@ impl Component for SelfInfo {
             </div>
             </>
         }
+    }
+
+    fn rendered(&mut self, _ctx: &yew::Context<Self>, _first_render: bool) {
+        let _ = self.node.cast::<HtmlDivElement>().unwrap().focus();
     }
 }
 

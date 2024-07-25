@@ -11,10 +11,10 @@ use yew::Event;
 
 use crate::db::group_members::GroupMembers;
 use crate::error::Result;
-use crate::model::group::{GroupMember, GroupMemberFromServer};
+use crate::model::group::GroupMember;
 
 use super::{repository::Repository, GROUP_ID_AND_USER_ID, GROUP_MEMBERS_TABLE_NAME};
-use super::{SuccessCallback, GROUP_ID_INDEX};
+use super::{SuccessCallback, GROUP_ID_AND_IS_DELETE};
 
 #[derive(Debug)]
 pub struct GroupMembersRepo {
@@ -53,10 +53,10 @@ impl GroupMembers for GroupMembersRepo {
         Ok(())
     }
 
-    async fn put_list(&self, members: Vec<GroupMemberFromServer>) -> Result<()> {
+    async fn put_list(&self, members: &[GroupMember]) -> Result<()> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         for member in members {
-            let value = serde_wasm_bindgen::to_value(&member)?;
+            let value = serde_wasm_bindgen::to_value(member)?;
             store.put(&value)?;
         }
         Ok(())
@@ -119,8 +119,13 @@ impl GroupMembers for GroupMembersRepo {
     async fn get_list_by_group_id(&self, group_id: &str) -> Result<Vec<GroupMember>> {
         let (tx, rx) = oneshot::channel::<Vec<GroupMember>>();
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
-        let index = store.index(GROUP_ID_INDEX)?;
-        let range = IdbKeyRange::only(&JsValue::from(group_id))?;
+        let index = store.index(GROUP_ID_AND_IS_DELETE)?;
+
+        let indices = Array::new();
+        indices.push(&JsValue::from(group_id));
+        indices.push(&JsValue::from(0));
+
+        let range = IdbKeyRange::only(&JsValue::from(indices))?;
         let request = index.open_cursor_with_range(&range.into())?;
 
         let mut groups = Vec::new();
@@ -166,10 +171,15 @@ impl GroupMembers for GroupMembersRepo {
     async fn delete(&self, group_id: &str, user_id: &str) -> Result<()> {
         let store = self.store(GROUP_MEMBERS_TABLE_NAME).await?;
         let index = store.index(GROUP_ID_AND_USER_ID)?;
+
         let indices = Array::new();
         indices.push(&JsValue::from(user_id));
         indices.push(&JsValue::from(group_id));
+
         let request = index.get(&JsValue::from(indices))?;
+
+        let (tx, rx) = oneshot::channel::<u8>();
+
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()
@@ -179,14 +189,26 @@ impl GroupMembers for GroupMembersRepo {
                 .result()
                 .unwrap();
             if !result.is_undefined() && !result.is_null() {
-                let group: GroupMember = serde_wasm_bindgen::from_value(result).unwrap();
-                if let Err(err) = store.delete(&JsValue::from(group.id)) {
+                let mut member: GroupMember = serde_wasm_bindgen::from_value(result).unwrap();
+                member.is_deleted = 1;
+
+                if let Err(err) = store.put(&serde_wasm_bindgen::to_value(&member).unwrap()) {
                     error!("delete group member error: {:?}", err);
                 }
             }
+            tx.send(0).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
+        rx.await.unwrap();
+        Ok(())
+    }
+
+    async fn delete_batch(&self, group_id: &str, user_ids: &[String]) -> Result<()> {
+        for id in user_ids {
+            self.delete(group_id, id).await?;
+        }
         Ok(())
     }
 }

@@ -1,6 +1,7 @@
 use gloo::timers::callback::Timeout;
 use gloo::utils::{document, window};
 use log::error;
+use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::model::notification::Notification;
 use web_sys::Node;
 use yew::platform::spawn_local;
@@ -11,10 +12,9 @@ use i18n::LanguageType;
 use icons::HangUpLoadingIcon;
 use sandcat_sdk::db;
 use sandcat_sdk::model::message::{GroupMsg, InviteType, Message, Msg, SendStatus, ServerResponse};
-use sandcat_sdk::model::user::UserWithMatchType;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::state::{I18nState, Notify, RelatedMsgState, SendMessageState};
+use sandcat_sdk::state::{I18nState, ItemType, Notify, RelatedMsgState, SendMessageState};
 
 use crate::right::friend_card::FriendCard;
 use crate::right::msg_item::related_msg::RelatedMsg;
@@ -45,7 +45,7 @@ pub enum MsgItemMsg {
     RelatedMsg,
 }
 
-type FriendCardProps = (UserWithMatchType, i32, i32);
+type FriendCardProps = (Friend, i32, i32);
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct MsgItemProps {
@@ -79,25 +79,19 @@ impl Component for MsgItem {
                 let x = event.x();
                 let y = event.y();
 
-                log::debug!("friend id in msg item: {:?}", &ctx.props().msg);
                 let is_self = ctx.props().msg.is_self;
-                // the friend id is friend when msg type is single
-                // because send id exchange the friend id when receive the message
-                let friend_id = ctx.props().msg.friend_id.clone();
-                let send_id = ctx.props().msg.send_id.clone();
-                let user_id = ctx.props().user_id.clone();
-                let conv_type = ctx.props().conv_type.clone();
-                let group_id = ctx.props().friend_id.clone();
-                ctx.link().send_future(async move {
-                    // 查询好友信息
-                    let user = if is_self {
-                        let user = db::db_ins().users.get(user_id.as_str()).await.unwrap();
-                        UserWithMatchType::from(user)
-                    } else {
-                        match conv_type {
+                if !is_self {
+                    // the friend id is friend when msg type is single
+                    // because send id exchange the friend id when receive the message
+                    let friend_id = ctx.props().msg.friend_id.clone();
+                    let send_id = ctx.props().msg.send_id.clone();
+                    let conv_type = ctx.props().conv_type.clone();
+                    let group_id = ctx.props().friend_id.clone();
+                    ctx.link().send_future(async move {
+                        // 查询好友信息
+                        let friend = match conv_type {
                             RightContentType::Friend => {
-                                let friend = db::db_ins().friends.get(friend_id.as_str()).await;
-                                UserWithMatchType::from(friend)
+                                db::db_ins().friends.get(friend_id.as_str()).await
                             }
                             // query group member
                             RightContentType::Group => {
@@ -110,14 +104,20 @@ impl Component for MsgItem {
                                     .await
                                     .unwrap()
                                     .unwrap();
-                                UserWithMatchType::from(member)
+                                // select if the member is friend
+                                let friend = db::db_ins().friends.get(&member.user_id).await;
+                                if friend.friend_id.is_empty() {
+                                    Friend::from(member)
+                                } else {
+                                    friend
+                                }
                             }
-                            _ => UserWithMatchType::default(),
-                        }
-                    };
+                            _ => Friend::default(),
+                        };
 
-                    MsgItemMsg::SpawnFriendCard(Box::new((user, x, y)))
-                });
+                        MsgItemMsg::SpawnFriendCard(Box::new((friend, x, y)))
+                    });
+                }
                 false
             }
             MsgItemMsg::CallVideo => {
@@ -372,7 +372,7 @@ impl Component for MsgItem {
         if self.show_friend_card {
             friend_card = html! {
                 <FriendCard
-                    friend_info={self.friend_info.as_ref().unwrap().clone()}
+                    friend={self.friend_info.as_ref().unwrap().clone()}
                     user_id={&ctx.props().user_id}
                     avatar={&ctx.props().avatar}
                     nickname={&ctx.props().msg.nickname}
@@ -412,12 +412,19 @@ impl Component for MsgItem {
         if self.show_friendlist {
             let close_back = ctx.link().callback(|_| MsgItemMsg::ShowForwardMsg);
             let submit_back = ctx.link().callback(MsgItemMsg::ForwardMsg);
+            let from = if ctx.props().conv_type == RightContentType::Group {
+                ItemType::Group
+            } else {
+                ItemType::Friend
+            };
+
             friendlist = html!(
                 <SelectFriendList
                     except={&ctx.props().friend_id}
                     {close_back}
                     {submit_back}
-                    lang={I18nState::get().lang} />)
+                    lang={I18nState::get().lang}
+                    {from} />)
         }
 
         // related message

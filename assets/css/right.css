@@ -22,6 +22,7 @@
     top: 0;
     right: -100%;
     animation: right-in .2s linear forwards;
+    background-color: var(--color-background);
     --avatar-width: 2.5rem;
     --avatar-height: 2.5rem;
 }
@@ -91,6 +92,12 @@
         align-items: center;
         justify-content: space-between;
         font-size: larger;
+
+        svg{
+            path{
+                stroke: var(--color-text);
+            }
+        }
     }
 
 }
@@ -107,7 +114,8 @@
     flex-direction: column;
     align-items: center;
     gap: .5rem;
-    background-color: var(--color-background-window);
+    background-color: var(--color-background);
+    border-radius: .3rem;
     z-index: 3;
 
     .people {
@@ -152,7 +160,7 @@
         }
     }
 
-    .setting {
+    .set-window-setting {
         width: 100%;
         font-size: small;
 
@@ -234,12 +242,14 @@
         position: absolute;
         width: 15rem;
         height: 20rem;
-        background-color: var(--color-background-window);
+        background-color: var(--color-background);
+        color: var(--color-text);
         display: flex;
         flex-direction: column;
         top: 50%;
         left: 50%;
-        padding: 1rem 1rem 0 1rem;
+        padding: 1rem;
+        border-radius: .3rem;
         transform: translate(-50%, -50%);
         box-shadow: 10px 10px 15px rgba(60, 60, 60, 0.12),
             10px 10px 10px rgba(60, 60, 60, 0.12),
@@ -263,8 +273,16 @@
                 align-items: center;
 
 
-                svg {
+                & svg {
                     height: .8rem;
+
+                    path {
+                        stroke: var(--color-text);
+                    }
+
+                    circle {
+                        stroke: var(--color-text);
+                    }
                 }
 
                 .file-sender-name {
@@ -280,19 +298,21 @@
 
         .file-sender-footer {
             width: 100%;
-            height: 2rem;
-            padding: .2rem;
+            height: 1.5rem;
             display: flex;
             justify-content: space-evenly;
 
             button {
                 width: 4rem;
-                height: 1.2rem;
+                height: 1.5rem;
                 display: flex;
                 justify-content: center;
                 align-items: center;
                 border: none;
+                border-radius: .2rem;
                 cursor: pointer;
+                background-color: var(--color-background-btn);
+                color: var(--color-text);
             }
         }
     }
@@ -361,10 +381,12 @@
             position: absolute;
             left: 0;
             bottom: 0;
+            transition: all .2s;
             cursor: s-resize;
 
             &:hover {
                 background-color: gray;
+                transition-delay: .3s;
             }
         }
 
@@ -650,7 +672,7 @@
         border-top: 1px solid var(--color-border);
 
         svg {
-            path {
+            path, circle {
                 stroke: var(--color-text);
             }
         }
@@ -672,6 +694,12 @@
             >div {
                 display: flex;
                 gap: 1rem;
+            }
+
+            span {
+                display: flex;
+                justify-content: center;
+                align-items: center;
             }
         }
 
@@ -711,7 +739,8 @@
                 right: 1rem;
                 bottom: 3rem;
                 font-size: .8rem;
-                background-color: var(--color-background-window);
+                background-color: var(--color-background);
+                color: var(--color-text);
             }
 
             .empty-msg-tip-mobile {
@@ -722,7 +751,8 @@
                 top: 50%;
                 transform: translate(-50%, -50%);
                 font-size: .8rem;
-                background-color: var(--color-background-window);
+                background-color: var(--color-background);
+                color: var(--color-text);
             }
 
             .sender-footer {
@@ -882,6 +912,7 @@
 
         .friendship-action button {
             border: none;
+            border-radius: .2rem;
             background-color: var(--color-background-btn);
             color: var(--color-text);
             width: 6rem;
@@ -902,9 +933,10 @@
         justify-content: flex-start;
         align-items: center;
         gap: 1rem;
-        background-color: var(--color-background-window);
+        background-color: var(--color-background);
         left: 50%;
         top: 10%;
+        border-radius: .3rem;
         transform: translateX(-50%);
 
         > :first-child {
@@ -922,6 +954,7 @@
 
             input {
                 border: none;
+                border-radius: .2rem;
                 outline: none;
                 padding: 0 .3rem;
                 background-color: var(--color-background-input);
@@ -935,12 +968,13 @@
             justify-items: center;
 
             button {
-                border: none;
                 background-color: var(--color-background-btn);
                 color: var(--color-text);
                 width: 6rem;
                 height: 2rem;
                 cursor: pointer;
+                border: none;
+                border-radius: .2rem;
             }
         }
 
@@ -994,9 +1028,10 @@
     }
 
     .pc-wrapper {
+        position: relative;
         display: flex;
         flex-direction: column;
-        position: relative;
+        gap: 1rem;
 
         &>*:not(:last-child, :first-child, :nth-child(2)) {
             border-bottom: 1px solid var(--color-border);
@@ -1007,7 +1042,7 @@
             position: absolute;
             right: 0;
             top: 1rem;
-            background-color: var(--color-background-window);
+            background-color: var(--color-background);
 
             &[tabindex] {
                 outline: none;
@@ -1024,7 +1059,8 @@
         }
 
         .header-info {
-            display: flex;
+            display: grid;
+            grid-template-columns: 1fr 4fr;
             gap: 1rem;
 
             .postcard-avatar {
@@ -1054,7 +1090,7 @@
                 flex-direction: column;
                 justify-content: center;
                 align-items: flex-start;
-                margin-left: 1rem;
+                gap: .5rem;
 
                 .name {
                     font-size: 1.5rem;
@@ -1069,12 +1105,19 @@
             width: 100%;
             height: 3rem;
             line-height: 3rem;
+            display: grid;
+            grid-template-columns: 1fr 4fr;
+            gap: 1rem;
+            align-items: center;
         }
 
         .postcard-remark {
             input {
+                width: 90%;
+                height: 2rem;
                 padding: .3rem .5rem;
                 border: none;
+                border-radius: .2rem;
                 background-color: var(--color-background-input);
             }
         }
@@ -1110,7 +1153,7 @@
     display: flex;
     flex-direction: column;
     border-radius: .3rem;
-    background-color: var(--color-background-window);
+    background-color: var(--color-background);
 
     & ::-webkit-scrollbar {
         width: 3px;
