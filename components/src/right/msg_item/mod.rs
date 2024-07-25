@@ -12,7 +12,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{ExclamationIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
+use icons::{CloseIcon, ExclamationIcon, MsgLoadingIcon, MsgPhoneIcon, VideoRecordIcon};
 use sandcat_sdk::db;
 use sandcat_sdk::model::file_msg::FileMsg;
 use sandcat_sdk::model::friend::Friend;
@@ -47,6 +47,7 @@ pub struct MsgItem {
     show_context_menu: bool,
     /// hold right click item position
     context_menu_pos: (i32, i32),
+    show_video_palyer: bool,
 }
 
 enum AudioDownloadStage {
@@ -107,6 +108,7 @@ impl MsgItem {
         Self {
             timeout,
             show_img_preview: false,
+            show_video_palyer: false,
             show_friend_card: false,
             show_friendlist: false,
             avatar,
@@ -229,13 +231,36 @@ impl MsgItem {
                 let onclick = ctx.link().callback(|_| MsgItemMsg::PreviewImg);
                 get_img_html(msg, oncontextmenu, self.show_img_preview, onclick, None)
             }
-            ContentType::Video => html! {
-                <div class="msg-item-content" {oncontextmenu}>
-                    <video class="msg-item-video">
-                        <source src={&msg.content} type="video/mp4" />
-                    </video>
-                </div>
-            },
+            ContentType::Video => {
+                let file = FileMsg::from(&msg.content);
+                let src = format!("/api/file/get/{}", file.server_name);
+
+                let onclick = ctx.link().callback(|event: MouseEvent| {
+                    event.stop_propagation();
+                    MsgItemMsg::ShowVideoPlayer
+                });
+                let mut video_player = html!();
+                if self.show_video_palyer {
+                    video_player = html! {
+                        <div class="video-player" onclick={onclick.clone()} >
+                            <span onclick={onclick.clone()}><CloseIcon/></span>
+                            <video controls={true}>
+                                <source src={src.clone()} type="video/mp4" />
+                            </video>
+                        </div>
+                    };
+                }
+                html! {
+                    <>
+                    {video_player}
+                    <div class="msg-item-content" {oncontextmenu} {onclick}>
+                        <video class="msg-item-video">
+                            <source {src} type="video/mp4" />
+                        </video>
+                    </div>
+                    </>
+                }
+            }
             ContentType::File => get_file_html(msg, msg_content_classes.to_string()),
             ContentType::Emoji => {
                 html! {
@@ -310,7 +335,7 @@ fn get_file_html(msg: &Message, class: String) -> Html {
         "Mobile"
     };
 
-    let href = AttrValue::from(format!("/api/file/get/{}", file.server_name));
+    let href = format!("/api/file/get/{}", file.server_name);
     html! {
         <div {class} >
             <a {href} download="" class="msg-item-file-name">
@@ -338,12 +363,13 @@ fn get_img_html(
     } else {
         &msg.file_content.clone()
     };
+
     let src = img_url.clone();
-    // let onclick = ctx.link().callback(|_| MsgItemMsg::PreviewImg);
+
     let img_preview = if show_preview {
         html! {
             <div class="img-preview pointer" onclick={onclick.clone()}>
-                <img alt="preview-img" src={src} />
+                <img alt="preview-img" {src} />
             </div>
         }
     } else {

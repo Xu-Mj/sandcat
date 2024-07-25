@@ -43,6 +43,7 @@ pub enum MsgItemMsg {
     ShowForwardMsg,
     ForwardMsg(Vec<String>),
     RelatedMsg,
+    ShowVideoPlayer,
 }
 
 type FriendCardProps = (Friend, i32, i32);
@@ -314,6 +315,11 @@ impl Component for MsgItem {
                 let msg = ctx.props().msg.clone();
                 let nickname = self.nickname.clone();
                 RelatedMsgState::notify(nickname, msg);
+                true
+            }
+            MsgItemMsg::ShowVideoPlayer => {
+                self.show_video_palyer = !self.show_video_palyer;
+                log::debug!("show video player:{:?}", self.show_video_palyer);
                 true
             }
         }
