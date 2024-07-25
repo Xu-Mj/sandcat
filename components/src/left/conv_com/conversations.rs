@@ -134,17 +134,27 @@ impl Component for Chats {
                 if pattern.is_empty() {
                     ctx.link().send_message(ChatsMsg::CleanupSearchResult);
                 } else {
-                    self.list.iter().for_each(|(key, item)| {
-                        if item.name.contains(pattern.as_str()) {
-                            self.result.insert((*key).clone(), (*item).clone());
-                        }
-                    });
+                    let insert_if_matches =
+                        |key: &AttrValue,
+                         item: &Conversation,
+                         result: &mut IndexMap<AttrValue, Conversation>| {
+                            if item
+                                .remark
+                                .as_deref()
+                                .map_or(false, |remark| remark.contains(pattern.as_str()))
+                                || item.name.contains(pattern.as_str())
+                            {
+                                result.insert(key.clone(), item.clone());
+                            }
+                        };
 
-                    self.pinned_list.iter().for_each(|(key, item)| {
-                        if item.name.contains(pattern.as_str()) {
-                            self.result.insert((*key).clone(), (*item).clone());
-                        }
-                    });
+                    self.list
+                        .iter()
+                        .for_each(|(key, item)| insert_if_matches(key, item, &mut self.result));
+
+                    self.pinned_list
+                        .iter()
+                        .for_each(|(key, item)| insert_if_matches(key, item, &mut self.result));
                     return true;
                 }
                 false
@@ -158,8 +168,8 @@ impl Component for Chats {
                 self.pinned_list = pined_list;
                 self.list = convs;
                 self.query_complete = true;
-                // 数据查询完成，通知Home组件我已经做完必要的工作了
                 self.seq = seq;
+
                 // unmount loading
                 Dialog::close_loading();
                 if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
@@ -167,7 +177,6 @@ impl Component for Chats {
                 }
                 true
             }
-
             ChatsMsg::InsertConv(conv) => {
                 self.list.shift_insert(0, conv.friend_id.clone(), conv);
                 true

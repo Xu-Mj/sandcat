@@ -31,10 +31,10 @@ pub struct TopBar {
 }
 
 pub enum TopBarMsg {
-    SearchInputChanged(Event),
-    SearchInputEnterListener(KeyboardEvent),
+    SearchInputChanged,
     PlusButtonClicked,
     SearchButtonClicked,
+    SubmitSearch(SubmitEvent),
 }
 
 impl Component for TopBar {
@@ -57,60 +57,37 @@ impl Component for TopBar {
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
-            // 搜索框输入事件
-            TopBarMsg::SearchInputChanged(_) => {
-                ctx.link().send_message(TopBarMsg::SearchButtonClicked);
-                true
-            }
-            // 搜索框回车事件
-            TopBarMsg::SearchInputEnterListener(_e) => {
-                // web_sys::console::log_1(&e);
-                // if e.key() == "Enter" {
-                // let input: HtmlInputElement = e.target_unchecked_into();
-                // self.search_value = input.value().into();
-                // let search_value = self.search_value.clone();
-                // ctx.props().search_callback.emit(search_value.clone());
-                // } else if e.key() == "Escape" {
-                // let input: HtmlInputElement = e.target_unchecked_into();
-                // input.set_value("");
-                // self.search_value = AttrValue::default();
-                // ctx.props().clean_callback.emit(AttrValue::default());
-                // }
-                // true
+            TopBarMsg::SearchInputChanged => {
+                self.send_value(ctx);
                 false
             }
             TopBarMsg::PlusButtonClicked => {
                 ctx.props().plus_click.emit(());
-                true
+                false
             }
             TopBarMsg::SearchButtonClicked => {
-                let input: HtmlInputElement = self.search_node.cast().unwrap();
-                ctx.props().search_callback.emit(input.value().into());
-                true
+                self.send_value(ctx);
+                false
+            }
+            TopBarMsg::SubmitSearch(event) => {
+                event.prevent_default();
+                self.send_value(ctx);
+                false
             }
         }
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        // input 输入框事件
-        let onchange = ctx
-            .link()
-            .callback(move |e: Event| TopBarMsg::SearchInputChanged(e));
-        // 按下回车键搜索，按下esc清空
-        let onkeydown = ctx
-            .link()
-            .callback(move |e: KeyboardEvent| TopBarMsg::SearchInputEnterListener(e));
         let id = match ctx.props().components_type {
             ComponentType::Contacts => "contacts",
             ComponentType::Messages => "messages",
             ComponentType::Setting => "setting",
             ComponentType::Default => "default",
         };
+
         let icon = match ctx.props().components_type {
             ComponentType::Contacts => {
-                html! {
-                    <PeoplePlusIcon/>
-                }
+                html! (<PeoplePlusIcon/>)
             }
             ComponentType::Messages => {
                 html!(<PlusIcon />)
@@ -120,6 +97,8 @@ impl Component for TopBar {
             }
             ComponentType::Setting => html!(),
         };
+
+        let onchange = ctx.link().callback(|_| TopBarMsg::SearchInputChanged);
         let click_plus = ctx.link().callback(|_| TopBarMsg::PlusButtonClicked);
         let onclick = ctx.link().callback(|_| TopBarMsg::SearchButtonClicked);
         let plus_class = if self.is_mobile {
@@ -127,26 +106,33 @@ impl Component for TopBar {
         } else {
             "plus-icon"
         };
+
         html! {
             // 水平布局，从左到右分别为排序选项卡、搜索输入框、设置按钮
             <div class="top-bar">
-                <div class="search">
+                <form class="search" onsubmit={ctx.link().callback(TopBarMsg::SubmitSearch)}>
                    <label /* for={id} */ class="search-icon" {onclick}>
                     <SearchIcon />
                     </label>
                    <input
-                        id={id}
+                        {id}
                         ref={self.search_node.clone()}
                         class="search-input"
                         type="search"
                         placeholder={tr!(self.i18n, SEARCH)}
-                        {onchange}
-                        {onkeydown} />
-                </div>
+                        {onchange} />
+                </form>
                 <div class={plus_class} onclick={click_plus}>
                     {icon}
                 </div>
             </div>
         }
+    }
+}
+
+impl TopBar {
+    pub fn send_value(&self, ctx: &Context<Self>) {
+        let input: HtmlInputElement = self.search_node.cast().unwrap();
+        ctx.props().search_callback.emit(input.value().into());
     }
 }
