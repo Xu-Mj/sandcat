@@ -28,6 +28,7 @@ wasm-bindgen-futures = "0.4.39"
 yew = { version = "0.21", features = ["csr"] }
 yewdux = { version = "0.10.0", features = ["doctests"] }
 yew-router = "0.18"
+icons = { version = "0.1.0", path = "../icons" }
 
 [dependencies.chrono]
 version = "0.4"

@@ -296,7 +296,7 @@ impl MsgItem {
                 html! {
                     <div class="msg-item-emoji" {oncontextmenu}>
                         // <span class="msg-item-emoji">
-                            <img class="emoji" alt="emoji" src={msg.content.clone()} />
+                            <img class="emoji" alt="emoji" src={&msg.content} />
                         // </span>
                     </div>
                 }
