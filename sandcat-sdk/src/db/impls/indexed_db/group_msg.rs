@@ -130,9 +130,9 @@ impl GroupMessages for GroupMsgRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_last_msg(&self, group_id: &str) -> Result<Message> {
+    async fn get_last_msg(&self, group_id: &str) -> Result<Option<Message>> {
         // 使用channel异步获取数据
-        let (tx, rx) = oneshot::channel::<Message>();
+        let (tx, rx) = oneshot::channel::<Option<Message>>();
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
 
         // let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
@@ -161,9 +161,9 @@ impl GroupMessages for GroupMsgRepo {
                 let value = cursor.value().unwrap();
                 let msg: Message = serde_wasm_bindgen::from_value(value).unwrap();
 
-                let _ = tx.take().unwrap().send(msg);
+                let _ = tx.take().unwrap().send(Some(msg));
             } else {
-                let _ = tx.take().unwrap().send(Message::default());
+                let _ = tx.take().unwrap().send(None);
             }
         }) as Box<dyn FnMut(&Event)>);
 

@@ -556,7 +556,10 @@ impl Chats {
             };
 
             db::db_ins().convs.put_conv(&conv).await.unwrap();
-            log::debug!("状态更新，不存在的会话，添加数据: {:?}", &conv);
+            log::debug!(
+                "state updated, conversation is not exist, adding...: {:?}",
+                &conv
+            );
             if need_rerender {
                 ChatsMsg::InsertConv(conv)
             } else {
@@ -604,13 +607,14 @@ impl Chats {
 
     // 创建群组会话
     async fn create_group_conversation(group_id: AttrValue) -> Conversation {
+        let mut last_msg_time = 0;
+        let mut last_msg_type = ContentType::default();
+
         let group = db::db_ins().groups.get(&group_id).await.unwrap().unwrap();
-        let result = db::db_ins()
-            .group_msgs
-            .get_last_msg(&group_id)
-            .await
-            .unwrap_or_default();
-        let content = if result.id != 0 {
+        let result = db::db_ins().group_msgs.get_last_msg(&group_id).await;
+        let content = if let Ok(Some(result)) = result {
+            last_msg_time = result.create_time;
+            last_msg_type = result.content_type;
             get_msg_type(
                 &utils::create_bundle(CONVERSATION),
                 result.content_type,
@@ -625,8 +629,8 @@ impl Chats {
             remark: group.remark,
             avatar: group.avatar,
             last_msg: content,
-            last_msg_time: result.create_time,
-            last_msg_type: result.content_type,
+            last_msg_time,
+            last_msg_type,
             unread_count: 0,
             friend_id: group_id,
             conv_type: RightContentType::Group,

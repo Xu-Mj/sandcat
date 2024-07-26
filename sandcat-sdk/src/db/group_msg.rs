@@ -19,7 +19,7 @@ pub trait GroupMessages: Debug {
         page_size: u32,
     ) -> Result<IndexMap<AttrValue, Message>>;
 
-    async fn get_last_msg(&self, group_id: &str) -> Result<Message>;
+    async fn get_last_msg(&self, group_id: &str) -> Result<Option<Message>>;
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()>;
 
