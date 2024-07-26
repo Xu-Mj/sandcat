@@ -643,6 +643,8 @@ impl Component for MessageList {
             .map(|(key, msg)| {
                 let (avatar, nickname) = if msg.is_self {
                     (&props.cur_user_avatar, &props.nickname)
+                } else if props.conv_type == RightContentType::Group {
+                    (&AttrValue::default(), &AttrValue::default())
                 } else {
                     (&friend_avatar, &friend_nickname)
                 };
