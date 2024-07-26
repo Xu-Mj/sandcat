@@ -2,21 +2,20 @@ use std::cell::RefCell;
 use std::ops::Deref;
 use std::rc::Rc;
 
-use futures_channel::oneshot;
 use indexmap::IndexMap;
 use log::error;
-use wasm_bindgen::{closure::Closure, JsCast, JsValue};
-use web_sys::{IdbKeyRange, IdbRequest};
+use wasm_bindgen::closure::Closure;
 use yew::{AttrValue, Event};
 
 use crate::db::group_msg::GroupMessages;
 use crate::error::Result;
 use crate::model::message::{Message, ServerResponse};
 
-use super::{repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX};
-use super::{
-    SuccessCallback, MESSAGE_FRIEND_AND_IS_READ_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX,
+use super::message::{
+    add, delete_batch, get, get_last_msg, get_messages, update_msg_status, update_read_status,
 };
+use super::SuccessCallback;
+use super::{repository::Repository, GROUP_MSG_TABLE_NAME};
 
 #[derive(Debug)]
 pub struct GroupMsgRepo {
@@ -56,20 +55,7 @@ impl GroupMsgRepo {
 impl GroupMessages for GroupMsgRepo {
     async fn put(&self, msg: &Message) -> Result<()> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let request = store.put(&serde_wasm_bindgen::to_value(&msg)?)?;
-
-        let (tx, rx) = oneshot::channel::<u8>();
-
-        let onsuccess = Closure::once(move |_event: &Event| {
-            tx.send(1).unwrap();
-        });
-        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-
-        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
-
-        rx.await.unwrap();
-
-        Ok(())
+        add(store, msg, &self.on_err_callback).await
     }
 
     /// friend id is group id
@@ -80,262 +66,43 @@ impl GroupMessages for GroupMsgRepo {
         page: u32,
         page_size: u32,
     ) -> Result<IndexMap<AttrValue, Message>> {
-        let mut counter = 0;
-        let mut advanced = true;
-        // use channel to get messages
-        let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Message>>();
-
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let index = store.index(MESSAGE_FRIEND_AND_SEND_TIME_INDEX)?;
-
-        // use friend id as group id
-        let start_key = js_sys::Array::new();
-        start_key.push(&JsValue::from(friend_id));
-        start_key.push(&JsValue::from_f64(f64::NEG_INFINITY));
-
-        let end_key = js_sys::Array::new();
-        end_key.push(&JsValue::from(friend_id));
-        end_key.push(&JsValue::from_f64(f64::INFINITY));
-
-        let range = IdbKeyRange::bound(&JsValue::from(start_key), &JsValue::from(end_key))?;
-        let request = index
-            .open_cursor_with_range_and_direction(&range, web_sys::IdbCursorDirection::Prev)?;
-
-        let messages = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
-        let messages = messages.clone();
-        let mut tx = Some(tx);
-        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
-
-        let success = Closure::wrap(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = req.result().unwrap_or_else(|_err| JsValue::null());
-
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-                if page > 1 && advanced {
-                    advanced = false;
-                    cursor.advance((page - 1) * page_size).unwrap();
-                    return;
-                }
-                let value = cursor.value().unwrap();
-                // 反序列化
-                if let Ok(msg) = serde_wasm_bindgen::from_value::<Message>(value) {
-                    let id = msg.local_id.clone();
-                    messages.borrow_mut().insert(id, msg);
-                }
-                counter += 1;
-                if counter >= page_size {
-                    let _ = tx.take().unwrap().send(messages.borrow().clone());
-                    return;
-                }
-                let _ = cursor.continue_();
-            } else {
-                // 如果为null说明已经遍历完成
-                //将总的结果发送出来
-                let _ = tx.take().unwrap().send(messages.borrow().clone());
-            }
-        }) as Box<dyn FnMut(&Event)>);
-
-        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-        *self.on_get_list_success.borrow_mut() = Some(success);
-
-        Ok(rx.await.unwrap())
+        let (result, onsuccess) =
+            get_messages(store, friend_id, page, page_size, &self.on_err_callback).await?;
+        *self.on_get_list_success.borrow_mut() = Some(onsuccess);
+        Ok(result)
     }
 
     async fn get_last_msg(&self, group_id: &str) -> Result<Option<Message>> {
-        // 使用channel异步获取数据
-        let (tx, rx) = oneshot::channel::<Option<Message>>();
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-
-        // let rang = IdbKeyRange::bound(&JsValue::from(0), &JsValue::from(100));
-        let rang = IdbKeyRange::only(&JsValue::from(group_id))?;
-        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
-
-        let request = index.open_cursor_with_range_and_direction(
-            &JsValue::from(&rang),
-            web_sys::IdbCursorDirection::Prev,
-        )?;
-
-        let mut tx = Some(tx);
-        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
-        let success = Closure::once(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = req.result().unwrap_or_else(|_err| JsValue::null());
-
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-
-                let value = cursor.value().unwrap();
-                let msg: Message = serde_wasm_bindgen::from_value(value).unwrap();
-
-                let _ = tx.take().unwrap().send(Some(msg));
-            } else {
-                let _ = tx.take().unwrap().send(None);
-            }
-        }) as Box<dyn FnMut(&Event)>);
-
-        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
-        Ok(rx.await.unwrap())
+        get_last_msg(store, group_id, &self.on_err_callback).await
     }
 
     async fn get(&self, local_id: &str) -> Result<Option<Message>> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let request = store.get(&JsValue::from(local_id))?;
-
-        let (tx, rx) = oneshot::channel::<Option<Message>>();
-
-        let onsuccess = Closure::once(move |event: &Event| {
-            let result = event
-                .target()
-                .unwrap()
-                .dyn_ref::<IdbRequest>()
-                .unwrap()
-                .result()
-                .unwrap();
-            let mut msg = None;
-            if !result.is_undefined() && !result.is_null() {
-                msg = Some(serde_wasm_bindgen::from_value(result).unwrap());
-            }
-            tx.send(msg).unwrap();
-        });
-
-        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-
-        let on_add_error = Closure::once(move |event: &Event| error!("query error: {:?}", event));
-        request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-
-        Ok(rx.await.unwrap())
+        get(store, local_id).await
     }
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let req = store.get(&JsValue::from(msg.local_id.as_str()))?;
-
-        let send_status = msg.send_status.clone();
-        let server_id = msg.server_id.clone();
-        let send_seq = msg.send_seq;
-        let send_time = msg.send_time;
-
-        let onsuccess = Closure::once(move |event: &Event| {
-            let value = event
-                .target()
-                .unwrap()
-                .dyn_ref::<IdbRequest>()
-                .unwrap()
-                .result()
-                .unwrap();
-            if !value.is_undefined() && !value.is_null() {
-                let mut result: Message = serde_wasm_bindgen::from_value(value).unwrap();
-                result.send_status = send_status;
-                result.server_id = server_id;
-                result.send_seq = send_seq;
-                result.send_time = send_time;
-
-                store
-                    .put(&serde_wasm_bindgen::to_value(&result).unwrap())
-                    .unwrap();
-            }
-        });
-        req.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-        req.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
-
+        let onsuccess = update_msg_status(store, msg, &self.on_err_callback).await?;
         *self.on_update_state_success.borrow_mut() = Some(onsuccess);
         Ok(())
     }
 
     async fn update_read_status(&self, friend_id: &str) -> Result<Vec<i64>> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let index = store.index(MESSAGE_FRIEND_AND_IS_READ_INDEX)?;
-
-        let friend_unread = js_sys::Array::new();
-        friend_unread.push(&JsValue::from(friend_id));
-        friend_unread.push(&JsValue::from(0));
-
-        let range = IdbKeyRange::only(&JsValue::from(friend_unread))?;
-        let request = index.open_cursor_with_range(&range)?;
-
-        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
-
-        let sequences = Rc::new(RefCell::new(Vec::new()));
-        let sequences = sequences.clone();
-
-        let (tx, rx) = oneshot::channel::<Vec<i64>>();
-        let mut tx = Some(tx);
-        let store = store.clone();
-
-        let success = Closure::wrap(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = req.result().unwrap_or_else(|_err| JsValue::null());
-
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-                if let Ok(value) = cursor.value() {
-                    if let Ok(mut msg) = serde_wasm_bindgen::from_value::<Message>(value) {
-                        if !msg.is_self {
-                            sequences.borrow_mut().push(msg.seq);
-                        }
-                        msg.is_read = 1;
-                        store
-                            .put(&serde_wasm_bindgen::to_value(&msg).unwrap())
-                            .unwrap();
-                    }
-                }
-                let _ = cursor.continue_();
-            } else {
-                tx.take().unwrap().send(sequences.borrow().clone()).unwrap();
-            }
-        }) as Box<dyn FnMut(&Event)>);
-
-        request.set_onsuccess(Some(success.as_ref().unchecked_ref()));
+        let (seq, success) = update_read_status(store, friend_id, &self.on_err_callback).await?;
         *self.on_update_success.borrow_mut() = Some(success);
 
-        Ok(rx.await.unwrap())
+        Ok(seq)
     }
 
-    async fn batch_delete(&self, group_id: &str) -> Result<()> {
+    async fn delete_batch(&self, group_id: &str) -> Result<()> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
-        let range = IdbKeyRange::only(&JsValue::from(group_id))?;
-        let request = index.open_cursor_with_range(&range)?;
 
-        let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
-            let target = event.target().expect("msg");
-            let req = target
-                .dyn_ref::<IdbRequest>()
-                .expect("Event target is IdbRequest; qed");
-            let result = req.result().unwrap_or_else(|_err| JsValue::null());
-
-            if !result.is_null() {
-                let cursor = result
-                    .dyn_ref::<web_sys::IdbCursorWithValue>()
-                    .expect("result is IdbCursorWithValue; qed");
-
-                cursor.delete().unwrap();
-
-                cursor.continue_().unwrap();
-            }
-        }) as Box<dyn FnMut(&Event)>);
-
-        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-
+        let onsuccess = delete_batch(store, group_id).await?;
         *self.on_batch_del_success.borrow_mut() = Some(onsuccess);
-
-        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
 
         Ok(())
     }

@@ -73,9 +73,10 @@ impl Messages for MessageRepo {
         page_size: u32,
     ) -> Result<IndexMap<AttrValue, Message>> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
-        let result = get_messages(store, friend_id, page, page_size, &self.on_err_callback).await?;
-        *self.on_get_list_success.borrow_mut() = Some(result.1);
-        Ok(result.0)
+        let (result, onsuccess) =
+            get_messages(store, friend_id, page, page_size, &self.on_err_callback).await?;
+        *self.on_get_list_success.borrow_mut() = Some(onsuccess);
+        Ok(result)
     }
 
     async fn add_message(&self, msg: &mut Message) -> Result<()> {
@@ -105,7 +106,7 @@ impl Messages for MessageRepo {
         unread_count(store).await.unwrap_or_default()
     }
 
-    async fn batch_delete(&self, friend_id: &str) -> Result<()> {
+    async fn delete_batch(&self, friend_id: &str) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
         let onsuccess = delete_batch(store, friend_id).await?;
         *self.on_del_msg_success.borrow_mut() = Some(onsuccess);

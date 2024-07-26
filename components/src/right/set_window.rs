@@ -212,7 +212,7 @@ impl Component for SetWindow {
                             spawn_local(async move {
                                 // clean group messages
                                 if let Err(err) =
-                                    db::db_ins().messages.batch_delete(id.as_str()).await
+                                    db::db_ins().messages.delete_batch(id.as_str()).await
                                 {
                                     log::error!("clean group messages error: {:?}", err);
                                 }
@@ -227,7 +227,7 @@ impl Component for SetWindow {
                             spawn_local(async move {
                                 // clean group messages
                                 if let Err(err) =
-                                    db::db_ins().group_msgs.batch_delete(id.as_str()).await
+                                    db::db_ins().group_msgs.delete_batch(id.as_str()).await
                                 {
                                     log::error!("clean group messages error: {:?}", err);
                                 }
