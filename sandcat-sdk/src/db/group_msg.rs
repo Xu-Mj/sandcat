@@ -10,7 +10,7 @@ use crate::model::message::{Message, ServerResponse};
 pub trait GroupMessages: Debug {
     async fn put(&self, group: &Message) -> Result<()>;
 
-    async fn get_msg_by_local_id(&self, local_id: &str) -> Result<Option<Message>>;
+    async fn get(&self, local_id: &str) -> Result<Option<Message>>;
 
     async fn get_messages(
         &self,
@@ -19,11 +19,11 @@ pub trait GroupMessages: Debug {
         page_size: u32,
     ) -> Result<IndexMap<AttrValue, Message>>;
 
-    async fn get_last_msg(&self, group_id: &str) -> Result<Message>;
+    async fn get_last_msg(&self, group_id: &str) -> Result<Option<Message>>;
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()>;
 
     async fn update_read_status(&self, friend_id: &str) -> Result<Vec<i64>>;
 
-    async fn batch_delete(&self, group_id: &str) -> Result<()>;
+    async fn delete_batch(&self, group_id: &str) -> Result<()>;
 }

@@ -10,7 +10,7 @@ use crate::AppState;
 
 #[derive(Debug, sqlx::FromRow, Serialize, Deserialize, Default)]
 pub struct Msg {
-    pub id: i32,
+    // pub id: i32,
     pub seq: i64,
     pub send_seq: i64,
     pub local_id: String,
@@ -45,7 +45,7 @@ impl Into<Message> for Msg {
             send_time: self.send_time,
             send_status: SendStatus::from(self.send_status),
             is_read: self.is_read,
-            id: self.id,
+            // id: self.id,
             seq: self.seq,
             send_seq: self.send_seq,
             is_self: self.is_self,

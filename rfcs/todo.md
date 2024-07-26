@@ -31,3 +31,4 @@
 - use indexeddb to store last sync/offline time instead of local storage
 - bug: switch component will cause `closure invoke after being dropped` while setting window is showing
 - bug: file message cannot be related
+- **CONSIDER**: WE REMOVED THE MESSAGE ID ATTRIBUTE, BECAUSE WE NEED TO GUARANTEE THE MESSAGE UNIQUENESS WHILE WE PUT THE MESSAGE INTO THE DATABASE, BUT WHETHER THE DATABASE CAN GUARANTEE THE MESSAGE INSERTION ORDERS IS NOT SURE.

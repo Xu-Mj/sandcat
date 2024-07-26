@@ -12,9 +12,9 @@ use super::group::{Group, GroupFromServer, GroupMemberFromServer};
 
 pub const DEFAULT_HELLO_MESSAGE: &str = "I've accepted your friend request. Now let's chat!";
 
-fn is_zero(id: &i32) -> bool {
-    *id == 0
-}
+// fn is_zero(id: &i32) -> bool {
+//     *id == 0
+// }
 
 /// 消息表，要不要每个用户对应一个表？
 /// 表名由message+user_id组成
@@ -22,9 +22,6 @@ fn is_zero(id: &i32) -> bool {
 /// 由于indexeddb只能在onupgrade中建表，不能动态创建，所以消息只能存到一张表中
 #[derive(Debug, Deserialize, Serialize, Clone, Default, PartialEq)]
 pub struct Message {
-    #[serde(skip_serializing_if = "is_zero")]
-    #[serde(default)]
-    pub id: i32,
     pub seq: i64,
     pub send_seq: i64,
     pub local_id: AttrValue,
@@ -89,7 +86,6 @@ impl From<InviteCancelMsg> for Message {
             InviteType::Audio => ContentType::AudioCall,
         };
         Message {
-            id: 0,
             seq: value.seq,
             send_seq: value.send_seq,
             local_id: value.local_id,
@@ -127,7 +123,6 @@ impl From<InviteAnswerMsg> for Message {
             AttrValue::from("deny")
         };
         Message {
-            id: 0,
             seq: value.seq,
             send_seq: value.send_seq,
             local_id: value.local_id,
@@ -161,7 +156,6 @@ impl From<InviteNotAnswerMsg> for Message {
         };
         let content = AttrValue::from("not_answer");
         Message {
-            id: 0,
             seq: value.seq,
             send_seq: value.send_seq,
             local_id: value.local_id,
@@ -196,7 +190,6 @@ impl From<Hangup> for Message {
         let content = format!("duration||{}", utils::format_milliseconds(value.sustain)).into();
 
         Message {
-            id: 0,
             seq: value.seq,
             send_seq: value.send_seq,
             local_id: value.local_id,
@@ -231,7 +224,6 @@ impl Message {
         // 计算时间
         let content = format!("duration||{}", utils::format_milliseconds(value.sustain)).into();
         Message {
-            id: 0,
             seq: value.seq,
             send_seq: value.send_seq,
             local_id: value.local_id,
@@ -262,7 +254,6 @@ impl Message {
         };
 
         Self {
-            id: 0,
             seq: msg.seq,
             send_seq: msg.send_seq,
             local_id: msg.local_id,
@@ -325,7 +316,6 @@ pub enum Msg {
 impl Msg {
     fn new_audio_dataless_msg(msg: &Message) -> Message {
         Message {
-            id: msg.id,
             seq: msg.seq,
             send_seq: msg.send_seq,
             local_id: msg.local_id.clone(),
@@ -614,7 +604,6 @@ impl TryFrom<pb::message::Msg> for Message {
         };
         let is_read = if value.is_read { 1 } else { 0 };
         Ok(Self {
-            id: 0,
             seq: value.seq,
             send_seq: value.send_seq,
             local_id: value.local_id.into(),

@@ -640,7 +640,7 @@ impl Component for MessageList {
         let list = self
             .list
             .iter()
-            .map(|(_, msg)| {
+            .map(|(key, msg)| {
                 let (avatar, nickname) = if msg.is_self {
                     (&props.cur_user_avatar, &props.nickname)
                 } else {
@@ -664,7 +664,7 @@ impl Component for MessageList {
                         {play_audio}
                         {del_item}
                         {send_timeout}
-                        key={msg.id}
+                        key={key.as_str()}
                     />
                 }
             })

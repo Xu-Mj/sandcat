@@ -42,8 +42,8 @@ impl Component for RelatedMsg {
         let ctx = ctx.link().clone();
         spawn_local(async move {
             let msg = match type_ {
-                ItemType::Group => db::db_ins().group_msgs.get_msg_by_local_id(&local_id).await,
-                ItemType::Friend => db::db_ins().messages.get_msg_by_local_id(&local_id).await,
+                ItemType::Group => db::db_ins().group_msgs.get(&local_id).await,
+                ItemType::Friend => db::db_ins().messages.get(&local_id).await,
             };
 
             if let Ok(Some(msg)) = msg {
