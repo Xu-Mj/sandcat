@@ -151,6 +151,11 @@ impl Chats {
                             }
                             msg.audio_downloaded = true;
                         }
+
+                        if msg.send_id == user_id {
+                            msg.is_self = true;
+                        }
+
                         if let Err(e) = db::db_ins().group_msgs.put(&msg).await {
                             error!("save message to db error: {:?}", e);
                         }

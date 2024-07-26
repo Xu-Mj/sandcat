@@ -19,6 +19,7 @@ use crate::db::{
     MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX,
     MESSAGE_TYPE_INDEX, SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
 };
+use crate::error::Result;
 
 use super::DB_NAME;
 
@@ -72,110 +73,12 @@ impl Repository {
             )
             .unwrap();
             // store.create_index_with_str("login", "login").unwrap();
-
-            let store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(MESSAGE_TABLE_NAME),
-                    &parameters,
-                )
-                .unwrap();
-            let mut param: IdbIndexParameters = IdbIndexParameters::new();
-            param.unique(true);
-            store
-                .create_index_with_str_and_optional_parameters(MESSAGE_ID_INDEX, "local_id", &param)
-                .unwrap();
-            let indexes = Array::new();
-            indexes.push(&JsValue::from("friend_id"));
-            indexes.push(&JsValue::from("send_time"));
-            let indexes = JsValue::from(indexes);
-            store
-                .create_index_with_str_sequence(MESSAGE_FRIEND_AND_SEND_TIME_INDEX, &indexes)
-                .unwrap();
-
-            let indexes = Array::new();
-            indexes.push(&JsValue::from("friend_id"));
-            indexes.push(&JsValue::from("is_read"));
-            let indexes = JsValue::from(indexes);
-            store
-                .create_index_with_str_sequence(MESSAGE_FRIEND_AND_IS_READ_INDEX, &indexes)
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_FRIEND_ID_INDEX, "friend_id")
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_CONTENT_INDEX, "content")
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_TIME_INDEX, "create_time")
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_TYPE_INDEX, "content_type")
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_IS_READ_INDEX, "is_read")
-                .unwrap();
-            let store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(GROUP_MSG_TABLE_NAME),
-                    &parameters,
-                )
-                .unwrap();
-            let mut param: IdbIndexParameters = IdbIndexParameters::new();
-            param.unique(true);
-            store
-                .create_index_with_str_and_optional_parameters(MESSAGE_ID_INDEX, "local_id", &param)
-                .unwrap();
-
-            let indexes = Array::new();
-            indexes.push(&JsValue::from("friend_id"));
-            indexes.push(&JsValue::from("send_time"));
-            let indexes = JsValue::from(indexes);
-            store
-                .create_index_with_str_sequence(MESSAGE_FRIEND_AND_SEND_TIME_INDEX, &indexes)
-                .unwrap();
-
-            let indexes = Array::new();
-            indexes.push(&JsValue::from("friend_id"));
-            indexes.push(&JsValue::from("is_read"));
-            let indexes = JsValue::from(indexes);
-            store
-                .create_index_with_str_sequence(MESSAGE_FRIEND_AND_IS_READ_INDEX, &indexes)
-                .unwrap();
-
-            store
-                .create_index_with_str(MESSAGE_FRIEND_ID_INDEX, "friend_id")
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_CONTENT_INDEX, "content")
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_TIME_INDEX, "create_time")
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_TYPE_INDEX, "content_type")
-                .unwrap();
-            store
-                .create_index_with_str(MESSAGE_IS_READ_INDEX, "is_read")
-                .unwrap();
-
-            let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
-            parameters.key_path(Some(&JsValue::from_str("friend_id")));
-            let store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(CONVERSATION_TABLE_NAME),
-                    &parameters,
-                )
-                .unwrap();
-            store
-                .create_index_with_str(CONVERSATION_LAST_MSG_TIME_INDEX, "last_msg_time")
-                .unwrap();
-            let indexes = Array::new();
-            indexes.push(&JsValue::from("is_pined"));
-            indexes.push(&JsValue::from("last_msg_time"));
-            let indexes = JsValue::from(indexes);
-            store
-                .create_index_with_str_sequence(CONVERSATION_IS_PINED_WITH_TIME_INDEX, &indexes)
-                .unwrap();
+            create_msg_table(&db, MESSAGE_TABLE_NAME).expect("create message table panic");
+            create_msg_table(&db, GROUP_MSG_TABLE_NAME).expect("create group message table panic");
+            create_friend_table(&db).expect("create friend table panic");
+            create_friendship_table(&db).expect("create friendship table panic");
+            create_group_members_table(&db).expect("create group members table panic");
+            create_conv_table(&db).expect("create conversations table panic");
 
             let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
             parameters.key_path(Some(&JsValue::from_str("id")));
@@ -192,99 +95,6 @@ impl Repository {
                     &parameters,
                 )
                 .unwrap();
-
-            // create group_members table
-            let indexes = Array::new();
-            indexes.push(&JsValue::from("user_id"));
-            indexes.push(&JsValue::from("group_id"));
-            let indexes = JsValue::from(indexes);
-
-            let mut parameter = IdbObjectStoreParameters::new();
-            parameter.key_path(Some(&indexes));
-            let store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(GROUP_MEMBERS_TABLE_NAME),
-                    &parameter,
-                )
-                .unwrap();
-            store
-                .create_index_with_str(GROUP_ID_INDEX, "group_id")
-                .unwrap();
-
-            // create composite index
-            store
-                .create_index_with_str_sequence_and_optional_parameters(
-                    GROUP_ID_AND_USER_ID,
-                    &indexes,
-                    &param,
-                )
-                .unwrap();
-
-            // create group_id and is_delete index
-            let indexes = Array::new();
-            indexes.push(&JsValue::from("group_id"));
-            indexes.push(&JsValue::from("is_deleted"));
-            let indexes = JsValue::from(indexes);
-            store
-                .create_index_with_str_sequence(GROUP_ID_AND_IS_DELETE, &indexes)
-                .unwrap();
-
-            // create friendship table and index
-            let mut parameter = IdbObjectStoreParameters::new();
-            parameter.key_path(Some(&JsValue::from(FRIENDSHIP_ID_INDEX)));
-            let store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(FRIENDSHIP_TABLE_NAME),
-                    &parameter,
-                )
-                .unwrap();
-
-            store
-                .create_index_with_str_and_optional_parameters(
-                    FRIENDSHIP_ID_INDEX,
-                    "friendship_id",
-                    &param,
-                )
-                .unwrap();
-            store
-                .create_index_with_str(FRIEND_USER_ID_INDEX, "user_id")
-                .unwrap();
-            store
-                .create_index_with_str(FRIENDSHIP_UNREAD_INDEX, "read")
-                .unwrap();
-
-            // create friend table and index
-            let mut p = IdbObjectStoreParameters::new();
-            p.key_path(Some(&JsValue::from_str("friend_id")));
-            let store = db
-                .create_object_store_with_optional_parameters(&String::from(FRIEND_TABLE_NAME), &p)
-                .unwrap();
-
-            store
-                .create_index_with_str(FRIEND_NAME_INDEX, "name")
-                .unwrap();
-            store
-                .create_index_with_str(FRIEND_REMARK_INDEX, "remark")
-                .unwrap();
-            store
-                .create_index_with_str(FRIEND_GENDER_INDEX, "gender")
-                .unwrap();
-            store
-                .create_index_with_str(FRIEND_PHONE_INDEX, "phone")
-                .unwrap();
-            store
-                .create_index_with_str(FRIEND_ADDRESS_INDEX, "address")
-                .unwrap();
-            store
-                .create_index_with_str(FRIEND_TIME_INDEX, "update_time")
-                .unwrap();
-
-            // db.create_object_store("users").unwrap();
-            // console::log_1(&JsValue::from("_store.unwrap()"));
-
-            // let _index = store
-            //     .create_index_with_str(&String::from("name"), &String::from("name"))
-            //     .expect("create_index_with_str error");
         });
         open_request.set_onupgradeneeded(Some(on_upgradeneeded.as_ref().unchecked_ref()));
         on_upgradeneeded.forget();
@@ -312,11 +122,11 @@ impl Repository {
         Repository { db }
     }
 
-    pub async fn store(&self, name: &str) -> Result<IdbObjectStore, JsValue> {
+    pub async fn store(&self, name: &str) -> Result<IdbObjectStore> {
         let transaction = self
             .db
             .transaction_with_str_and_mode(name, IdbTransactionMode::Readwrite)?;
-        transaction.object_store(name)
+        Ok(transaction.object_store(name)?)
     }
 
     pub async fn delete_db() {
@@ -327,4 +137,127 @@ impl Repository {
         let idb_factory = window.indexed_db().unwrap().unwrap();
         idb_factory.delete_database(db_name).unwrap();
     }
+}
+
+fn create_msg_table(db: &IdbDatabase, table_name: &str) -> Result<()> {
+    // use local_id as primary key
+    let mut parameter = IdbObjectStoreParameters::new();
+    parameter.key_path(Some(&JsValue::from(MESSAGE_ID_INDEX)));
+
+    let store =
+        db.create_object_store_with_optional_parameters(&String::from(table_name), &parameter)?;
+
+    let indexes = Array::new();
+    indexes.push(&JsValue::from("friend_id"));
+    indexes.push(&JsValue::from("send_time"));
+    let indexes = JsValue::from(indexes);
+    store.create_index_with_str_sequence(MESSAGE_FRIEND_AND_SEND_TIME_INDEX, &indexes)?;
+
+    let indexes = Array::new();
+    indexes.push(&JsValue::from("friend_id"));
+    indexes.push(&JsValue::from("is_read"));
+    let indexes = JsValue::from(indexes);
+    store.create_index_with_str_sequence(MESSAGE_FRIEND_AND_IS_READ_INDEX, &indexes)?;
+
+    store.create_index_with_str(MESSAGE_FRIEND_ID_INDEX, "friend_id")?;
+    store.create_index_with_str(MESSAGE_CONTENT_INDEX, "content")?;
+    store.create_index_with_str(MESSAGE_TIME_INDEX, "create_time")?;
+    store.create_index_with_str(MESSAGE_TYPE_INDEX, "content_type")?;
+    store.create_index_with_str(MESSAGE_IS_READ_INDEX, "is_read")?;
+    Ok(())
+}
+
+fn create_conv_table(db: &IdbDatabase) -> Result<()> {
+    // use friend_id as primary key
+    let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
+    parameters.key_path(Some(&JsValue::from_str("friend_id")));
+    let store = db.create_object_store_with_optional_parameters(
+        &String::from(CONVERSATION_TABLE_NAME),
+        &parameters,
+    )?;
+
+    store.create_index_with_str(CONVERSATION_LAST_MSG_TIME_INDEX, "last_msg_time")?;
+
+    let indexes = Array::new();
+    indexes.push(&JsValue::from("is_pined"));
+    indexes.push(&JsValue::from("last_msg_time"));
+    let indexes = JsValue::from(indexes);
+    store.create_index_with_str_sequence(CONVERSATION_IS_PINED_WITH_TIME_INDEX, &indexes)?;
+
+    Ok(())
+}
+
+fn create_group_members_table(db: &IdbDatabase) -> Result<()> {
+    // create group_members table
+    let indexes = Array::new();
+    indexes.push(&JsValue::from("user_id"));
+    indexes.push(&JsValue::from("group_id"));
+    let indexes = JsValue::from(indexes);
+
+    let mut parameter = IdbObjectStoreParameters::new();
+    parameter.key_path(Some(&indexes));
+    let store = db.create_object_store_with_optional_parameters(
+        &String::from(GROUP_MEMBERS_TABLE_NAME),
+        &parameter,
+    )?;
+
+    store.create_index_with_str(GROUP_ID_INDEX, "group_id")?;
+
+    // create composite index
+    let mut param: IdbIndexParameters = IdbIndexParameters::new();
+    param.unique(true);
+    store.create_index_with_str_sequence_and_optional_parameters(
+        GROUP_ID_AND_USER_ID,
+        &indexes,
+        &param,
+    )?;
+
+    // create group_id and is_delete index
+    let indexes = Array::new();
+    indexes.push(&JsValue::from("group_id"));
+    indexes.push(&JsValue::from("is_deleted"));
+    let indexes = JsValue::from(indexes);
+    store.create_index_with_str_sequence(GROUP_ID_AND_IS_DELETE, &indexes)?;
+
+    Ok(())
+}
+
+fn create_friendship_table(db: &IdbDatabase) -> Result<()> {
+    // create friendship table and index
+    let mut parameter = IdbObjectStoreParameters::new();
+    parameter.key_path(Some(&JsValue::from(FRIENDSHIP_ID_INDEX)));
+    let store = db.create_object_store_with_optional_parameters(
+        &String::from(FRIENDSHIP_TABLE_NAME),
+        &parameter,
+    )?;
+
+    let mut param: IdbIndexParameters = IdbIndexParameters::new();
+    param.unique(true);
+    store.create_index_with_str_and_optional_parameters(
+        FRIENDSHIP_ID_INDEX,
+        "friendship_id",
+        &param,
+    )?;
+
+    store.create_index_with_str(FRIEND_USER_ID_INDEX, "user_id")?;
+    store.create_index_with_str(FRIENDSHIP_UNREAD_INDEX, "read")?;
+
+    Ok(())
+}
+
+fn create_friend_table(db: &IdbDatabase) -> Result<()> {
+    // create friend table and index
+    let mut p = IdbObjectStoreParameters::new();
+    p.key_path(Some(&JsValue::from_str("friend_id")));
+    let store =
+        db.create_object_store_with_optional_parameters(&String::from(FRIEND_TABLE_NAME), &p)?;
+
+    store.create_index_with_str(FRIEND_NAME_INDEX, "name")?;
+    store.create_index_with_str(FRIEND_REMARK_INDEX, "remark")?;
+    store.create_index_with_str(FRIEND_GENDER_INDEX, "gender")?;
+    store.create_index_with_str(FRIEND_PHONE_INDEX, "phone")?;
+    store.create_index_with_str(FRIEND_ADDRESS_INDEX, "address")?;
+    store.create_index_with_str(FRIEND_TIME_INDEX, "update_time")?;
+
+    Ok(())
 }

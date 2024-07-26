@@ -14,8 +14,7 @@ use crate::error::Result;
 use crate::model::message::{Message, ServerResponse};
 
 use super::{
-    repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX,
-    MESSAGE_TABLE_NAME,
+    repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME,
 };
 use super::{
     SuccessCallback, MESSAGE_FRIEND_AND_IS_READ_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX,
@@ -100,11 +99,12 @@ impl Messages for MessageRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_msg_by_local_id(&self, local_id: &str) -> Result<Option<Message>> {
-        let (tx, rx) = oneshot::channel::<Option<Message>>();
+    async fn get(&self, local_id: &str) -> Result<Option<Message>> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
-        let index = store.index(MESSAGE_ID_INDEX)?;
-        let request = index.get(&JsValue::from(local_id))?;
+        let request = store.get(&JsValue::from(local_id))?;
+
+        let (tx, rx) = oneshot::channel::<Option<Message>>();
+
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()
@@ -120,8 +120,10 @@ impl Messages for MessageRepo {
             tx.send(msg).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+
         let on_add_error = Closure::once(move |event: &Event| error!("query error: {:?}", event));
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
+
         Ok(rx.await.unwrap())
     }
 
@@ -197,42 +199,29 @@ impl Messages for MessageRepo {
         Ok(rx.await.unwrap())
     }
 
-    /// todo test if set local id to unique, and put a message with same local id
     async fn add_message(&self, msg: &mut Message) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
-        let index = store.index(MESSAGE_ID_INDEX)?;
-        let (tx, rx) = oneshot::channel::<Option<Message>>();
-        let req = index.get(&JsValue::from(msg.local_id.as_str()))?;
-
-        let onsuccess = Closure::once(move |event: &Event| {
-            let value = event
-                .target()
-                .unwrap()
-                .dyn_ref::<IdbRequest>()
-                .unwrap()
-                .result()
-                .unwrap();
-            if !value.is_undefined() && !value.is_null() {
-                let result = serde_wasm_bindgen::from_value(value).unwrap();
-                tx.send(Some(result)).unwrap();
-            } else {
-                tx.send(None).unwrap();
-            }
-        });
-        req.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
-
-        let result = rx.await.unwrap();
-        msg.id = if let Some(msg) = result { msg.id } else { 0 };
-
         let request = store.put(&serde_wasm_bindgen::to_value(&msg)?)?;
+
+        let (tx, rx) = oneshot::channel::<u8>();
+
+        let onsuccess = Closure::once(move |_event: &Event| {
+            tx.send(1).unwrap();
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+
         request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
+        // wait for the result
+        rx.await.unwrap();
+
         Ok(())
     }
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
-        let index = store.index(MESSAGE_ID_INDEX)?;
-        let req = index.get(&JsValue::from(msg.local_id.as_str()))?;
+        // let index = store.index(MESSAGE_ID_INDEX)?;
+        let req = store.get(&JsValue::from(msg.local_id.as_str()))?;
 
         let store = store.clone();
         let send_status = msg.send_status.clone();
@@ -375,9 +364,9 @@ impl Messages for MessageRepo {
         Ok(())
     }
 
-    async fn delete(&self, local_id: i32) -> Result<()> {
+    async fn delete(&self, local_id: &AttrValue) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
-        store.delete(&JsValue::from(local_id))?;
+        store.delete(&JsValue::from(local_id.as_str()))?;
         Ok(())
     }
 }

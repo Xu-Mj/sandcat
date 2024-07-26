@@ -13,10 +13,10 @@ use crate::db::group_msg::GroupMessages;
 use crate::error::Result;
 use crate::model::message::{Message, ServerResponse};
 
+use super::{repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX};
 use super::{
-    repository::Repository, GROUP_MSG_TABLE_NAME, MESSAGE_FRIEND_ID_INDEX, MESSAGE_ID_INDEX,
+    SuccessCallback, MESSAGE_FRIEND_AND_IS_READ_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX,
 };
-use super::{SuccessCallback, MESSAGE_FRIEND_AND_IS_READ_INDEX};
 
 #[derive(Debug)]
 pub struct GroupMsgRepo {
@@ -54,10 +54,21 @@ impl GroupMsgRepo {
 
 #[async_trait::async_trait(?Send)]
 impl GroupMessages for GroupMsgRepo {
-    async fn put(&self, group: &Message) -> Result<()> {
+    async fn put(&self, msg: &Message) -> Result<()> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let value = serde_wasm_bindgen::to_value(group)?;
-        store.put(&value)?;
+        let request = store.put(&serde_wasm_bindgen::to_value(&msg)?)?;
+
+        let (tx, rx) = oneshot::channel::<u8>();
+
+        let onsuccess = Closure::once(move |_event: &Event| {
+            tx.send(1).unwrap();
+        });
+        request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+
+        request.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
+        rx.await.unwrap();
+
         Ok(())
     }
 
@@ -75,14 +86,20 @@ impl GroupMessages for GroupMsgRepo {
         let (tx, rx) = oneshot::channel::<IndexMap<AttrValue, Message>>();
 
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let rang = IdbKeyRange::only(&JsValue::from(friend_id));
+        let index = store.index(MESSAGE_FRIEND_AND_SEND_TIME_INDEX)?;
 
         // use friend id as group id
-        let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
-        let request = index.open_cursor_with_range_and_direction(
-            &JsValue::from(&rang.unwrap()),
-            web_sys::IdbCursorDirection::Prev,
-        )?;
+        let start_key = js_sys::Array::new();
+        start_key.push(&JsValue::from(friend_id));
+        start_key.push(&JsValue::from_f64(f64::NEG_INFINITY));
+
+        let end_key = js_sys::Array::new();
+        end_key.push(&JsValue::from(friend_id));
+        end_key.push(&JsValue::from_f64(f64::INFINITY));
+
+        let range = IdbKeyRange::bound(&JsValue::from(start_key), &JsValue::from(end_key))?;
+        let request = index
+            .open_cursor_with_range_and_direction(&range, web_sys::IdbCursorDirection::Prev)?;
 
         let messages = std::rc::Rc::new(std::cell::RefCell::new(IndexMap::new()));
         let messages = messages.clone();
@@ -171,10 +188,9 @@ impl GroupMessages for GroupMsgRepo {
         Ok(rx.await.unwrap())
     }
 
-    async fn get_msg_by_local_id(&self, local_id: &str) -> Result<Option<Message>> {
+    async fn get(&self, local_id: &str) -> Result<Option<Message>> {
         let store = self.store(GROUP_MSG_TABLE_NAME).await?;
-        let index = store.index(MESSAGE_ID_INDEX)?;
-        let request = index.get(&JsValue::from(local_id))?;
+        let request = store.get(&JsValue::from(local_id))?;
 
         let (tx, rx) = oneshot::channel::<Option<Message>>();
 
@@ -202,11 +218,8 @@ impl GroupMessages for GroupMsgRepo {
     }
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()> {
-        let store = self.store(GROUP_MSG_TABLE_NAME).await.unwrap();
-        let index = store.index(MESSAGE_ID_INDEX).unwrap();
-        let req = index.get(&JsValue::from(msg.local_id.as_str()))?;
-
-        let store = store.clone();
+        let store = self.store(GROUP_MSG_TABLE_NAME).await?;
+        let req = store.get(&JsValue::from(msg.local_id.as_str()))?;
 
         let send_status = msg.send_status.clone();
         let server_id = msg.server_id.clone();

@@ -10,7 +10,7 @@ use crate::model::message::{Message, ServerResponse};
 pub trait GroupMessages: Debug {
     async fn put(&self, group: &Message) -> Result<()>;
 
-    async fn get_msg_by_local_id(&self, local_id: &str) -> Result<Option<Message>>;
+    async fn get(&self, local_id: &str) -> Result<Option<Message>>;
 
     async fn get_messages(
         &self,

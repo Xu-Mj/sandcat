@@ -262,7 +262,6 @@ impl Component for MsgItem {
             }
             MsgItemMsg::DeleteItem => {
                 let del_item = ctx.props().del_item.clone();
-                let id = ctx.props().msg.id;
                 let local_id = ctx.props().msg.local_id.clone();
                 let content_type = ctx.props().msg.content_type;
                 spawn_local(async move {
@@ -273,7 +272,7 @@ impl Component for MsgItem {
                             return;
                         }
                     }
-                    if let Err(e) = db::db_ins().messages.delete(id).await {
+                    if let Err(e) = db::db_ins().messages.delete(&local_id).await {
                         log::error!("delete message error: {:?}", e);
                         return;
                     }
