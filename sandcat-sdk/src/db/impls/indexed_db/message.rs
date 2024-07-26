@@ -57,9 +57,9 @@ impl MessageRepo {
 
 #[async_trait::async_trait(?Send)]
 impl Messages for MessageRepo {
-    async fn get_last_msg(&self, friend_id: &str) -> Result<Message> {
+    async fn get_last_msg(&self, friend_id: &str) -> Result<Option<Message>> {
         // use channel to get the result
-        let (tx, rx) = oneshot::channel::<Message>();
+        let (tx, rx) = oneshot::channel::<Option<Message>>();
         let store = self.store(MESSAGE_TABLE_NAME).await?;
 
         let rang = IdbKeyRange::only(&JsValue::from(friend_id))?;
@@ -89,9 +89,9 @@ impl Messages for MessageRepo {
 
                 let msg: Message = serde_wasm_bindgen::from_value(value).unwrap();
 
-                let _ = tx.take().unwrap().send(msg);
+                let _ = tx.take().unwrap().send(Some(msg));
             } else {
-                let _ = tx.take().unwrap().send(Message::default());
+                let _ = tx.take().unwrap().send(None);
             }
         }) as Box<dyn FnMut(&Event)>);
 

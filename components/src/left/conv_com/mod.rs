@@ -570,17 +570,17 @@ impl Chats {
 
     // 创建好友会话
     async fn create_friend_conversation(friend_id: AttrValue) -> Conversation {
+        let mut last_msg_time = 0;
+        let mut last_msg_type = ContentType::default();
         let friend = db::db_ins().friends.get(&friend_id).await;
-        let result = db::db_ins()
-            .messages
-            .get_last_msg(&friend_id)
-            .await
-            .unwrap_or_default();
-        let content = if result.id != 0 {
+        let result = db::db_ins().messages.get_last_msg(&friend_id).await;
+        let content = if let Ok(Some(msg)) = result {
+            last_msg_time = msg.create_time;
+            last_msg_type = msg.content_type;
             get_msg_type(
                 &utils::create_bundle(CONVERSATION),
-                result.content_type,
-                &result.content,
+                msg.content_type,
+                &msg.content,
             )
         } else {
             AttrValue::default()
@@ -591,8 +591,8 @@ impl Chats {
             remark: friend.remark,
             avatar: friend.avatar,
             last_msg: content,
-            last_msg_time: result.create_time,
-            last_msg_type: result.content_type,
+            last_msg_time,
+            last_msg_type,
             unread_count: 0,
             friend_id,
             conv_type: RightContentType::Friend,
