@@ -122,7 +122,7 @@ impl Component for ChangePwd {
                         error!("change pwd failed: {:?}", err);
                         Notification::error("change pwd failed").notify();
                     } else {
-                        Notification::info("password modify success");
+                        Notification::info("password modify success").notify();
                         close.emit(());
                     }
                 })
@@ -173,7 +173,7 @@ impl Component for ChangePwd {
             html!()
         };
 
-        let pwd_strength = if self.pwd_strength > 0 {
+        let pwd_strength = if self.new_pwd.len() > 0 {
             html! {
                 <meter
                     max="100"
