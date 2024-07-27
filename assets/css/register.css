@@ -60,74 +60,73 @@
         height: 100%;
     }
 
-    .register-wrapper {
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
+
+}
+
+.register-wrapper {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    background-color: var(--color-background);
+    border-radius: .3rem;
+
+    &>div {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 3fr 1fr;
+        height: 3rem;
+        line-height: 3rem;
         align-items: center;
-        gap: 1rem;
-        background-color: var(--color-background);
-        border-radius: .3rem;
 
-        &>div {
-            width: 100%;
-            display: grid;
-            grid-template-columns: 1fr 3fr 1fr;
-            height: 3rem;
-            line-height: 3rem;
-            align-items: center;
-
-            /* 最后一个元素左右居中 */
-            &>*:last-child {
-                justify-self: center;
-            }
+        /* 最后一个元素左右居中 */
+        &>*:last-child {
+            justify-self: center;
         }
-
-        .register-avatar-wrapper {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-
-            &>img {
-                width: 3rem;
-                height: 3rem;
-                cursor: pointer;
-            }
-
-            .avatar-active {
-                border: 3px solid rgb(4, 161, 252);
-            }
-        }
-
-        .register-code-btn {
-            width: 4rem;
-            height: 2rem;
-            background-color: rgb(4, 161, 252);
-            border: none;
-            border-radius: .2rem;
-            cursor: pointer;
-            color: white;
-
-            &:disabled {
-                background-color: rgb(99, 195, 250);
-                cursor: not-allowed;
-            }
-        }
-
-        .email-right {
-            border: green 1px solid;
-        }
-
-        .email-wrong {
-            border: red 1px solid;
-        }
-
-
     }
 
+    .register-avatar-wrapper {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+
+        &>img {
+            width: 3rem;
+            height: 3rem;
+            cursor: pointer;
+        }
+
+        .avatar-active {
+            border: 3px solid rgb(4, 161, 252);
+        }
+    }
+
+    .register-code-btn {
+        width: 4rem;
+        height: 2rem;
+        background-color: rgb(4, 161, 252);
+        border: none;
+        border-radius: .2rem;
+        cursor: pointer;
+        color: white;
+
+        &:disabled {
+            background-color: rgb(99, 195, 250);
+            cursor: not-allowed;
+        }
+    }
+
+    .email-right {
+        border: green 1px solid;
+    }
+
+    .email-wrong {
+        border: red 1px solid;
+    }
 
     progress {
         width: 90%;

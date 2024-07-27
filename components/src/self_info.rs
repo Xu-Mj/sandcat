@@ -4,7 +4,6 @@ use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
 use gloo::utils::window;
 use js_sys::Array;
-use sandcat_sdk::model::notification::Notification;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::spawn_local;
@@ -24,6 +23,7 @@ use yewdux::Dispatch;
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::api;
 use sandcat_sdk::db;
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::user::{User, UserUpdate};
 use sandcat_sdk::state::I18nState;
@@ -31,6 +31,8 @@ use sandcat_sdk::state::MobileState;
 use utils::tr;
 
 use crate::avatar::{Avatar, SubmitOption};
+use crate::change_pwd::ChangePwd;
+use crate::constant::CHANGE_PWD;
 use crate::constant::{
     ACCOUNT, ADDRESS, CANCEL, CHOOSE_AVATAR, EMAIL, FEMALE, GENDER, LOGOUT, MALE, NICKNAME, PHONE,
     REGION, SECRET, SET_AVATAR, SIGNATURE, SUBMIT,
@@ -48,9 +50,10 @@ pub struct SelfInfo {
     signature_node: NodeRef,
     avatar: String,
     gender: String,
-    _dispatch: Dispatch<I18nState>,
+    dispatch: Dispatch<I18nState>,
     is_mobile: bool,
     show_avatar_setter: bool,
+    show_change_pwd: bool,
 }
 
 #[derive(Debug)]
@@ -62,6 +65,7 @@ pub enum SelfInfoMsg {
     ShowAvatarSetter,
     SetAvatar(String),
     OnEscDown(KeyboardEvent),
+    ShowChangePwd,
 }
 
 #[derive(Properties, PartialEq, Clone)]
@@ -97,7 +101,8 @@ impl Component for SelfInfo {
             gender: ctx.props().user.gender.to_string(),
             avatar: ctx.props().user.avatar.to_string(),
             show_avatar_setter: false,
-            _dispatch: dispatch,
+            show_change_pwd: false,
+            dispatch,
             is_mobile: MobileState::is_mobile(),
         }
     }
@@ -162,8 +167,8 @@ impl Component for SelfInfo {
             }
             SelfInfoMsg::I18nStateChanged(state) => {
                 let res = match state.lang {
-                    LanguageType::ZhCN => zh_cn::ADD_FRIEND,
-                    LanguageType::EnUS => en_us::ADD_FRIEND,
+                    LanguageType::ZhCN => zh_cn::USER_INFO,
+                    LanguageType::EnUS => en_us::USER_INFO,
                 };
                 let i18n = utils::create_bundle(res);
                 self.i18n = i18n;
@@ -208,6 +213,10 @@ impl Component for SelfInfo {
                 event.stop_propagation();
                 false
             }
+            SelfInfoMsg::ShowChangePwd => {
+                self.show_change_pwd = !self.show_change_pwd;
+                true
+            }
         }
     }
     fn view(&self, ctx: &yew::prelude::Context<Self>) -> yew::prelude::Html {
@@ -238,8 +247,21 @@ impl Component for SelfInfo {
             )
         }
 
+        let set_pwd_click = ctx.link().callback(|_| SelfInfoMsg::ShowChangePwd);
+
+        let change_pwd = if self.show_change_pwd {
+            let lang = self.dispatch.get().lang;
+            let email = user.email.clone().unwrap();
+            let close = ctx.link().callback(|_| SelfInfoMsg::ShowChangePwd);
+            let user_id = user.id;
+            html!(<ChangePwd {user_id} {close} {lang} {email}/>)
+        } else {
+            html!()
+        };
+
         html! {
             <>
+            {change_pwd}
             <div tabindex="-1" {class} ref={self.node.clone()} onkeydown={ctx.link().callback(SelfInfoMsg::OnEscDown)}>
                 {avatar_setter}
                 <div class="info-panel-item-avatar">
@@ -270,6 +292,12 @@ impl Component for SelfInfo {
                 <div class="info-panel-item">
                     <label>{tr!(self.i18n, ACCOUNT)}</label>
                     <span>{user.account}</span>
+                </div>
+                <div class="info-panel-item">
+                    <label>{tr!(self.i18n, CHANGE_PWD)}</label>
+                    <button type="button" class="set-pwd-btn" onclick={set_pwd_click}>
+                        {tr!(self.i18n, CHANGE_PWD)}
+                    </button>
                 </div>
                 <div class="info-panel-item">
                     <label>

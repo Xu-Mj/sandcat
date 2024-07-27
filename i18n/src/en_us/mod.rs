@@ -22,6 +22,7 @@ cancel = Cancel
 pub const USER_INFO: &str = r#"
 nickname = nicname
 account = account
+change_pwd = set_pwd
 email = email
 phone = phone
 address = address
@@ -38,6 +39,18 @@ submit = Submit
 cancel = Cancel
 logout = Logout
 choose_avatar = Choose
+"#;
+
+pub const CHANGE_PWD: &str = r#"
+new_pwd = new pwd
+pwd_hint = new pwd
+confirm_pwd = repeat
+confirm_pwd_hint = confirm password
+code = code
+re_send_code = resend code
+send_code = send code
+submit = Submit
+cancel = Cancel
 "#;
 
 pub const CALL_COM: &str = r#"

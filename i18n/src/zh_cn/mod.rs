@@ -17,6 +17,7 @@ cancel = 取消
 pub const USER_INFO: &str = r#"
 nickname = 昵称
 account = 账号
+change_pwd = 修改密码
 email = 邮箱
 phone = 手机号
 address = 地址
@@ -33,6 +34,18 @@ submit = 保存
 cancel = 取消
 logout = 退出登录
 choose_avatar = 添加头像
+"#;
+
+pub const CHANGE_PWD: &str = r#"
+new_pwd = 新密码
+pwd_hint = 输入新密码
+confirm_pwd = 重复
+confirm_pwd_hint = 确认密码
+code = 验证码
+re_send_code = 重新发送
+send_code = 发送
+submit = 确认
+cancel = 取消
 "#;
 
 pub const TOP: &str = r#"

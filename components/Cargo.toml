@@ -20,6 +20,7 @@ wasm-bindgen-futures = "0.4.39"
 yewdux = { version = "0.10.0", features = ["doctests"] }
 yew = { version = "0.21", features = ["csr"] }
 yew-router = "0.18"
+zxcvbn = "2"
 
 
 sandcat-sdk = { path = "../sandcat-sdk" }

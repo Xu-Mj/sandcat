@@ -3,6 +3,7 @@ use sandcat_sdk::state::MobileState;
 pub mod action;
 mod avatar;
 pub mod call;
+mod change_pwd;
 pub mod constant;
 pub mod dialog;
 pub mod left;
