@@ -23,5 +23,11 @@ pub trait UserApi {
 
     async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String>;
 
-    async fn change_pwd(&self, pwd: String, code: String) -> Result<()>;
+    async fn change_pwd(
+        &self,
+        email: String,
+        user_id: String,
+        pwd: String,
+        code: String,
+    ) -> Result<()>;
 }

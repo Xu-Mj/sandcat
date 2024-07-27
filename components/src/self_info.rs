@@ -253,7 +253,8 @@ impl Component for SelfInfo {
             let lang = self.dispatch.get().lang;
             let email = user.email.clone().unwrap();
             let close = ctx.link().callback(|_| SelfInfoMsg::ShowChangePwd);
-            html!(<ChangePwd {close} {lang} {email}/>)
+            let user_id = user.id;
+            html!(<ChangePwd {user_id} {close} {lang} {email}/>)
         } else {
             html!()
         };

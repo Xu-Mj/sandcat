@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 async-trait = "0.1.80"
+base64 = "0.22.0"
 bincode = "1.3.3"
 futures-channel = "0.3.29"
 gloo = "0.11.0"

@@ -1,3 +1,5 @@
+use base64::prelude::BASE64_STANDARD_NO_PAD;
+use base64::Engine;
 use gloo_net::http::Request;
 use serde::Serialize;
 
@@ -19,6 +21,8 @@ pub struct MailRequest {
 
 #[derive(Serialize, Debug)]
 pub struct ChangePwdRequest {
+    pub email: String,
+    pub user_id: String,
     pub pwd: String,
     pub code: String,
 }
@@ -104,9 +108,21 @@ impl UserApi for UserHttp {
         Ok(token)
     }
 
-    async fn change_pwd(&self, pwd: String, code: String) -> Result<()> {
-        Request::post("/api/user/change_pwd")
-            .json(&ChangePwdRequest { pwd, code })?
+    async fn change_pwd(
+        &self,
+        email: String,
+        user_id: String,
+        pwd: String,
+        code: String,
+    ) -> Result<()> {
+        let pwd = BASE64_STANDARD_NO_PAD.encode(&pwd);
+        Request::put("/api/user/pwd")
+            .json(&ChangePwdRequest {
+                email,
+                user_id,
+                pwd,
+                code,
+            })?
             .send()
             .await?
             .success()?;

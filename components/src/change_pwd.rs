@@ -28,6 +28,7 @@ pub struct ChangePwd {
 
 #[derive(Properties, Clone, PartialEq)]
 pub struct Props {
+    pub user_id: AttrValue,
     pub email: AttrValue,
     pub close: Callback<()>,
     pub lang: LanguageType,
@@ -113,12 +114,16 @@ impl Component for ChangePwd {
                 event.prevent_default();
                 let pwd = self.new_pwd.to_string();
                 let code = self.code_node.cast::<HtmlInputElement>().unwrap().value();
+                let user_id = ctx.props().user_id.to_string();
+                let email = ctx.props().email.to_string();
+                let close = ctx.props().close.clone();
                 spawn_local(async move {
-                    if let Err(err) = api::users().change_pwd(pwd, code).await {
+                    if let Err(err) = api::users().change_pwd(email, user_id, pwd, code).await {
                         error!("change pwd failed: {:?}", err);
                         Notification::error("change pwd failed").notify();
                     } else {
                         Notification::info("password modify success");
+                        close.emit(());
                     }
                 })
             }
