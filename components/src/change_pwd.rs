@@ -1,5 +1,7 @@
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Interval;
+use log::error;
+use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use zxcvbn::zxcvbn;
@@ -109,6 +111,16 @@ impl Component for ChangePwd {
             }
             Msg::Submit(event) => {
                 event.prevent_default();
+                let pwd = self.new_pwd.to_string();
+                let code = self.code_node.cast::<HtmlInputElement>().unwrap().value();
+                spawn_local(async move {
+                    if let Err(err) = api::users().change_pwd(pwd, code).await {
+                        error!("change pwd failed: {:?}", err);
+                        Notification::error("change pwd failed").notify();
+                    } else {
+                        Notification::info("password modify success");
+                    }
+                })
             }
             Msg::SendCodeSuccess => {
                 log::debug!("send code success");
@@ -140,7 +152,7 @@ impl Component for ChangePwd {
     }
 
     fn view(&self, ctx: &yew::Context<Self>) -> Html {
-        let code_button = if self.is_send {
+        let code_button = if self.is_code_send {
             format!("{}s {}", self.time, tr!(self.i18n, "re_send_code"))
         } else {
             tr!(self.i18n, "send_code")
@@ -217,6 +229,7 @@ impl Component for ChangePwd {
                         autocomplete="current-password"
                         placeholder={tr!(self.i18n, "code")}/>
                     <button
+                        type="button"
                         class="register-code-btn"
                         disabled={self.time != 0 && self.is_send}
                         onclick={ctx.link().callback(|_| Msg::SendCode)}

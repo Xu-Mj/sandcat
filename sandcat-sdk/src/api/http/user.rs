@@ -17,6 +17,12 @@ pub struct MailRequest {
     pub email: String,
 }
 
+#[derive(Serialize, Debug)]
+pub struct ChangePwdRequest {
+    pub pwd: String,
+    pub code: String,
+}
+
 #[async_trait::async_trait(?Send)]
 impl UserApi for UserHttp {
     /// 向指定邮箱中发送邮件
@@ -97,31 +103,13 @@ impl UserApi for UserHttp {
             .await?;
         Ok(token)
     }
-}
 
-/* // 根据id查询用户信息
-#[allow(dead_code)]
-pub async fn get_info_by_id(id: String) -> Result<User, JsValue> {
-    Request::get(format!("/api/user/{}", id).as_str())
-        .header(&self.auth_header, &self.token)
-        .send()
-        .await
-        .map_err(|err| JsValue::from(err.to_string()))?
-        .json()
-        .await
-        .map_err(|err| JsValue::from(err.to_string()))
+    async fn change_pwd(&self, pwd: String, code: String) -> Result<()> {
+        Request::post("/api/user/change_pwd")
+            .json(&ChangePwdRequest { pwd, code })?
+            .send()
+            .await?
+            .success()?;
+        Ok(())
+    }
 }
-
-// 获取好友请求列表
-#[allow(dead_code)]
-pub async fn get_friend_apply_list_by_id(id: String) -> Result<Vec<FriendShipWithUser>, JsValue> {
-    Request::get(format!("/api/friend/{}/apply", id).as_str())
-        .header(&self.auth_header, &self.token)
-        .send()
-        .await
-        .map_err(|err| JsValue::from(err.to_string()))?
-        .json()
-        .await
-        .map_err(|err| JsValue::from(err.to_string()))
-}
- */

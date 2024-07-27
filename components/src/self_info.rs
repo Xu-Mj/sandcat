@@ -207,7 +207,6 @@ impl Component for SelfInfo {
                 true
             }
             SelfInfoMsg::OnEscDown(event) => {
-                log::debug!("on esc down");
                 if event.key() == "Escape" {
                     ctx.props().close.emit(());
                 }

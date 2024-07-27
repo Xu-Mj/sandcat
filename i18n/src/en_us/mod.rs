@@ -47,8 +47,8 @@ pwd_hint = new pwd
 confirm_pwd = repeat
 confirm_pwd_hint = confirm password
 code = code
-re_send_code = send code
-send_code = resend code
+re_send_code = resend code
+send_code = send code
 submit = Submit
 cancel = Cancel
 "#;

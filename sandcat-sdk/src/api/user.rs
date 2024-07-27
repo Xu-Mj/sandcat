@@ -22,4 +22,6 @@ pub trait UserApi {
     async fn sign_out(&self, user_id: &str) -> Result<()>;
 
     async fn refresh_token(&self, token: &str, is_refresh: bool) -> Result<String>;
+
+    async fn change_pwd(&self, pwd: String, code: String) -> Result<()>;
 }
