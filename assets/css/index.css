@@ -567,6 +567,7 @@ input {
     background-color: var(--color-background);
     z-index: 3;
     overflow-y: auto;
+    user-select: text;
 
     .info-panel-item-avatar {
         width: 100%;

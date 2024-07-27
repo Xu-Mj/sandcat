@@ -310,7 +310,7 @@ pub enum Msg {
     FriendshipDeliveredNotice(MessageID),
     OfflineSync(Message),
     SingleCall(SingleCall),
-    ServerRecResp(ServerResponse), // GroupInvitationReceived((UserID, GroupID)),
+    ServerRecResp(ServerResponse),
 }
 
 impl Msg {

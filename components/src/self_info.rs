@@ -162,8 +162,8 @@ impl Component for SelfInfo {
             }
             SelfInfoMsg::I18nStateChanged(state) => {
                 let res = match state.lang {
-                    LanguageType::ZhCN => zh_cn::ADD_FRIEND,
-                    LanguageType::EnUS => en_us::ADD_FRIEND,
+                    LanguageType::ZhCN => zh_cn::USER_INFO,
+                    LanguageType::EnUS => en_us::USER_INFO,
                 };
                 let i18n = utils::create_bundle(res);
                 self.i18n = i18n;

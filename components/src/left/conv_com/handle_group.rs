@@ -21,14 +21,14 @@ use super::{conversations::ChatsMsg, Chats};
 
 /// Handle group related messages
 /// 1. group invitations:
-/// save the group information and the members information to db
-/// and then create a new conversation, add it into our conversation list
-/// store it to db
-/// 2.  group dismiss:
-/// update group information set is_dismissed to true
-/// update the conversation list about the last message content
+///     save the group information and the members information to db
+///     and then create a new conversation, add it into our conversation list
+///     store it to db
+/// 2. group dismiss:
+///     update group information set is_dismissed to true
+///     update the conversation list about the last message content
 /// 3. members leave:
-/// delete member from the db
+///     delete member from the db
 
 impl Chats {
     pub async fn handle_group_invitation(ctx: Scope<Self>, msg: GroupInvitation) {
