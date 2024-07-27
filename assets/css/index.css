@@ -540,7 +540,7 @@ input {
 
 .info-panel-size {
     width: 21rem;
-    height: 34rem;
+    height: 36.5rem;
     position: fixed;
     top: 50%;
     left: 50%;
@@ -561,6 +561,80 @@ input {
     padding-top: 3rem;
     top: 0;
     left: 0;
+}
+
+.change-pwd {
+    width: 25rem;
+    height: auto;
+    padding: 1rem;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: var(--color-background-window);
+    border-radius: .3rem;
+    z-index: 4;
+
+
+    &>div {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 3fr 1fr;
+        height: 3rem;
+        line-height: 3rem;
+        align-items: center;
+
+        input {
+            width: 100%;
+            height: 3rem;
+            padding: 1rem;
+            background-color: #f0f0ee;
+            outline: none;
+            border: none;
+            font: inherit;
+        }
+
+        /* 最后一个元素左右居中 */
+        &>*:last-child {
+            justify-self: center;
+        }
+    }
+
+    .register-code-btn {
+        width: 4rem;
+        height: 2rem;
+        background-color: rgb(4, 161, 252);
+        border: none;
+        border-radius: .2rem;
+        cursor: pointer;
+        color: white;
+
+        &:disabled {
+            background-color: rgb(99, 195, 250);
+            cursor: not-allowed;
+        }
+    }
+
+
+
+    p {
+        width: 100%;
+        display: flex;
+        justify-content: space-evenly;
+    }
+
+    p input {
+        width: 6rem;
+        height: 2rem;
+        border: none;
+        border-radius: .2rem;
+        background-color: #BDBDBD;
+    }
 }
 
 .info-panel {
@@ -633,6 +707,16 @@ input {
                 align-items: center;
                 gap: .1rem;
             }
+        }
+
+        .set-pwd-btn {
+            width: 100%;
+            height: 1.8rem;
+            background-color: var(--color-background-btn);
+            color: var(--color-text);
+            border: none;
+            border-radius: .2rem;
+            cursor: pointer;
         }
     }
 
