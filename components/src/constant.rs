@@ -30,6 +30,7 @@ pub const APPLY_MSG: &str = "apply_msg";
 pub const REMARK: &str = "remark";
 pub const NICKNAME: &str = "nickname";
 pub const ACCOUNT: &str = "account";
+pub const CHANGE_PWD: &str = "change_pwd";
 pub const REGION: &str = "region";
 pub const SEND_MSG: &str = "send_message";
 pub const VOICE_CALL: &str = "voice_call";
