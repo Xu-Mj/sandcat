@@ -137,27 +137,3 @@ impl UserApi for UserHttp {
         Ok(())
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use gloo_net::http::Request;
-    use wasm_bindgen_test::wasm_bindgen_test;
-
-    use crate::{api::http::RespStatus, error::Result};
-    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
-    #[wasm_bindgen_test]
-    async fn test_user_api() {
-        if let Err(e) = get_err().await {
-            panic!("{:?}", e)
-        }
-    }
-
-    async fn get_err() -> Result<()> {
-        Request::get(format!("/api/user/refresh_token/ewerf/fff").as_ref())
-            .send()
-            .await?
-            .success()
-            .await?;
-        Ok(())
-    }
-}
