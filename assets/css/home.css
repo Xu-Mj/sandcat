@@ -299,16 +299,18 @@
 
 .notify {
     position: absolute;
-    /* top: 2rem; */
-    /* right: 1rem; */
-    width: 10rem;
-    max-height: 11rem;
+    width: 15rem;
+    max-height: 21rem;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
     gap: .5rem;
     overflow-y: auto;
     scroll-behavior: smooth;
     z-index: 10;
+
+
 
     .error {
         background-color: #f8d7da;
@@ -322,13 +324,14 @@
 
     .notification-item {
         width: 100%;
-        min-height: 3rem;
-        max-height: 4rem;
+        min-height: 2rem;
+        line-height: 2rem;
         position: relative;
         border-radius: .3rem;
-        padding: .3rem;
+        padding: .5rem 1rem;
         overflow: hidden;
-        flex-shrink: 0;
+        word-wrap: break-word;
+        word-break: break-all;
 
         .notification-close {
             position: absolute;
@@ -338,7 +341,12 @@
             height: 1rem;
             cursor: pointer;
         }
+
     }
+}
+
+.notify::-webkit-scrollbar {
+    display: none;
 }
 
 @keyframes video-spawn {
