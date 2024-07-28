@@ -19,6 +19,7 @@ type NotificationList = HashMap<i64, (Rc<Notification>, Timeout)>;
 pub struct NotificationCom {
     noti_ref: NodeRef,
     i18n: FluentBundle<FluentResource>,
+    _i18n_dis: Dispatch<I18nState>,
     notifications: NotificationList,
     _noti_dis: Dispatch<Notification>,
 }
@@ -29,6 +30,7 @@ pub struct Props {}
 pub enum Msg {
     Notification(Rc<Notification>),
     Remove(i64),
+    I18nStateChanged(Rc<I18nState>),
 }
 
 impl Component for NotificationCom {
@@ -38,6 +40,8 @@ impl Component for NotificationCom {
 
     fn create(ctx: &Context<Self>) -> Self {
         let _noti_dis = Dispatch::global().subscribe_silent(ctx.link().callback(Msg::Notification));
+        let _i18n_dis =
+            Dispatch::global().subscribe_silent(ctx.link().callback(Msg::I18nStateChanged));
 
         let res = match I18nState::get().lang {
             LanguageType::ZhCN => zh_cn::NOTIFICATION,
@@ -48,6 +52,7 @@ impl Component for NotificationCom {
         Self {
             noti_ref: NodeRef::default(),
             i18n,
+            _i18n_dis,
             notifications: HashMap::new(),
             _noti_dis,
         }
@@ -64,6 +69,14 @@ impl Component for NotificationCom {
             }
             Msg::Remove(id) => {
                 self.notifications.remove(&id);
+                true
+            }
+            Msg::I18nStateChanged(state) => {
+                let res = match state.lang {
+                    LanguageType::ZhCN => zh_cn::NOTIFICATION,
+                    LanguageType::EnUS => en_us::NOTIFICATION,
+                };
+                self.i18n = utils::create_bundle(res);
                 true
             }
         }
