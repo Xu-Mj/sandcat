@@ -48,7 +48,8 @@ impl MsgApi for MsgHttp {
             .json(&request)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(messages)
@@ -64,7 +65,8 @@ impl MsgApi for MsgHttp {
             .json(&request)?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
         Ok(())
     }
 }

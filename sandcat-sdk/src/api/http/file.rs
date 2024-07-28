@@ -75,7 +75,8 @@ impl FileApi for FileHttp {
             .body(form)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .text()
             .await?;
 
@@ -88,7 +89,8 @@ impl FileApi for FileHttp {
             .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .binary()
             .await?;
         Ok(result)

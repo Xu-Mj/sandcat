@@ -1,3 +1,5 @@
+pub mod api_err;
+
 use js_sys::{Error as JsError, JsString};
 use thiserror::Error as ThisError;
 use wasm_bindgen::{JsCast, JsValue};
@@ -19,7 +21,9 @@ pub enum Error {
     Database(Reason),
     /// request server error
     #[error("Network error {0}")]
-    Network(Reason),
+    Network(api_err::Error),
+    #[error("Network connect error {0}")]
+    NetworkConn(Reason),
     /// js related error
     #[error("{0}")]
     JavaScript(Reason),
@@ -56,7 +60,7 @@ impl From<serde_wasm_bindgen::Error> for Error {
 
 impl From<gloo_net::Error> for Error {
     fn from(err: gloo_net::Error) -> Self {
-        Self::Network(err.to_string())
+        Self::NetworkConn(err.to_string())
     }
 }
 

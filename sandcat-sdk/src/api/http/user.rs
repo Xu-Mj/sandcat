@@ -36,7 +36,8 @@ impl UserApi for UserHttp {
             .json(&MailRequest { email })?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
         Ok(())
     }
 
@@ -46,7 +47,8 @@ impl UserApi for UserHttp {
             .json(&register)?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
         Ok(())
     }
 
@@ -56,7 +58,8 @@ impl UserApi for UserHttp {
             .json(&user)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(user)
@@ -72,7 +75,8 @@ impl UserApi for UserHttp {
             .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(friend)
@@ -83,7 +87,8 @@ impl UserApi for UserHttp {
             .json(&req)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(resp)
@@ -94,7 +99,8 @@ impl UserApi for UserHttp {
             .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
         Ok(())
     }
 
@@ -102,7 +108,8 @@ impl UserApi for UserHttp {
         let token = Request::get(format!("/api/user/refresh_token/{token}/{is_refresh}").as_ref())
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .text()
             .await?;
         Ok(token)
@@ -125,7 +132,32 @@ impl UserApi for UserHttp {
             })?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use gloo_net::http::Request;
+    use wasm_bindgen_test::wasm_bindgen_test;
+
+    use crate::{api::http::RespStatus, error::Result};
+    wasm_bindgen_test::wasm_bindgen_test_configure!(run_in_browser);
+    #[wasm_bindgen_test]
+    async fn test_user_api() {
+        if let Err(e) = get_err().await {
+            panic!("{:?}", e)
+        }
+    }
+
+    async fn get_err() -> Result<()> {
+        Request::get(format!("/api/user/refresh_token/ewerf/fff").as_ref())
+            .send()
+            .await?
+            .success()
+            .await?;
         Ok(())
     }
 }
