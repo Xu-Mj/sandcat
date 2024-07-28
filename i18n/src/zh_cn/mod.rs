@@ -250,3 +250,35 @@ group_desc = 群描述
 group_name = 群名称
 group_announcement = 群公告
 "#;
+
+/// notification error type
+/// UnknownError,
+// Network,
+// LocalNotFound,
+// NotFound,
+// ServerError,
+// Internal,
+// UnAuthorized,
+// BadRequest,
+// AccountOrPassword,
+// CodeIsExpired,
+// CodeIsInvalid,
+// MsgSendError,
+// WsConnError,
+// WsClosed,
+pub const NOTIFICATION: &str = r#"
+Internal = 内部错误
+UnknownError = 未知错误
+Network = 网络错误
+LocalNotFound = 本地资源不存在
+NotFound = 资源不存在
+ServerError = 服务器错误
+UnAuthorized = 未授权
+BadRequest = 请求错误
+AccountOrPassword = 账号或密码错误
+CodeIsExpired = 验证码已过期
+CodeIsInvalid = 验证码无效
+MsgSendError = 消息发送失败
+WsConnError = WebSocket连接失败
+WsClosed = WebSocket连接已关闭
+"#;

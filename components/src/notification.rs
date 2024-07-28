@@ -1,17 +1,24 @@
 use std::{collections::HashMap, rc::Rc};
 
+use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
+use i18n::{en_us, zh_cn, LanguageType};
+use utils::tr;
 use web_sys::HtmlDivElement;
 use yew::{classes, html, Component, Context, Html, NodeRef, Properties};
 use yewdux::Dispatch;
 
 use icons::CloseIcon;
-use sandcat_sdk::model::notification::{Notification, NotificationType};
+use sandcat_sdk::{
+    model::notification::{Notification, NotificationType},
+    state::{I18nState, Notify},
+};
 
 type NotificationList = HashMap<i64, (Rc<Notification>, Timeout)>;
 
 pub struct NotificationCom {
     noti_ref: NodeRef,
+    i18n: FluentBundle<FluentResource>,
     notifications: NotificationList,
     _noti_dis: Dispatch<Notification>,
 }
@@ -31,8 +38,16 @@ impl Component for NotificationCom {
 
     fn create(ctx: &Context<Self>) -> Self {
         let _noti_dis = Dispatch::global().subscribe_silent(ctx.link().callback(Msg::Notification));
+
+        let res = match I18nState::get().lang {
+            LanguageType::ZhCN => zh_cn::NOTIFICATION,
+            LanguageType::EnUS => en_us::NOTIFICATION,
+        };
+        let i18n = utils::create_bundle(res);
+
         Self {
             noti_ref: NodeRef::default(),
+            i18n,
             notifications: HashMap::new(),
             _noti_dis,
         }
@@ -61,22 +76,32 @@ impl Component for NotificationCom {
             .map(|(id, (item, _))| {
                 let mut class = classes!("notification-item");
                 let mut close_btn = html!();
+                let mut content = html!({ &item.content });
                 match item.type_ {
                     NotificationType::Info => class.push("info"),
                     // NotificationType::Success => class.push("success"),
                     NotificationType::Warn => class.push("warn"),
                     NotificationType::Error => {
                         class.push("error");
+                        if let Some(err) = item.error.as_ref() {
+                            content = html! {
+                                <>
+                                    <div class="notification-title"><b>{tr!(self.i18n, &err.kind().to_string())}</b></div>
+                                    <div class="notification-err">{err.details()}</div>
+                                </>
+                            };
+                        }
                         let id = *id;
                         let onclick = ctx.link().callback(move |_| Msg::Remove(id));
                         close_btn =
                             html! { <span class="notification-close" {onclick}><CloseIcon/></span>};
                     }
                 }
+
                 html! {
                     <div {class} key={*id}>
                         {close_btn}
-                        {item.content.clone()}
+                        {content}
                     </div>
                 }
             })
