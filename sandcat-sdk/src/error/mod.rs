@@ -104,6 +104,22 @@ pub struct Error {
     source: Option<Box<dyn StdError>>,
 }
 
+impl Clone for Error {
+    fn clone(&self) -> Self {
+        Self {
+            kind: self.kind.clone(),
+            details: self.details.clone(),
+            source: None,
+        }
+    }
+}
+
+impl PartialEq for Error {
+    fn eq(&self, other: &Self) -> bool {
+        self.kind == other.kind && self.details == other.details
+    }
+}
+
 impl Error {
     #[inline]
     pub fn new(
@@ -141,6 +157,15 @@ impl Error {
     }
 
     pub fn js_error(err: JavaScriptError) -> Self {
+        Self {
+            kind: ErrorKind::Internal,
+            details: Some(err.message().into()),
+            source: Some(Box::new(err)),
+        }
+    }
+
+    pub fn js_err(err: JsValue) -> Self {
+        let err = JavaScriptError::from(err);
         Self {
             kind: ErrorKind::Internal,
             details: Some(err.message().into()),

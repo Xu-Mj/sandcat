@@ -299,8 +299,8 @@
 
 .notify {
     position: absolute;
-    top: 2rem;
-    right: 1rem;
+    /* top: 2rem; */
+    /* right: 1rem; */
     width: 10rem;
     max-height: 11rem;
     display: flex;
@@ -322,7 +322,7 @@
 
     .notification-item {
         width: 100%;
-        min-height: 2rem;
+        min-height: 3rem;
         max-height: 4rem;
         position: relative;
         border-radius: .3rem;

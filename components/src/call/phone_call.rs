@@ -2,8 +2,9 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use gloo::timers::callback::{Interval, Timeout};
-use log::debug;
+use log::{debug, error};
 use nanoid::nanoid;
+use sandcat_sdk::error::Error;
 use wasm_bindgen::JsCast;
 use wasm_bindgen_futures::JsFuture;
 use web_sys::{
@@ -154,7 +155,7 @@ impl Component for PhoneCall {
                 if msg.agree {
                     // 对方同意了通话请求，正在建立连接，为了简化代码邀请方和被邀请方的创建pc方法合并到一起了
                     if let Err(e) = self.create_pc(ctx, "") {
-                        Notification::error(format!("create pc error: {:?}", e)).notify();
+                        Notification::error(Error::js_err(e)).notify();
                         return false;
                     }
                 } else {
@@ -184,7 +185,7 @@ impl Component for PhoneCall {
                 }
 
                 if let Err(e) = self.create_pc(ctx, &msg.sdp) {
-                    log::error!("创建连接失败:{:?}", e);
+                    error!("创建连接失败:{:?}", e);
                     return false;
                 }
 
@@ -221,7 +222,7 @@ impl Component for PhoneCall {
                         );
                         spawn_local(async {
                             if let Err(err) = future.await {
-                                log::error!("remote desc set failed: {:?}", err);
+                                error!("remote desc set failed: {:?}", err);
                             }
                         });
                         return true;
@@ -246,7 +247,7 @@ impl Component for PhoneCall {
                 spawn_local(async {
                     if let Err(err) = future.await {
                         // todo need to interrupt the call
-                        log::error!("set ice candidate failed: {:?}", err);
+                        error!("set ice candidate failed: {:?}", err);
                     }
                 })
             }
@@ -326,7 +327,7 @@ impl Component for PhoneCall {
                                     .borrow()
                                     .send_message(Msg::SingleCall(SingleCall::Invite(msg)))
                                 {
-                                    log::error!("send message error: {:?}", e);
+                                    error!("send message error: {:?}", e);
                                     return PhoneCallMsg::Close;
                                 }
                                 PhoneCallMsg::ShowVideoWindow(stream, Box::new(friend))
@@ -345,7 +346,7 @@ impl Component for PhoneCall {
                                         OTHER_ERROR
                                     }
                                 } else {
-                                    log::error!("未知错误获取音频流: {:?}", e);
+                                    error!("未知错误获取音频流: {:?}", e);
                                     UNKNOW_ERROR
                                     // "其他错误"
                                 };
@@ -360,7 +361,7 @@ impl Component for PhoneCall {
                                         .borrow()
                                         .send_message(Msg::SingleCall(SingleCall::Invite(msg)))
                                     {
-                                        log::error!("send invite msg error: {:?}", e);
+                                        error!("send invite msg error: {:?}", e);
                                     } else {
                                         log::debug!("send invite msg success");
                                     }
@@ -379,7 +380,7 @@ impl Component for PhoneCall {
                                             OTHER_ERROR
                                         }
                                     } else {
-                                        log::error!("未知错误获取音频流: {:?}", e);
+                                        error!("未知错误获取音频流: {:?}", e);
                                         UNKNOW_ERROR
                                     };
                                     PhoneCallMsg::Error(content.to_string())
@@ -419,7 +420,7 @@ impl Component for PhoneCall {
                             ..Default::default()
                         })
                         .await
-                        .map_err(|err| log::error!("消息入库失败:{:?}", err));
+                        .map_err(|err| error!("消息入库失败:{:?}", err));
 
                     PhoneCallMsg::SendMessage(SingleCall::InviteCancel(InviteCancelMsg {
                         local_id,
@@ -445,16 +446,14 @@ impl Component for PhoneCall {
                         InviteType::Video => match utils::get_video_stream().await {
                             Ok(stream) => PhoneCallMsg::ConnectedCall(stream),
                             Err(e) => {
-                                Notification::error(format!("get video stream error: {:?}", e))
-                                    .notify();
+                                Notification::error(Error::js_err(e)).notify();
                                 PhoneCallMsg::Close
                             }
                         },
                         InviteType::Audio => match utils::get_audio_stream().await {
                             Ok(stream) => PhoneCallMsg::ConnectedCall(stream),
                             Err(e) => {
-                                Notification::error(format!("get audio stream error: {:?}", e))
-                                    .notify();
+                                Notification::error(Error::js_err(e)).notify();
                                 PhoneCallMsg::Close
                             }
                         },
@@ -498,7 +497,7 @@ impl Component for PhoneCall {
                             ..Default::default()
                         })
                         .await
-                        .map_err(|err| log::error!("消息入库失败:{:?}", err))
+                        .map_err(|err| error!("消息入库失败:{:?}", err))
                         .unwrap();
 
                     PhoneCallMsg::SendMessage(SingleCall::HangUp(Hangup {
@@ -534,7 +533,7 @@ impl Component for PhoneCall {
                 });
                 if let Err(e) = ctx.props().ws.borrow().send_message(Msg::SingleCall(msg)) {
                     // todo notify user we failed to send message
-                    log::error!("send message error: {:?}", e);
+                    error!("send message error: {:?}", e);
                     return false;
                 }
                 self.show_notify = false;
@@ -594,7 +593,7 @@ impl Component for PhoneCall {
                                 platform,
                             })))
                     {
-                        log::error!("send message error: {:?}", e);
+                        error!("send message error: {:?}", e);
                     }
                 });
                 true
@@ -699,7 +698,7 @@ impl Component for PhoneCall {
                                 ..Default::default()
                             })
                             .await
-                            .map_err(|err| log::error!("消息入库失败:{:?}", err));
+                            .map_err(|err| error!("消息入库失败:{:?}", err));
 
                         PhoneCallMsg::SendMessage(SingleCall::NotAnswer(InviteNotAnswerMsg {
                             local_id,
@@ -796,7 +795,7 @@ impl Component for PhoneCall {
                     if let Some(div) = self.wrapper_node.cast::<HtmlDivElement>() {
                         div.style()
                             .set_property("top", &format!("{}px", div.offset_top() - y))
-                            .map_err(|e| log::error!("set top error: {:?}", e))
+                            .map_err(|e| error!("set top error: {:?}", e))
                             .expect("set top position panic");
                         div.style()
                             .set_property("left", &format!("{}px", div.offset_left() - x))
@@ -850,7 +849,7 @@ impl Component for PhoneCall {
                         if let Some(div) = self.wrapper_node.cast::<HtmlDivElement>() {
                             div.style()
                                 .set_property("top", &format!("{}px", div.offset_top() - y))
-                                .map_err(|e| log::error!("set top error: {:?}", e))
+                                .map_err(|e| error!("set top error: {:?}", e))
                                 .expect("set top position panic");
                             div.style()
                                 .set_property("left", &format!("{}px", div.offset_left() - x))
@@ -899,7 +898,7 @@ impl Component for PhoneCall {
             }
             PhoneCallMsg::Error(err) => {
                 self.finish_call();
-                Notification::error(tr!(self.i18n, &err)).notify();
+                Notification::error(Error::internal_with_details(err)).notify();
                 true
             }
         }

@@ -13,6 +13,7 @@ use yew::{
 
 use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::{
+    error::Error,
     model::{notification::Notification, voice::Voice},
     state::{I18nState, MobileState, Notify},
 };
@@ -144,7 +145,7 @@ impl Component for Recorder {
 
                 let ctx_clone = ctx.link().clone();
                 let on_error_closure = Closure::wrap(Box::new(move |e: JsValue| {
-                    log::error!("MediaRecorder error: {:?}", e);
+                    error!("MediaRecorder error: {:?}", e);
                     ctx_clone.send_message(RecorderMsg::PrepareError(e));
                 }) as Box<dyn FnMut(JsValue)>);
 
@@ -235,19 +236,19 @@ impl Component for Recorder {
             }
             RecorderMsg::PrepareError(e) => {
                 web_sys::console::log_1(&e);
-                log::error!("prepare error");
+                error!("prepare error");
                 self.record_state = RecorderState::Error;
                 self.mask_node
                     .cast::<HtmlDivElement>()
                     .map(|div| div.style().set_property("display", "none"));
                 self.clean();
                 // Dialog::error(&tr!(self.i18n, "error"));
-                let msg = if let Some(err) = e.dyn_ref::<web_sys::DomException>() {
-                    err.name()
-                } else {
-                    tr!(self.i18n, ERROR)
-                };
-                Notification::error(msg).notify();
+                // let msg = if let Some(err) = e.dyn_ref::<web_sys::DomException>() {
+                //     err.name()
+                // } else {
+                //     tr!(self.i18n, ERROR)
+                // };
+                Notification::error(Error::js_err(e)).notify();
                 true
             }
             RecorderMsg::TouchStart(event) => {

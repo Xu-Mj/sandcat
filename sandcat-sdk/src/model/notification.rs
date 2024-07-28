@@ -1,12 +1,15 @@
 use yew::AttrValue;
 use yewdux::{Dispatch, Store};
 
+use crate::error::Error;
+
 #[derive(Default, Debug, Clone, PartialEq, Store)]
 pub struct Notification {
     pub id: i64,
     pub content: AttrValue,
     pub delay: u32,
     pub type_: NotificationType,
+    pub error: Option<Error>,
 }
 
 impl Notification {
@@ -17,6 +20,7 @@ impl Notification {
             content: content.to_string().into(),
             type_: NotificationType::Info,
             delay: 3000,
+            error: None,
         }
     }
 
@@ -27,16 +31,18 @@ impl Notification {
             content: content.to_string().into(),
             type_: NotificationType::Warn,
             delay: 3000,
+            error: None,
         }
     }
 
-    pub fn error(content: impl ToString) -> Self {
+    pub fn error(err: Error) -> Self {
         let id = chrono::Utc::now().timestamp_millis();
         Self {
             id,
-            content: content.to_string().into(),
+            content: AttrValue::default(),
             type_: NotificationType::Error,
             delay: 3000,
+            error: Some(err),
         }
     }
 

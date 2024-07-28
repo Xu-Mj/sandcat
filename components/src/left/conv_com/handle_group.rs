@@ -40,14 +40,14 @@ impl Chats {
 
         if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
             error!("Failed to store conversation: {:?}", e);
-            Notification::error("Failed to store conversation").notify();
+            Notification::error(e).notify();
             return;
         }
 
         // store group information
         if let Err(err) = db::db_ins().groups.put(&info).await {
             error!("store group error : {:?}", err);
-            Notification::error("Failed to store group").notify();
+            Notification::error(err).notify();
             return;
         };
 
@@ -55,7 +55,7 @@ impl Chats {
         let members: Vec<GroupMember> = msg.members.into_iter().map(GroupMember::from).collect();
         if let Err(e) = db::db_ins().group_members.put_list(&members).await {
             error!("save group member error: {:?}", e);
-            Notification::error("Failed to store group member").notify();
+            Notification::error(e).notify();
             return;
         }
 
@@ -88,21 +88,21 @@ impl Chats {
 
                     if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                         error!("Failed to store conversation: {:?}", e);
-                        Notification::error("Failed to store conversation").notify();
+                        Notification::error(e).notify();
                         return;
                     }
 
                     // save group
                     if let Err(err) = db::db_ins().groups.put(&response.group).await {
                         error!("store group error: {:?}", err);
-                        Notification::error("Failed to store group info").notify();
+                        Notification::error(err).notify();
                         return;
                     }
 
                     // save group members
                     if let Err(e) = db::db_ins().group_members.put_list(&response.members).await {
                         error!("save group member error: {:?}", e);
-                        Notification::error("Failed to store group member").notify();
+                        Notification::error(e).notify();
                         return;
                     }
 
@@ -115,7 +115,7 @@ impl Chats {
                 }
                 Err(e) => {
                     error!("get group info and group members error: {:?}", e);
-                    Notification::error("Failed to get group info and group members").notify();
+                    Notification::error(e).notify();
                 }
             }
         } else {
@@ -128,12 +128,12 @@ impl Chats {
                     // save members
                     if let Err(e) = db::db_ins().group_members.put_list(&members).await {
                         error!("save group member error: {:?}", e);
-                        Notification::error("Failed to store group member").notify();
+                        Notification::error(e).notify();
                     }
                 }
                 Err(e) => {
                     error!("get group members error: {:?}", e);
-                    Notification::error("Failed to get group members").notify();
+                    Notification::error(e).notify();
                 }
             }
         }
@@ -177,7 +177,7 @@ impl Chats {
                 Ok(user) => user,
                 Err(e) => {
                     error!("get user error:{:?}", e);
-                    Notification::error("query user error").notify();
+                    Notification::error(e).notify();
                     return ChatsMsg::None;
                 }
             };
@@ -203,8 +203,8 @@ impl Chats {
 
                     // sotre the group info to database
                     if let Err(err) = db::db_ins().groups.put(&g).await {
-                        log::error!("create group error: {:?}", err);
-                        Notification::error("Failed to store group").notify();
+                        error!("create group error: {:?}", err);
+                        Notification::error(err).notify();
                         return ChatsMsg::None;
                     }
 
@@ -212,8 +212,8 @@ impl Chats {
                     for v in values.iter_mut() {
                         v.group_id = g.id.clone();
                         if let Err(e) = db::db_ins().group_members.put(v).await {
-                            log::error!("save group member error: {:?}", e);
-                            Notification::error("Failed to store group member").notify();
+                            error!("save group member error: {:?}", e);
+                            Notification::error(e).notify();
                             continue;
                         }
                     }
@@ -226,7 +226,7 @@ impl Chats {
                     conv.unread_count = 0;
                     if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
                         error!("failed to store conversation to db: {:?}", e);
-                        Notification::error("Failed to store group").notify();
+                        Notification::error(e).notify();
                         return ChatsMsg::None;
                     }
 
@@ -234,8 +234,8 @@ impl Chats {
                     ChatsMsg::InsertConv(conv)
                 }
                 Err(err) => {
-                    log::error!("create group request error: {:?}", err);
-                    Notification::error("Failed to create group").notify();
+                    error!("create group request error: {:?}", err);
+                    Notification::error(err).notify();
                     ChatsMsg::None
                 }
             }
@@ -283,8 +283,8 @@ impl Chats {
     pub async fn handle_group_update(group: Group) {
         // update group information
         if let Err(err) = db::db_ins().groups.put(&group).await {
-            log::error!("update group fail:{:?}", err);
-            Notification::error("Failed to update group").notify();
+            error!("update group fail:{:?}", err);
+            Notification::error(err).notify();
         }
         // update conversation
         Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {

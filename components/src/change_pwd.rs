@@ -120,7 +120,7 @@ impl Component for ChangePwd {
                 spawn_local(async move {
                     if let Err(err) = api::users().change_pwd(email, user_id, pwd, code).await {
                         error!("change pwd failed: {:?}", err);
-                        Notification::error("change pwd failed").notify();
+                        Notification::error(err).notify();
                     } else {
                         Notification::info("password modify success").notify();
                         close.emit(());
@@ -140,8 +140,8 @@ impl Component for ChangePwd {
                 self.is_send = false;
             }
             Msg::SendCodeFailed(e) => {
-                log::error!("send code failed: {:?}", e);
-                Notification::error("code send failed").notify();
+                error!("send code failed: {:?}", e);
+                Notification::error(e).notify();
                 self.is_send = false;
             }
             Msg::UpdateTime => {

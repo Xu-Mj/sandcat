@@ -1,8 +1,6 @@
 use gloo::timers::callback::Timeout;
 use gloo::utils::{document, window};
 use log::error;
-use sandcat_sdk::model::friend::Friend;
-use sandcat_sdk::model::notification::Notification;
 use web_sys::Node;
 use yew::platform::spawn_local;
 use yew::prelude::*;
@@ -11,7 +9,9 @@ use yewdux::Dispatch;
 use i18n::LanguageType;
 use icons::HangUpLoadingIcon;
 use sandcat_sdk::db;
+use sandcat_sdk::model::friend::Friend;
 use sandcat_sdk::model::message::{GroupMsg, InviteType, Message, Msg, SendStatus, ServerResponse};
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::state::{I18nState, ItemType, Notify, RelatedMsgState, SendMessageState};
@@ -268,12 +268,12 @@ impl Component for MsgItem {
                     if content_type == ContentType::Audio {
                         // delete audio file
                         if let Err(e) = db::db_ins().voices.del(&local_id).await {
-                            log::error!("delete audio file error: {:?}", e);
+                            error!("delete audio file error: {:?}", e);
                             return;
                         }
                     }
                     if let Err(e) = db::db_ins().messages.delete(&local_id).await {
-                        log::error!("delete message error: {:?}", e);
+                        error!("delete message error: {:?}", e);
                         return;
                     }
                     del_item.emit(local_id);
@@ -298,9 +298,8 @@ impl Component for MsgItem {
                         msg.is_read = 1;
                         msg.is_self = true;
                         if let Err(err) = db::db_ins().messages.add_message(&mut msg).await {
-                            log::error!("{:?}", err);
-                            Notification::error("forword message error: store message error")
-                                .notify();
+                            error!("forword message error: store message error{:?}", err);
+                            Notification::error(err).notify();
                         }
                         Dispatch::<SendMessageState>::global()
                             .reduce_mut(|s| s.msg = Msg::Single(msg.clone()));

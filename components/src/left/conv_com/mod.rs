@@ -153,7 +153,7 @@ impl Chats {
                     }
                     Err(e) => {
                         error!("pull offline messages error: {:?}", e);
-                        Notification::error("pull offline messages error").notify();
+                        Notification::error(e).notify();
                         return;
                     }
                 };
@@ -163,7 +163,7 @@ impl Chats {
 
                 if let Err(e) = db::db_ins().seq.put(&local_seq).await {
                     error!("save local seq error: {:?}", e);
-                    Notification::error("save local seq error").notify();
+                    Notification::error(e).notify();
                     return;
                 }
             }
@@ -331,7 +331,7 @@ impl Chats {
 
         BASE64_STANDARD_NO_PAD
             .decode(parts[1])
-            .map_err(|e| log::error!("decode jwt error: {:?}", e))
+            .map_err(|e| error!("decode jwt error: {:?}", e))
             .ok()
             .and_then(|decoded| serde_json::from_slice::<Claims>(&decoded).ok())
     }
@@ -342,10 +342,10 @@ impl Chats {
             if *e.kind() == ErrorKind::WsClosed {
                 // reconnect websocket
                 if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
-                    log::error!("websocket connect error: {:?}", e);
+                    error!("websocket connect error: {:?}", e);
                 }
             } else {
-                log::error!("send message error: {:?}", e);
+                error!("send message error: {:?}", e);
             }
         }
     }
@@ -355,7 +355,7 @@ impl Chats {
         let id = self.context_menu_pos.2.clone();
         spawn_local(async move {
             if let Err(e) = db::db_ins().convs.delete(&id).await {
-                log::error!("delete conversation error: {:?}", e);
+                error!("delete conversation error: {:?}", e);
             }
         });
 
@@ -404,7 +404,7 @@ impl Chats {
 
             spawn_local(async move {
                 if let Err(e) = db::db_ins().convs.put_conv(&updated_conv).await {
-                    log::error!("mute conversation err: {:?}", e);
+                    error!("mute conversation err: {:?}", e);
                 }
             });
         };
@@ -424,7 +424,7 @@ impl Chats {
         let update_conv = |conv: Conversation| {
             spawn_local(async move {
                 if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
-                    log::error!("pin/un-pin conversation err: {:?}", e);
+                    error!("pin/un-pin conversation err: {:?}", e);
                 }
             });
         };

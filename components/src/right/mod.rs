@@ -17,6 +17,7 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
 use log::error;
+use sandcat_sdk::error::Error;
 use sandcat_sdk::model::group::GroupMember;
 use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::pb::message::{GroupInviteNew, RemoveMemberRequest};
@@ -215,7 +216,7 @@ impl Component for Right {
                         };
                         if let Err(err) = api::groups().remove_mem(&req).await {
                             error!("remove member error: {:?}", err);
-                            Notification::error(err.to_string()).notify();
+                            Notification::error(err).notify();
                         } else {
                             // delete from db
                             if let Err(err) = db::db_ins()
@@ -224,7 +225,7 @@ impl Component for Right {
                                 .await
                             {
                                 error!("delete member error: {:?}", err);
-                                Notification::error(err.to_string()).notify();
+                                Notification::error(err).notify();
                             }
                         }
                     });
@@ -244,12 +245,13 @@ impl Component for Right {
                         let group = match db::db_ins().groups.get(&group_id).await {
                             Ok(Some(group)) => group,
                             Ok(None) => {
-                                Notification::error("get group info error").notify();
+                                Notification::error(Error::local_not_found("group not found"))
+                                    .notify();
                                 return;
                             }
                             Err(e) => {
                                 error!("get group info error:{:?}", e);
-                                Notification::error("get group info error").notify();
+                                Notification::error(e).notify();
                                 return;
                             }
                         };
@@ -263,7 +265,7 @@ impl Component for Right {
                             .await
                         {
                             error!("invite member error:{:?}", e);
-                            Notification::error("invite member error").notify();
+                            Notification::error(e).notify();
                             return;
                         }
                         let time = chrono::Utc::now().timestamp_millis();
