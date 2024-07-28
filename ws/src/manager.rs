@@ -160,6 +160,7 @@ impl WebSocketManager {
                 }
                 _ => {
                     log::warn!("WebSocket closed: {:?}", e);
+                    ConnectState::DisConnect.notify();
                 }
             }
             // reconnect
@@ -196,30 +197,29 @@ impl WebSocketManager {
     }
 
     fn reconnect(&mut self, ws_manager: Rc<RefCell<Self>>) {
-        log::debug!("第{}次重连", self.reconnect_attempts);
+        // log::debug!("第{}次重连", self.reconnect_attempts);
         self.is_reconnecting = true;
         if self.reconnect_attempts < self.max_reconnect_attempts {
             self.reconnect_attempts += 1;
-            let interval = self.reconnect_interval * self.reconnect_attempts as i32;
-            let window = web_sys::window().unwrap();
-            let closure = Closure::once(Box::new(move || {
-                if let Err(e) = WebSocketManager::connect(ws_manager.clone()) {
-                    log::error!("reconnect error: {:?}", e)
-                }
-            }) as Box<dyn FnMut()>);
-
-            window
-                .set_timeout_with_callback_and_timeout_and_arguments_0(
-                    closure.as_ref().unchecked_ref(),
-                    interval,
-                )
-                .unwrap();
-
-            self.on_timeout = Some(closure);
-        } else {
-            log::error!("Reached maximum reconnect attempts");
-            ConnectState::DisConnect.notify();
         }
+
+        let interval = self.reconnect_interval * self.reconnect_attempts as i32;
+        let window = web_sys::window().unwrap();
+
+        let closure = Closure::once(Box::new(move || {
+            if let Err(e) = WebSocketManager::connect(ws_manager.clone()) {
+                log::error!("reconnect error: {:?}", e)
+            }
+        }) as Box<dyn FnMut()>);
+
+        window
+            .set_timeout_with_callback_and_timeout_and_arguments_0(
+                closure.as_ref().unchecked_ref(),
+                interval,
+            )
+            .unwrap();
+
+        self.on_timeout = Some(closure);
     }
 
     // clean WebSocket connection and events

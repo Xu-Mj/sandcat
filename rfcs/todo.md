@@ -27,8 +27,7 @@
 - need to update group name in friend list after update group info
 - consider that add resize state to local configuration
 - bug: resizer position will jump lower when the right component is resized
-- keep cursor style while dragging the resizer
 - use indexeddb to store last sync/offline time instead of local storage
 - bug: switch component will cause `closure invoke after being dropped` while setting window is showing
-- bug: file message cannot be related
 - **CONSIDER**: WE REMOVED THE MESSAGE ID ATTRIBUTE, BECAUSE WE NEED TO GUARANTEE THE MESSAGE UNIQUENESS WHILE WE PUT THE MESSAGE INTO THE DATABASE, BUT WHETHER THE DATABASE CAN GUARANTEE THE MESSAGE INSERTION ORDERS IS NOT SURE.
+- **CONSIDER**: IF CLIENT INTER A LONG TERM OFFLINE, AND THEN CLINET INTO ONLINE,THE MESSAGE WILL BE NORMAL, BECAUSE WE HAVE THE STRATEGY TO SYNC THE MISSED MESSAGE. BUT IS THE FRIENDSHIP NORMAL?
