@@ -41,7 +41,7 @@ impl Notification {
             id,
             content: AttrValue::default(),
             type_: NotificationType::Error,
-            delay: 3000,
+            delay: 5000,
             error: Some(err),
         }
     }

@@ -10,37 +10,6 @@ use wasm_bindgen::{JsCast, JsValue};
 
 pub type Result<T> = std::result::Result<T, Error>;
 
-// #[derive(Debug, Clone, ThisError, PartialEq)]
-// pub enum Error {
-//     /// convert server message to local error
-//     #[error("Convert message error {0}")]
-//     Convert(Reason),
-//     /// database query not found
-//     #[error("Not found{0}")]
-//     NotFound(Reason),
-//     /// database error
-//     #[error("Database error {0}")]
-//     Database(Reason),
-//     /// request server error
-//     #[error("Network error {0}")]
-//     Network(api_err::Error),
-//     #[error("Network connect error {0}")]
-//     NetworkConn(Reason),
-//     /// js related error
-//     #[error("{0}")]
-//     JavaScript(Reason),
-//     #[error("Unknown error")]
-//     Unknown,
-//     #[error("No window object")]
-//     NoWindow,
-//     #[error("JsValue to string error")]
-//     JsToStr,
-//     #[error("JsValue to string error")]
-//     WebSocket(WebSocketError),
-//     #[error("BinCode error {0}")]
-//     BinCode(Reason),
-// }
-
 // The ERROR ON THE SERVER SIDE, no need to catch
 // is ServerError
 // ParseError,
@@ -80,6 +49,12 @@ pub enum ErrorKind {
     WsClosed,
 }
 
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match &self.details {
@@ -88,6 +63,7 @@ impl fmt::Display for Error {
         }
     }
 }
+
 impl StdError for Error {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
         self.source
@@ -136,6 +112,10 @@ impl Error {
 
     pub fn kind(&self) -> &ErrorKind {
         &self.kind
+    }
+
+    pub fn details(&self) -> &Option<String> {
+        &self.details
     }
 
     #[inline]
