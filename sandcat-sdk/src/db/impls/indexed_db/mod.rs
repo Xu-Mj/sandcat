@@ -66,7 +66,7 @@ pub const MESSAGE_TYPE_INDEX: &str = "type";
 pub const MESSAGE_IS_READ_INDEX: &str = "is_read";
 
 // 定义数据库查询状态
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum QueryStatus<T> {
     // 正在查询
     Querying,

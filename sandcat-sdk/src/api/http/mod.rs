@@ -9,7 +9,7 @@ pub use oauth2::*;
 pub use seq::*;
 pub use user::*;
 
-use crate::error::{api_err, Error, Result};
+use crate::error::{Error, Result};
 
 mod file;
 mod friend;
@@ -32,11 +32,10 @@ impl RespStatus for Response {
         } else {
             // deserialize error
             let err = self
-                .json::<api_err::Error>()
+                .json::<Error>()
                 .await
-                .unwrap_or(api_err::Error::unkonw_error());
-            // convert error
-            Err(Error::Network(err))
+                .unwrap_or(Error::internal_with_details("Response deserialize error"));
+            Err(err)
         }
     }
 }

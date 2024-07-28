@@ -14,7 +14,7 @@ use crate::right::msg_item::{get_file_html, get_img_html};
 pub struct RelatedMsg {
     text_node: NodeRef,
     show_img_preview: bool,
-    msg: Option<Message>,
+    msg: Option<Box<Message>>,
     show_complete_text: bool,
 }
 
@@ -27,7 +27,7 @@ pub struct Props {
 
 pub enum Msg {
     PreviewImg,
-    ShowRelated(Message),
+    ShowRelated(Box<Message>),
     ShowText,
 }
 
@@ -47,7 +47,7 @@ impl Component for RelatedMsg {
             };
 
             if let Ok(Some(msg)) = msg {
-                ctx.send_message(Self::Message::ShowRelated(msg));
+                ctx.send_message(Self::Message::ShowRelated(Box::new(msg)));
             } else {
                 error!("related msg not found");
             }

@@ -251,7 +251,7 @@ impl Chats {
             .group_members
             .get_by_group_id_and_friend_id(&group_id, group.owner.as_str())
             .await?
-            .ok_or(Error::NotFound("group member not found".into()))?;
+            .ok_or(Error::local_not_found("group member not found"))?;
 
         // get the conversation information
         let conv = if let Ok(Some(mut conv)) = db::db_ins().convs.get_by_frined_id(&group_id).await

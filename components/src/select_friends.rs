@@ -46,7 +46,7 @@ pub enum AddConvMsg {
 
 type QueryResult = QueryStatus<(IndexMap<AttrValue, Friend>, Option<HashSet<AttrValue>>)>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub enum QueryStatus<T> {
     Querying,
     Success(T),

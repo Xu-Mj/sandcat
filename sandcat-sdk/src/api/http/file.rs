@@ -33,12 +33,14 @@ impl FileHttp {
         let request = web_sys::Request::new_with_str_and_init(url, &opts)?;
 
         // send request
-        let window = web_sys::window().ok_or(Error::NoWindow)?;
+        let window =
+            web_sys::window().ok_or(Error::internal_with_details("window object not found"))?;
         let request_promise = window.fetch_with_request(&request);
         let res: Response = JsFuture::from(request_promise).await?.dyn_into()?;
         let text = JsFuture::from(res.text()?).await?;
 
-        text.as_string().ok_or(Error::JsToStr)
+        text.as_string()
+            .ok_or(Error::internal_with_details("JsValue to string error"))
     }
 }
 
@@ -65,7 +67,6 @@ impl FileApi for FileHttp {
         let mut options = BlobPropertyBag::new();
         options.type_("audio/webm;codecs=opus");
         let blob = Blob::new_with_u8_array_sequence_and_options(&array, &options)?;
-        web_sys::console::log_1(&blob);
         let form = FormData::new()?;
         form.append_with_blob_and_filename("file", &blob, "audio.webm")?;
 

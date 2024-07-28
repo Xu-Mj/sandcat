@@ -20,7 +20,7 @@ use i18n::{
 };
 use sandcat_sdk::{
     api, db,
-    error::{Error, WebSocketError},
+    error::ErrorKind,
     model::{
         conversation::Conversation,
         message::{Msg, SingleCall},
@@ -339,7 +339,7 @@ impl Chats {
     pub fn send_msg(&self, msg: Msg) {
         // 发送已收到消息给服务器
         if let Err(e) = self.ws.borrow().send_message(msg) {
-            if e == Error::WebSocket(WebSocketError::Closed) {
+            if *e.kind() == ErrorKind::WsClosed {
                 // reconnect websocket
                 if let Err(e) = WebSocketManager::connect(self.ws.clone()) {
                     log::error!("websocket connect error: {:?}", e);
