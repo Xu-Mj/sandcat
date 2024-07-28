@@ -16,7 +16,8 @@ impl OAuth2Api for OAuth2Http {
         ))
         .send()
         .await?
-        .success()?
+        .success()
+        .await?
         .json()
         .await?;
         Ok(resp)
@@ -28,7 +29,8 @@ impl OAuth2Api for OAuth2Http {
         ))
         .send()
         .await?
-        .success()?
+        .success()
+        .await?
         .json()
         .await?;
         Ok(resp)

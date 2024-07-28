@@ -3,10 +3,7 @@ use std::rc::Rc;
 use gloo::utils::document;
 use indexmap::IndexMap;
 use log::error;
-use sandcat_sdk::api;
-use sandcat_sdk::model::message::SendStatus;
-use sandcat_sdk::model::notification::Notification;
-use sandcat_sdk::state::{AudioDownloadedState, ItemType, UpdateFriendState};
+use sandcat_sdk::error::Error;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::JsCast;
 use web_sys::{Blob, BlobPropertyBag, HtmlAudioElement, HtmlDivElement, HtmlElement, Url};
@@ -14,10 +11,14 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::LanguageType;
+use sandcat_sdk::api;
 use sandcat_sdk::db;
 use sandcat_sdk::model::friend::FriendStatus;
+use sandcat_sdk::model::message::SendStatus;
 use sandcat_sdk::model::message::{GroupMsg, Message, Msg, SingleCall};
+use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::{ContentType, ItemInfo, RightContentType};
+use sandcat_sdk::state::{AudioDownloadedState, ItemType, UpdateFriendState};
 use sandcat_sdk::state::{
     MobileState, RecMessageState, RefreshMsgListState, SendAudioMsgState, SendMessageState,
     SendResultState,
@@ -333,15 +334,15 @@ impl MessageList {
             let blob = match Blob::new_with_u8_array_sequence_and_options(&array, &property_bag) {
                 Ok(blob) => blob,
                 Err(e) => {
-                    log::error!("create blob error: {:?}", e);
+                    error!("create blob error: {:?}", e);
                     return;
                 }
             };
             let data_url = match Url::create_object_url_with_blob(&blob) {
                 Ok(url) => url,
                 Err(e) => {
-                    log::error!("create data url error: {:?}", e);
-                    Notification::error("play audio error").notify();
+                    error!("create data url error: {:?}", e);
+                    Notification::error(Error::js_err(e)).notify();
                     return;
                 }
             };
@@ -361,8 +362,8 @@ impl MessageList {
             audio.set_onended(Some(on_stop.as_ref().unchecked_ref()));
             // todo handle error
             if let Err(e) = audio.play() {
-                log::error!("play audio error: {:?}", e);
-                Notification::error("play audio error").notify();
+                error!("play audio error: {:?}", e);
+                Notification::error(Error::js_err(e)).notify();
             };
         }
     }
@@ -492,7 +493,7 @@ impl Component for MessageList {
                 self.audio_on_stop = None;
                 if let Some(ref url) = self.audio_data_url {
                     if let Err(e) = Url::revoke_object_url(url) {
-                        log::error!("revoke object url error: {:?}", e);
+                        error!("revoke object url error: {:?}", e);
                     };
                 }
                 self.audio_data_url = None;

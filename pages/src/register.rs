@@ -212,7 +212,7 @@ impl Component for Register {
             }
             RegisterMsg::SendCodeFailed(e) => {
                 log::error!("send code failed: {:?}", e);
-                Notification::error("code send failed").notify();
+                Notification::error(e).notify();
                 self.is_send = false;
                 true
             }

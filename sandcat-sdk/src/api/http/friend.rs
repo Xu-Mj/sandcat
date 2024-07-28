@@ -24,7 +24,8 @@ impl FriendApi for FriendHttp {
             .json(&new_friend)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(FriendShipWithUser::from(friendship))
@@ -35,7 +36,8 @@ impl FriendApi for FriendHttp {
             .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(user)
@@ -48,7 +50,8 @@ impl FriendApi for FriendHttp {
             .json(&friendship)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(friend)
@@ -64,7 +67,8 @@ impl FriendApi for FriendHttp {
             .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(friends)
@@ -86,7 +90,8 @@ impl FriendApi for FriendHttp {
             .json(&data)?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
         Ok(())
     }
 
@@ -96,7 +101,8 @@ impl FriendApi for FriendHttp {
             .json(&DeleteFriend { user_id, friend_id })?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
         Ok(())
     }
 }

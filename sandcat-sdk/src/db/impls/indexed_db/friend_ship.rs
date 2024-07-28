@@ -52,7 +52,7 @@ impl Friendships for FriendShipRepo {
         let mut friendship = self
             .get_friendship(friendship_id)
             .await?
-            .ok_or(Error::NotFound("friend not found".to_string()))?;
+            .ok_or(Error::local_not_found("friend not found"))?;
         friendship.status = FriendStatus::Accepted as i32;
         self.put_friendship(&friendship).await
     }
@@ -61,7 +61,7 @@ impl Friendships for FriendShipRepo {
         let mut friendship = self
             .get_friendship_by_friend_id(friend_id)
             .await?
-            .ok_or(Error::NotFound("friend not found".to_string()))?;
+            .ok_or(Error::local_not_found("friend not found"))?;
         friendship.status = FriendStatus::Accepted as i32;
         self.put_friendship(&friendship).await?;
         Ok(())

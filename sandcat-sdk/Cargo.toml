@@ -54,3 +54,6 @@ features = [
     "IdbKeyRange",
     "IdbIndexParameters",
 ]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3"

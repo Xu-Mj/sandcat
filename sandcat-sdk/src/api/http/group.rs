@@ -25,7 +25,8 @@ impl GroupApi for GroupHttp {
             .json(&data)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(Group::from(response.info.unwrap()))
@@ -37,7 +38,8 @@ impl GroupApi for GroupHttp {
             .json(&data)?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
         Ok(())
     }
     async fn remove_mem(&self, data: &RemoveMemberRequest) -> Result<()> {
@@ -46,7 +48,8 @@ impl GroupApi for GroupHttp {
             .json(data)?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
         Ok(())
     }
 
@@ -56,7 +59,8 @@ impl GroupApi for GroupHttp {
             .json(&data)?
             .send()
             .await?
-            .success()?;
+            .success()
+            .await?;
 
         Ok(())
     }
@@ -67,7 +71,8 @@ impl GroupApi for GroupHttp {
             .json(&data)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
 
@@ -79,7 +84,8 @@ impl GroupApi for GroupHttp {
             .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(resp)
@@ -90,7 +96,8 @@ impl GroupApi for GroupHttp {
             .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(resp)
@@ -112,7 +119,8 @@ impl GroupApi for GroupHttp {
             .json(&req)?
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(resp)

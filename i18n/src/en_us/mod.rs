@@ -257,3 +257,21 @@ group_desc = GroupDesc
 group_name = GroupName
 group_announcement = GroupAnno
 "#;
+
+// 改成英文
+pub const NOTIFICATION: &str = r#"
+Internal = Internal Error
+UnknownError = Unknown Error
+Network = Network Error
+LocalNotFound = Local Resource Not Found
+NotFound = Resource Not Found
+ServerError = Server Error
+UnAuthorized = Unauthorized
+BadRequest = Bad Request
+AccountOrPassword = Account or Password Error
+CodeIsExpired = Code Is Expired
+CodeIsInvalid = Code Is Invalid
+MsgSendError= Msg Send Error
+WsConnError = WebSocket Connection Error
+WsClosed = WebSocket Closed
+"#;

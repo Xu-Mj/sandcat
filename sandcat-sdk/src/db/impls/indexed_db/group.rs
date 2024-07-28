@@ -199,6 +199,6 @@ impl GroupInterface for GroupRepo {
             self.put(&group).await?;
             return Ok(group);
         }
-        Err(Error::NotFound("Group not found".to_string()))
+        Err(Error::local_not_found("Group not found"))
     }
 }

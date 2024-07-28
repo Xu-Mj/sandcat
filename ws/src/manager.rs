@@ -1,6 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use log::debug;
+use log::error;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 use web_sys::{CloseEvent, ErrorEvent, MessageEvent, WebSocket};
@@ -8,7 +10,6 @@ use yew::Callback;
 
 use sandcat_sdk::error::Error;
 use sandcat_sdk::error::Result;
-use sandcat_sdk::error::WebSocketError;
 use sandcat_sdk::model::message::convert_server_msg;
 use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::model::TOKEN;
@@ -88,11 +89,11 @@ impl WebSocketManager {
             format!(
                 "{}/{}",
                 ws_manager.borrow().url,
-                utils::get_local_storage(TOKEN).unwrap()
+                utils::get_local_storage(TOKEN)?
             )
             .as_str(),
         )
-        .map_err(|e| Error::WebSocket(WebSocketError::Connect(e)))?;
+        .map_err(Error::ws_conn)?;
 
         // send connecting state
         ConnectState::Connecting.notify();
@@ -160,12 +161,16 @@ impl WebSocketManager {
                 }
                 _ => {
                     log::warn!("WebSocket closed: {:?}", e);
+                    ConnectState::DisConnect.notify();
                 }
             }
             // reconnect
-            ws_manager_clone
+            if let Err(err) = ws_manager_clone
                 .borrow_mut()
-                .reconnect(ws_manager_clone.clone());
+                .reconnect(ws_manager_clone.clone())
+            {
+                error!("reconnect error: {:?}", err)
+            }
         }) as Box<dyn FnMut(CloseEvent)>);
 
         ws.set_onopen(Some(on_open.as_ref().unchecked_ref()));
@@ -187,48 +192,45 @@ impl WebSocketManager {
         if let Some(ws) = &self.ws {
             // encode message
             let msg = bincode::serialize(&PbMsg::from(message))?;
-            ws.send_with_u8_array(&msg)
-                .map_err(|e| Error::WebSocket(WebSocketError::Send(e)))?;
+            ws.send_with_u8_array(&msg).map_err(Error::send_err)?;
             Ok(())
         } else {
-            Err(Error::WebSocket(WebSocketError::Closed))
+            Err(Error::ws_closed())
         }
     }
 
-    fn reconnect(&mut self, ws_manager: Rc<RefCell<Self>>) {
-        log::debug!("第{}次重连", self.reconnect_attempts);
+    fn reconnect(&mut self, ws_manager: Rc<RefCell<Self>>) -> Result<()> {
+        // log::debug!("第{}次重连", self.reconnect_attempts);
         self.is_reconnecting = true;
         if self.reconnect_attempts < self.max_reconnect_attempts {
             self.reconnect_attempts += 1;
-            let interval = self.reconnect_interval * self.reconnect_attempts as i32;
-            let window = web_sys::window().unwrap();
-            let closure = Closure::once(Box::new(move || {
-                if let Err(e) = WebSocketManager::connect(ws_manager.clone()) {
-                    log::error!("reconnect error: {:?}", e)
-                }
-            }) as Box<dyn FnMut()>);
-
-            window
-                .set_timeout_with_callback_and_timeout_and_arguments_0(
-                    closure.as_ref().unchecked_ref(),
-                    interval,
-                )
-                .unwrap();
-
-            self.on_timeout = Some(closure);
-        } else {
-            log::error!("Reached maximum reconnect attempts");
-            ConnectState::DisConnect.notify();
         }
+
+        let interval = self.reconnect_interval * self.reconnect_attempts as i32;
+        let window = web_sys::window().ok_or(Error::internal_with_details("window not found"))?;
+
+        let closure = Closure::once(Box::new(move || {
+            if let Err(e) = WebSocketManager::connect(ws_manager.clone()) {
+                log::error!("reconnect error: {:?}", e)
+            }
+        }) as Box<dyn FnMut()>);
+
+        window.set_timeout_with_callback_and_timeout_and_arguments_0(
+            closure.as_ref().unchecked_ref(),
+            interval,
+        )?;
+
+        self.on_timeout = Some(closure);
+        Ok(())
     }
 
     // clean WebSocket connection and events
     pub fn cleanup(&mut self) {
         if let Some(ws) = self.ws.take() {
-            log::debug!("WebSocket connection closing...");
+            debug!("WebSocket connection closing...");
             let _ = ws
                 .close()
-                .map_err(|err| log::error!("close WebSocket error: {:?}", err));
+                .map_err(|err| error!("close WebSocket error: {:?}", err));
             ws.set_onopen(None);
             ws.set_onmessage(None);
             ws.set_onerror(None);

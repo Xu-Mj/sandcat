@@ -16,7 +16,8 @@ impl SeqApi for SeqHttp {
             .header(AUTHORIZE_HEADER, &token())
             .send()
             .await?
-            .success()?
+            .success()
+            .await?
             .json()
             .await?;
         Ok(seq)

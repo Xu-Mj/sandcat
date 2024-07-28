@@ -4,6 +4,7 @@ use fluent::{FluentBundle, FluentResource};
 use gloo::utils::document;
 use gloo::utils::window;
 use js_sys::Array;
+use log::error;
 use wasm_bindgen::JsCast;
 use wasm_bindgen::JsValue;
 use wasm_bindgen_futures::spawn_local;
@@ -143,9 +144,8 @@ impl Component for SelfInfo {
                         match api::file().upload_avatar(&file).await {
                             Ok(name) => user.avatar = name,
                             Err(e) => {
-                                log::error!("upload avatar error: {:?}", e);
-                                Dispatch::<Notification>::global()
-                                    .set(Notification::error("upload avatar error"));
+                                error!("upload avatar error: {:?}", e);
+                                Notification::error(e).notify();
                                 return;
                             }
                         }
@@ -156,9 +156,9 @@ impl Component for SelfInfo {
                             submit.emit(Box::new(user));
                         }
                         Err(e) => {
-                            log::error!("{:?}", e);
-                            Dispatch::<Notification>::global()
-                                .set(Notification::error("update user info failed"));
+                            error!("{:?}", e);
+                            Notification::error(e).notify();
+
                             close.emit(());
                         }
                     }
