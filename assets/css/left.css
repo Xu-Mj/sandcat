@@ -16,6 +16,13 @@
         line-height: 1.5rem;
         padding: 0 1rem;
         font-size: small;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .delete-color{
+        color: red;
     }
 }
 

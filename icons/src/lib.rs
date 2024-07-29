@@ -6,6 +6,18 @@ pub struct SvgFillProps {
     pub fill: AttrValue,
 }
 
+#[function_component(ForwardIcon)]
+pub fn forward_icon(props: &SvgFillProps) -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 72 72">
+            <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2">
+                <path stroke={&props.fill} d="M46.815 33.428L55 25.214L46.815 17"/>
+                <path stroke={&props.fill} d="M32.329 54.498c-8.087 0-14.642-6.556-14.642-14.642s6.555-14.642 14.642-14.642h21.73"/>
+            </g>
+        </svg>
+    }
+}
+
 #[function_component(HangUpLoadingIcon)]
 pub fn hangup_loading_icon(props: &SvgFillProps) -> Html {
     html! {

@@ -4,6 +4,7 @@ use yew::prelude::*;
 use yew::{Component, Properties};
 
 use i18n::{en_us, zh_cn, LanguageType};
+use icons::ForwardIcon;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::state::{I18nState, Notify};
 use utils::tr;
@@ -56,7 +57,7 @@ impl Component for MsgRightClick {
         {
             forward = html!(
                  <div class="right-click-panel-item hover" onclick={ctx.props().forward.reform(|_|())}>
-                     {tr!(self.i18n, FORWARD)}
+                     <ForwardIcon fill={"var(--color-text)"}/>{tr!(self.i18n, FORWARD)}
                  </div>
             );
 
@@ -70,13 +71,13 @@ impl Component for MsgRightClick {
             <div ref={self.node.clone()}
                 {style}
                 class="right-click-panel box-shadow" tabindex="0"
-                onblur={ctx.props().close.reform(|_|())}
+                // onblur={ctx.props().close.reform(|_|())}
                 >
-                <div class="right-click-panel-item hover" onclick={ctx.props().delete.reform(|_|())}>
-                    {tr!(self.i18n, DELETE)}
-                </div>
                 {forward}
                 {related}
+                <div class="right-click-panel-item delete-color hover" onclick={ctx.props().delete.reform(|_|())}>
+                    {tr!(self.i18n, DELETE)}
+                </div>
             </div>
         }
     }
