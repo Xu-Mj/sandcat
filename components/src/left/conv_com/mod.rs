@@ -27,8 +27,8 @@ use sandcat_sdk::{
         notification::Notification,
         seq::Seq,
         user::Claims,
-        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType, OFFLINE_TIME,
-        REFRESH_TOKEN, TOKEN, WS_ADDR,
+        CommonProps, ComponentType, ContentType, CurrentItem, RightContentType, REFRESH_TOKEN,
+        TOKEN, WS_ADDR,
     },
     state::{
         ConvState, CreateConvState, CreateGroupConvState, I18nState, MobileState, MuteState,
@@ -256,10 +256,13 @@ impl Chats {
     }
 
     pub async fn pull_friends(user_id: &str) {
-        let offline_time = utils::get_local_storage(OFFLINE_TIME)
+        let offline_time = db::db_ins()
+            .offline_time
+            .get()
+            .await
             .unwrap_or_default()
-            .parse::<i64>()
-            .unwrap_or_default();
+            .unwrap_or_default()
+            .time;
 
         match api::friends()
             .get_friend_list_by_id(user_id, offline_time)
@@ -272,11 +275,10 @@ impl Chats {
                 }
 
                 // update offline_time(last sync time)
-                utils::set_local_storage(
-                    OFFLINE_TIME,
-                    &chrono::Utc::now().timestamp_millis().to_string(),
-                )
-                .unwrap();
+                let now = chrono::Utc::now().timestamp_millis();
+                if let Err(e) = db::db_ins().offline_time.save(now).await {
+                    error!("record offline time error: {:?}", e);
+                }
             }
             Err(e) => {
                 error!("获取联系人列表错误: {:?}", e)

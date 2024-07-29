@@ -16,7 +16,7 @@ use sandcat_sdk::model::message::Msg;
 use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::page::Page;
 use sandcat_sdk::model::seq::Seq;
-use sandcat_sdk::model::{ComponentType, CurrentItem, OFFLINE_TIME, REFRESH_TOKEN, TOKEN};
+use sandcat_sdk::model::{ComponentType, CurrentItem, REFRESH_TOKEN, TOKEN};
 use sandcat_sdk::state::CreateConvState;
 use sandcat_sdk::state::{
     AddFriendState, AddFriendStateItem, ComponentTypeState, CreateGroupConvState, I18nState,
@@ -358,10 +358,15 @@ impl Component for Chats {
                     navigator.push(&Page::Login);
                 }
                 //  record logout time
-                let now = chrono::Utc::now().timestamp_millis();
-                if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
-                    log::error!("record offline time to local storage error: {:?}", err);
-                }
+                spawn_local(async {
+                    let now = chrono::Utc::now().timestamp_millis();
+                    if let Err(err) = db::db_ins().offline_time.save(now).await {
+                        log::error!("save offline time error: {:?}", err);
+                    }
+                });
+                // if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
+                //     log::error!("record offline time to local storage error: {:?}", err);
+                // }
                 false
             }
             ChatsMsg::UpdateToken(token, is_refresh) => {
@@ -510,12 +515,12 @@ impl Component for Chats {
         self.refresh_token_getter = None;
         self.ws.borrow_mut().cleanup();
         // record the offline time
-        let now = chrono::Utc::now().timestamp_millis();
-        if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
-            log::error!("record offline time to local storage error: {:?}", err);
-        }
-        // spawn_local(async {
-        //     db::repository::Repository::delete_db().await;
-        // });
+        spawn_local(async {
+            // db::repository::Repository::delete_db().await;
+            let now = chrono::Utc::now().timestamp_millis();
+            if let Err(err) = db::db_ins().offline_time.save(now).await {
+                log::error!("record offline time to local storage error: {:?}", err);
+            }
+        });
     }
 }

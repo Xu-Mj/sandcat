@@ -1,6 +1,8 @@
 use std::rc::Rc;
 
 use fluent::{FluentBundle, FluentResource};
+use log::error;
+use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlDivElement;
 use yew::prelude::*;
 use yewdux::Dispatch;
@@ -10,7 +12,8 @@ use icons::{
     ConnectedIcon, ContactsIcon, DisconnectIcon, HangUpLoadingIcon, MessagesIcon, SettingIcon,
 };
 use sandcat_sdk::{
-    model::{user::User, ComponentType, OFFLINE_TIME},
+    db,
+    model::{user::User, ComponentType},
     state::{
         AppState, ComponentTypeState, ConnectState, I18nState, MobileState, Notify, UnreadState,
     },
@@ -101,10 +104,15 @@ impl Component for Top {
                 self.connect_state = state;
 
                 if *self.connect_state == ConnectState::DisConnect {
-                    let now = chrono::Utc::now().timestamp_millis();
-                    if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
-                        log::error!("record offline time to local storage error: {:?}", err);
-                    }
+                    spawn_local(async {
+                        let now = chrono::Utc::now().timestamp_millis();
+                        if let Err(e) = db::db_ins().offline_time.save(now).await {
+                            error!("record offline time error: {:?}", e);
+                        };
+                        // if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
+                        //     log::error!("record offline time to local storage error: {:?}", err);
+                        // }
+                    });
                 }
             }
         }

@@ -1,4 +1,6 @@
+use impls::indexed_db::offline_time::OfflineTimeRepo;
 pub use impls::indexed_db::*;
+use offline_time::OfflineTimes;
 use once_cell::sync::OnceCell;
 
 use self::{
@@ -66,6 +68,7 @@ pub struct Db {
     pub users: Box<dyn Users>,
     pub seq: Box<dyn SeqInterface>,
     pub voices: Box<dyn Voices>,
+    pub offline_time: Box<dyn OfflineTimes>,
 }
 
 impl Db {
@@ -81,7 +84,8 @@ impl Db {
             group_msgs: Box::new(GroupMsgRepo::new(repo.clone())),
             users: Box::new(UserRepo::new(repo.clone())),
             seq: Box::new(SeqRepo::new(repo.clone())),
-            voices: Box::new(VoiceRepo::new(repo)),
+            voices: Box::new(VoiceRepo::new(repo.clone())),
+            offline_time: Box::new(OfflineTimeRepo::new(repo)),
         }
     }
 }

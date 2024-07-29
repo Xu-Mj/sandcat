@@ -32,9 +32,9 @@ impl OfflineTimeRepo {
 
 #[async_trait::async_trait(?Send)]
 impl OfflineTimes for OfflineTimeRepo {
-    async fn save(&self, obj: &OfflineTime) -> Result<()> {
+    async fn save(&self, time: i64) -> Result<()> {
         let db = self.store(OFFLINE_TIME_TABLE_NAME).await?;
-        db.put(&serde_wasm_bindgen::to_value(obj).unwrap())?;
+        db.put(&serde_wasm_bindgen::to_value(&OfflineTime::new(time)).unwrap())?;
         Ok(())
     }
 
