@@ -123,20 +123,20 @@ impl Component for PhoneCall {
                     invite_type: msg.invite_type.clone(),
                     ..Default::default()
                 });
-                log::debug!("invite_info: {:?}", self.invite_info);
+                debug!("invite_info: {:?}", self.invite_info);
                 ctx.link().send_future(async move {
                     // 查询好友数据
                     let friend = db::db_ins().friends.get(friend_id.as_str()).await;
-                    log::debug!("收到邀请: {:?}", friend);
+                    debug!("收到邀请: {:?}", friend);
                     PhoneCallMsg::ShowCallNotify(Box::new(friend))
                 });
             }
             SingleCall::InviteCancel(mut msg) => {
-                log::debug!("对方取消通话");
+                debug!("对方取消通话");
                 // 判断是否是当前用户
                 if let Some(info) = self.invite_info.as_ref() {
                     if info.send_id == msg.send_id {
-                        log::debug!("正在关闭通知");
+                        debug!("正在关闭通知");
 
                         self.finish_call();
                         // 数据入库
@@ -146,13 +146,13 @@ impl Component for PhoneCall {
                         self.show_notify = false;
                         self.call_friend_info = None;
                         self.save_call_msg(msg.into());
-                        log::debug!("已经关闭通知");
+                        debug!("已经关闭通知");
                         return true;
                     }
                 }
             }
             SingleCall::InviteAnswer(mut msg) => {
-                log::debug!("single invite answer");
+                debug!("single invite answer");
                 if msg.agree {
                     // 对方同意了通话请求，正在建立连接，为了简化代码邀请方和被邀请方的创建pc方法合并到一起了
                     if let Err(e) = self.create_pc(ctx, "") {
@@ -161,7 +161,7 @@ impl Component for PhoneCall {
                     }
                 } else {
                     // 拒绝通话请求，数据入库
-                    log::debug!("对方拒绝了请求");
+                    debug!("对方拒绝了请求");
                     let friend_id = msg.send_id.clone();
                     msg.send_id = msg.friend_id.clone();
                     msg.friend_id = friend_id;
@@ -207,7 +207,7 @@ impl Component for PhoneCall {
                 if let Some(info) = &self.invite_info {
                     if info.friend_id == msg.send_id && self.rtc.is_some() {
                         // 接通
-                        log::debug!("请求被对方同意");
+                        debug!("请求被对方同意");
                         // todo需要在webrtc状态为Connected下进行回调修改
                         // self.invite_info.as_mut().unwrap().start_time =
                         //     chrono::Utc::now().timestamp_millis();
@@ -299,7 +299,7 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::SendCallInvite(msg) => {
-                log::debug!("send call invite");
+                debug!("send call invite");
                 // 判断是否正在通话中
                 if self.invite_info.is_some() {
                     Notification::warn(tr!(self.i18n, CALL_BUSY)).notify();
@@ -372,7 +372,7 @@ impl Component for PhoneCall {
                                     {
                                         error!("send invite msg error: {:?}", e);
                                     } else {
-                                        log::debug!("send invite msg success");
+                                        debug!("send invite msg success");
                                     }
                                     PhoneCallMsg::ShowAudioWindow(stream, Box::new(friend))
                                 }
@@ -402,7 +402,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::SendInviteCancel => {
-                log::debug!("SendInviteCancele");
+                debug!("SendInviteCancele");
                 let local_id = AttrValue::from(nanoid!());
                 let info = self.invite_info.as_ref().unwrap();
                 let friend_id = info.friend_id.clone();
@@ -445,7 +445,7 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::ResponseCall => {
-                log::debug!("ResponseCall");
+                debug!("ResponseCall");
                 self.invited = true;
 
                 // get stream
@@ -472,7 +472,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::HangUpCall => {
-                log::debug!("HangUpCall");
+                debug!("HangUpCall");
                 let info = self.invite_info.as_ref().unwrap();
                 let create_time = chrono::Utc::now().timestamp_millis();
                 let sustain = create_time - info.start_time;
@@ -526,7 +526,7 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::AgreeCall => {
-                log::debug!("AgreeCall");
+                debug!("AgreeCall");
                 // 同意视频通话
                 let info = self.invite_info.as_ref().unwrap();
                 let msg = SingleCall::InviteAnswer(InviteAnswerMsg {
@@ -559,7 +559,7 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::ConnectedCall(stream) => {
-                log::debug!("ConnectedCall");
+                debug!("ConnectedCall");
                 // set stream to peer connection
                 let pc = self.rtc.as_ref().unwrap().pc().clone();
                 let invite_info = self.invite_info.as_ref().unwrap();
@@ -608,7 +608,7 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::DenyCall => {
-                log::debug!("DenyCall");
+                debug!("DenyCall");
                 let info = self.invite_info.as_ref().unwrap();
                 let local_id = AttrValue::from(nanoid!());
                 let send_id = ctx.props().user_id.clone();
@@ -665,6 +665,7 @@ impl Component for PhoneCall {
             }
             PhoneCallMsg::ShowVideoWindow(stream, friend) => {
                 let video: HtmlVideoElement = self.video_node.cast().unwrap();
+                self.is_get_stream = true;
                 self.call_friend_info = Some(friend);
                 video.set_src_object(Some(&stream));
                 let _ = video.play().unwrap();
@@ -677,7 +678,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::CallTimeout => {
-                log::debug!("CallTimeout");
+                debug!("CallTimeout");
                 if self.show_video || self.show_audio {
                     let info = self.invite_info.as_ref().unwrap();
                     if info.connected {
@@ -726,7 +727,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::SwitchVolume => {
-                log::debug!("SwitchVolume");
+                debug!("SwitchVolume");
                 self.volume_mute = !self.volume_mute;
                 match self.invite_info.as_ref().unwrap().invite_type {
                     InviteType::Video => {
@@ -741,13 +742,14 @@ impl Component for PhoneCall {
                 true
             }
             PhoneCallMsg::SwitchMicrophoneMute => {
-                log::debug!("SwitchMicrophoneMute");
+                debug!("SwitchMicrophoneMute");
                 self.microphone_mute = !self.microphone_mute;
                 self.mute_audio(self.microphone_mute);
                 true
             }
             PhoneCallMsg::ShowAudioWindow(stream, friend) => {
-                log::debug!("ShowAudioWindow");
+                debug!("ShowAudioWindow");
+                self.is_get_stream = true;
                 self.stream = Some(stream);
                 self.call_friend_info = Some(friend);
                 let ctx = ctx.link().clone();
@@ -758,7 +760,7 @@ impl Component for PhoneCall {
             }
 
             PhoneCallMsg::ShowCallNotify(item) => {
-                log::debug!("show call notify: {:?}", item.id());
+                debug!("show call notify: {:?}", item.id());
                 self.call_friend_info = Some(item);
                 self.show_notify = true;
                 self.invited = true;
@@ -769,7 +771,7 @@ impl Component for PhoneCall {
                 false
             }
             PhoneCallMsg::CallStateChange(state) => {
-                log::debug!("CallStateChange");
+                debug!("CallStateChange");
                 // 判断是否是空的状态
                 if state.msg.local_id.is_empty() {
                     return false;
@@ -914,6 +916,9 @@ impl Component for PhoneCall {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        if !self.is_get_stream {
+            return html!();
+        }
         // todo error notification
         if self.conn_state == ConnectionState::Error {
             return html! {

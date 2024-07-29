@@ -1,10 +1,21 @@
 mod phone_call;
-use fluent::{FluentBundle, FluentResource};
-use i18n::{en_us, zh_cn, LanguageType};
 pub use phone_call::*;
-use wasm_bindgen_futures::{spawn_local, JsFuture};
 
+use std::fmt::Debug;
+
+use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::{Interval, Timeout};
+use log::debug;
+use wasm_bindgen::{JsCast, JsValue};
+use wasm_bindgen_futures::{spawn_local, JsFuture};
+use web_sys::{
+    HtmlAudioElement, HtmlVideoElement, MediaStream, MediaStreamTrack, RtcSdpType,
+    RtcSessionDescriptionInit, RtcSignalingState,
+};
+use yew::prelude::*;
+use yewdux::Dispatch;
+
+use i18n::{en_us, zh_cn, LanguageType};
 use sandcat_sdk::{
     db,
     model::{
@@ -13,15 +24,7 @@ use sandcat_sdk::{
     },
     state::{I18nState, MobileState, SendCallState},
 };
-use std::fmt::Debug;
-use wasm_bindgen::{JsCast, JsValue};
 use web_rtc::WebRTC;
-use web_sys::{
-    HtmlAudioElement, HtmlVideoElement, MediaStream, MediaStreamTrack, RtcSdpType,
-    RtcSessionDescriptionInit, RtcSignalingState,
-};
-use yew::prelude::*;
-use yewdux::Dispatch;
 
 pub struct PhoneCall {
     /// 显示视频通话
@@ -70,6 +73,7 @@ pub struct PhoneCall {
     is_dragging: bool,
     is_mobile: bool,
     is_zoom: bool,
+    is_get_stream: bool,
     conn_state: ConnectionState,
     i18n: FluentBundle<FluentResource>,
 }
@@ -129,6 +133,7 @@ impl PhoneCall {
             is_dragging: false,
             is_mobile,
             is_zoom: false,
+            is_get_stream: false,
             conn_state: ConnectionState::Waiting,
             i18n,
             _i18n_dis,
@@ -159,7 +164,7 @@ impl PhoneCall {
                 spawn_local(async move {
                     match future.await {
                         Ok(_) => {
-                            log::debug!("set remote desc success in rtc signal state stable")
+                            debug!("set remote desc success in rtc signal state stable")
                         }
                         Err(err) => {
                             log::error!(
@@ -174,7 +179,7 @@ impl PhoneCall {
                 spawn_local(async move {
                     match future.await {
                         Ok(_) => {
-                            log::debug!("set remote desc success in rtc signal state not stable")
+                            debug!("set remote desc success in rtc signal state not stable")
                         }
                         Err(err) => {
                             log::error!(
@@ -191,7 +196,7 @@ impl PhoneCall {
                 spawn_local(async move {
                     match future.await {
                         Ok(_) => {
-                            log::debug!("set remote desc success in rtc signal state not stable")
+                            debug!("set remote desc success in rtc signal state not stable")
                         }
                         Err(err) => {
                             log::error!(
@@ -227,7 +232,7 @@ impl PhoneCall {
 
     fn finish_call(&mut self) {
         if let Some(ref mut rtc) = self.rtc {
-            log::debug!("hang up video clear pc");
+            debug!("hang up video clear pc");
             rtc.close();
         }
 
@@ -243,20 +248,20 @@ impl PhoneCall {
             match invite_info.invite_type {
                 InviteType::Video => {
                     if let Some(video) = self.video_node.cast::<HtmlVideoElement>() {
-                        log::debug!("hang up video clear stream");
+                        debug!("hang up video clear stream");
                         video.set_src_object(None);
                     }
                     if let Some(friend_video_node) =
                         self.friend_video_node.cast::<HtmlVideoElement>()
                     {
-                        log::debug!("hang up video clear stream2");
+                        debug!("hang up video clear stream2");
                         friend_video_node.set_src_object(None);
                     }
                     self.show_video = false;
                 }
                 InviteType::Audio => {
                     if let Some(audio) = self.friend_audio_node.cast::<HtmlAudioElement>() {
-                        log::debug!("hang up audio clear stream");
+                        debug!("hang up audio clear stream");
                         audio.set_src_object(None);
                     }
                     self.show_audio = false;
@@ -274,6 +279,7 @@ impl PhoneCall {
         self.volume_mute = false;
         self.microphone_mute = false;
         self.is_zoom = false;
+        self.is_get_stream = false;
     }
 
     fn save_call_msg(&self, mut msg: Message) {
