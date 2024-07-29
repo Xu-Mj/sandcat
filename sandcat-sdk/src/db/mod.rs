@@ -31,6 +31,7 @@ pub mod group_msg;
 pub mod groups;
 pub mod impls;
 pub mod messages;
+pub mod offline_time;
 pub mod seq;
 pub mod users;
 pub mod voice;

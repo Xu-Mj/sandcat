@@ -4,6 +4,7 @@ pub mod friend;
 pub mod group;
 pub mod message;
 pub mod notification;
+pub mod offline_time;
 pub mod page;
 pub mod seq;
 pub mod user;

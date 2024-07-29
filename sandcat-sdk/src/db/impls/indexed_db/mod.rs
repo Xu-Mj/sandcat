@@ -5,6 +5,7 @@ pub mod group;
 pub mod group_members;
 pub mod group_msg;
 pub mod message;
+pub mod offline_time;
 pub mod repository;
 pub mod seq;
 pub mod user;
