@@ -898,7 +898,7 @@ impl Component for PhoneCall {
             }
             PhoneCallMsg::Error(err) => {
                 self.finish_call();
-                Notification::error(Error::internal_with_details(err)).notify();
+                Notification::error(Error::internal_with_details(tr!(self.i18n, &err))).notify();
                 true
             }
         }
