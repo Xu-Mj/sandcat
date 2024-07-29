@@ -900,8 +900,12 @@
     }
 
     .rect {
-        h2 {
-            margin-bottom: 2rem;
+        position: relative;
+
+        h1 {
+            position: absolute;
+            top: -5rem;
+            left: -4rem;
         }
 
         b {

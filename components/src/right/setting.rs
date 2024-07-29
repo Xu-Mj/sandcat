@@ -143,7 +143,7 @@ impl Component for Setting {
         html! {
             <div class="setting">
                 <div {class}>
-                   <h2> { tr!(self.i18n, SETTING) }</h2>
+                   <h1> { tr!(self.i18n, SETTING) }</h1>
 
                     <div class={font_class}>
                         <b>{tr!(self.i18n, FONT_SIZE)}</b>
