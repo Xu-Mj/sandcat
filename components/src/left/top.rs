@@ -146,15 +146,15 @@ impl Component for Top {
         let top_right = if !self.is_mobile {
             html! {
                 <div class="top-right">
-                    <span class={msg_class.clone()} onclick={msg_onclick.clone()}>
+                    <span class={msg_class} onclick={msg_onclick}>
                         <MessagesIcon fill={"var(--color-text)"}/>
-                        { msg_count.clone() }
+                        { msg_count }
                     </span>
-                    <span class={contact_class.clone()} onclick={contact_onclick.clone()}>
+                    <span class={contact_class} onclick={contact_onclick}>
                         <ContactsIcon fill={"var(--color-text)"}/>
-                        { contact_count.clone() }
+                        { contact_count }
                     </span>
-                    <span class={setting_class.clone()} onclick={setting_onclick.clone()}>
+                    <span class={setting_class} onclick={setting_onclick}>
                         <SettingIcon fill={"var(--color-text)"}/>
                     </span>
                 </div>
@@ -162,13 +162,13 @@ impl Component for Top {
         } else {
             html! {
                 <div class="top-down">
-                    <div class={classes!(msg_class.clone(), "top-down-style")} onclick={msg_onclick.clone()}>
+                    <div class={classes!(msg_class, "top-down-style")} onclick={msg_onclick}>
                         { tr!(self.i18n, MSG) }
-                        { msg_count.clone() }
+                        { msg_count }
                     </div>
-                    <div class={classes!(contact_class.clone(), "top-down-style")} onclick={contact_onclick.clone()}>
+                    <div class={classes!(contact_class, "top-down-style")} onclick={contact_onclick}>
                         { tr!(self.i18n, CONTACTS) }
-                        { contact_count.clone() }
+                        { contact_count }
                     </div>
                 </div>
             }
@@ -211,7 +211,7 @@ impl Top {
                 html!(<div class="connection-state"><DisconnectIcon /></div>)
             }
             ConnectState::Connecting => {
-                html!(<div class="connection-state"><HangUpLoadingIcon fill={AttrValue::from("var(--color-text)")} /></div>)
+                html!(<div class="connection-state"><HangUpLoadingIcon fill={"var(--color-text)"} /></div>)
             }
             ConnectState::Connected => html!(<div class="connection-state"><ConnectedIcon /></div>),
         }
