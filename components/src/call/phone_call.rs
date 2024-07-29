@@ -418,7 +418,7 @@ impl Component for PhoneCall {
                 ctx.link().send_future(async move {
                     let _ = db::db_ins()
                         .messages
-                        .add_message(&mut Message {
+                        .add_message(&Message {
                             local_id: local_id.clone(),
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
@@ -493,7 +493,7 @@ impl Component for PhoneCall {
                 ctx.link().send_future(async move {
                     db::db_ins()
                         .messages
-                        .add_message(&mut Message {
+                        .add_message(&Message {
                             local_id: local_id.clone(),
                             send_id: send_id.clone(),
                             friend_id: friend_id.clone(),
@@ -626,7 +626,7 @@ impl Component for PhoneCall {
                 ctx.link().send_future(async move {
                     let _ = db::db_ins()
                         .messages
-                        .add_message(&mut Message {
+                        .add_message(&Message {
                             local_id: local_id.clone(),
                             server_id: AttrValue::default(),
                             send_id: send_id.clone(),
@@ -697,7 +697,7 @@ impl Component for PhoneCall {
                     ctx.link().send_future(async move {
                         let _ = db::db_ins()
                             .messages
-                            .add_message(&mut Message {
+                            .add_message(&Message {
                                 local_id: local_id.clone(),
                                 send_id: send_id.clone(),
                                 friend_id: friend_id.clone(),

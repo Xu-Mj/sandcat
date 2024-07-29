@@ -19,7 +19,7 @@ pub trait Messages: Debug {
         page_size: u32,
     ) -> Result<IndexMap<AttrValue, Message>>;
 
-    async fn add_message(&self, msg: &mut Message) -> Result<()>;
+    async fn add_message(&self, msg: &Message) -> Result<()>;
 
     async fn update_msg_status(&self, msg: &ServerResponse) -> Result<()>;
 

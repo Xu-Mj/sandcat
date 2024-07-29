@@ -79,7 +79,7 @@ impl Messages for MessageRepo {
         Ok(result)
     }
 
-    async fn add_message(&self, msg: &mut Message) -> Result<()> {
+    async fn add_message(&self, msg: &Message) -> Result<()> {
         let store = self.store(MESSAGE_TABLE_NAME).await?;
         add(store, msg, &self.on_err_callback).await
     }

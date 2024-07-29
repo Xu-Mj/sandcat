@@ -297,7 +297,7 @@ impl Component for MsgItem {
                         msg.local_id = nanoid::nanoid!().into();
                         msg.is_read = 1;
                         msg.is_self = true;
-                        if let Err(err) = db::db_ins().messages.add_message(&mut msg).await {
+                        if let Err(err) = db::db_ins().messages.add_message(&msg).await {
                             error!("forword message error: store message error{:?}", err);
                             Notification::error(err).notify();
                         }

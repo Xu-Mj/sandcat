@@ -430,7 +430,7 @@ impl Chats {
                         msg.audio_downloaded = true;
                     }
                     // save to db
-                    if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
+                    if let Err(e) = db::db_ins().messages.add_message(&msg).await {
                         error!("save message to db error: {:?}", e);
                         Notification::error(e).notify();
                     }

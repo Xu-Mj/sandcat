@@ -202,10 +202,10 @@ impl Sender {
         });
     }
 
-    async fn store_send_msg_(conv_type: RightContentType, mut msg: Message) {
+    async fn store_send_msg_(conv_type: RightContentType, msg: Message) {
         match conv_type {
             RightContentType::Friend => {
-                db::db_ins().messages.add_message(&mut msg).await.unwrap();
+                db::db_ins().messages.add_message(&msg).await.unwrap();
                 Dispatch::<SendMessageState>::global().reduce_mut(|s| s.msg = Msg::Single(msg));
             }
             RightContentType::Group => {

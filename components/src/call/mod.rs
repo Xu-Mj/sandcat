@@ -282,11 +282,11 @@ impl PhoneCall {
         self.is_get_stream = false;
     }
 
-    fn save_call_msg(&self, mut msg: Message) {
+    fn save_call_msg(&self, msg: Message) {
         spawn_local(async move {
             db::db_ins()
                 .messages
-                .add_message(&mut msg)
+                .add_message(&msg)
                 .await
                 .map_err(|err| log::error!("消息入库失败:{:?}", err))
                 .unwrap();

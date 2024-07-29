@@ -364,9 +364,6 @@ impl Component for Chats {
                         log::error!("save offline time error: {:?}", err);
                     }
                 });
-                // if let Err(err) = utils::set_local_storage(OFFLINE_TIME, &now.to_string()) {
-                //     log::error!("record offline time to local storage error: {:?}", err);
-                // }
                 false
             }
             ChatsMsg::UpdateToken(token, is_refresh) => {

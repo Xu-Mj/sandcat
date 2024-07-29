@@ -26,12 +26,39 @@ impl Chats {
         conv_type: RightContentType,
         cur_user_id: AttrValue,
     ) {
-        if cur_user_id != msg.send_id {
-            let friend_id = msg.send_id.clone();
-            msg.send_id = msg.friend_id.clone();
-            msg.friend_id = friend_id;
-        } else {
-            msg.is_self = true;
+        if msg.content_type == ContentType::Audio {
+            // request from file server
+            if let Err(e) =
+                Self::download_voice_and_save(&msg.content, &msg.local_id, msg.audio_duration).await
+            {
+                error!("download voice error: {}", e);
+            }
+            msg.audio_downloaded = true;
+        }
+
+        match conv_type {
+            RightContentType::Friend => {
+                if cur_user_id != msg.send_id {
+                    let friend_id = msg.send_id.clone();
+                    msg.send_id = msg.friend_id.clone();
+                    msg.friend_id = friend_id;
+                } else {
+                    msg.is_self = true;
+                }
+                if let Err(e) = db::db_ins().messages.add_message(&msg).await {
+                    error!("save message to db error: {:?}", e);
+                }
+            }
+            RightContentType::Group => {
+                msg.is_self = cur_user_id == msg.send_id;
+                if let Err(e) = db::db_ins().group_msgs.put(&msg).await {
+                    error!("save message to db error: {:?}", e);
+                }
+            }
+            // todo handle other types
+            _ => {
+                return;
+            }
         }
 
         let unread_count = if msg.is_read == 1 || msg.is_self {
@@ -48,20 +75,6 @@ impl Chats {
             conv_type,
             ..Default::default()
         };
-
-        if msg.content_type == ContentType::Audio {
-            // request from file server
-            if let Err(e) =
-                Self::download_voice_and_save(&msg.content, &msg.local_id, msg.audio_duration).await
-            {
-                error!("download voice error: {}", e);
-            }
-            msg.audio_downloaded = true;
-        }
-
-        if let Err(e) = db::db_ins().messages.add_message(&mut msg).await {
-            error!("save message to db error: {:?}", e);
-        }
 
         if let Some(v) = map.get_mut(&conv.friend_id) {
             v.last_msg = conv.last_msg;
@@ -137,28 +150,15 @@ impl Chats {
                             error!("dismiss group failed: {:?}", err);
                         };
                     }
-                    GroupMsg::Message(mut msg) => {
-                        if msg.content_type == ContentType::Audio {
-                            // request from file server
-                            if let Err(e) = Self::download_voice_and_save(
-                                &msg.content,
-                                &msg.local_id,
-                                msg.audio_duration,
-                            )
-                            .await
-                            {
-                                error!("download voice and save error {:?}", e);
-                            }
-                            msg.audio_downloaded = true;
-                        }
-
-                        if msg.send_id == user_id {
-                            msg.is_self = true;
-                        }
-
-                        if let Err(e) = db::db_ins().group_msgs.put(&msg).await {
-                            error!("save message to db error: {:?}", e);
-                        }
+                    GroupMsg::Message(msg) => {
+                        Self::handle_offline_msg_map(
+                            &mut map,
+                            msg.content.clone(),
+                            msg,
+                            conv_type,
+                            user_id.clone(),
+                        )
+                        .await;
                     }
                     GroupMsg::MemberExit((mem_id, group_id, _)) => {
                         // todo send a exit message to the group
