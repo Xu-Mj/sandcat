@@ -18,6 +18,24 @@ pub fn forward_icon(props: &SvgFillProps) -> Html {
     }
 }
 
+#[function_component(QuoteIcon)]
+pub fn quote_icon(props: &SvgFillProps) -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24">
+            <path stroke={&props.fill} d="M9.135 9h3L10 14.608H7zm5 0h3L15 14.608h-3z"/>
+        </svg>
+    }
+}
+
+#[function_component(DeleteIcon)]
+pub fn delete_icon(props: &SvgFillProps) -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24">
+            <path stroke={&props.fill} stroke-width="1" d="M18 19a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V7H4V4h4.5l1-1h4l1 1H19v3h-1zM6 7v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2V7zm12-1V5h-4l-1-1h-3L9 5H5v1zM8 9h1v10H8zm6 0h1v10h-1z"/>
+        </svg>
+    }
+}
+
 #[function_component(HangUpLoadingIcon)]
 pub fn hangup_loading_icon(props: &SvgFillProps) -> Html {
     html! {
