@@ -17,6 +17,18 @@
         padding: 0 1rem;
         font-size: small;
     }
+
+    .right-click-panel-item-display {
+        display: grid;
+        grid-template-columns: 1fr 3fr;
+        align-items: center;
+        padding: 0 .5rem;
+        gap: .5rem;
+    }
+
+    .delete-color {
+        color: var(--color-text-delete);
+    }
 }
 
 /* 左侧列表 */

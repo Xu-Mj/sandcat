@@ -396,20 +396,12 @@
         position: relative;
         scroll-behavior: smooth;
 
-
-        svg {
-            path {
-                stroke: var(--color-text);
-            }
-        }
-
         #exclamation {
             path {
                 stroke: #e11d48;
                 fill: #e11d48;
             }
         }
-
         /* 消息组件,对方消息 */
 
         .msg-item {
@@ -429,6 +421,12 @@
                 position: relative;
             }
 
+            svg {
+                path {
+                    stroke: var(--color-text);
+                }
+            }
+
         }
 
         /* 消息组件 */
@@ -442,6 +440,12 @@
 
             :hover .time-span {
                 display: block;
+            }
+
+            svg {
+                path {
+                    stroke: var(--color-text);
+                }
             }
 
             .content-wrapper {
@@ -896,8 +900,12 @@
     }
 
     .rect {
-        h2 {
-            margin-bottom: 2rem;
+        position: relative;
+
+        h1 {
+            position: absolute;
+            top: -5rem;
+            left: -4rem;
         }
 
         b {

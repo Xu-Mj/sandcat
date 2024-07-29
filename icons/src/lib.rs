@@ -6,6 +6,36 @@ pub struct SvgFillProps {
     pub fill: AttrValue,
 }
 
+#[function_component(ForwardIcon)]
+pub fn forward_icon(props: &SvgFillProps) -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 72 72">
+            <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4">
+                <path stroke={&props.fill} d="M46.815 33.428L55 25.214L46.815 17"/>
+                <path stroke={&props.fill} d="M32.329 54.498c-8.087 0-14.642-6.556-14.642-14.642s6.555-14.642 14.642-14.642h21.73"/>
+            </g>
+        </svg>
+    }
+}
+
+#[function_component(QuoteIcon)]
+pub fn quote_icon(props: &SvgFillProps) -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24">
+            <path stroke={&props.fill} d="M9.135 9h3L10 14.608H7zm5 0h3L15 14.608h-3z"/>
+        </svg>
+    }
+}
+
+#[function_component(DeleteIcon)]
+pub fn delete_icon(props: &SvgFillProps) -> Html {
+    html! {
+        <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24">
+            <path fill={&props.fill} d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6z"/>
+        </svg>
+    }
+}
+
 #[function_component(HangUpLoadingIcon)]
 pub fn hangup_loading_icon(props: &SvgFillProps) -> Html {
     html! {

@@ -4,6 +4,7 @@ use yew::prelude::*;
 use yew::{Component, Properties};
 
 use i18n::{en_us, zh_cn, LanguageType};
+use icons::{DeleteIcon, ForwardIcon, QuoteIcon};
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::state::{I18nState, Notify};
 use utils::tr;
@@ -55,14 +56,16 @@ impl Component for MsgRightClick {
             || ctx.props().content_type != ContentType::VideoCall
         {
             forward = html!(
-                 <div class="right-click-panel-item hover" onclick={ctx.props().forward.reform(|_|())}>
-                     {tr!(self.i18n, FORWARD)}
+                 <div class="right-click-panel-item right-click-panel-item-display  hover"
+                    onclick={ctx.props().forward.reform(|_|())}>
+                    <ForwardIcon fill={"var(--color-text)"}/>{tr!(self.i18n, FORWARD)}
                  </div>
             );
 
             related = html!(
-                 <div class="right-click-panel-item hover" onclick={ctx.props().related.reform(|_|())}>
-                     {tr!(self.i18n, RELATED)}
+                 <div class="right-click-panel-item right-click-panel-item-display  hover"
+                    onclick={ctx.props().related.reform(|_|())}>
+                    <QuoteIcon fill={"var(--color-text)"}/>{tr!(self.i18n, RELATED)}
                  </div>
             );
         };
@@ -72,11 +75,12 @@ impl Component for MsgRightClick {
                 class="right-click-panel box-shadow" tabindex="0"
                 onblur={ctx.props().close.reform(|_|())}
                 >
-                <div class="right-click-panel-item hover" onclick={ctx.props().delete.reform(|_|())}>
-                    {tr!(self.i18n, DELETE)}
-                </div>
                 {forward}
                 {related}
+                <div class="right-click-panel-item delete-color right-click-panel-item-display hover"
+                    onclick={ctx.props().delete.reform(|_|())}>
+                    <DeleteIcon fill={"var(--color-text-delete)"}/>{tr!(self.i18n, DELETE)}
+                </div>
             </div>
         }
     }

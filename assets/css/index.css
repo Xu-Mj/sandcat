@@ -34,6 +34,7 @@
     --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
     /* scrollbar-gutter: stable; */
     --v-transparent: 0.9;
+    --color-text-delete: red;
 }
 
 /* semantic color variables for this project */
