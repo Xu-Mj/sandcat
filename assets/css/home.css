@@ -299,8 +299,9 @@
 
 .notify {
     position: absolute;
+    top: 2rem;
     width: 15rem;
-    max-height: 21rem;
+    /* max-height: 21rem; */
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -323,7 +324,6 @@
     }
 
     .notification-item {
-        width: 100%;
         min-height: 2rem;
         line-height: 2rem;
         position: relative;
@@ -345,6 +345,14 @@
     }
 }
 
+@keyframes notify-item-in {
+    from{
+        top: -100%;
+    }
+    to{
+        top: 0;
+    }
+}
 .notify::-webkit-scrollbar {
     display: none;
 }

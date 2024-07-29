@@ -4,6 +4,7 @@ pub mod friend;
 pub mod group;
 pub mod message;
 pub mod notification;
+pub mod offline_time;
 pub mod page;
 pub mod seq;
 pub mod user;
@@ -19,7 +20,6 @@ use self::friend::FriendStatus;
 pub static WS_ADDR: &str = "WS_ADDR";
 pub static TOKEN: &str = "ACCESS_TOKEN";
 pub static REFRESH_TOKEN: &str = "REFRESH_TOKEN";
-pub static OFFLINE_TIME: &str = "OFFLINE_TIME";
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(i32)]

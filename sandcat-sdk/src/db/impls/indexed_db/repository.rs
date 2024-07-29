@@ -17,17 +17,39 @@ use crate::db::{
     GROUP_MSG_TABLE_NAME, GROUP_TABLE_NAME, MESSAGE_CONTENT_INDEX,
     MESSAGE_FRIEND_AND_IS_READ_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX,
     MESSAGE_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME, MESSAGE_TIME_INDEX,
-    MESSAGE_TYPE_INDEX, SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
+    MESSAGE_TYPE_INDEX, OFFLINE_TIME_TABLE_NAME, SEQ_TABLE_NAME, USER_TABLE_NAME, VOICE_TABLE_NAME,
 };
 use crate::error::Result;
 
 use super::DB_NAME;
 
-// const DATE_FORMAT_STR: &str = "%Y-%m-%d %H:%M:%S";
 const DB_VERSION: u32 = 1;
-#[derive(Debug, Clone)]
+
+type Func = Option<Closure<dyn FnMut(&Event)>>;
+
+#[derive(Debug)]
 pub struct Repository {
     db: IdbDatabase,
+    onupgread: Func,
+    onsuccess: Func,
+}
+
+impl Clone for Repository {
+    fn clone(&self) -> Self {
+        Self {
+            db: self.db.clone(),
+            onupgread: None,
+            onsuccess: None,
+        }
+    }
+}
+
+impl Drop for Repository {
+    fn drop(&mut self) {
+        self.onsuccess = None;
+        self.onupgread = None;
+        self.db.close();
+    }
 }
 
 impl Repository {
@@ -80,24 +102,32 @@ impl Repository {
             create_group_members_table(&db).expect("create group members table panic");
             create_conv_table(&db).expect("create conversations table panic");
 
-            let mut parameters: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
-            parameters.key_path(Some(&JsValue::from_str("id")));
-            parameters.auto_increment(true);
-            let _store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(SEQ_TABLE_NAME),
-                    &parameters,
-                )
-                .unwrap();
-            let _store = db
-                .create_object_store_with_optional_parameters(
-                    &String::from(GROUP_TABLE_NAME),
-                    &parameters,
-                )
-                .unwrap();
+            // create sequence table
+            db.create_object_store_with_optional_parameters(
+                &String::from(SEQ_TABLE_NAME),
+                &parameters,
+            )
+            .unwrap();
+
+            let mut id_key: IdbObjectStoreParameters = IdbObjectStoreParameters::new();
+            id_key.key_path(Some(&JsValue::from_str("id")));
+
+            // create groups table
+            db.create_object_store_with_optional_parameters(
+                &String::from(GROUP_TABLE_NAME),
+                &id_key,
+            )
+            .unwrap();
+
+            // create offline time table
+            db.create_object_store_with_optional_parameters(
+                &String::from(OFFLINE_TIME_TABLE_NAME),
+                &parameters,
+            )
+            .unwrap();
         });
         open_request.set_onupgradeneeded(Some(on_upgradeneeded.as_ref().unchecked_ref()));
-        on_upgradeneeded.forget();
+        // on_upgradeneeded.forget();
 
         let on_success = Closure::once(move |event: &Event| {
             // Extract database handle from the event
@@ -115,11 +145,15 @@ impl Repository {
             let _ = tx.send(db);
         });
         open_request.set_onsuccess(Some(on_success.as_ref().unchecked_ref()));
-        on_success.forget();
+        // on_success.forget();
 
         let db = rx.await.unwrap();
 
-        Repository { db }
+        Repository {
+            db,
+            onupgread: Some(on_upgradeneeded),
+            onsuccess: Some(on_success),
+        }
     }
 
     pub async fn store(&self, name: &str) -> Result<IdbObjectStore> {
