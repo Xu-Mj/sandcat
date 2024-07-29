@@ -9,8 +9,8 @@ pub struct SvgFillProps {
 #[function_component(ForwardIcon)]
 pub fn forward_icon(props: &SvgFillProps) -> Html {
     html! {
-        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 72 72">
-            <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2">
+        <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 72 72">
+            <g fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="4">
                 <path stroke={&props.fill} d="M46.815 33.428L55 25.214L46.815 17"/>
                 <path stroke={&props.fill} d="M32.329 54.498c-8.087 0-14.642-6.556-14.642-14.642s6.555-14.642 14.642-14.642h21.73"/>
             </g>
@@ -31,7 +31,7 @@ pub fn quote_icon(props: &SvgFillProps) -> Html {
 pub fn delete_icon(props: &SvgFillProps) -> Html {
     html! {
         <svg xmlns="http://www.w3.org/2000/svg" width="1rem" height="1rem" viewBox="0 0 24 24">
-            <path stroke={&props.fill} stroke-width="1" d="M18 19a3 3 0 0 1-3 3H8a3 3 0 0 1-3-3V7H4V4h4.5l1-1h4l1 1H19v3h-1zM6 7v12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2V7zm12-1V5h-4l-1-1h-3L9 5H5v1zM8 9h1v10H8zm6 0h1v10h-1z"/>
+            <path fill={&props.fill} d="M19 4h-3.5l-1-1h-5l-1 1H5v2h14M6 19a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7H6z"/>
         </svg>
     }
 }
