@@ -14,7 +14,7 @@ use web_sys::{
 use yew::platform::spawn_local;
 use yew::{html, AttrValue, Callback, Component, Context, Html, Properties, TouchEvent};
 
-use i18n::LanguageType;
+use i18n::{en_us, zh_cn, LanguageType};
 use icons::{
     AnswerPhoneIcon, AudioZoomInIcon, AudioZoomOutIcon, HangUpLoadingIcon, HangupInNotifyIcon,
     MicrophoneIcon, MicrophoneMuteIcon, VideoRecordIcon, VolumeIcon, VolumeMuteIcon,
@@ -27,7 +27,7 @@ use sandcat_sdk::model::message::{
 use sandcat_sdk::model::notification::Notification;
 use sandcat_sdk::model::ContentType;
 use sandcat_sdk::model::ItemInfo;
-use sandcat_sdk::state::SendCallState;
+use sandcat_sdk::state::{I18nState, SendCallState};
 use utils::tr;
 use ws::WebSocketManager;
 
@@ -76,6 +76,7 @@ pub enum PhoneCallMsg {
     SwitchMicrophoneMute,
     SendMessage(SingleCall),
     CallStateChange(Rc<SendCallState>),
+    I18nStateChange(Rc<I18nState>),
     Close,
     Error(String),
     OnMouseDown(MouseEvent),
@@ -289,6 +290,14 @@ impl Component for PhoneCall {
     }
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
         match msg {
+            PhoneCallMsg::I18nStateChange(state) => {
+                let res = match state.lang {
+                    LanguageType::ZhCN => zh_cn::CALL_COM,
+                    LanguageType::EnUS => en_us::CALL_COM,
+                };
+                self.i18n = utils::create_bundle(res);
+                true
+            }
             PhoneCallMsg::SendCallInvite(msg) => {
                 log::debug!("send call invite");
                 // 判断是否正在通话中

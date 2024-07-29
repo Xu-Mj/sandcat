@@ -11,7 +11,7 @@ use sandcat_sdk::{
         message::{InviteInfo, InviteType, Message},
         ItemInfo,
     },
-    state::{MobileState, SendCallState},
+    state::{I18nState, MobileState, SendCallState},
 };
 use std::fmt::Debug;
 use wasm_bindgen::{JsCast, JsValue};
@@ -62,6 +62,7 @@ pub struct PhoneCall {
     /// 用来监听是否有通话消息
     /// 通话状态， 用来挂断、取消等等。。
     _call_state_dis: Dispatch<SendCallState>,
+    _i18n_dis: Dispatch<I18nState>,
     /// 面板拖动记录x、y坐标
     pos_x: i32,
     pos_y: i32,
@@ -91,6 +92,11 @@ impl PhoneCall {
     fn new(ctx: &Context<Self>) -> Self {
         let call_state_dis =
             Dispatch::global().subscribe(ctx.link().callback(PhoneCallMsg::CallStateChange));
+
+        // i18n state listener
+        let _i18n_dis =
+            Dispatch::global().subscribe(ctx.link().callback(PhoneCallMsg::I18nStateChange));
+
         let is_mobile = MobileState::is_mobile();
 
         let res = match ctx.props().lang {
@@ -125,6 +131,7 @@ impl PhoneCall {
             is_zoom: false,
             conn_state: ConnectionState::Waiting,
             i18n,
+            _i18n_dis,
         }
     }
 
