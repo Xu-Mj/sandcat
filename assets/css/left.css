@@ -16,13 +16,18 @@
         line-height: 1.5rem;
         padding: 0 1rem;
         font-size: small;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
     }
 
-    .delete-color{
-        color: red;
+    .right-click-panel-item-display {
+        display: grid;
+        grid-template-columns: 1fr 3fr;
+        align-items: center;
+        padding: 0 .5rem;
+        gap: .5rem;
+    }
+
+    .delete-color {
+        color: var(--color-text-delete);
     }
 }
 
