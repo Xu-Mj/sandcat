@@ -118,7 +118,7 @@ un_mute = Un-mute
 pin = Pin
 un_pin = Un-pin
 forward = Forward
-related = Related
+related = Quote
 "#;
 
 pub const SELECT_FRIENDS: &str = r#"
