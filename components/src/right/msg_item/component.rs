@@ -91,9 +91,12 @@ impl Component for MsgItem {
                     ctx.link().send_future(async move {
                         // 查询好友信息
                         let friend = match conv_type {
-                            RightContentType::Friend => {
-                                db::db_ins().friends.get(friend_id.as_str()).await
-                            }
+                            RightContentType::Friend => db::db_ins()
+                                .friends
+                                .get(friend_id.as_str())
+                                .await
+                                .unwrap()
+                                .unwrap(),
                             // query group member
                             RightContentType::Group => {
                                 let member = db::db_ins()
@@ -106,11 +109,12 @@ impl Component for MsgItem {
                                     .unwrap()
                                     .unwrap();
                                 // select if the member is friend
-                                let friend = db::db_ins().friends.get(&member.user_id).await;
-                                if friend.friend_id.is_empty() {
-                                    Friend::from(member)
-                                } else {
+                                if let Ok(Some(friend)) =
+                                    db::db_ins().friends.get(&member.user_id).await
+                                {
                                     friend
+                                } else {
+                                    Friend::from(member)
                                 }
                             }
                             _ => Friend::default(),

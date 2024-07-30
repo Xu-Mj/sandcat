@@ -95,10 +95,14 @@ impl FriendApi for FriendHttp {
         Ok(())
     }
 
-    async fn delete_friend(&self, user_id: String, friend_id: String) -> Result<()> {
+    async fn delete_friend(&self, fs_id: String, user_id: String, friend_id: String) -> Result<()> {
         Request::delete("/api/friend")
             .header(AUTHORIZE_HEADER, &token())
-            .json(&DeleteFriend { user_id, friend_id })?
+            .json(&DeleteFriend {
+                fs_id,
+                user_id,
+                friend_id,
+            })?
             .send()
             .await?
             .success()
@@ -109,6 +113,7 @@ impl FriendApi for FriendHttp {
 
 #[derive(Serialize, Deserialize)]
 pub struct DeleteFriend {
+    fs_id: String,
     user_id: String,
     friend_id: String,
 }

@@ -21,6 +21,7 @@ pub struct FriendRepo {
     on_err_callback: Closure<dyn FnMut(&Event)>,
     /// use `RefCell` that we can modify this attr through the `&self`
     on_update_success: SuccessCallback,
+    on_del_msg_success: SuccessCallback,
     on_get_list_success: SuccessCallback,
     on_get_list_by_ids_success: SuccessCallback,
 }
@@ -42,6 +43,7 @@ impl FriendRepo {
             repo,
             on_err_callback,
             on_update_success: Rc::new(RefCell::new(None)),
+            on_del_msg_success: Rc::new(RefCell::new(None)),
             on_get_list_success: Rc::new(RefCell::new(None)),
             on_get_list_by_ids_success: Rc::new(RefCell::new(None)),
         }
@@ -96,13 +98,11 @@ impl Friends for FriendRepo {
         });
     }
 
-    async fn get(&self, id: &str) -> Friend {
+    async fn get(&self, id: &str) -> Result<Option<Friend>> {
         // 声明一个channel，接收查询结果
-        let (tx, rx) = oneshot::channel::<Friend>();
-        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
-        let request = store
-            .get(&JsValue::from(id))
-            .expect("friend select get error");
+        let (tx, rx) = oneshot::channel::<Option<Friend>>();
+        let store = self.store(FRIEND_TABLE_NAME).await?;
+        let request = store.get(&JsValue::from(id))?;
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()
@@ -111,11 +111,12 @@ impl Friends for FriendRepo {
                 .unwrap()
                 .result()
                 .unwrap();
-            let mut friend = Friend::default();
             if !result.is_undefined() && !result.is_null() {
-                friend = serde_wasm_bindgen::from_value(result).unwrap();
+                tx.send(serde_wasm_bindgen::from_value(result).unwrap())
+                    .unwrap();
+            } else {
+                tx.send(None).unwrap();
             }
-            tx.send(friend).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         let on_add_error = Closure::once(move |event: &Event| {
@@ -123,7 +124,7 @@ impl Friends for FriendRepo {
             web_sys::console::log_1(&event.into());
         });
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        rx.await.unwrap()
+        Ok(rx.await.unwrap())
     }
 
     async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>> {
@@ -225,7 +226,7 @@ impl Friends for FriendRepo {
         let index = store.index(MESSAGE_FRIEND_ID_INDEX)?;
         let range = IdbKeyRange::only(&JsValue::from(id))?;
         let req = index.open_cursor_with_range(&range)?;
-        let onsuccess = Closure::once(Box::new(move |event: &Event| {
+        let onsuccess = Closure::wrap(Box::new(move |event: &Event| {
             let req = event.target().unwrap().dyn_into::<IdbRequest>().unwrap();
             let result = req.result().unwrap_or_default();
             // default is Undefined
@@ -236,6 +237,11 @@ impl Friends for FriendRepo {
             }
         }) as Box<dyn FnMut(&Event)>);
         req.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
+
+        *self.on_del_msg_success.borrow_mut() = Some(onsuccess);
+
+        req.set_onerror(Some(self.on_err_callback.as_ref().unchecked_ref()));
+
         Ok(())
     }
 }

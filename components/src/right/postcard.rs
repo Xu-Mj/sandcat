@@ -127,7 +127,11 @@ impl Component for PostCard {
                 match ctx.props().conv_type {
                     RightContentType::Friend => {
                         if let Some(ref friend) = self.friend {
-                            self.delete_friend(user_id, friend.friend_id.clone());
+                            self.delete_friend(
+                                friend.fs_id.clone(),
+                                user_id,
+                                friend.friend_id.clone(),
+                            );
                         }
                     }
                     RightContentType::Group => {
@@ -225,7 +229,7 @@ impl PostCard {
                     .send_message(PostCardMsg::QueryFriend(QueryState::Querying));
                 let clone_id = id.clone();
                 ctx.link().send_future(async move {
-                    let user_info = db::db_ins().friends.get(&clone_id).await;
+                    let user_info = db::db_ins().friends.get(&clone_id).await.unwrap().unwrap();
                     log::debug!("user info :{:?}", user_info);
                     PostCardMsg::QueryFriend(QueryState::Success(Some(user_info)))
                 });
@@ -315,10 +319,13 @@ impl PostCard {
         need_update
     }
 
-    fn delete_friend(&self, user_id: String, id: AttrValue) {
+    fn delete_friend(&self, fs_id: AttrValue, user_id: String, id: AttrValue) {
         spawn_local(async move {
             // send delete friend request
-            match api::friends().delete_friend(user_id, id.to_string()).await {
+            match api::friends()
+                .delete_friend(fs_id.to_string(), user_id, id.to_string())
+                .await
+            {
                 Ok(_) => {
                     // delete data from local storage
                     if let Err(err) = db::db_ins().friends.delete_friend(&id).await {
@@ -327,6 +334,15 @@ impl PostCard {
                         // delete conversation
                         if let Err(e) = db::db_ins().convs.delete(id.as_str()).await {
                             log::error!("delete conversation failed: {:?}", e);
+                        }
+
+                        // record the offline time, delete friend is same as friendships synchronized
+                        if let Err(err) = db::db_ins()
+                            .offline_time
+                            .save(chrono::Utc::now().timestamp_millis())
+                            .await
+                        {
+                            error!("save offline time error: {:?}", err);
                         }
                         log::debug!("delete friend success");
                         // send state message to remove conversation from conversation lis

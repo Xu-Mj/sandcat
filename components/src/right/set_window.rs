@@ -407,7 +407,12 @@ impl SetWindow {
             let mut group: Option<Group> = None;
             match conv_type {
                 RightContentType::Friend => {
-                    let f = db::db_ins().friends.get(id.as_str()).await;
+                    let f = db::db_ins()
+                        .friends
+                        .get(id.as_str())
+                        .await
+                        .unwrap()
+                        .unwrap();
                     friend = Some(f);
                 }
                 RightContentType::Group => {

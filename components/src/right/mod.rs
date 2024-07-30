@@ -103,9 +103,11 @@ impl Right {
             ComponentType::Messages => match self.conv_state.conv.content_type {
                 RightContentType::Default => {}
                 RightContentType::Friend => {
-                    ctx.link().send_future(async move {
-                        let friend = db::db_ins().friends.get(id.as_str()).await;
-                        RightMsg::ContentChange(Some(Box::new(friend)))
+                    let ctx = ctx.link().clone();
+                    spawn_local(async move {
+                        if let Ok(Some(friend)) = db::db_ins().friends.get(id.as_str()).await {
+                            ctx.send_message(RightMsg::ContentChange(Some(Box::new(friend))));
+                        }
                     });
                 }
                 RightContentType::Group => {

@@ -23,5 +23,5 @@ pub trait FriendApi {
     async fn update_remark(&self, user_id: String, friend_id: String, remark: String)
         -> Result<()>;
 
-    async fn delete_friend(&self, user_id: String, friend_id: String) -> Result<()>;
+    async fn delete_friend(&self, fs_id: String, user_id: String, friend_id: String) -> Result<()>;
 }

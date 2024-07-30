@@ -21,7 +21,7 @@ pub trait Friends: Debug {
 
     // async fn get(&self, id: &str) -> Friend;/
 
-    async fn get(&self, friend_id: &str) -> Friend;
+    async fn get(&self, friend_id: &str) -> Result<Option<Friend>>;
 
     async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>>;
 

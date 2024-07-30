@@ -23,6 +23,7 @@ use sandcat_sdk::{
     error::ErrorKind,
     model::{
         conversation::Conversation,
+        friend::FriendStatus,
         message::{Msg, SingleCall},
         notification::Notification,
         seq::Seq,
@@ -269,7 +270,20 @@ impl Chats {
             .await
         {
             Ok(res) => {
-                db::db_ins().friends.put_friend_list(&res.friends).await;
+                // handle friends list by friend status
+                for friend in res.friends {
+                    if friend.status == FriendStatus::Accepted as i32 {
+                        if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                            error!("save friend error: {:?}", err);
+                        }
+                    } else if let Ok(Some(friend)) =
+                        db::db_ins().friends.get(&friend.friend_id).await
+                    {
+                        if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
+                            error!("save friend error: {:?}", err);
+                        }
+                    }
+                }
                 if let Err(err) = db::db_ins().friendships.put_fs_batch(&res.fs).await {
                     error!("save friends error: {:?}", err);
                 }
@@ -575,9 +589,14 @@ impl Chats {
 
     // 创建好友会话
     async fn create_friend_conversation(friend_id: AttrValue) -> Conversation {
+        let friend = db::db_ins()
+            .friends
+            .get(&friend_id)
+            .await
+            .unwrap()
+            .unwrap_or_default();
         let mut last_msg_time = 0;
         let mut last_msg_type = ContentType::default();
-        let friend = db::db_ins().friends.get(&friend_id).await;
         let result = db::db_ins().messages.get_last_msg(&friend_id).await;
         let content = if let Ok(Some(msg)) = result {
             last_msg_time = msg.create_time;
@@ -612,7 +631,12 @@ impl Chats {
         let mut last_msg_time = 0;
         let mut last_msg_type = ContentType::default();
 
-        let group = db::db_ins().groups.get(&group_id).await.unwrap().unwrap();
+        let group = db::db_ins()
+            .groups
+            .get(&group_id)
+            .await
+            .unwrap()
+            .unwrap_or_default();
         let result = db::db_ins().group_msgs.get_last_msg(&group_id).await;
         let content = if let Ok(Some(result)) = result {
             last_msg_time = result.create_time;
