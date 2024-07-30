@@ -127,7 +127,11 @@ impl Component for PostCard {
                 match ctx.props().conv_type {
                     RightContentType::Friend => {
                         if let Some(ref friend) = self.friend {
-                            self.delete_friend(user_id, friend.friend_id.clone());
+                            self.delete_friend(
+                                friend.fs_id.clone(),
+                                user_id,
+                                friend.friend_id.clone(),
+                            );
                         }
                     }
                     RightContentType::Group => {
@@ -315,10 +319,13 @@ impl PostCard {
         need_update
     }
 
-    fn delete_friend(&self, user_id: String, id: AttrValue) {
+    fn delete_friend(&self, fs_id: AttrValue, user_id: String, id: AttrValue) {
         spawn_local(async move {
             // send delete friend request
-            match api::friends().delete_friend(user_id, id.to_string()).await {
+            match api::friends()
+                .delete_friend(fs_id.to_string(), user_id, id.to_string())
+                .await
+            {
                 Ok(_) => {
                     // delete data from local storage
                     if let Err(err) = db::db_ins().friends.delete_friend(&id).await {
