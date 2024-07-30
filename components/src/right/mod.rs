@@ -28,7 +28,7 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
-use icons::{BackIcon, CatHeadIcon, CloseIcon, MaxIcon};
+use icons::{BackIcon, CatHeadIcon};
 use sandcat_sdk::model::RightContentType;
 use sandcat_sdk::model::{ComponentType, ItemInfo};
 use sandcat_sdk::state::{AppState, ItemType, MobileState, Notify, ShowRight};
@@ -363,11 +363,11 @@ impl Component for Right {
                     "right-top-bar-friend",
                     html!(),
                     html! {
-                        <div class="close-bar">
-                            <span></span>
-                            <MaxIcon/>
-                            <CloseIcon/>
-                        </div>
+                        // <div class="close-bar">
+                        //     <span></span>
+                        //     <MaxIcon/>
+                        //     <CloseIcon/>
+                        // </div>
                     },
                     None,
                     None,
