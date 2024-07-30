@@ -152,7 +152,7 @@ impl MessageList {
                 let mut friend: Option<Box<dyn ItemInfo>> = None;
                 match conv_type {
                     RightContentType::Friend => {
-                        let mut result = db::db_ins().friends.get(&id).await;
+                        let mut result = db::db_ins().friends.get(&id).await.unwrap().unwrap();
                         log::debug!(
                             "message list props id: {} in query method; friend :{:?}",
                             id.clone(),

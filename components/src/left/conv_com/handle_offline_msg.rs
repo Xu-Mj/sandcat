@@ -281,9 +281,10 @@ impl Chats {
             unread_count += conv.unread_count;
             match conv.conv_type {
                 RightContentType::Friend => {
-                    let friend = db::db_ins().friends.get(&conv.friend_id).await;
-                    conv.avatar = friend.avatar;
-                    conv.name = friend.name;
+                    if let Ok(Some(friend)) = db::db_ins().friends.get(&conv.friend_id).await {
+                        conv.avatar = friend.avatar;
+                        conv.name = friend.name;
+                    }
                 }
                 RightContentType::Group => {
                     if let Ok(Some(group)) = db::db_ins().groups.get(&conv.friend_id).await {

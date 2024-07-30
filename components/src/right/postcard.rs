@@ -229,7 +229,7 @@ impl PostCard {
                     .send_message(PostCardMsg::QueryFriend(QueryState::Querying));
                 let clone_id = id.clone();
                 ctx.link().send_future(async move {
-                    let user_info = db::db_ins().friends.get(&clone_id).await;
+                    let user_info = db::db_ins().friends.get(&clone_id).await.unwrap().unwrap();
                     log::debug!("user info :{:?}", user_info);
                     PostCardMsg::QueryFriend(QueryState::Success(Some(user_info)))
                 });

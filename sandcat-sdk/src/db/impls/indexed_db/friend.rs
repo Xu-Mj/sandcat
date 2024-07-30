@@ -98,13 +98,11 @@ impl Friends for FriendRepo {
         });
     }
 
-    async fn get(&self, id: &str) -> Friend {
+    async fn get(&self, id: &str) -> Result<Option<Friend>> {
         // 声明一个channel，接收查询结果
-        let (tx, rx) = oneshot::channel::<Friend>();
-        let store = self.store(FRIEND_TABLE_NAME).await.unwrap();
-        let request = store
-            .get(&JsValue::from(id))
-            .expect("friend select get error");
+        let (tx, rx) = oneshot::channel::<Option<Friend>>();
+        let store = self.store(FRIEND_TABLE_NAME).await?;
+        let request = store.get(&JsValue::from(id))?;
         let onsuccess = Closure::once(move |event: &Event| {
             let result = event
                 .target()
@@ -113,11 +111,12 @@ impl Friends for FriendRepo {
                 .unwrap()
                 .result()
                 .unwrap();
-            let mut friend = Friend::default();
             if !result.is_undefined() && !result.is_null() {
-                friend = serde_wasm_bindgen::from_value(result).unwrap();
+                tx.send(serde_wasm_bindgen::from_value(result).unwrap())
+                    .unwrap();
+            } else {
+                tx.send(None).unwrap();
             }
-            tx.send(friend).unwrap();
         });
         request.set_onsuccess(Some(onsuccess.as_ref().unchecked_ref()));
         let on_add_error = Closure::once(move |event: &Event| {
@@ -125,7 +124,7 @@ impl Friends for FriendRepo {
             web_sys::console::log_1(&event.into());
         });
         request.set_onerror(Some(on_add_error.as_ref().unchecked_ref()));
-        rx.await.unwrap()
+        Ok(rx.await.unwrap())
     }
 
     async fn get_list(&self) -> Result<IndexMap<AttrValue, Friend>> {

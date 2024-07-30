@@ -165,24 +165,25 @@ impl Chats {
     ) {
         let ctx = ctx.link().clone();
         spawn_local(async move {
-            let friend = db::db_ins().friends.get(&friend_id).await;
-            if friend.friend_id.is_empty() {
-                return;
+            if let Ok(Some(friend)) = db::db_ins().friends.get(&friend_id).await {
+                if friend.friend_id.is_empty() {
+                    return;
+                }
+
+                conv.avatar = friend.avatar;
+                conv.name = friend.name;
+                conv.remark = friend.remark;
+
+                if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
+                    error!("failed to update conv: {:?}", e);
+                    Notification::error(e).notify();
+                    return;
+                }
+                Self::incr_unread_count(&conv, &current_id);
+
+                log::debug!("create conversation: {:?}", &conv);
+                ctx.send_message(ChatsMsg::InsertConv(conv));
             }
-
-            conv.avatar = friend.avatar;
-            conv.name = friend.name;
-            conv.remark = friend.remark;
-
-            if let Err(e) = db::db_ins().convs.put_conv(&conv).await {
-                error!("failed to update conv: {:?}", e);
-                Notification::error(e).notify();
-                return;
-            }
-            Self::incr_unread_count(&conv, &current_id);
-
-            log::debug!("create conversation: {:?}", &conv);
-            ctx.send_message(ChatsMsg::InsertConv(conv));
         });
     }
 
@@ -673,8 +674,7 @@ impl Chats {
             Msg::RecRelationshipDel((friend_id, seq)) => {
                 // update database
                 spawn_local(async move {
-                    let mut friend = db::db_ins().friends.get(&friend_id).await;
-                    if !friend.friend_id.is_empty() {
+                    if let Ok(Some(mut friend)) = db::db_ins().friends.get(&friend_id).await {
                         friend.status = FriendStatus::Deleted as i32;
                         if let Err(err) = db::db_ins().friends.put_friend(&friend).await {
                             error!("save friend error:{:?}", err);
