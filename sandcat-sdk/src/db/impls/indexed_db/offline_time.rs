@@ -9,7 +9,7 @@ use crate::{db::offline_time::OfflineTimes, error::Result, model::offline_time::
 
 use super::{repository::Repository, OFFLINE_TIME_TABLE_NAME};
 
-const OFFLINE_TIME_ID: i64 = 1;
+const OFFLINE_TIME_ID: i32 = 1;
 
 #[derive(Debug)]
 pub struct OfflineTimeRepo {

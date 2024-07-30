@@ -14,10 +14,9 @@ use crate::error::Result;
 use crate::model::message::{Message, ServerResponse};
 
 use super::{
-    repository::Repository, MESSAGE_FRIEND_ID_INDEX, MESSAGE_IS_READ_INDEX, MESSAGE_TABLE_NAME,
-};
-use super::{
-    SuccessCallback, MESSAGE_FRIEND_AND_IS_READ_INDEX, MESSAGE_FRIEND_AND_SEND_TIME_INDEX,
+    repository::Repository, SuccessCallback, MESSAGE_FRIEND_AND_IS_READ_INDEX,
+    MESSAGE_FRIEND_AND_SEND_TIME_INDEX, MESSAGE_FRIEND_ID_INDEX, MESSAGE_IS_READ_INDEX,
+    MESSAGE_TABLE_NAME,
 };
 
 #[derive(Debug)]
