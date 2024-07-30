@@ -335,6 +335,15 @@ impl PostCard {
                         if let Err(e) = db::db_ins().convs.delete(id.as_str()).await {
                             log::error!("delete conversation failed: {:?}", e);
                         }
+
+                        // record the offline time, delete friend is same as friendships synchronized
+                        if let Err(err) = db::db_ins()
+                            .offline_time
+                            .save(chrono::Utc::now().timestamp_millis())
+                            .await
+                        {
+                            error!("save offline time error: {:?}", err);
+                        }
                         log::debug!("delete friend success");
                         // send state message to remove conversation from conversation lis
                         RemoveConvState::remove(id.clone());

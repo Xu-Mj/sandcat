@@ -513,7 +513,7 @@ impl Component for Chats {
         self.ws.borrow_mut().cleanup();
         // record the offline time
         spawn_local(async {
-            db::repository::Repository::delete_db().await;
+            // db::repository::Repository::delete_db().await;
             let now = chrono::Utc::now().timestamp_millis();
             if let Err(err) = db::db_ins().offline_time.save(now).await {
                 log::error!("record offline time to local storage error: {:?}", err);

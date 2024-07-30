@@ -269,6 +269,7 @@ impl Chats {
             .await
         {
             Ok(res) => {
+                // handle friends list by friend status
                 db::db_ins().friends.put_friend_list(&res.friends).await;
                 if let Err(err) = db::db_ins().friendships.put_fs_batch(&res.fs).await {
                     error!("save friends error: {:?}", err);
