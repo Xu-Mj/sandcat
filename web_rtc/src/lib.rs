@@ -1,3 +1,4 @@
+use sandcat_sdk::model::configurations::STUN_SERVER;
 use std::cell::RefCell;
 use std::rc::Rc;
 use wasm_bindgen::closure::Closure;
@@ -74,7 +75,7 @@ impl WebRTC {
     ) -> Result<(), JsValue> {
         // 创建一个新的RtcIceServer
         let mut ice_server = RtcIceServer::new();
-        ice_server.url("stun:localhost:3478");
+        ice_server.url(STUN_SERVER);
 
         // 将RtcIceServer添加到RtcConfiguration中
         let ice_servers = js_sys::Array::from(&ice_server);
