@@ -1,3 +1,4 @@
+pub mod configurations;
 pub mod conversation;
 pub mod file_msg;
 pub mod friend;
