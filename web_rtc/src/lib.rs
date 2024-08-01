@@ -74,7 +74,7 @@ impl WebRTC {
     ) -> Result<(), JsValue> {
         // 创建一个新的RtcIceServer
         let mut ice_server = RtcIceServer::new();
-        ice_server.url("stun:stun.l.google.com:19302");
+        ice_server.url("stun:localhost:3478");
 
         // 将RtcIceServer添加到RtcConfiguration中
         let ice_servers = js_sys::Array::from(&ice_server);

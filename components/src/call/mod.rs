@@ -73,7 +73,6 @@ pub struct PhoneCall {
     is_dragging: bool,
     is_mobile: bool,
     is_zoom: bool,
-    is_get_stream: bool,
     conn_state: ConnectionState,
     i18n: FluentBundle<FluentResource>,
 }
@@ -133,7 +132,6 @@ impl PhoneCall {
             is_dragging: false,
             is_mobile,
             is_zoom: false,
-            is_get_stream: false,
             conn_state: ConnectionState::Waiting,
             i18n,
             _i18n_dis,
@@ -279,7 +277,6 @@ impl PhoneCall {
         self.volume_mute = false;
         self.microphone_mute = false;
         self.is_zoom = false;
-        self.is_get_stream = false;
     }
 
     fn save_call_msg(&self, msg: Message) {

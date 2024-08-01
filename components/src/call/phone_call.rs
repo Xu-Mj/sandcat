@@ -675,7 +675,6 @@ impl Component for PhoneCall {
             }
             PhoneCallMsg::ShowVideoWindow(stream, friend) => {
                 let video: HtmlVideoElement = self.video_node.cast().unwrap();
-                self.is_get_stream = true;
                 self.call_friend_info = Some(friend);
                 video.set_src_object(Some(&stream));
                 let _ = video.play().unwrap();
@@ -759,7 +758,6 @@ impl Component for PhoneCall {
             }
             PhoneCallMsg::ShowAudioWindow(stream, friend) => {
                 debug!("ShowAudioWindow");
-                self.is_get_stream = true;
                 self.stream = Some(stream);
                 self.call_friend_info = Some(friend);
                 let ctx = ctx.link().clone();
@@ -926,9 +924,6 @@ impl Component for PhoneCall {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
-        if !self.is_get_stream {
-            return html!();
-        }
         // todo error notification
         if self.conn_state == ConnectionState::Error {
             return html! {
@@ -1033,11 +1028,13 @@ impl Component for PhoneCall {
                         </div>
                     )
                 };
+
                 let call_duration_class = if self.is_zoom {
                     "call-duration-zoom"
                 } else {
                     "call-duration"
                 };
+
                 if self.show_video {
                     let self_video_style = if info.connected {
                         "animation: video-self-zoom-in .4s forwards"
