@@ -304,6 +304,7 @@ impl Chats {
     }
 
     pub fn handle_lack_msg(&mut self, ctx: &Context<Self>, end: i64, is_send: bool) {
+        log::debug!("handle lack msg: {}, {}", end, is_send);
         if (!is_send && self.seq.local_seq > end - 1) || (is_send && self.seq.send_seq > end - 1) {
             return;
         }
@@ -311,14 +312,14 @@ impl Chats {
         let (need_repull, start, other_seq) = if is_send {
             (
                 self.seq.send_seq < end - 1,
-                self.seq.local_seq,
                 self.seq.send_seq,
+                self.seq.local_seq,
             )
         } else {
             (
                 self.seq.local_seq < end - 1,
-                self.seq.send_seq,
                 self.seq.local_seq,
+                self.seq.send_seq,
             )
         };
 
