@@ -57,6 +57,7 @@ pub struct MessageList {
     _audio_dis: Dispatch<AudioDownloadedState>,
 }
 
+#[derive(Debug)]
 pub enum MessageListMsg {
     QueryMsgList(IndexMap<AttrValue, Message>),
     NextPage,
@@ -476,6 +477,7 @@ impl Component for MessageList {
                 log::debug!("sync offline msg in message list....");
                 self.reset();
                 self.query(ctx);
+                self.query_friend(ctx);
                 false
             }
             MessageListMsg::SendResultCallback(state) => {
@@ -614,6 +616,7 @@ impl Component for MessageList {
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
+        log::debug!("view message list, self friend: {:?}", self.friend);
         if self.friend.is_none() {
             return html!();
         }
