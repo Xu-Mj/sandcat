@@ -453,7 +453,7 @@ fn get_list_item(
                     avatar:item.avatar(),
                     time:item.time(),
                     remark:item.remark().unwrap_or_default(),
-                    id: item.id()
+                    id: item.id().clone()
                 }
             }
             unread_count={0}

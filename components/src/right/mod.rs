@@ -17,10 +17,6 @@ use std::rc::Rc;
 use fluent::{FluentBundle, FluentResource};
 use gloo::timers::callback::Timeout;
 use log::error;
-use sandcat_sdk::error::Error;
-use sandcat_sdk::model::group::GroupMember;
-use sandcat_sdk::model::notification::Notification;
-use sandcat_sdk::pb::message::{GroupInviteNew, RemoveMemberRequest};
 use wasm_bindgen::JsCast;
 use web_sys::{CssAnimation, HtmlDivElement};
 use yew::platform::spawn_local;
@@ -29,8 +25,11 @@ use yewdux::Dispatch;
 
 use i18n::{en_us, zh_cn, LanguageType};
 use icons::{BackIcon, CatHeadIcon};
-use sandcat_sdk::model::RightContentType;
-use sandcat_sdk::model::{ComponentType, ItemInfo};
+use sandcat_sdk::error::Error;
+use sandcat_sdk::model::group::GroupMember;
+use sandcat_sdk::model::notification::Notification;
+use sandcat_sdk::model::{ComponentType, ItemInfoBox, RightContentType};
+use sandcat_sdk::pb::message::{GroupInviteNew, RemoveMemberRequest};
 use sandcat_sdk::state::{AppState, ItemType, MobileState, Notify, ShowRight};
 use sandcat_sdk::state::{
     ComponentTypeState, ConvState, CreateGroupConvState, FriendListState, I18nState,
@@ -59,7 +58,7 @@ pub struct Right {
     _com_dis: Dispatch<ComponentTypeState>,
     conv_state: Rc<ConvState>,
     _conv_dis: Dispatch<ConvState>,
-    cur_conv_info: Option<Box<dyn ItemInfo>>,
+    cur_conv_info: Option<ItemInfoBox>,
     friend_list_state: Rc<FriendListState>,
     _friend_list_dis: Dispatch<FriendListState>,
     lang_state: Rc<I18nState>,
@@ -78,7 +77,7 @@ pub enum RightMsg {
     StateChanged(Rc<AppState>),
     ComStateChanged(Rc<ComponentTypeState>),
     ConvStateChanged(Rc<ConvState>),
-    ContentChange(Option<Box<dyn ItemInfo>>),
+    ContentChange(ItemInfoBox),
     FriendListStateChanged(Rc<FriendListState>),
     ShowSetting,
     ShowSelectFriendList,
@@ -106,7 +105,7 @@ impl Right {
                     let ctx = ctx.link().clone();
                     spawn_local(async move {
                         if let Ok(Some(friend)) = db::db_ins().friends.get(id.as_str()).await {
-                            ctx.send_message(RightMsg::ContentChange(Some(Box::new(friend))));
+                            ctx.send_message(RightMsg::ContentChange(ItemInfoBox::new(friend)));
                         }
                     });
                 }
@@ -114,7 +113,7 @@ impl Right {
                     let ctx = ctx.link().clone();
                     spawn_local(async move {
                         if let Ok(Some(group)) = db::db_ins().groups.get(id.as_str()).await {
-                            ctx.send_message(RightMsg::ContentChange(Some(Box::new(group))));
+                            ctx.send_message(RightMsg::ContentChange(ItemInfoBox::new(group)));
                         }
                     });
                 }
@@ -178,7 +177,7 @@ impl Component for Right {
                 true
             }
             RightMsg::ContentChange(item) => {
-                self.cur_conv_info = item;
+                self.cur_conv_info = Some(item);
                 true
             }
             RightMsg::FriendListStateChanged(state) => {
@@ -188,7 +187,7 @@ impl Component for Right {
             RightMsg::ConvStateChanged(state) => {
                 self.conv_state = state;
                 self.match_content(ctx);
-                true
+                false
             }
             RightMsg::ShowSetting => {
                 if self.show_friend_list {
@@ -389,6 +388,8 @@ impl Component for Right {
                     {back.clone()}<span></span><span></span>
                 </div>);
 
+        let mut content = html!();
+
         if let Some(info) = &self.cur_conv_info {
             let onclick = ctx.link().callback(|event: MouseEvent| {
                 event.stop_propagation();
@@ -439,58 +440,60 @@ impl Component for Right {
                         {"···"}
                     </span>
                 </div>
-            }
-        }
+            };
 
-        let content = match self.com_state.component_type {
-            ComponentType::Messages => {
-                // 处理没有选中会话的情况
-                if self.conv_state.conv.item_id.is_empty() {
-                    html! {
-                        <div class="choose-conv">
-                            <CatHeadIcon/>
-                            <h2 >{tr!(self.i18n, HELLO)}</h2>
-                        </div>
-                    }
-                } else {
-                    html! {
-                    <MessageList
-                        friend_id={&self.conv_state.conv.item_id}
-                        cur_user_avatar={&self.state.login_user.avatar}
-                        nickname={&self.state.login_user.name}
-                        conv_type={self.conv_state.conv.content_type.clone()}
-                        cur_user_id={&self.state.login_user.id}
-                        lang={self.lang_state.lang}/>
-                    }
-                }
-            }
-            ComponentType::Contacts => {
-                // 要根据右部内容类型绘制页面
-                match self.friend_list_state.friend.content_type {
-                    RightContentType::Friend | RightContentType::Group => {
+            content = match self.com_state.component_type {
+                ComponentType::Messages => {
+                    // 处理没有选中会话的情况
+                    if self.conv_state.conv.item_id.is_empty() {
                         html! {
-                            <PostCard
-                                user_id={&self.state.login_user.id}
-                                id={&self.friend_list_state.friend.item_id}
-                                avatar={&self.state.login_user.avatar}
-                                nickname={&self.state.login_user.name}
-                                conv_type={self.friend_list_state.friend.content_type.clone()}
-                                lang={self.lang_state.lang}/>
+                            <div class="choose-conv">
+                                <CatHeadIcon/>
+                                <h2 >{tr!(self.i18n, HELLO)}</h2>
+                            </div>
+                        }
+                    } else {
+                        let friend = info.clone();
+                        html! {
+                        <MessageList
+                            // friend_id={&self.conv_state.conv.item_id}
+                            {friend}
+                            cur_user_avatar={&self.state.login_user.avatar}
+                            nickname={&self.state.login_user.name}
+                            conv_type={self.conv_state.conv.content_type.clone()}
+                            cur_user_id={&self.state.login_user.id}
+                            lang={self.lang_state.lang}/>
                         }
                     }
-                    RightContentType::FriendShipList => {
-                        html! {
-                            <FriendShipList user_id={&self.state.login_user.id} lang={self.lang_state.lang}/>
+                }
+                ComponentType::Contacts => {
+                    // 要根据右部内容类型绘制页面
+                    match self.friend_list_state.friend.content_type {
+                        RightContentType::Friend | RightContentType::Group => {
+                            html! {
+                                <PostCard
+                                    user_id={&self.state.login_user.id}
+                                    id={&self.friend_list_state.friend.item_id}
+                                    avatar={&self.state.login_user.avatar}
+                                    nickname={&self.state.login_user.name}
+                                    conv_type={self.friend_list_state.friend.content_type.clone()}
+                                    lang={self.lang_state.lang}/>
+                            }
+                        }
+                        RightContentType::FriendShipList => {
+                            html! {
+                                <FriendShipList user_id={&self.state.login_user.id} lang={self.lang_state.lang}/>
+                            }
+                        }
+                        _ => {
+                            html!(<div class="cat-head-icon"><CatHeadIcon/></div>)
                         }
                     }
-                    _ => {
-                        html!(<div class="cat-head-icon"><CatHeadIcon/></div>)
-                    }
                 }
-            }
-            ComponentType::Setting => html! {<Setting lang={self.lang_state.lang} />},
-            ComponentType::Default => html!(),
-        };
+                ComponentType::Setting => html! {<Setting lang={self.lang_state.lang} />},
+                ComponentType::Default => html!(),
+            };
+        }
 
         html! {
             <div ref={self.node_ref.clone()}

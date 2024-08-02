@@ -11,7 +11,11 @@ pub mod seq;
 pub mod user;
 pub mod voice;
 
-use std::fmt::{Debug, Display};
+use std::{
+    fmt::{Debug, Display},
+    ops::Deref,
+    rc::Rc,
+};
 
 use serde::{Deserialize, Serialize};
 use yew::AttrValue;
@@ -91,6 +95,30 @@ pub trait ItemInfo: Debug {
     fn owner(&self) -> AttrValue;
 
     fn status(&self) -> FriendStatus;
+}
+
+#[derive(Clone, Debug)]
+pub struct ItemInfoBox(Rc<dyn ItemInfo>);
+
+impl Deref for ItemInfoBox {
+    type Target = Rc<dyn ItemInfo>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl PartialEq for ItemInfoBox {
+    fn eq(&self, other: &Self) -> bool {
+        // 根据需求实现比较逻辑，这里假设通过 id 来判断
+        self.0.id() == other.0.id()
+    }
+}
+
+impl ItemInfoBox {
+    pub fn new(item: impl ItemInfo + 'static) -> Self {
+        Self(Rc::new(item))
+    }
 }
 
 #[derive(Clone, Default, Debug, Serialize, Deserialize, PartialEq)]
