@@ -13,7 +13,6 @@
 - move database init to the conversation component to decrease render times
 - need to notify user when the authorization is expired
 - there is a problem about relationship while two devices login both especially one offline and the other online, the offline turn to online, it is difficult to get the relationship between the two devices.
-- local storage is shared with same address, it will influence the other user.
 - add login state ui: logining, login failed, login success
 - adjust oauth2 login ui
 - oauth2 request address need to fix
@@ -32,4 +31,3 @@
 - **CONSIDER**: WE REMOVED THE MESSAGE ID ATTRIBUTE, BECAUSE WE NEED TO GUARANTEE THE MESSAGE UNIQUENESS WHILE WE PUT THE MESSAGE INTO THE DATABASE, BUT WHETHER THE DATABASE CAN GUARANTEE THE MESSAGE INSERTION ORDERS IS NOT SURE.
 - **CONSIDER**: IF CLIENT INTER A LONG TERM OFFLINE, AND THEN CLINET INTO ONLINE,THE MESSAGE WILL BE NORMAL, BECAUSE WE HAVE THE STRATEGY TO SYNC THE MISSED MESSAGE. BUT IS THE FRIENDSHIP NORMAL?
 - todo: modify
-- issue: wheel direction is reversed
