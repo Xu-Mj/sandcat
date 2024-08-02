@@ -261,7 +261,7 @@ impl MsgItem {
                     </>
                 }
             }
-            ContentType::File => get_file_html(msg, msg_content_classes.to_string()),
+            ContentType::File => get_file_html(msg, msg_content_classes.to_string(), oncontextmenu),
             ContentType::Emoji => {
                 html! {
                     <div class="msg-item-emoji" {oncontextmenu}>
@@ -326,7 +326,11 @@ impl MsgItem {
     }
 }
 
-fn get_file_html(msg: &Message, class: String) -> Html {
+fn get_file_html(
+    msg: &Message,
+    class: String,
+    oncontextmenu: Option<Callback<MouseEvent>>,
+) -> Html {
     let file = FileMsg::from(&msg.content);
 
     let platform = if msg.platform == 0 {
@@ -337,7 +341,7 @@ fn get_file_html(msg: &Message, class: String) -> Html {
 
     let href = format!("/api/file/get/{}", file.server_name);
     html! {
-        <div {class} >
+        <div {class} {oncontextmenu} >
             <a {href} download="" class="msg-item-file-name">
                 <div>
                     <p>{&file.name}</p>

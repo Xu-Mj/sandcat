@@ -136,7 +136,7 @@ impl Component for RelatedMsg {
                     <source src={&msg.content} type="video/mp4" />
                 </video>
             },
-            ContentType::File => get_file_html(msg, "msg-item-text".to_string()),
+            ContentType::File => get_file_html(msg, "msg-item-text".to_string(), None),
             ContentType::Emoji => {
                 html! {
                     <img class="emoji" alt="emoji" src={msg.content.clone()} />
