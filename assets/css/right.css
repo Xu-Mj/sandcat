@@ -395,6 +395,7 @@
         padding: .8rem 1rem;
         position: relative;
         scroll-behavior: smooth;
+        overflow-anchor: auto;
 
         #exclamation {
             path {

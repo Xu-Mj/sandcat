@@ -96,4 +96,7 @@ features = [
     "DataTransfer",
     "DataTransferItem",
     "DataTransferItemList",
+    "IntersectionObserver",
+    "IntersectionObserverEntry",
+    "IntersectionObserverInit",
 ]
