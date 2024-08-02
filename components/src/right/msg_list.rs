@@ -3,7 +3,6 @@ use std::rc::Rc;
 use gloo::utils::document;
 use indexmap::IndexMap;
 use log::error;
-use sandcat_sdk::error::Error;
 use wasm_bindgen::closure::Closure;
 use wasm_bindgen::{JsCast, JsValue};
 use web_sys::{
@@ -15,20 +14,22 @@ use yew::prelude::*;
 use yewdux::Dispatch;
 
 use i18n::LanguageType;
-use sandcat_sdk::api;
 use sandcat_sdk::db;
+use sandcat_sdk::error::Error;
 use sandcat_sdk::model::friend::FriendStatus;
 use sandcat_sdk::model::message::SendStatus;
 use sandcat_sdk::model::message::{GroupMsg, Message, Msg, SingleCall};
 use sandcat_sdk::model::notification::Notification;
-use sandcat_sdk::model::{ContentType, ItemInfo, RightContentType};
-use sandcat_sdk::state::{AudioDownloadedState, ItemType, UpdateFriendState};
+use sandcat_sdk::model::{ContentType, ItemInfo, ItemInfoBox, RightContentType};
+use sandcat_sdk::state::AudioDownloadedState;
 use sandcat_sdk::state::{
     MobileState, RecMessageState, RefreshMsgListState, SendAudioMsgState, SendMessageState,
     SendResultState,
 };
 
 use crate::right::{msg_item::MsgItem, sender::Sender};
+
+const DEFAULT_PAGE_SIZE: u32 = 30;
 
 pub struct MessageList {
     list: IndexMap<AttrValue, Message>,
@@ -44,13 +45,14 @@ pub struct MessageList {
     friend: Option<Box<dyn ItemInfo>>,
     new_msg_count: u32,
     is_black: bool,
-    is_set_observer: bool,
     audio_on_stop: Option<Closure<dyn FnMut(Event)>>,
     audio_data_url: Option<String>,
     is_mobile: bool,
+    need_set_observer: bool,
     mouse_move: Option<Closure<dyn FnMut(MouseEvent)>>,
     mouse_up: Option<Closure<dyn FnMut(MouseEvent)>>,
-    observer: Option<Closure<dyn FnMut(Vec<IntersectionObserverEntry>)>>,
+    observer: Option<IntersectionObserver>,
+    observer_callback: Option<Closure<dyn FnMut(Vec<IntersectionObserverEntry>)>>,
 
     // listen sync offline message, query message list
     _sync_msg_dis: Dispatch<RefreshMsgListState>,
@@ -83,7 +85,7 @@ pub enum MessageListMsg {
     MsgSendTimeout(AttrValue),
     ResizerMouseDown(MouseEvent),
     ResizerMouseUp,
-    // OnScroll(Event),
+    OnScroll(WheelEvent),
 }
 
 /// 接收对方用户信息即可，
@@ -95,7 +97,8 @@ pub enum MessageListMsg {
 /// 直接将必要|的信息都传递进来就行，省略一次数据库查询
 #[derive(Properties, Clone, PartialEq, Debug)]
 pub struct MessageListProps {
-    pub friend_id: AttrValue,
+    // pub friend_id: AttrValue,
+    pub friend: ItemInfoBox,
     pub conv_type: RightContentType,
     pub cur_user_avatar: AttrValue,
     pub cur_user_id: AttrValue,
@@ -129,27 +132,28 @@ impl Component for MessageList {
 
         let audio_dis = Dispatch::global()
             .subscribe_silent(ctx.link().callback(MessageListMsg::AudioDownloaded));
-        let self_ = Self {
+        Self {
             list: IndexMap::new(),
             is_playing_audio: AttrValue::default(),
             wrapper_ref: NodeRef::default(),
             node_ref: NodeRef::default(),
             load_ref: NodeRef::default(),
             audio_ref: NodeRef::default(),
-            page_size: 30,
+            page_size: DEFAULT_PAGE_SIZE,
             page: 1,
             is_all: false,
             scroll_state: ScrollState::Bottom,
             friend: None,
             new_msg_count: 0,
+            need_set_observer: true,
             is_black: false,
-            is_set_observer: false,
             audio_on_stop: None,
             audio_data_url: None,
             is_mobile: MobileState::is_mobile(),
             mouse_move: None,
             mouse_up: None,
             observer: None,
+            observer_callback: None,
 
             _sync_msg_dis,
             _rec_msg_dis,
@@ -157,14 +161,11 @@ impl Component for MessageList {
             _sent_audio_dis,
             _sent_msg_dis,
             _audio_dis: audio_dis,
-        };
-        self_.query_friend(ctx);
-        // self_.query(ctx);
-        self_
+        }
     }
 
     fn update(&mut self, ctx: &Context<Self>, msg: Self::Message) -> bool {
-        let friend_id = ctx.props().friend_id.clone();
+        let friend_id = ctx.props().friend.id();
         match msg {
             MessageListMsg::QueryStart => {
                 if !self.is_all {
@@ -181,7 +182,7 @@ impl Component for MessageList {
                     self.page += 1;
                 }
                 self.scroll_state = ScrollState::None;
-
+                // list.reverse();
                 self.list.extend(list);
                 true
             }
@@ -224,7 +225,7 @@ impl Component for MessageList {
                 log::debug!("sync offline msg in message list....");
                 self.reset();
                 self.query(ctx);
-                self.query_friend(ctx);
+                // self.query_friend(ctx);
                 false
             }
             MessageListMsg::SendResultCallback(state) => {
@@ -333,15 +334,23 @@ impl Component for MessageList {
                 }
                 false
             }
+            MessageListMsg::OnScroll(event) => {
+                event.prevent_default(); // 阻止默认的滚动行为
+
+                if let Some(div) = self.node_ref.cast::<HtmlDivElement>() {
+                    // 反转滚动方向
+                    div.set_scroll_top(div.scroll_top() - (event.delta_y() * 3.) as i32);
+                }
+                false
+            }
         }
     }
 
-    fn changed(&mut self, ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
+    fn changed(&mut self, _ctx: &Context<Self>, _old_props: &Self::Properties) -> bool {
         self.reset();
-        self.query_friend(ctx);
-        self.query(ctx);
+        self.need_set_observer = true;
         // do not re-render component, it will rerender in query
-        false
+        true
     }
 
     fn view(&self, ctx: &Context<Self>) -> Html {
@@ -369,19 +378,20 @@ impl Component for MessageList {
             "msg-list scrollbar"
         };
 
+        let onwheel = ctx.link().callback(MessageListMsg::OnScroll);
         html! {
             <div class="msg-container">
                 <div class="msg-list-wrapper" ref={self.wrapper_ref.clone()}>
                     {new_msg_count}
                     <audio ref={self.audio_ref.clone()}/>
-                    <div ref={self.node_ref.clone()} class={msg_list_class}>
+                    <div ref={self.node_ref.clone()} class={msg_list_class} {onwheel}>
                         {list}
                         <div class="msg-list-loading" ref={self.load_ref.clone()}></div>
                     </div>
                     <div class="msg-list-resizer" onmousedown={ctx.link().callback(MessageListMsg::ResizerMouseDown)}></div>
                 </div>
                 <Sender
-                    friend_id={&props.friend_id}
+                    friend_id={props.friend.id()}
                     cur_user_id={&props.cur_user_id}
                     avatar={&ctx.props().cur_user_avatar}
                     nickname={&ctx.props().nickname}
@@ -395,7 +405,7 @@ impl Component for MessageList {
         }
     }
 
-    fn rendered(&mut self, _ctx: &Context<Self>, _first_render: bool) {
+    fn rendered(&mut self, ctx: &Context<Self>, _first_render: bool) {
         if self.scroll_state == ScrollState::Bottom {
             if let Some(node) = self.node_ref.cast::<HtmlElement>() {
                 node.set_scroll_top(0);
@@ -404,32 +414,43 @@ impl Component for MessageList {
         }
 
         // set intersection observer event
-        if _first_render && !self.is_set_observer {
-            let call = _ctx.link().callback(|_| MessageListMsg::QueryStart);
-            let load = self.load_ref.cast::<HtmlDivElement>().unwrap();
-            let callback = Closure::wrap(Box::new(move |entries: Vec<IntersectionObserverEntry>| {
+        if self.need_set_observer {
+            self.set_observer(ctx);
+        }
+    }
+}
+
+impl MessageList {
+    fn set_observer(&mut self, ctx: &Context<Self>) {
+        let load = self.load_ref.cast::<HtmlDivElement>().unwrap();
+        let callback = if let Some(callback) = self.observer_callback.take() {
+            callback
+        } else {
+            let call = ctx.link().callback(|_| MessageListMsg::QueryStart);
+            Closure::wrap(Box::new(move |entries: Vec<IntersectionObserverEntry>| {
                 if let Some(entry) = entries.first() {
                     if entry.is_intersecting() {
                         call.emit(());
                     }
                 }
             })
-                as Box<dyn FnMut(Vec<IntersectionObserverEntry>)>);
-            let observer = IntersectionObserver::new_with_options(
-                callback.as_ref().unchecked_ref(),
-                IntersectionObserverInit::new().threshold(&JsValue::from_f64(1.0)),
-            )
-            .unwrap();
-            observer.observe(&load);
-            self.observer = Some(callback);
-            self.is_set_observer = true;
+                as Box<dyn FnMut(Vec<IntersectionObserverEntry>)>)
+        };
+        if let Some(observer) = self.observer.take() {
+            observer.disconnect();
         }
+        let observer = IntersectionObserver::new_with_options(
+            callback.as_ref().unchecked_ref(),
+            IntersectionObserverInit::new().threshold(&JsValue::from_f64(1.0)),
+        )
+        .unwrap();
+        observer.observe(&load);
+        self.observer = Some(observer);
+        self.observer_callback = Some(callback);
+        self.need_set_observer = false;
     }
-}
-
-impl MessageList {
     fn query(&self, ctx: &Context<Self>) {
-        let id = ctx.props().friend_id.clone();
+        let id = ctx.props().friend.id();
         log::debug!("message list props id: {} in query method", id);
         if !id.is_empty() {
             // 查询数据库
@@ -437,7 +458,10 @@ impl MessageList {
             let page = self.page;
             let page_size = self.page_size;
             let conv_type = ctx.props().conv_type.clone();
-            log::debug!("props conv type :{:?}", conv_type);
+            log::debug!(
+                "props conv type :{:?}, page: {page}, {page_size}",
+                conv_type
+            );
 
             ctx.link().send_future(async move {
                 match conv_type {
@@ -465,74 +489,74 @@ impl MessageList {
         }
     }
 
-    fn query_friend(&self, ctx: &Context<Self>) {
-        let id = ctx.props().friend_id.clone();
-        if !id.is_empty() {
-            // 查询数据库
-            let conv_type = ctx.props().conv_type.clone();
+    // fn query_friend(&self, ctx: &Context<Self>) {
+    //     let id = ctx.props().friend_id.clone();
+    //     if !id.is_empty() {
+    //         // 查询数据库
+    //         let conv_type = ctx.props().conv_type.clone();
 
-            ctx.link().send_future(async move {
-                // 查询朋友信息
-                let mut friend: Option<Box<dyn ItemInfo>> = None;
-                match conv_type {
-                    RightContentType::Friend => {
-                        let mut result = db::db_ins().friends.get(&id).await.unwrap().unwrap();
-                        log::debug!(
-                            "message list props id: {} in query method; friend :{:?}",
-                            id.clone(),
-                            result
-                        );
+    //         ctx.link().send_future(async move {
+    //             // 查询朋友信息
+    //             let mut friend: Option<Box<dyn ItemInfo>> = None;
+    //             match conv_type {
+    //                 RightContentType::Friend => {
+    //                     let mut result = db::db_ins().friends.get(&id).await.unwrap().unwrap();
+    //                     log::debug!(
+    //                         "message list props id: {} in query method; friend :{:?}",
+    //                         id.clone(),
+    //                         result
+    //                     );
 
-                        // todo optimize query time, we should load the friend info asynchronously
-                        if let Ok(user) = api::friends().query_friend(&id).await {
-                            if user.id == id {
-                                let mut need_update = false;
-                                if user.name != result.name {
-                                    result.name = user.name.into();
-                                    need_update = true;
-                                }
-                                if user.avatar != result.avatar {
-                                    result.avatar = user.avatar.into();
-                                    need_update = true;
-                                }
-                                result.region = user.region.map(|r| r.into());
-                                if user.signature != result.signature {
-                                    result.signature = user.signature.into();
-                                }
-                                if need_update {
-                                    if let Err(err) = db::db_ins().friends.put_friend(&result).await
-                                    {
-                                        error!("save friend error:{:?}", err);
-                                    }
+    //                     // todo optimize query time, we should load the friend info asynchronously
+    //                     if let Ok(user) = api::friends().query_friend(&id).await {
+    //                         if user.id == id {
+    //                             let mut need_update = false;
+    //                             if user.name != result.name {
+    //                                 result.name = user.name.into();
+    //                                 need_update = true;
+    //                             }
+    //                             if user.avatar != result.avatar {
+    //                                 result.avatar = user.avatar.into();
+    //                                 need_update = true;
+    //                             }
+    //                             result.region = user.region.map(|r| r.into());
+    //                             if user.signature != result.signature {
+    //                                 result.signature = user.signature.into();
+    //                             }
+    //                             if need_update {
+    //                                 if let Err(err) = db::db_ins().friends.put_friend(&result).await
+    //                                 {
+    //                                     error!("save friend error:{:?}", err);
+    //                                 }
 
-                                    // send update event
-                                    Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
-                                        s.id.clone_from(&result.friend_id);
-                                        s.name = Some(result.name.clone());
-                                        s.remark = None;
-                                        s.type_ = ItemType::Friend;
-                                    });
-                                }
-                            }
-                        }
-                        friend = Some(Box::new(result));
-                    }
-                    RightContentType::Group => {
-                        friend = Some(Box::new(
-                            db::db_ins().groups.get(&id).await.unwrap().unwrap(),
-                        ));
-                    }
-                    _ => {}
-                }
-                MessageListMsg::QueryFriend(friend)
-            });
-        }
-    }
+    //                                 // send update event
+    //                                 Dispatch::<UpdateFriendState>::global().reduce_mut(|s| {
+    //                                     s.id.clone_from(&result.friend_id);
+    //                                     s.name = Some(result.name.clone());
+    //                                     s.remark = None;
+    //                                     s.type_ = ItemType::Friend;
+    //                                 });
+    //                             }
+    //                         }
+    //                     }
+    //                     friend = Some(Box::new(result));
+    //                 }
+    //                 RightContentType::Group => {
+    //                     friend = Some(Box::new(
+    //                         db::db_ins().groups.get(&id).await.unwrap().unwrap(),
+    //                     ));
+    //                 }
+    //                 _ => {}
+    //             }
+    //             MessageListMsg::QueryFriend(friend)
+    //         });
+    //     }
+    // }
 
     fn reset(&mut self) {
         self.list = IndexMap::new();
         self.page = 1;
-        self.page_size = 20;
+        self.page_size = DEFAULT_PAGE_SIZE;
         self.new_msg_count = 0;
         self.is_all = false;
         self.friend = None;
@@ -622,10 +646,10 @@ impl MessageList {
                 log::debug!(
                     "rec friendship del in msg list {}, ctx friend id {:?}",
                     friend_id,
-                    ctx.props().friend_id
+                    ctx.props().friend.id()
                 );
                 // judge if friend_id is current user
-                if friend_id == ctx.props().friend_id {
+                if friend_id == ctx.props().friend.id() {
                     self.is_black = true;
                     return true;
                 }
@@ -693,44 +717,40 @@ impl MessageList {
     }
 
     fn get_list_html(&self, ctx: &Context<Self>) -> Html {
-        if let Some(frined) = self.friend.as_ref() {
-            let friend_avatar = frined.avatar();
-            let friend_nickname = frined.name();
-            self.list
-                .iter()
-                .map(|(key, msg)| {
-                    let (avatar, nickname) = if msg.is_self {
-                        (&ctx.props().cur_user_avatar, &ctx.props().nickname)
-                    } else if ctx.props().conv_type == RightContentType::Group {
-                        (&AttrValue::default(), &AttrValue::default())
-                    } else {
-                        (&friend_avatar, &friend_nickname)
-                    };
-                    let mut play_audio = None;
-                    if msg.content_type == ContentType::Audio {
-                        play_audio = Some(ctx.link().callback(MessageListMsg::PlayAudio));
-                    }
-                    let del_item = ctx.link().callback(MessageListMsg::DelItem);
+        let friend_avatar = ctx.props().friend.avatar();
+        let friend_nickname = ctx.props().friend.name();
+        self.list
+            .iter()
+            .map(|(key, msg)| {
+                let (avatar, nickname) = if msg.is_self {
+                    (&ctx.props().cur_user_avatar, &ctx.props().nickname)
+                } else if ctx.props().conv_type == RightContentType::Group {
+                    (&AttrValue::default(), &AttrValue::default())
+                } else {
+                    (&friend_avatar, &friend_nickname)
+                };
+                let mut play_audio = None;
+                if msg.content_type == ContentType::Audio {
+                    play_audio = Some(ctx.link().callback(MessageListMsg::PlayAudio));
+                }
+                let del_item = ctx.link().callback(MessageListMsg::DelItem);
 
-                    let send_timeout = ctx.link().callback(MessageListMsg::MsgSendTimeout);
-                    html! {
-                        <MsgItem
-                            user_id={&ctx.props().cur_user_id}
-                            friend_id={&ctx.props().friend_id}
-                            msg={msg.clone()}
-                            {avatar}
-                            nickname={nickname}
-                            conv_type={ctx.props().conv_type.clone()}
-                            {play_audio}
-                            {del_item}
-                            {send_timeout}
-                            key={key.as_str()}
-                        />
-                    }
-                })
-                .collect::<Html>()
-        } else {
-            html! {}
-        }
+                let send_timeout = ctx.link().callback(MessageListMsg::MsgSendTimeout);
+                html! {
+                    <MsgItem
+                        user_id={&ctx.props().cur_user_id}
+                        friend_id={&ctx.props().friend.id()}
+                        msg={msg.clone()}
+                        {avatar}
+                        nickname={nickname}
+                        conv_type={ctx.props().conv_type.clone()}
+                        {play_audio}
+                        {del_item}
+                        {send_timeout}
+                        key={key.as_str()}
+                    />
+                }
+            })
+            .collect::<Html>()
     }
 }

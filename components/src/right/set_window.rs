@@ -158,7 +158,7 @@ impl Component for SetWindow {
                 });
                 // todo send mute message to conversation component
                 if let Some(info) = self.info.as_ref() {
-                    Dispatch::<MuteState>::global().reduce_mut(|s| s.conv_id = info.id());
+                    Dispatch::<MuteState>::global().reduce_mut(|s| s.conv_id = info.id().clone());
                 }
                 true
             }
