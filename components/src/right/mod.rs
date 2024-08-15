@@ -97,31 +97,26 @@ impl Right {
             self.cur_conv_info = None;
             return;
         }
+        match self.conv_state.conv.content_type {
+            RightContentType::Default => {}
+            RightContentType::Friend => {
+                let ctx = ctx.link().clone();
+                spawn_local(async move {
+                    if let Ok(Some(friend)) = db::db_ins().friends.get(id.as_str()).await {
+                        ctx.send_message(RightMsg::ContentChange(ItemInfoBox::new(friend)));
+                    }
+                });
+            }
+            RightContentType::Group => {
+                let ctx = ctx.link().clone();
+                spawn_local(async move {
+                    if let Ok(Some(group)) = db::db_ins().groups.get(id.as_str()).await {
+                        ctx.send_message(RightMsg::ContentChange(ItemInfoBox::new(group)));
+                    }
+                });
+            }
 
-        match self.com_state.component_type {
-            ComponentType::Messages => match self.conv_state.conv.content_type {
-                RightContentType::Default => {}
-                RightContentType::Friend => {
-                    let ctx = ctx.link().clone();
-                    spawn_local(async move {
-                        if let Ok(Some(friend)) = db::db_ins().friends.get(id.as_str()).await {
-                            ctx.send_message(RightMsg::ContentChange(ItemInfoBox::new(friend)));
-                        }
-                    });
-                }
-                RightContentType::Group => {
-                    let ctx = ctx.link().clone();
-                    spawn_local(async move {
-                        if let Ok(Some(group)) = db::db_ins().groups.get(id.as_str()).await {
-                            ctx.send_message(RightMsg::ContentChange(ItemInfoBox::new(group)));
-                        }
-                    });
-                }
-
-                _ => {}
-            },
-
-            _ => self.cur_conv_info = None,
+            _ => {}
         }
     }
 }
@@ -495,6 +490,7 @@ impl Component for Right {
             };
         }
 
+        log::info!("right render: {:?}", self.cur_conv_info);
         html! {
             <div ref={self.node_ref.clone()}
                 {class}
