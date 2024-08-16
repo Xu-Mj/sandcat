@@ -338,8 +338,8 @@ impl Component for MessageList {
                 event.prevent_default(); // 阻止默认的滚动行为
 
                 if let Some(div) = self.node_ref.cast::<HtmlDivElement>() {
-                    // 反转滚动方向
-                    div.set_scroll_top(div.scroll_top() - (event.delta_y() * 3.) as i32);
+                    // reverse scroll direction
+                    div.set_scroll_top(div.scroll_top() - (event.delta_y() * 4.) as i32);
                 }
                 false
             }
